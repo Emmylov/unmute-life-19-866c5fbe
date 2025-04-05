@@ -1,9 +1,23 @@
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
+      setLoading(false);
+    };
+
+    checkAuth();
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-unmute-purple/30 to-unmute-pink/30 p-6">
       {/* Logo and name */}
@@ -40,11 +54,29 @@ const Index = () => {
 
       {/* CTA */}
       <div className="text-center">
-        <Link to="/onboarding">
-          <Button className="unmute-primary-button text-lg">
-            Get Started
-          </Button>
-        </Link>
+        {!loading && (
+          isAuthenticated ? (
+            <Link to="/home">
+              <Button className="unmute-primary-button text-lg">
+                Go to Home Feed
+              </Button>
+            </Link>
+          ) : (
+            <div className="space-y-4">
+              <Link to="/auth">
+                <Button className="unmute-primary-button text-lg">
+                  Sign In / Create Account
+                </Button>
+              </Link>
+              
+              <div className="pt-2">
+                <Link to="/onboarding" className="text-sm text-gray-600 hover:text-unmute-purple">
+                  Learn more first
+                </Link>
+              </div>
+            </div>
+          )
+        )}
         
         <p className="mt-4 text-sm text-gray-600">
           Join thousands of teens making their voices heard
