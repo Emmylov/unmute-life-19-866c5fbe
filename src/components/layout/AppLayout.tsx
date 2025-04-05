@@ -3,6 +3,15 @@ import React, { ReactNode } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Sidebar from "@/components/layout/Sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useLocation } from "react-router-dom";
+import { 
+  Home, 
+  Search, 
+  Film, 
+  Users, 
+  Bell, 
+  User
+} from "lucide-react";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -10,6 +19,7 @@ interface AppLayoutProps {
 
 const AppLayout = ({ children }: AppLayoutProps) => {
   const isMobile = useIsMobile();
+  const location = useLocation();
   
   return (
     <div className="min-h-screen bg-gray-50">
@@ -18,39 +28,53 @@ const AppLayout = ({ children }: AppLayoutProps) => {
       <div className="flex">
         {!isMobile && <Sidebar />}
         
-        <main className="flex-1">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <main className="flex-1 overflow-hidden">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             {children}
           </div>
         </main>
       </div>
       
-      {isMobile && <MobileNavigation />}
+      {isMobile && <MobileNavigation currentPath={location.pathname} />}
     </div>
   );
 };
 
-const MobileNavigation = () => {
+interface MobileNavigationProps {
+  currentPath: string;
+}
+
+const MobileNavigation = ({ currentPath }: MobileNavigationProps) => {
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 flex items-center justify-around z-10">
-      <NavLink icon="home" label="Home" isActive />
-      <NavLink icon="search" label="Explore" />
-      <NavLink icon="plus-circle" label="Create" />
-      <NavLink icon="message-circle" label="Chat" />
-      <NavLink icon="user" label="Profile" />
+      <NavLink icon={<Home className="h-6 w-6" />} label="Home" to="/home" isActive={currentPath === '/home'} />
+      <NavLink icon={<Search className="h-6 w-6" />} label="Explore" to="/explore" isActive={currentPath === '/explore'} />
+      <NavLink icon={<Film className="h-6 w-6" />} label="Reels" to="/reels" isActive={currentPath === '/reels'} />
+      <NavLink icon={<Users className="h-6 w-6" />} label="Community" to="/communities" isActive={currentPath === '/communities'} />
+      <NavLink icon={<User className="h-6 w-6" />} label="Profile" to="/profile" isActive={currentPath === '/profile'} />
     </nav>
   );
 };
 
-const NavLink = ({ icon, label, isActive = false }: { icon: string; label: string; isActive?: boolean }) => {
+interface NavLinkProps {
+  icon: React.ReactNode;
+  label: string;
+  to: string;
+  isActive?: boolean;
+}
+
+const NavLink = ({ icon, label, to, isActive = false }: NavLinkProps) => {
   return (
-    <div className="flex flex-col items-center">
+    <a 
+      href={to}
+      className="flex flex-col items-center"
+    >
       <div
-        className={`w-6 h-6 mb-1 ${
+        className={`mb-1 ${
           isActive ? "text-unmute-purple" : "text-gray-500"
         }`}
       >
-        <i className={`icon-${icon}`} />
+        {icon}
       </div>
       <span
         className={`text-xs ${
@@ -59,7 +83,7 @@ const NavLink = ({ icon, label, isActive = false }: { icon: string; label: strin
       >
         {label}
       </span>
-    </div>
+    </a>
   );
 };
 

@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -153,10 +154,10 @@
     transform: translate(-50%, -50%);
     width: 100px;
     height: 100px;
-    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23ec4899' viewBox='0 0 24 24' stroke='none'%3E%3Cpath d='M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z'%3E%3C/path%3E%3C/svg%3E");
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center;
+    font-size: 4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     opacity: 0;
     animation: heart-burst 1s ease-out forwards;
     pointer-events: none;
@@ -189,5 +190,55 @@
 
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
+  }
+  
+  /* Updated confetti animation */
+  .confetti-animation {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    background-image: 
+      radial-gradient(circle at 25% 25%, var(--tw-gradient-stops)),
+      url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0,0 L400,400 Z' stroke='%237c3aed' stroke-opacity='0.2' stroke-width='2'%3E%3C/path%3E%3C/svg%3E"),
+      url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='200' cy='200' r='5' fill='%23ec4899' fill-opacity='0.3'%3E%3C/circle%3E%3C/svg%3E"),
+      url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='190' y='190' width='20' height='20' transform='rotate(45, 200, 200)' fill='%2314b8a6' fill-opacity='0.3'%3E%3C/rect%3E%3C/svg%3E"),
+      url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M200,180 L220,220 L200,260 L180,220 Z' fill='%23fb7185' fill-opacity='0.3'%3E%3C/path%3E%3C/svg%3E");
+    background-size: 
+      cover,
+      120px 120px,
+      60px 60px,
+      80px 80px,
+      100px 100px;
+    opacity: 0;
+    animation: confetti-fall 3s ease-in-out forwards;
+  }
+
+  @keyframes confetti-fall {
+    0% {
+      background-position: 
+        center,
+        0px 0px, 
+        0px 0px, 
+        0px 0px, 
+        0px 0px;
+      opacity: 0;
+    }
+    25% {
+      opacity: 1;
+    }
+    75% {
+      opacity: 1;
+    }
+    100% {
+      background-position: 
+        center,
+        200px 400px, 
+        60px 300px, 
+        -80px 200px, 
+        100px 300px;
+      opacity: 0;
+    }
   }
 }
