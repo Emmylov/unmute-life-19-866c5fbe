@@ -1,15 +1,14 @@
 
-import { useLocation, Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 const NotFound = () => {
-  const location = useLocation();
   const navigate = useNavigate();
-
+  
   useEffect(() => {
     console.error(
-      "404 Error: User attempted to access non-existent route:",
-      location.pathname
+      "404 Error: User attempted to access non-existent route"
     );
 
     // Set a timeout to redirect to home feed after 3 seconds
@@ -18,7 +17,7 @@ const NotFound = () => {
     }, 3000);
 
     return () => clearTimeout(redirectTimer);
-  }, [location.pathname, navigate]);
+  }, [navigate]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-unmute-purple/10 to-unmute-pink/10 p-6">

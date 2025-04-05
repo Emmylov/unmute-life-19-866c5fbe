@@ -1,15 +1,9 @@
 
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
 const Index = () => {
-  const navigate = useNavigate();
-
-  const startOnboarding = () => {
-    navigate("/onboarding");
-  };
-
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-unmute-purple/30 to-unmute-pink/30 p-6">
       {/* Logo and name */}
@@ -46,12 +40,11 @@ const Index = () => {
 
       {/* CTA */}
       <div className="text-center">
-        <Button 
-          onClick={startOnboarding} 
-          className="unmute-primary-button text-lg"
-        >
-          Get Started
-        </Button>
+        <Link to="/onboarding">
+          <Button className="unmute-primary-button text-lg">
+            Get Started
+          </Button>
+        </Link>
         
         <p className="mt-4 text-sm text-gray-600">
           Join thousands of teens making their voices heard
