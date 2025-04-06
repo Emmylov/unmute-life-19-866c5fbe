@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -192,14 +191,16 @@ const ReelPostTab: React.FC<ReelPostTabProps> = ({ onSuccess }) => {
       const videoFileName = `${uuidv4()}.${videoExt}`;
       const videoFilePath = `${user.id}/${videoFileName}`;
       
+      const uploadOptions = {
+        cacheControl: '3600'
+      };
+      
       const { data: videoData, error: videoError } = await supabase.storage
         .from('reels')
-        .upload(videoFilePath, videoFile, {
-          onUploadProgress: (progress) => {
-            const progressPercent = (progress.loaded / progress.total) * 100;
-            setUploadProgress(progressPercent);
-          }
-        });
+        .upload(videoFilePath, videoFile, uploadOptions);
+      
+      // Update progress after upload completes
+      setUploadProgress(videoError ? 0 : 100);
       
       if (videoError) {
         console.error("Error uploading video:", videoError);

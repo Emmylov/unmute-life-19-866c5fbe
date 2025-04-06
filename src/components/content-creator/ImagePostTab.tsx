@@ -83,17 +83,20 @@ const ImagePostTab: React.FC<ImagePostTabProps> = ({ onSuccess }) => {
         const fileName = `${uuidv4()}.${fileExt}`;
         const filePath = `${user.id}/${fileName}`;
         
+        const uploadOptions = {
+          cacheControl: '3600'
+        };
+        
+        // Track upload progress separately
         const { data, error } = await supabase.storage
           .from('posts')
-          .upload(filePath, file, {
-            onUploadProgress: (progress) => {
-              const progressPercent = (progress.loaded / progress.total) * 100;
-              setUploadProgress(prev => ({
-                ...prev,
-                [i]: progressPercent
-              }));
-            }
-          });
+          .upload(filePath, file, uploadOptions);
+        
+        // Update progress after upload completes or fails
+        setUploadProgress(prev => ({
+          ...prev,
+          [i]: error ? 0 : 100
+        }));
         
         if (error) {
           console.error("Error uploading image:", error);

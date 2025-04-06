@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import OnboardingLayout from "@/components/onboarding/OnboardingLayout";
 import OnboardingProgress from "@/components/onboarding/OnboardingProgress";
@@ -11,12 +10,37 @@ import AccountCreationStep from "@/components/onboarding/AccountCreationStep";
 import InterestsStep from "@/components/onboarding/InterestsStep";
 import ProfileSetupStep from "@/components/onboarding/ProfileSetupStep";
 import FinalWelcomeStep from "@/components/onboarding/FinalWelcomeStep";
+import { supabase } from "@/integrations/supabase/client";
 
 const TOTAL_STEPS = 8;
 
 const Onboarding = () => {
   const [currentStep, setCurrentStep] = useState(0);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  
+  useEffect(() => {
+    const checkOnboardingStatus = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (session) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('is_onboarded')
+          .eq('id', session.user.id)
+          .single();
+          
+        if (profile?.is_onboarded) {
+          navigate('/home');
+          return;
+        }
+      }
+      
+      setLoading(false);
+    };
+    
+    checkOnboardingStatus();
+  }, [navigate]);
   
   const handleNext = () => {
     if (currentStep < TOTAL_STEPS - 1) {
@@ -32,11 +56,20 @@ const Onboarding = () => {
     navigate("/home"); // Skip sign up and go to home
   };
   
-  const handleComplete = () => {
+  const handleComplete = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (session) {
+      await supabase.from('profiles')
+        .update({
+          is_onboarded: true
+        })
+        .eq('id', session.user.id);
+    }
+    
     navigate("/home"); // Go to home after onboarding
   };
   
-  // Different background for each step
   const getBackgroundClass = () => {
     switch (currentStep) {
       case 0:
@@ -87,6 +120,14 @@ const Onboarding = () => {
         return null;
     }
   };
+  
+  if (loading) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <div className="animate-spin h-8 w-8 border-4 border-unmute-purple border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
   
   return (
     <OnboardingLayout backgroundClass={getBackgroundClass()}>

@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -126,14 +125,16 @@ const MemePostTab: React.FC<MemePostTabProps> = ({ onSuccess }) => {
       const fileName = `${uuidv4()}.jpg`;
       const filePath = `${user.id}/${fileName}`;
       
+      const uploadOptions = {
+        cacheControl: '3600'
+      };
+      
       const { data, error } = await supabase.storage
         .from('posts')
-        .upload(filePath, memeFile, {
-          onUploadProgress: (progress) => {
-            const progressPercent = (progress.loaded / progress.total) * 100;
-            setUploadProgress(progressPercent);
-          }
-        });
+        .upload(filePath, memeFile, uploadOptions);
+      
+      // Update progress after upload completes
+      setUploadProgress(error ? 0 : 100);
       
       if (error) {
         console.error("Error uploading meme:", error);
