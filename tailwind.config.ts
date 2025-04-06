@@ -63,27 +63,32 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				// Unmute custom colors
+				// Unmute custom colors - Cosmic Candy palette
 				unmute: {
 					purple: {
-						light: '#9b7efa',
-						DEFAULT: '#7c3aed',
-						dark: '#6025c0'
+						light: '#A066F8',
+						DEFAULT: '#A066F8',
+						dark: '#7A4BD5'
 					},
 					pink: {
-						light: '#f472b6',
-						DEFAULT: '#ec4899',
-						dark: '#be185d'
+						light: '#FF99D6',
+						DEFAULT: '#FF66C4',
+						dark: '#E54EA6'
 					},
-					coral: {
-						light: '#fda4af',
-						DEFAULT: '#fb7185',
-						dark: '#e11d48'
+					blue: {
+						light: '#66AEFF',
+						DEFAULT: '#3F8CFF',
+						dark: '#2A6FD9'
 					},
-					teal: {
-						light: '#5eead4',
-						DEFAULT: '#14b8a6',
-						dark: '#0f766e'
+					mint: {
+						light: '#C2FFF4',
+						DEFAULT: '#A2FFEA',
+						dark: '#7BECD8'
+					},
+					lavender: {
+						light: '#D3A6FF',
+						DEFAULT: '#C084FC',
+						dark: '#A766EB'
 					}
 				}
 			},
@@ -94,20 +99,12 @@ export default {
 			},
 			keyframes: {
 				'accordion-down': {
-					from: {
-						height: '0'
-					},
-					to: {
-						height: 'var(--radix-accordion-content-height)'
-					}
+					from: { height: '0' },
+					to: { height: 'var(--radix-accordion-content-height)' }
 				},
 				'accordion-up': {
-					from: {
-						height: 'var(--radix-accordion-content-height)'
-					},
-					to: {
-						height: '0'
-					}
+					from: { height: 'var(--radix-accordion-content-height)' },
+					to: { height: '0' }
 				},
 				'fade-in': {
 					'0%': {
@@ -155,8 +152,8 @@ export default {
 					'50%': { transform: 'translateY(-5px)' }
 				},
 				'glow': {
-					'0%, 100%': { boxShadow: '0 0 5px 2px rgba(124, 58, 237, 0.2)' },
-					'50%': { boxShadow: '0 0 10px 5px rgba(124, 58, 237, 0.4)' }
+					'0%, 100%': { boxShadow: '0 0 5px 2px rgba(160, 102, 248, 0.2)' },
+					'50%': { boxShadow: '0 0 10px 5px rgba(160, 102, 248, 0.4)' }
 				},
 				'shimmer': {
 					'0%': { backgroundPosition: '-200% 0' },
@@ -188,9 +185,9 @@ export default {
 			},
 			backgroundImage: {
 				'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-				'purple-pink-gradient': 'linear-gradient(90deg, #7c3aed, #ec4899)',
-				'coral-teal-gradient': 'linear-gradient(90deg, #fb7185, #14b8a6)',
-				'purple-teal-gradient': 'linear-gradient(135deg, #7c3aed 0%, #14b8a6 100%)',
+				'cosmic-crush': 'linear-gradient(135deg, #A066F8, #FF66C4)',
+				'dream-mist': 'linear-gradient(135deg, #FEE3FF, #F6F8FF)',
+				'neon-glow': 'linear-gradient(90deg, #3F8CFF, #A2FFEA)',
 				'shimmer-gradient': 'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 100%)',
 			}
 		}

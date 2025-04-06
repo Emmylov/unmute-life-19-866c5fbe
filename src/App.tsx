@@ -13,7 +13,7 @@ import Home from "./pages/Home";
 import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
 import Reels from "./pages/Reels";
-import ContentCreator from "./pages/ContentCreator"; // Import the new page
+import ContentCreator from "./pages/ContentCreator";
 
 // Create a QueryClient for React Query
 const queryClient = new QueryClient();
@@ -38,7 +38,25 @@ const App = () => {
   }, []);
 
   if (loading) {
-    return <div className="h-screen flex items-center justify-center">Loading...</div>;
+    return (
+      <div className="h-screen flex items-center justify-center bg-dream-mist">
+        <div className="flex flex-col items-center">
+          <div className="text-2xl font-bold unmute-gradient-text mb-4">Unmute</div>
+          <div className="space-y-3">
+            <div className="flex space-x-2">
+              {[1, 2, 3].map((i) => (
+                <div 
+                  key={i}
+                  className="w-3 h-3 bg-primary rounded-full animate-bounce" 
+                  style={{ animationDelay: `${i * 0.1}s` }}
+                />
+              ))}
+            </div>
+            <p className="text-gray-500">Loading your experience...</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -55,7 +73,7 @@ const App = () => {
             <Route path="/profile" element={<Profile />} />
             <Route path="/profile/:username" element={<Profile />} />
             <Route path="/reels" element={<Reels />} />
-            <Route path="/create" element={<ContentCreator />} /> {/* Add this route */}
+            <Route path="/create" element={<ContentCreator />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

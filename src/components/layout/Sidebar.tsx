@@ -1,20 +1,19 @@
 
 import React from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
   Home, 
-  Search, 
   Compass, 
   Video, 
   Users, 
   Bell,
   Bookmark,
   Settings,
-  HelpCircle,
   User,
   BadgeHelp,
-  LogOut
+  LogOut,
+  PlusCircle
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -39,6 +38,7 @@ const itemAnimation = {
 const Sidebar = () => {
   const location = useLocation();
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -52,19 +52,12 @@ const Sidebar = () => {
   
   return (
     <motion.aside 
-      className="hidden md:flex flex-col w-64 bg-white border-r border-gray-200 min-h-screen"
+      className="hidden md:flex flex-col w-64 bg-white/80 backdrop-blur-md border-r border-gray-100 min-h-screen"
       initial="hidden"
       animate="visible"
       variants={sidebarAnimation}
     >
       <div className="p-6">
-        <motion.h2 
-          className="text-lg font-semibold mb-2"
-          variants={itemAnimation}
-        >
-          Menu
-        </motion.h2>
-        
         <motion.nav 
           className="mt-4 flex flex-col space-y-1"
           variants={itemAnimation}
@@ -109,6 +102,21 @@ const Sidebar = () => {
           />
         </motion.nav>
         
+        <motion.div
+          className="mt-8 flex justify-center"
+          variants={itemAnimation}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <button 
+            onClick={() => navigate('/create')}
+            className="w-full bg-cosmic-crush text-white py-3 px-4 rounded-full font-medium flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all"
+          >
+            <PlusCircle className="h-5 w-5" />
+            Create Content
+          </button>
+        </motion.div>
+        
         <motion.h2 
           className="text-lg font-semibold mt-8 mb-2"
           variants={itemAnimation}
@@ -151,10 +159,10 @@ const Sidebar = () => {
       </div>
       
       <div className="mt-auto p-6 border-t border-gray-100">
-        <div className="bg-gradient-to-r from-unmute-purple/10 to-unmute-pink/10 rounded-xl p-4">
+        <div className="bg-dream-mist rounded-xl p-4">
           <h4 className="text-sm font-medium mb-2">Upgrade to Pro</h4>
           <p className="text-xs text-gray-600 mb-3">Get access to premium features</p>
-          <button className="text-xs px-3 py-1.5 bg-unmute-purple text-white rounded-full font-medium">
+          <button className="text-xs px-3 py-1.5 bg-cosmic-crush text-white rounded-full font-medium shadow-sm hover:shadow-md transition-all">
             Learn more
           </button>
         </div>
@@ -177,10 +185,10 @@ const SidebarLink = ({ to, icon, label, isActive = false, hasNotification = fals
       <NavLink
         to={to}
         className={`
-          flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-colors relative
+          flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all relative
           ${
             isActive
-              ? "bg-gradient-to-r from-unmute-purple-light/20 to-unmute-purple/10 text-unmute-purple"
+              ? "bg-cosmic-crush bg-opacity-10 text-primary"
               : "text-gray-600 hover:bg-gray-100"
           }
         `}
@@ -189,7 +197,7 @@ const SidebarLink = ({ to, icon, label, isActive = false, hasNotification = fals
         {label}
         
         {hasNotification && (
-          <span className="absolute right-4 top-1/2 transform -translate-y-1/2 h-2 w-2 bg-unmute-coral rounded-full" />
+          <span className="absolute right-4 top-1/2 transform -translate-y-1/2 h-2 w-2 bg-secondary rounded-full" />
         )}
       </NavLink>
     </motion.div>

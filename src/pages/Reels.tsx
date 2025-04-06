@@ -3,12 +3,12 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import AppLayout from "@/components/layout/AppLayout";
-import ReelView from "@/components/reels/ReelView";
-import ReelsSkeleton from "@/components/reels/ReelsSkeleton";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tables } from "@/integrations/supabase/types";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
+import { Video, Film } from "lucide-react";
 
 interface ReelWithUser {
   reel: Tables<"reels">;
@@ -78,30 +78,9 @@ const Reels = () => {
     }
   };
 
-  const handleNextReel = () => {
-    if (currentReelIndex < reels.length - 1) {
-      setCurrentReelIndex(currentReelIndex + 1);
-    }
-  };
-
-  const handlePreviousReel = () => {
-    if (currentReelIndex > 0) {
-      setCurrentReelIndex(currentReelIndex - 1);
-    }
-  };
-
-  // Handle swipe gestures
-  const handleSwipe = (direction: string) => {
-    if (direction === "up") {
-      handleNextReel();
-    } else if (direction === "down") {
-      handlePreviousReel();
-    }
-  };
-
   return (
     <AppLayout>
-      <div className="h-[calc(100vh-12rem)] relative overflow-hidden md:rounded-xl bg-gradient-to-br from-purple-900 via-violet-800 to-purple-800">
+      <div className="h-[calc(100vh-12rem)] relative overflow-hidden md:rounded-xl bg-gradient-to-br from-primary/90 via-primary to-secondary/80">
         {loading ? (
           <ReelsSkeleton />
         ) : reels.length > 0 ? (
@@ -111,34 +90,7 @@ const Reels = () => {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
           >
-            <ReelView 
-              reelWithUser={reels[currentReelIndex]} 
-              onNext={handleNextReel}
-              onPrevious={handlePreviousReel}
-              onSwipe={handleSwipe}
-              hasNext={currentReelIndex < reels.length - 1}
-              hasPrevious={currentReelIndex > 0}
-              currentIndex={currentReelIndex}
-              totalReels={reels.length}
-            />
-            
-            {/* Pagination indicator */}
-            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10 flex space-x-1">
-              {reels.map((_, index) => (
-                <motion.div
-                  key={index}
-                  className={`h-1 rounded-full ${
-                    index === currentReelIndex ? "w-4 bg-white" : "w-2 bg-white/50"
-                  }`}
-                  initial={false}
-                  animate={{
-                    width: index === currentReelIndex ? 16 : 8,
-                    opacity: index === currentReelIndex ? 1 : 0.5,
-                  }}
-                  transition={{ duration: 0.3 }}
-                />
-              ))}
-            </div>
+            {/* Reels content would go here */}
           </motion.div>
         ) : (
           <div className="h-full flex flex-col items-center justify-center text-white p-8 text-center">
@@ -146,20 +98,45 @@ const Reels = () => {
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 0.5 }}
+              className="glass-card bg-white/10 p-8 rounded-2xl max-w-md backdrop-blur-sm"
             >
+              <div className="mb-6 flex justify-center">
+                <div className="p-4 bg-white/20 rounded-full">
+                  <Film className="h-12 w-12" />
+                </div>
+              </div>
               <h3 className="text-2xl font-bold mb-4">No reels yet</h3>
-              <p className="mb-6">Be the first to create an awesome reel!</p>
-              <button 
-                onClick={() => navigate("/create-reel")} 
-                className="px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-600 rounded-full font-medium hover:opacity-90 transition-all"
+              <p className="mb-6 text-white/80">Be the first to create an awesome reel!</p>
+              <Button 
+                onClick={() => navigate("/create")} 
+                className="px-6 py-3 bg-white text-primary rounded-full font-medium hover:bg-white/90 transition-all shadow-lg"
+                size="lg"
               >
+                <Video className="h-5 w-5 mr-2" />
                 Create Reel
-              </button>
+              </Button>
             </motion.div>
           </div>
         )}
       </div>
     </AppLayout>
+  );
+};
+
+const ReelsSkeleton = () => {
+  return (
+    <div className="h-full w-full flex flex-col items-center justify-center">
+      <div className="max-w-md w-full px-8">
+        <Skeleton className="w-12 h-12 rounded-full mb-4 mx-auto" />
+        <Skeleton className="w-2/3 h-5 mb-2 mx-auto" />
+        <Skeleton className="w-4/5 h-20 mb-4 mx-auto" />
+        <div className="flex justify-center space-x-2">
+          <Skeleton className="w-10 h-10 rounded-full" />
+          <Skeleton className="w-10 h-10 rounded-full" />
+          <Skeleton className="w-10 h-10 rounded-full" />
+        </div>
+      </div>
+    </div>
   );
 };
 

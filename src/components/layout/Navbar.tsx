@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Search, Menu, Bell, MessageCircle, LogOut } from "lucide-react";
+import { Search, Menu, Bell, MessageCircle, LogOut, PlusCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -23,6 +23,7 @@ const Navbar = () => {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   
   useEffect(() => {
@@ -67,9 +68,8 @@ const Navbar = () => {
     
     // Generate a deterministic color based on user ID
     const colors = [
-      "bg-purple-500", "bg-pink-500", "bg-indigo-500", 
-      "bg-blue-500", "bg-teal-500", "bg-green-500",
-      "bg-yellow-500", "bg-orange-500", "bg-red-500"
+      "bg-unmute-purple", "bg-unmute-pink", "bg-unmute-lavender", 
+      "bg-unmute-blue", "bg-unmute-mint"
     ];
     
     const index = userId.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length;
@@ -77,7 +77,7 @@ const Navbar = () => {
   };
   
   return (
-    <header className="sticky top-0 z-20 bg-white border-b border-gray-200">
+    <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-gray-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo and Mobile Menu */}
@@ -100,8 +100,8 @@ const Navbar = () => {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input 
                   type="text" 
-                  placeholder="Search..." 
-                  className="pl-10 bg-gray-50 border-none focus-visible:ring-unmute-purple/30"
+                  placeholder="Search voices, people, and communities..." 
+                  className="pl-10 bg-gray-50/80 border-none focus-visible:ring-primary/30 rounded-full"
                 />
               </div>
             </div>
@@ -115,9 +115,23 @@ const Navbar = () => {
               </Button>
             )}
             
-            <Button variant="ghost" size="icon" className="relative">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className={`relative text-primary hover:text-primary/80 transition-colors ${location.pathname === '/create' ? 'bg-primary/10' : ''}`}
+              onClick={() => navigate('/create')}
+            >
+              <PlusCircle className="h-5 w-5" />
+              <span className="sr-only">Create</span>
+            </Button>
+            
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="relative"
+            >
               <Bell className="h-5 w-5" />
-              <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-unmute-coral"></span>
+              <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-secondary"></span>
             </Button>
             
             <Button variant="ghost" size="icon">
@@ -126,7 +140,7 @@ const Navbar = () => {
             
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Avatar className="h-9 w-9 cursor-pointer ring-2 ring-white hover:ring-unmute-purple/20 transition-all">
+                <Avatar className="h-9 w-9 cursor-pointer ring-2 ring-white hover:ring-primary/20 transition-all">
                   <AvatarImage 
                     src={profile?.avatar || ''} 
                     alt={profile?.username || user?.email || 'User'}
@@ -143,17 +157,20 @@ const Navbar = () => {
                   </AvatarFallback>
                 </Avatar>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="w-56 glass-card">
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link to="/profile" className="cursor-pointer">Profile</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
+                  <Link to="/create" className="cursor-pointer">Create Content</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
                   <Link to="/settings" className="cursor-pointer">Settings</Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleSignOut} className="text-red-500 cursor-pointer">
+                <DropdownMenuItem onClick={handleSignOut} className="text-destructive cursor-pointer">
                   <LogOut className="h-4 w-4 mr-2" />
                   Sign out
                 </DropdownMenuItem>
@@ -170,7 +187,7 @@ const Navbar = () => {
               <Input 
                 type="text" 
                 placeholder="Search..." 
-                className="pl-10"
+                className="pl-10 rounded-full"
                 autoFocus
               />
             </div>
