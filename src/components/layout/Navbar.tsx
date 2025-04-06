@@ -99,7 +99,7 @@ const Navbar = ({ pageTitle }: NavbarProps) => {
             {pageTitle && (
               <div className="ml-4 md:ml-6 flex items-center">
                 <span className="text-gray-400 mx-2">/</span>
-                <h1 className="text-lg font-medium text-unmute-purple">{pageTitle}</h1>
+                <h1 className="text-lg font-medium text-unmute-purple-dark">{pageTitle}</h1>
               </div>
             )}
           </div>
@@ -137,7 +137,7 @@ const Navbar = ({ pageTitle }: NavbarProps) => {
             </Button>
             
             <Button 
-              className={`hidden sm:flex items-center gap-2 bg-gradient-to-r from-unmute-purple to-unmute-pink hover:opacity-90 text-white rounded-full shadow`}
+              className={`hidden sm:flex items-center gap-2 unmute-primary-button`}
               size="sm"
               onClick={() => navigate('/create')}
             >

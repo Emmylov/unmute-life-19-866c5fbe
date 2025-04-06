@@ -30,14 +30,49 @@ const Reels = () => {
   const fetchReels = async () => {
     try {
       setLoading(true);
-      const { data: reelsData, error: reelsError } = await supabase
+      
+      // First try to get reels from posts_reels table (new structure)
+      let { data: newerReelsData, error: newerReelsError } = await supabase
+        .from("posts_reels")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      // Then get reels from the reels table (older structure)
+      let { data: olderReelsData, error: olderReelsError } = await supabase
         .from("reels")
         .select("*")
         .order("created_at", { ascending: false });
 
-      if (reelsError) throw reelsError;
+      if (newerReelsError && olderReelsError) {
+        throw newerReelsError || olderReelsError;
+      }
 
-      if (reelsData && reelsData.length > 0) {
+      const reelsData = [];
+      
+      // Add data from newer reels structure if available
+      if (newerReelsData && newerReelsData.length > 0) {
+        // Map the newer reels structure to match the expected format
+        const mappedNewerReels = newerReelsData.map(reel => ({
+          id: reel.id,
+          user_id: reel.user_id,
+          created_at: reel.created_at,
+          video_url: reel.video_url,
+          thumbnail_url: null, // This might be available in the actual data
+          caption: reel.caption || "",
+          audio: reel.audio_url || reel.audio || ""
+        }));
+        
+        reelsData.push(...mappedNewerReels);
+      }
+      
+      // Add data from older reels structure if available
+      if (olderReelsData && olderReelsData.length > 0) {
+        reelsData.push(...olderReelsData);
+      }
+      
+      console.log("Fetched reels data:", reelsData);
+
+      if (reelsData.length > 0) {
         // Fetch user profiles for each reel
         const reelsWithUsers = await Promise.all(
           reelsData.map(async (reel) => {
@@ -67,6 +102,9 @@ const Reels = () => {
         );
 
         setReels(reelsWithUsers);
+        console.log("Reels with users:", reelsWithUsers);
+      } else {
+        setReels([]);
       }
     } catch (error) {
       console.error("Error loading reels:", error);
@@ -108,7 +146,7 @@ const Reels = () => {
               <div className="relative w-full h-full max-w-md max-h-[80vh] mx-auto">
                 <video
                   src={reels[currentReelIndex].reel.video_url}
-                  poster={reels[currentReelIndex].reel.thumbnail_url}
+                  poster={reels[currentReelIndex].reel.thumbnail_url || undefined}
                   className="w-full h-full object-cover rounded-lg"
                   controls
                   autoPlay

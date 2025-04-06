@@ -80,7 +80,7 @@ const NavLink = ({ icon, label, to, isActive = false }: NavLinkProps) => {
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
         className={`mb-1 ${
-          isActive ? "text-unmute-purple" : "text-gray-500"
+          isActive ? "text-unmute-purple-dark" : "text-gray-500"
         }`}
       >
         {icon}
@@ -96,7 +96,7 @@ const NavLink = ({ icon, label, to, isActive = false }: NavLinkProps) => {
       </motion.div>
       <span
         className={`text-xs ${
-          isActive ? "text-unmute-purple font-medium" : "text-gray-500"
+          isActive ? "text-unmute-purple-dark font-medium" : "text-gray-500"
         }`}
       >
         {label}

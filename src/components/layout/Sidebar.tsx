@@ -188,7 +188,7 @@ const SidebarLink = ({ to, icon, label, isActive = false, hasNotification = fals
           flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all relative
           ${
             isActive
-              ? "bg-cosmic-crush bg-opacity-10 text-primary"
+              ? "bg-unmute-purple/20 text-unmute-purple-dark font-bold"
               : "text-gray-600 hover:bg-gray-100"
           }
         `}

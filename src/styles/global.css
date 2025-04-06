@@ -93,4 +93,12 @@
   .empty-state-icon {
     @apply h-16 w-16 text-muted-foreground/30 mb-6 p-3 bg-muted/30 rounded-full;
   }
+  
+  .bg-cosmic-crush {
+    @apply bg-gradient-to-r from-unmute-purple to-unmute-pink;
+  }
+  
+  .bg-dream-mist {
+    @apply bg-gradient-to-r from-[#FEE3FF] to-[#F6F8FF];
+  }
 }
