@@ -16,15 +16,16 @@ import { motion } from "framer-motion";
 
 interface AppLayoutProps {
   children: ReactNode;
+  pageTitle?: string;
 }
 
-const AppLayout = ({ children }: AppLayoutProps) => {
+const AppLayout = ({ children, pageTitle }: AppLayoutProps) => {
   const isMobile = useIsMobile();
   const location = useLocation();
   
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
+      <Navbar pageTitle={pageTitle} />
       
       <div className="flex">
         {!isMobile && <Sidebar />}

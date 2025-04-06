@@ -1,0 +1,96 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 273 93% 68%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 327 100% 70%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 273 93% 68%;
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 273 93% 68%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 327 100% 70%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 273 93% 68%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer utilities {
+  .unmute-gradient-text {
+    @apply bg-gradient-to-r from-unmute-purple to-unmute-pink bg-clip-text text-transparent;
+  }
+  
+  .unmute-primary-button {
+    @apply bg-gradient-to-r from-unmute-purple to-unmute-pink hover:opacity-90 text-white rounded-full shadow transition-all;
+  }
+  
+  .unmute-secondary-button {
+    @apply bg-white border border-unmute-purple/20 text-unmute-purple hover:bg-unmute-purple/5 rounded-full transition-all;
+  }
+  
+  .glass-card {
+    @apply backdrop-blur-sm bg-white/90 border border-white/20 shadow-sm;
+  }
+  
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .empty-state {
+    @apply flex flex-col items-center justify-center text-center p-12;
+  }
+  
+  .empty-state-icon {
+    @apply h-16 w-16 text-muted-foreground/30 mb-6 p-3 bg-muted/30 rounded-full;
+  }
+}

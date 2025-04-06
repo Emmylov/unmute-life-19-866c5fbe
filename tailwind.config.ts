@@ -189,7 +189,33 @@ export default {
 				'dream-mist': 'linear-gradient(135deg, #FEE3FF, #F6F8FF)',
 				'neon-glow': 'linear-gradient(90deg, #3F8CFF, #A2FFEA)',
 				'shimmer-gradient': 'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 100%)',
-			}
+			},
+			typography: {
+				DEFAULT: {
+					css: {
+						maxWidth: '65ch',
+						color: 'inherit',
+						a: {
+							color: 'inherit',
+							opacity: 0.75,
+							fontWeight: '500',
+							textDecoration: 'underline',
+							'&:hover': {
+								opacity: 1,
+								color: '#A066F8',
+							},
+						},
+						b: { color: 'inherit' },
+						strong: { color: 'inherit' },
+						em: { color: 'inherit' },
+						h1: { color: 'inherit' },
+						h2: { color: 'inherit' },
+						h3: { color: 'inherit' },
+						h4: { color: 'inherit' },
+						code: { color: 'inherit' },
+					},
+				},
+			},
 		}
 	},
 	plugins: [require("tailwindcss-animate")],

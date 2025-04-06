@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Search, Menu, Bell, MessageCircle, LogOut, PlusCircle } from "lucide-react";
+import { Search, Menu, Bell, MessageCircle, LogOut, PlusCircle, Video } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -17,7 +17,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 
-const Navbar = () => {
+interface NavbarProps {
+  pageTitle?: string;
+}
+
+const Navbar = ({ pageTitle }: NavbarProps) => {
   const isMobile = useIsMobile();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
@@ -89,8 +93,15 @@ const Navbar = () => {
             )}
             
             <Link to="/home" className="flex items-center">
-              <span className="text-xl font-bold unmute-gradient-text">Unmute</span>
+              <span className="text-xl font-bold bg-gradient-to-r from-unmute-purple to-unmute-pink bg-clip-text text-transparent">Unmute</span>
             </Link>
+            
+            {pageTitle && (
+              <div className="ml-4 md:ml-6 flex items-center">
+                <span className="text-gray-400 mx-2">/</span>
+                <h1 className="text-lg font-medium text-unmute-purple">{pageTitle}</h1>
+              </div>
+            )}
           </div>
           
           {/* Desktop Search */}
@@ -101,7 +112,7 @@ const Navbar = () => {
                 <Input 
                   type="text" 
                   placeholder="Search voices, people, and communities..." 
-                  className="pl-10 bg-gray-50/80 border-none focus-visible:ring-primary/30 rounded-full"
+                  className="pl-10 bg-gray-50/80 border-none focus-visible:ring-unmute-purple/30 rounded-full"
                 />
               </div>
             </div>
@@ -118,11 +129,20 @@ const Navbar = () => {
             <Button 
               variant="ghost" 
               size="icon" 
-              className={`relative text-primary hover:text-primary/80 transition-colors ${location.pathname === '/create' ? 'bg-primary/10' : ''}`}
+              className={`relative text-unmute-purple hover:text-unmute-purple/80 transition-colors ${location.pathname === '/create' ? 'bg-unmute-purple/10' : ''}`}
               onClick={() => navigate('/create')}
             >
               <PlusCircle className="h-5 w-5" />
               <span className="sr-only">Create</span>
+            </Button>
+            
+            <Button 
+              className={`hidden sm:flex items-center gap-2 bg-gradient-to-r from-unmute-purple to-unmute-pink hover:opacity-90 text-white rounded-full shadow`}
+              size="sm"
+              onClick={() => navigate('/create')}
+            >
+              <Video className="h-4 w-4" />
+              Create
             </Button>
             
             <Button 
@@ -131,7 +151,7 @@ const Navbar = () => {
               className="relative"
             >
               <Bell className="h-5 w-5" />
-              <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-secondary"></span>
+              <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-unmute-pink"></span>
             </Button>
             
             <Button variant="ghost" size="icon">
@@ -140,7 +160,7 @@ const Navbar = () => {
             
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Avatar className="h-9 w-9 cursor-pointer ring-2 ring-white hover:ring-primary/20 transition-all">
+                <Avatar className="h-9 w-9 cursor-pointer ring-2 ring-white hover:ring-unmute-purple/20 transition-all">
                   <AvatarImage 
                     src={profile?.avatar || ''} 
                     alt={profile?.username || user?.email || 'User'}
