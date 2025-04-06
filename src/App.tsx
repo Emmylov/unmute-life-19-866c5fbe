@@ -12,6 +12,7 @@ import Onboarding from "./pages/Onboarding";
 import Home from "./pages/Home";
 import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
+import Reels from "./pages/Reels"; // Add this import
 
 // Create a QueryClient for React Query
 const queryClient = new QueryClient();
@@ -52,6 +53,7 @@ const App = () => {
             <Route path="/home" element={<Home />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/profile/:username" element={<Profile />} />
+            <Route path="/reels" element={<Reels />} /> {/* Add this route */}
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
