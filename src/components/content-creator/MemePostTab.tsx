@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -129,6 +130,9 @@ const MemePostTab: React.FC<MemePostTabProps> = ({ onSuccess }) => {
         cacheControl: '3600'
       };
       
+      // Start with 0 progress
+      setUploadProgress(0);
+      
       const { data, error } = await supabase.storage
         .from('posts')
         .upload(filePath, memeFile, uploadOptions);
@@ -150,12 +154,12 @@ const MemePostTab: React.FC<MemePostTabProps> = ({ onSuccess }) => {
       const memeData = {
         user_id: user.id,
         image_url: publicUrl,
-        storage_path: filePath,
-        content: `${topText} ${bottomText}`.trim(),
-        cause: category, // Using the cause field for category
+        top_text: topText,
+        bottom_text: bottomText,
+        category: category
       };
       
-      const { error: insertError } = await supabase.from('posts').insert(memeData);
+      const { error: insertError } = await supabase.from('posts_memes').insert(memeData);
       
       if (insertError) {
         console.error("Error creating meme post:", insertError);

@@ -45,14 +45,14 @@ const TextPostTab: React.FC<TextPostTabProps> = ({ onSuccess }) => {
       const postData = {
         user_id: user.id,
         title,
-        content: body,
+        body,
+        tags,
         visibility: isDraft ? "draft" : visibility,
-        cause: tags.join(','),
         created_at: isScheduled && scheduledDate ? scheduledDate : now.toISOString(),
         emoji_mood: selectedEmoji,
       };
       
-      const { error } = await supabase.from('posts').insert(postData);
+      const { error } = await supabase.from('posts_text').insert(postData);
       
       if (error) {
         console.error("Error creating post:", error);

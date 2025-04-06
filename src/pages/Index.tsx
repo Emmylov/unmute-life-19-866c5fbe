@@ -37,8 +37,12 @@ const Index = () => {
 
   // Redirect authenticated and onboarded users directly to home
   useEffect(() => {
-    if (isAuthenticated && isOnboarded && !loading) {
-      navigate('/home');
+    if (isAuthenticated && !loading) {
+      if (isOnboarded) {
+        navigate('/home');
+      } else {
+        navigate('/onboarding');
+      }
     }
   }, [isAuthenticated, isOnboarded, loading, navigate]);
 

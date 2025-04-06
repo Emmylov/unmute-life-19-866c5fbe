@@ -87,7 +87,9 @@ const ImagePostTab: React.FC<ImagePostTabProps> = ({ onSuccess }) => {
           cacheControl: '3600'
         };
         
-        // Track upload progress separately
+        // Track upload progress separately - update progress after upload completes
+        setUploadProgress(prev => ({ ...prev, [i]: 0 }));
+        
         const { data, error } = await supabase.storage
           .from('posts')
           .upload(filePath, file, uploadOptions);
@@ -114,16 +116,15 @@ const ImagePostTab: React.FC<ImagePostTabProps> = ({ onSuccess }) => {
       // Save post data to Supabase
       const postData = {
         user_id: user.id,
-        content: caption,
-        image_url: imageUrls[0], // Primary image
+        image_urls: imageUrls,
+        caption,
+        tags,
         storage_path: storagePaths.join(','),
-        cause: tags.join(','),
         visibility: isDraft ? "draft" : visibility,
         layout: layout,
-        // Store additional image URLs as needed
       };
       
-      const { error } = await supabase.from('posts').insert(postData);
+      const { error } = await supabase.from('posts_images').insert(postData);
       
       if (error) {
         console.error("Error creating post:", error);

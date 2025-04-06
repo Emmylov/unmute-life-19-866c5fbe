@@ -185,6 +185,144 @@ export type Database = {
           },
         ]
       }
+      posts_images: {
+        Row: {
+          caption: string | null
+          created_at: string | null
+          id: string
+          image_urls: string[]
+          tags: string[] | null
+          user_id: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string | null
+          id?: string
+          image_urls: string[]
+          tags?: string[] | null
+          user_id: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string | null
+          id?: string
+          image_urls?: string[]
+          tags?: string[] | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      posts_memes: {
+        Row: {
+          bottom_text: string | null
+          category: string | null
+          created_at: string | null
+          id: string
+          image_url: string
+          top_text: string | null
+          user_id: string
+        }
+        Insert: {
+          bottom_text?: string | null
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          image_url: string
+          top_text?: string | null
+          user_id: string
+        }
+        Update: {
+          bottom_text?: string | null
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          image_url?: string
+          top_text?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      posts_reels: {
+        Row: {
+          allow_comments: boolean | null
+          allow_duets: boolean | null
+          audio_type: string | null
+          audio_url: string | null
+          caption: string | null
+          created_at: string | null
+          duration: number | null
+          id: string
+          original_audio_volume: number | null
+          overlay_audio_volume: number | null
+          tags: string[] | null
+          user_id: string
+          video_url: string
+        }
+        Insert: {
+          allow_comments?: boolean | null
+          allow_duets?: boolean | null
+          audio_type?: string | null
+          audio_url?: string | null
+          caption?: string | null
+          created_at?: string | null
+          duration?: number | null
+          id?: string
+          original_audio_volume?: number | null
+          overlay_audio_volume?: number | null
+          tags?: string[] | null
+          user_id: string
+          video_url: string
+        }
+        Update: {
+          allow_comments?: boolean | null
+          allow_duets?: boolean | null
+          audio_type?: string | null
+          audio_url?: string | null
+          caption?: string | null
+          created_at?: string | null
+          duration?: number | null
+          id?: string
+          original_audio_volume?: number | null
+          overlay_audio_volume?: number | null
+          tags?: string[] | null
+          user_id?: string
+          video_url?: string
+        }
+        Relationships: []
+      }
+      posts_text: {
+        Row: {
+          body: string
+          created_at: string | null
+          emoji_mood: string | null
+          id: string
+          tags: string[] | null
+          title: string | null
+          user_id: string
+          visibility: string | null
+        }
+        Insert: {
+          body: string
+          created_at?: string | null
+          emoji_mood?: string | null
+          id?: string
+          tags?: string[] | null
+          title?: string | null
+          user_id: string
+          visibility?: string | null
+        }
+        Update: {
+          body?: string
+          created_at?: string | null
+          emoji_mood?: string | null
+          id?: string
+          tags?: string[] | null
+          title?: string | null
+          user_id?: string
+          visibility?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar: string | null

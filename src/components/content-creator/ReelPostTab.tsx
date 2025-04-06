@@ -195,6 +195,9 @@ const ReelPostTab: React.FC<ReelPostTabProps> = ({ onSuccess }) => {
         cacheControl: '3600'
       };
       
+      // Set initial progress
+      setUploadProgress(0);
+      
       const { data: videoData, error: videoError } = await supabase.storage
         .from('reels')
         .upload(videoFilePath, videoFile, uploadOptions);
@@ -244,10 +247,8 @@ const ReelPostTab: React.FC<ReelPostTabProps> = ({ onSuccess }) => {
         video_url: videoPublicUrl,
         thumbnail_url: thumbnailPublicUrl,
         caption: caption,
-        storage_path: videoFilePath,
-        thumbnail_storage_path: thumbnailFilePath,
+        tags: tags,
         audio: audioName,
-        // Additional fields
         audio_type: audioType,
         original_audio_volume: originalVolume / 100,
         overlay_audio_volume: overlayVolume / 100,
@@ -256,7 +257,7 @@ const ReelPostTab: React.FC<ReelPostTabProps> = ({ onSuccess }) => {
         duration: videoDuration,
       };
       
-      const { error: insertError } = await supabase.from('reels').insert(reelData);
+      const { error: insertError } = await supabase.from('posts_reels').insert(reelData);
       
       if (insertError) {
         console.error("Error creating reel:", insertError);
