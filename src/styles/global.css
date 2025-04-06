@@ -11,9 +11,9 @@
     --card-foreground: 240 10% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
-    --primary: 273 93% 68%;
+    --primary: 273 93% 68%; /* #A066F8 */
     --primary-foreground: 0 0% 98%;
-    --secondary: 327 100% 70%;
+    --secondary: 327 100% 70%; /* #FF66C4 */
     --secondary-foreground: 0 0% 98%;
     --muted: 240 4.8% 95.9%;
     --muted-foreground: 240 3.8% 46.1%;
@@ -94,11 +94,30 @@
     @apply h-16 w-16 text-muted-foreground/30 mb-6 p-3 bg-muted/30 rounded-full;
   }
   
+  /* Cosmic Candy Palette */
   .bg-cosmic-crush {
-    @apply bg-gradient-to-r from-unmute-purple to-unmute-pink;
+    @apply bg-gradient-to-r from-[#A066F8] to-[#FF66C4];
   }
   
   .bg-dream-mist {
     @apply bg-gradient-to-r from-[#FEE3FF] to-[#F6F8FF];
+  }
+  
+  /* Mobile Optimizations */
+  .mobile-nav-item {
+    @apply flex flex-col items-center justify-center p-2 relative;
+  }
+  
+  .mobile-content-padding {
+    @apply px-3 py-4 sm:px-6 sm:py-6;
+  }
+  
+  /* Active state improvements */
+  .nav-item-active {
+    @apply text-unmute-purple font-medium relative;
+  }
+  
+  .nav-item-active::after {
+    @apply content-[''] absolute bottom-0 left-0 right-0 h-0.5 bg-unmute-purple rounded-full;
   }
 }

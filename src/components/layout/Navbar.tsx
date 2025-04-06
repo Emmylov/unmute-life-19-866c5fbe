@@ -1,8 +1,8 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Search, Menu, Bell, MessageCircle, LogOut, PlusCircle, Video } from "lucide-react";
+import { Search, Menu, Bell, MessageCircle, LogOut, PlusCircle, Video, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -16,6 +16,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 interface NavbarProps {
   pageTitle?: string;
@@ -26,9 +33,11 @@ const Navbar = ({ pageTitle }: NavbarProps) => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  const searchInputRef = useRef<HTMLInputElement>(null);
   
   useEffect(() => {
     const getUser = async () => {
@@ -51,6 +60,15 @@ const Navbar = ({ pageTitle }: NavbarProps) => {
     
     getUser();
   }, []);
+
+  // Focus search input when opened
+  useEffect(() => {
+    if (isSearchOpen && searchInputRef.current) {
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 100);
+    }
+  }, [isSearchOpen]);
   
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -79,6 +97,15 @@ const Navbar = ({ pageTitle }: NavbarProps) => {
     const index = userId.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length;
     return colors[index];
   };
+
+  const navigationLinks = [
+    { name: "Home", path: "/home" },
+    { name: "Explore", path: "/explore" },
+    { name: "Reels", path: "/reels" },
+    { name: "Communities", path: "/communities" },
+    { name: "Profile", path: "/profile" },
+    { name: "Settings", path: "/settings" },
+  ];
   
   return (
     <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-gray-100">
@@ -87,9 +114,87 @@ const Navbar = ({ pageTitle }: NavbarProps) => {
           {/* Logo and Mobile Menu */}
           <div className="flex items-center">
             {isMobile && (
-              <Button variant="ghost" size="icon" className="mr-2">
-                <Menu className="h-5 w-5" />
-              </Button>
+              <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" className="mr-2">
+                    <Menu className="h-5 w-5" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="p-0">
+                  <SheetHeader className="px-4 py-3 border-b">
+                    <SheetTitle>
+                      <span className="text-xl font-bold bg-gradient-to-r from-unmute-purple to-unmute-pink bg-clip-text text-transparent">
+                        Unmute
+                      </span>
+                    </SheetTitle>
+                  </SheetHeader>
+                  <div className="py-4">
+                    {profile && (
+                      <div className="px-4 py-3 mb-2 flex items-center">
+                        <Avatar className="h-10 w-10 mr-3 ring-2 ring-white">
+                          <AvatarImage
+                            src={profile?.avatar || ''}
+                            alt={profile?.username || user?.email || 'User'}
+                          />
+                          <AvatarFallback className={`${getAvatarFallbackColor(user?.id)} text-white`}>
+                            {getInitials(profile?.username || profile?.full_name || user?.email)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium text-sm">
+                            {profile?.username || profile?.full_name || user?.email}
+                          </p>
+                          <p className="text-xs text-gray-500">@{profile?.username || 'username'}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    <nav className="mt-2">
+                      {navigationLinks.map((link) => (
+                        <Link
+                          key={link.path}
+                          to={link.path}
+                          className={`flex items-center px-4 py-3 text-sm ${
+                            location.pathname === link.path
+                              ? "bg-primary/5 text-primary font-medium"
+                              : "text-gray-700 hover:bg-gray-50"
+                          }`}
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          {link.name}
+                        </Link>
+                      ))}
+                    </nav>
+
+                    <div className="px-4 pt-4 mt-4 border-t">
+                      <Button
+                        onClick={() => {
+                          navigate('/create');
+                          setIsMobileMenuOpen(false);
+                        }}
+                        className="w-full unmute-primary-button"
+                      >
+                        <PlusCircle className="h-4 w-4 mr-2" />
+                        Create Content
+                      </Button>
+                    </div>
+
+                    <div className="px-4 pt-2 pb-4">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          handleSignOut();
+                          setIsMobileMenuOpen(false);
+                        }}
+                        className="w-full text-destructive hover:text-destructive border-destructive/30 hover:bg-destructive/10 mt-2"
+                      >
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Sign out
+                      </Button>
+                    </div>
+                  </div>
+                </SheetContent>
+              </Sheet>
             )}
             
             <Link to="/home" className="flex items-center">
@@ -99,7 +204,7 @@ const Navbar = ({ pageTitle }: NavbarProps) => {
             {pageTitle && (
               <div className="ml-4 md:ml-6 flex items-center">
                 <span className="text-gray-400 mx-2">/</span>
-                <h1 className="text-lg font-medium text-unmute-purple-dark">{pageTitle}</h1>
+                <h1 className="text-lg font-medium text-gray-900">{pageTitle}</h1>
               </div>
             )}
           </div>
@@ -119,9 +224,9 @@ const Navbar = ({ pageTitle }: NavbarProps) => {
           )}
           
           {/* Right Nav Items */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3">
             {isMobile && (
-              <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(!isSearchOpen)}>
+              <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(!isSearchOpen)} className="text-gray-500">
                 <Search className="h-5 w-5" />
               </Button>
             )}
@@ -137,8 +242,7 @@ const Navbar = ({ pageTitle }: NavbarProps) => {
             </Button>
             
             <Button 
-              className={`hidden sm:flex items-center gap-2 unmute-primary-button`}
-              size="sm"
+              className={`hidden sm:flex items-center gap-2 unmute-primary-button px-4 py-2 h-9`}
               onClick={() => navigate('/create')}
             >
               <Video className="h-4 w-4" />
@@ -148,13 +252,13 @@ const Navbar = ({ pageTitle }: NavbarProps) => {
             <Button 
               variant="ghost" 
               size="icon" 
-              className="relative"
+              className="relative text-gray-500"
             >
               <Bell className="h-5 w-5" />
               <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-unmute-pink"></span>
             </Button>
             
-            <Button variant="ghost" size="icon">
+            <Button variant="ghost" size="icon" className="text-gray-500">
               <MessageCircle className="h-5 w-5" />
             </Button>
             
@@ -201,15 +305,23 @@ const Navbar = ({ pageTitle }: NavbarProps) => {
         
         {/* Mobile Search (expandable) */}
         {isMobile && isSearchOpen && (
-          <div className="pb-4">
+          <div className="pb-4 relative">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input 
+                ref={searchInputRef}
                 type="text" 
                 placeholder="Search..." 
-                className="pl-10 rounded-full"
-                autoFocus
+                className="pl-10 rounded-full pr-10"
               />
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7" 
+                onClick={() => setIsSearchOpen(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
             </div>
           </div>
         )}

@@ -12,7 +12,22 @@ import { Video, Film, ArrowLeft, ArrowRight, Heart, MessageCircle, Share2, Bookm
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface ReelWithUser {
-  reel: Tables<"reels">;
+  reel: Tables<"reels"> | {
+    id: string;
+    user_id: string;
+    created_at: string;
+    video_url: string;
+    thumbnail_url?: string;
+    caption?: string;
+    allow_comments?: boolean;
+    allow_duets?: boolean;
+    audio_type?: string;
+    audio_url?: string;
+    duration?: number;
+    original_audio_volume?: number;
+    overlay_audio_volume?: number;
+    tags?: string[];
+  };
   user: Tables<"profiles">;
 }
 
@@ -59,7 +74,15 @@ const Reels = () => {
           video_url: reel.video_url,
           thumbnail_url: null, // This might be available in the actual data
           caption: reel.caption || "",
-          audio: reel.audio_url || reel.audio || ""
+          // Handle audio field differently for newer reels
+          audio_url: reel.audio_url || "",
+          audio_type: reel.audio_type || "original",
+          duration: reel.duration,
+          allow_comments: reel.allow_comments,
+          allow_duets: reel.allow_duets,
+          original_audio_volume: reel.original_audio_volume,
+          overlay_audio_volume: reel.overlay_audio_volume,
+          tags: reel.tags
         }));
         
         reelsData.push(...mappedNewerReels);
@@ -128,6 +151,16 @@ const Reels = () => {
     if (currentReelIndex < reels.length - 1) {
       setCurrentReelIndex(currentReelIndex + 1);
     }
+  };
+
+  const getAudioDisplay = (reel: ReelWithUser['reel']) => {
+    // Handle different reel structures for audio display
+    if ('audio' in reel && reel.audio) {
+      return reel.audio;
+    } else if ('audio_url' in reel && reel.audio_url) {
+      return reel.audio_type === 'original' ? 'Original Audio' : reel.audio_url;
+    }
+    return 'Original Audio';
   };
 
   return (

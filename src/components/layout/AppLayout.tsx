@@ -52,13 +52,38 @@ const MobileNavigation = ({ currentPath }: MobileNavigationProps) => {
       initial={{ y: 100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.3, ease: "easeOut" }}
-      className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-2 flex items-center justify-around z-10"
+      className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-2 py-2 flex items-center justify-around z-10 shadow-lg"
     >
-      <NavLink icon={<Home className="h-6 w-6" />} label="Home" to="/home" isActive={currentPath === '/home'} />
-      <NavLink icon={<Search className="h-6 w-6" />} label="Explore" to="/explore" isActive={currentPath === '/explore'} />
-      <NavLink icon={<Film className="h-6 w-6" />} label="Reels" to="/reels" isActive={currentPath === '/reels'} />
-      <NavLink icon={<Users className="h-6 w-6" />} label="Community" to="/communities" isActive={currentPath === '/communities'} />
-      <NavLink icon={<User className="h-6 w-6" />} label="Profile" to="/profile" isActive={currentPath === '/profile'} />
+      <NavLink 
+        icon={<Home className="h-5 w-5" />} 
+        label="Home" 
+        to="/home" 
+        isActive={currentPath === '/home'} 
+      />
+      <NavLink 
+        icon={<Search className="h-5 w-5" />} 
+        label="Explore" 
+        to="/explore" 
+        isActive={currentPath === '/explore'} 
+      />
+      <NavLink 
+        icon={<Film className="h-5 w-5" />} 
+        label="Reels" 
+        to="/reels" 
+        isActive={currentPath === '/reels'} 
+      />
+      <NavLink 
+        icon={<Users className="h-5 w-5" />} 
+        label="Community" 
+        to="/communities" 
+        isActive={currentPath === '/communities'} 
+      />
+      <NavLink 
+        icon={<User className="h-5 w-5" />} 
+        label="Profile" 
+        to="/profile" 
+        isActive={currentPath === '/profile'} 
+      />
     </motion.nav>
   );
 };
@@ -74,20 +99,20 @@ const NavLink = ({ icon, label, to, isActive = false }: NavLinkProps) => {
   return (
     <Link
       to={to}
-      className="relative flex flex-col items-center"
+      className="relative flex flex-col items-center py-1"
     >
       <motion.div
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
-        className={`mb-1 ${
-          isActive ? "text-unmute-purple-dark" : "text-gray-500"
+        className={`flex items-center justify-center mb-1 ${
+          isActive ? "text-primary font-medium" : "text-gray-500"
         }`}
       >
         {icon}
         {isActive && (
           <motion.div 
             layoutId="activeTab" 
-            className="absolute -bottom-1 left-1/2 w-5 h-1 bg-unmute-purple rounded-full transform -translate-x-1/2"
+            className="absolute -bottom-1 left-1/2 w-5 h-1 bg-primary rounded-full transform -translate-x-1/2"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.2 }}
@@ -96,7 +121,7 @@ const NavLink = ({ icon, label, to, isActive = false }: NavLinkProps) => {
       </motion.div>
       <span
         className={`text-xs ${
-          isActive ? "text-unmute-purple-dark font-medium" : "text-gray-500"
+          isActive ? "text-primary font-medium" : "text-gray-500"
         }`}
       >
         {label}
