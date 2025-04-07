@@ -60,10 +60,14 @@ const Reels = () => {
         return;
       }
       
-      // Filter for only video files
+      // Filter for only video files - with proper null checks
       const videoFiles = storageFiles.filter(file => 
+        file && file.id && 
+        (file.id.endsWith('.mp4') || file.id.endsWith('.mov') || file.id.endsWith('.webm')) && 
         !file.id.endsWith('-thumb.jpg') && 
-        (file.metadata?.mimetype?.startsWith('video/') || file.name.match(/\.(mp4|mov|webm)$/i))
+        (file.metadata?.mimetype?.startsWith('video/') || 
+         (typeof file.name === 'string' && 
+          /\.(mp4|mov|webm)$/i.test(file.name)))
       );
       
       console.log("Video files filtered:", videoFiles);
@@ -79,12 +83,13 @@ const Reels = () => {
       const processedReels = await Promise.all(
         videoFiles.map(async (file) => {
           // Extract user_id from the file path (usually the first segment)
-          const pathParts = file.name.split('/');
+          const pathParts = file.name ? file.name.split('/') : ['unknown'];
           const userId = pathParts[0] || 'unknown';
-          const fileId = file.id || file.name;
+          const fileId = file.id || file.name || '';
           
           // Find thumbnail file if available
           const thumbnailFile = storageFiles.find(f => 
+            f && f.name && fileId && 
             f.name.includes(fileId.replace(/\.(mp4|mov|webm)$/i, '')) && 
             f.name.includes('-thumb.jpg')
           );
@@ -110,15 +115,15 @@ const Reels = () => {
             id: fileId,
             user_id: userId,
             created_at: file.created_at || new Date().toISOString(),
-            video_url: getPublicUrl(STORAGE_BUCKETS.REELS, file.name),
-            thumbnail_url: thumbnailFile ? getPublicUrl(STORAGE_BUCKETS.REELS, thumbnailFile.name) : undefined,
+            video_url: getPublicUrl(STORAGE_BUCKETS.REELS, file.name || ''),
+            thumbnail_url: thumbnailFile ? getPublicUrl(STORAGE_BUCKETS.REELS, thumbnailFile.name || '') : undefined,
             caption: "",
             audio_type: "original",
-            audio_url: "", // Default empty string
-            duration: 0, // Default 0
-            original_audio_volume: 1, // Default 1
-            overlay_audio_volume: 0, // Default 0
-            tags: [], // Default empty array
+            audio_url: "", 
+            duration: 0,
+            original_audio_volume: 1,
+            overlay_audio_volume: 0,
+            tags: [],
             allow_comments: true,
             allow_duets: true
           };
@@ -131,10 +136,10 @@ const Reels = () => {
               // Ensure these URLs are full public URLs
               video_url: metadata.video_url?.startsWith('http') 
                 ? metadata.video_url 
-                : getPublicUrl(STORAGE_BUCKETS.REELS, file.name),
+                : getPublicUrl(STORAGE_BUCKETS.REELS, file.name || ''),
               thumbnail_url: metadata.thumbnail_url?.startsWith('http') 
                 ? metadata.thumbnail_url 
-                : thumbnailFile ? getPublicUrl(STORAGE_BUCKETS.REELS, thumbnailFile.name) : undefined
+                : thumbnailFile ? getPublicUrl(STORAGE_BUCKETS.REELS, thumbnailFile.name || '') : undefined
             };
           }
           
