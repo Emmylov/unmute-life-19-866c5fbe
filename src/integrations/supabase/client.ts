@@ -10,3 +10,41 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 // import { supabase } from "@/integrations/supabase/client";
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+// Storage helper functions
+export const getPublicUrl = (bucket: string, path: string): string => {
+  const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+  return data.publicUrl;
+};
+
+// Function to list all files in a bucket
+export const listBucketFiles = async (bucket: string, path: string = '') => {
+  const { data, error } = await supabase.storage.from(bucket).list(path);
+  
+  if (error) {
+    console.error('Error listing files:', error);
+    return null;
+  }
+  
+  return data;
+};
+
+// Function to get metadata for multiple files from a bucket
+export const getFilesMetadata = async (bucket: string, paths: string[]) => {
+  const promises = paths.map(async (path) => {
+    const { data, error } = await supabase.storage.from(bucket).list(path, {
+      limit: 100,
+      offset: 0,
+      sortBy: { column: 'name', order: 'asc' },
+    });
+    
+    if (error) {
+      console.error(`Error getting metadata for ${path}:`, error);
+      return null;
+    }
+    
+    return data;
+  });
+  
+  return Promise.all(promises);
+};

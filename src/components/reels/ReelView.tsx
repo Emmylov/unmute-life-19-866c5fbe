@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { 
@@ -14,7 +13,23 @@ import { getInitials } from "@/lib/utils";
 import EmojiReactions from "./EmojiReactions";
 
 interface ReelWithUser {
-  reel: Tables<"reels">;
+  reel: {
+    id: string;
+    user_id: string;
+    created_at: string;
+    video_url: string;
+    thumbnail_url?: string;
+    caption?: string;
+    audio?: string;
+    audio_type?: string;
+    audio_url?: string;
+    allow_comments?: boolean;
+    allow_duets?: boolean;
+    duration?: number;
+    original_audio_volume?: number;
+    overlay_audio_volume?: number;
+    tags?: string[];
+  };
   user: Tables<"profiles">;
 }
 
@@ -61,12 +76,10 @@ const ReelView = ({
         videoRef.current.pause();
       }
       
-      // Handle mute state
       videoRef.current.muted = isMuted;
     }
   }, [isPlaying, videoRef, isMuted, currentIndex]);
 
-  // Reset play state when reel changes
   useEffect(() => {
     setIsPlaying(true);
     if (videoRef.current) {
@@ -87,19 +100,15 @@ const ReelView = ({
 
   const toggleLike = async () => {
     setLiked(!liked);
-    // Show heart animation
     controls.start({
       scale: [1, 1.2, 1],
       opacity: [1, 1, 0],
       transition: { duration: 0.8 }
     });
-    
-    // Here you would also update the like in Supabase
   };
 
   const toggleSave = () => {
     setSaved(!saved);
-    // Here you would also update the save in Supabase
   };
 
   const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
@@ -112,6 +121,17 @@ const ReelView = ({
     }
   };
 
+  const getAudioDisplay = () => {
+    if (reel.audio) {
+      return reel.audio;
+    } else if (reel.audio_type === 'original') {
+      return 'Original Audio';
+    } else if (reel.audio_url) {
+      return reel.audio_url.split('/').pop() || 'Audio';
+    }
+    return 'Original Audio';
+  };
+
   return (
     <motion.div 
       className="relative w-full h-full bg-black overflow-hidden"
@@ -120,7 +140,6 @@ const ReelView = ({
       dragElastic={0.2}
       onDragEnd={handleDragEnd}
     >
-      {/* Video */}
       <div className="absolute inset-0 flex items-center justify-center">
         <video 
           ref={videoRef}
@@ -133,7 +152,6 @@ const ReelView = ({
         />
       </div>
 
-      {/* Play/Pause overlay */}
       {!isPlaying && (
         <motion.div 
           initial={{ opacity: 0 }}
@@ -145,7 +163,6 @@ const ReelView = ({
         </motion.div>
       )}
 
-      {/* Floating heart animation */}
       <motion.div
         className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none"
         animate={controls}
@@ -154,7 +171,6 @@ const ReelView = ({
         <Heart className="w-20 h-20 text-primary filter drop-shadow-lg" fill={liked ? "#ec4899" : "none"} />
       </motion.div>
 
-      {/* Navigation indicators */}
       {hasNext && (
         <motion.div
           initial={{ opacity: 0 }}
@@ -177,9 +193,7 @@ const ReelView = ({
         </motion.div>
       )}
 
-      {/* Overlay UI */}
       <div className="absolute inset-0 pointer-events-none">
-        {/* Top info */}
         <div className="absolute top-4 left-4 right-4 flex justify-between items-center pointer-events-auto z-10">
           <Link to={`/profile/${user?.username || user?.id}`} className="flex items-center space-x-2">
             <Avatar className="h-10 w-10 border-2 border-white">
@@ -201,7 +215,6 @@ const ReelView = ({
           </Button>
         </div>
         
-        {/* Side actions */}
         <div className="absolute bottom-20 right-4 flex flex-col space-y-6 pointer-events-auto">
           <motion.button 
             whileHover={{ scale: 1.1 }} 
@@ -254,9 +267,7 @@ const ReelView = ({
           </motion.button>
         </div>
 
-        {/* Bottom info */}
         <div className="absolute bottom-6 left-4 right-24 pointer-events-auto">
-          {/* Caption */}
           {caption && (
             <div className="mb-3">
               <p className="text-white text-sm">
@@ -273,7 +284,6 @@ const ReelView = ({
             </div>
           )}
           
-          {/* Hashtags */}
           {hashtags.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-3">
               {hashtags.map((tag, index) => (
@@ -288,8 +298,7 @@ const ReelView = ({
             </div>
           )}
           
-          {/* Audio info */}
-          {reel.audio && (
+          {(reel.audio || reel.audio_url) && (
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
                 <motion.div 
@@ -299,18 +308,16 @@ const ReelView = ({
                 />
               </div>
               <div className="text-white/90 text-sm font-medium">
-                {reel.audio}
+                {getAudioDisplay()}
               </div>
             </div>
           )}
         </div>
 
-        {/* Emoji reactions */}
         <div className="absolute bottom-28 left-4 pointer-events-auto">
           <EmojiReactions reelId={reel.id} />
         </div>
 
-        {/* Mute button */}
         <button 
           className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center pointer-events-auto"
           onClick={toggleMute}

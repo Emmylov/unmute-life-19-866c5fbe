@@ -1,32 +1,33 @@
 
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, listBucketFiles, getPublicUrl } from "@/integrations/supabase/client";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tables } from "@/integrations/supabase/types";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
-import { Video, Film, ArrowLeft, ArrowRight, Heart, MessageCircle, Share2, Bookmark } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import ReelView from "@/components/reels/ReelView";
+import { Video, Film, ArrowLeft, ArrowRight } from "lucide-react";
+import ReelsSkeleton from "@/components/reels/ReelsSkeleton";
 
 interface ReelWithUser {
-  reel: Tables<"reels"> | {
+  reel: {
     id: string;
     user_id: string;
     created_at: string;
     video_url: string;
     thumbnail_url?: string;
     caption?: string;
-    allow_comments?: boolean;
-    allow_duets?: boolean;
     audio_type?: string;
     audio_url?: string;
     duration?: number;
     original_audio_volume?: number;
     overlay_audio_volume?: number;
     tags?: string[];
+    allow_comments?: boolean;
+    allow_duets?: boolean;
   };
   user: Tables<"profiles">;
 }
@@ -46,89 +47,120 @@ const Reels = () => {
     try {
       setLoading(true);
       
-      // First try to get reels from posts_reels table (new structure)
-      let { data: newerReelsData, error: newerReelsError } = await supabase
-        .from("posts_reels")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      // Then get reels from the reels table (older structure)
-      let { data: olderReelsData, error: olderReelsError } = await supabase
-        .from("reels")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (newerReelsError && olderReelsError) {
-        throw newerReelsError || olderReelsError;
-      }
-
-      const reelsData = [];
+      // Fetch files from storage bucket "reels"
+      const storageFiles = await listBucketFiles('reels');
+      console.log("Storage files:", storageFiles);
       
-      // Add data from newer reels structure if available
-      if (newerReelsData && newerReelsData.length > 0) {
-        // Map the newer reels structure to match the expected format
-        const mappedNewerReels = newerReelsData.map(reel => ({
-          id: reel.id,
-          user_id: reel.user_id,
-          created_at: reel.created_at,
-          video_url: reel.video_url,
-          thumbnail_url: null, // This might be available in the actual data
-          caption: reel.caption || "",
-          // Handle audio field differently for newer reels
-          audio_url: reel.audio_url || "",
-          audio_type: reel.audio_type || "original",
-          duration: reel.duration,
-          allow_comments: reel.allow_comments,
-          allow_duets: reel.allow_duets,
-          original_audio_volume: reel.original_audio_volume,
-          overlay_audio_volume: reel.overlay_audio_volume,
-          tags: reel.tags
-        }));
-        
-        reelsData.push(...mappedNewerReels);
-      }
-      
-      // Add data from older reels structure if available
-      if (olderReelsData && olderReelsData.length > 0) {
-        reelsData.push(...olderReelsData);
-      }
-      
-      console.log("Fetched reels data:", reelsData);
-
-      if (reelsData.length > 0) {
-        // Fetch user profiles for each reel
-        const reelsWithUsers = await Promise.all(
-          reelsData.map(async (reel) => {
-            const { data: userData, error: userError } = await supabase
-              .from("profiles")
-              .select("*")
-              .eq("id", reel.user_id)
-              .single();
-
-            if (userError) {
-              console.error("Error fetching user:", userError);
-              return {
-                reel,
-                user: { 
-                  id: reel.user_id || "", 
-                  username: "Unknown User",
-                  avatar: null 
-                } as Tables<"profiles">
-              };
-            }
-
-            return {
-              reel,
-              user: userData as Tables<"profiles">
-            };
-          })
-        );
-
-        setReels(reelsWithUsers);
-        console.log("Reels with users:", reelsWithUsers);
-      } else {
+      if (!storageFiles || storageFiles.length === 0) {
+        console.log("No reels found in storage");
+        setLoading(false);
         setReels([]);
+        return;
       }
+      
+      // Filter for only video files
+      const videoFiles = storageFiles.filter(file => 
+        !file.id.endsWith('-thumb.jpg') && 
+        (file.metadata?.mimetype?.startsWith('video/') || file.name.match(/\.(mp4|mov|webm)$/i))
+      );
+      
+      console.log("Video files:", videoFiles);
+
+      if (videoFiles.length === 0) {
+        console.log("No video files found");
+        setLoading(false);
+        setReels([]);
+        return;
+      }
+
+      // Get associated metadata from the database if available
+      const { data: reelsMetadata, error: metadataError } = await supabase
+        .from("posts_reels")
+        .select("*");
+        
+      console.log("Reels metadata from DB:", reelsMetadata);
+      
+      // Also try to get older reels metadata
+      const { data: olderReelsData, error: olderReelsError } = await supabase
+        .from("reels")
+        .select("*");
+      
+      console.log("Older reels metadata:", olderReelsData);
+      
+      // Create reels array from storage files
+      const storageReels = await Promise.all(
+        videoFiles.map(async (file) => {
+          // Extract user_id from the file path (usually the first segment)
+          const pathParts = file.name.split('/');
+          const userId = pathParts[0] || 'unknown';
+          const fileId = file.id || file.name;
+          
+          // Check if we have metadata for this file in either table
+          let metadata = reelsMetadata?.find(rm => rm.video_url.includes(fileId)) || 
+                         olderReelsData?.find(or => or.video_url.includes(fileId));
+          
+          // Get thumbnail if available (usually has the same name with -thumb.jpg)
+          let thumbnailFile = storageFiles.find(f => 
+            f.name.includes(fileId.replace(/\.(mp4|mov|webm)$/i, '')) && f.name.includes('-thumb.jpg')
+          );
+          
+          // If no metadata found, create basic metadata
+          if (!metadata) {
+            metadata = {
+              id: fileId,
+              user_id: userId,
+              created_at: file.created_at || new Date().toISOString(),
+              video_url: getPublicUrl('reels', file.name),
+              thumbnail_url: thumbnailFile ? getPublicUrl('reels', thumbnailFile.name) : undefined,
+              caption: "",
+              audio_type: "original",
+              allow_comments: true,
+              allow_duets: true
+            };
+          } else if (metadata) {
+            // Ensure video_url is a full public URL
+            if (!metadata.video_url.startsWith('http')) {
+              metadata.video_url = getPublicUrl('reels', file.name);
+            }
+            
+            // Ensure thumbnail_url is a full public URL if available
+            if (metadata.thumbnail_url && !metadata.thumbnail_url.startsWith('http') && thumbnailFile) {
+              metadata.thumbnail_url = getPublicUrl('reels', thumbnailFile.name);
+            }
+          }
+          
+          // Get user profile
+          const { data: userData, error: userError } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", metadata.user_id)
+            .maybeSingle();
+            
+          console.log(`User data for ${metadata.user_id}:`, userData);
+          
+          if (userError) {
+            console.error("Error fetching user:", userError);
+          }
+          
+          return {
+            reel: metadata,
+            user: userData || { 
+              id: metadata.user_id, 
+              username: "Unknown User", 
+              avatar: null 
+            } as Tables<"profiles">
+          };
+        })
+      );
+      
+      console.log("Processed reels from storage:", storageReels);
+      
+      // Sort by created_at (newest first)
+      const sortedReels = storageReels.sort((a, b) => {
+        return new Date(b.reel.created_at).getTime() - new Date(a.reel.created_at).getTime();
+      });
+      
+      setReels(sortedReels);
     } catch (error) {
       console.error("Error loading reels:", error);
       toast({
@@ -153,19 +185,17 @@ const Reels = () => {
     }
   };
 
-  const getAudioDisplay = (reel: ReelWithUser['reel']) => {
-    // Handle different reel structures for audio display
-    if ('audio' in reel && reel.audio) {
-      return reel.audio;
-    } else if ('audio_url' in reel && reel.audio_url) {
-      return reel.audio_type === 'original' ? 'Original Audio' : reel.audio_url;
+  const handleReelSwipe = (direction: string) => {
+    if (direction === "up" && currentReelIndex < reels.length - 1) {
+      setCurrentReelIndex(currentReelIndex + 1);
+    } else if (direction === "down" && currentReelIndex > 0) {
+      setCurrentReelIndex(currentReelIndex - 1);
     }
-    return 'Original Audio';
   };
 
   return (
     <AppLayout pageTitle="Reels">
-      <div className="h-[calc(100vh-12rem)] relative overflow-hidden md:rounded-xl bg-gradient-to-br from-primary/90 via-primary to-secondary/80">
+      <div className="h-[calc(100vh-12rem)] md:h-[calc(100vh-8rem)] relative overflow-hidden md:rounded-xl bg-gradient-to-br from-primary/90 via-primary to-secondary/80">
         {loading ? (
           <ReelsSkeleton />
         ) : reels.length > 0 ? (
@@ -175,77 +205,17 @@ const Reels = () => {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
           >
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="relative w-full h-full max-w-md max-h-[80vh] mx-auto">
-                <video
-                  src={reels[currentReelIndex].reel.video_url}
-                  poster={reels[currentReelIndex].reel.thumbnail_url || undefined}
-                  className="w-full h-full object-cover rounded-lg"
-                  controls
-                  autoPlay
-                  loop
-                  muted
-                />
-                
-                {/* Reel Controls UI */}
-                <div className="absolute bottom-4 left-4 right-4 text-white p-4 bg-black/30 backdrop-blur-sm rounded-lg">
-                  <div className="flex items-center mb-3">
-                    <Avatar className="h-8 w-8 mr-2 ring-2 ring-white">
-                      <AvatarImage src={reels[currentReelIndex].user.avatar || ''} alt={reels[currentReelIndex].user.username || ''} />
-                      <AvatarFallback className="bg-unmute-purple-dark">
-                        {reels[currentReelIndex].user.username?.substring(0, 1).toUpperCase() || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="text-sm font-medium">{reels[currentReelIndex].user.username || 'Unknown User'}</p>
-                      <p className="text-xs opacity-80">Original audio</p>
-                    </div>
-                  </div>
-                  
-                  <p className="text-sm mb-3">{reels[currentReelIndex].reel.caption || ''}</p>
-                  
-                  <div className="flex justify-between">
-                    <div className="flex space-x-4">
-                      <button className="flex flex-col items-center">
-                        <Heart className="h-5 w-5" />
-                        <span className="text-xs mt-1">23k</span>
-                      </button>
-                      <button className="flex flex-col items-center">
-                        <MessageCircle className="h-5 w-5" />
-                        <span className="text-xs mt-1">142</span>
-                      </button>
-                      <button className="flex flex-col items-center">
-                        <Share2 className="h-5 w-5" />
-                        <span className="text-xs mt-1">Share</span>
-                      </button>
-                    </div>
-                    <button className="flex flex-col items-center">
-                      <Bookmark className="h-5 w-5" />
-                      <span className="text-xs mt-1">Save</span>
-                    </button>
-                  </div>
-                </div>
-                
-                {/* Navigation buttons */}
-                {currentReelIndex > 0 && (
-                  <button 
-                    onClick={handlePrevReel}
-                    className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/30 text-white p-2 rounded-full backdrop-blur-sm hover:bg-black/50 transition-colors"
-                  >
-                    <ArrowLeft className="h-5 w-5" />
-                  </button>
-                )}
-                
-                {currentReelIndex < reels.length - 1 && (
-                  <button 
-                    onClick={handleNextReel}
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/30 text-white p-2 rounded-full backdrop-blur-sm hover:bg-black/50 transition-colors"
-                  >
-                    <ArrowRight className="h-5 w-5" />
-                  </button>
-                )}
-              </div>
-            </div>
+            {/* Full-screen immersive view for reels */}
+            <ReelView 
+              reelWithUser={reels[currentReelIndex]}
+              onNext={handleNextReel}
+              onPrevious={handlePrevReel}
+              onSwipe={handleReelSwipe}
+              hasNext={currentReelIndex < reels.length - 1}
+              hasPrevious={currentReelIndex > 0}
+              currentIndex={currentReelIndex}
+              totalReels={reels.length}
+            />
           </motion.div>
         ) : (
           <div className="h-full flex flex-col items-center justify-center text-white p-8 text-center">
@@ -275,23 +245,6 @@ const Reels = () => {
         )}
       </div>
     </AppLayout>
-  );
-};
-
-const ReelsSkeleton = () => {
-  return (
-    <div className="h-full w-full flex flex-col items-center justify-center">
-      <div className="max-w-md w-full px-8">
-        <Skeleton className="w-12 h-12 rounded-full mb-4 mx-auto" />
-        <Skeleton className="w-2/3 h-5 mb-2 mx-auto" />
-        <Skeleton className="w-4/5 h-20 mb-4 mx-auto" />
-        <div className="flex justify-center space-x-2">
-          <Skeleton className="w-10 h-10 rounded-full" />
-          <Skeleton className="w-10 h-10 rounded-full" />
-          <Skeleton className="w-10 h-10 rounded-full" />
-        </div>
-      </div>
-    </div>
   );
 };
 
