@@ -11,6 +11,15 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
+// Available storage buckets in the project
+export const STORAGE_BUCKETS = {
+  REELS: 'reels',
+  POSTS: 'posts',
+  STORIES: 'stories',
+  AVATARS: 'avatars',
+  MESSAGES: 'messages',
+};
+
 // Storage helper functions
 export const getPublicUrl = (bucket: string, path: string): string => {
   const { data } = supabase.storage.from(bucket).getPublicUrl(path);
@@ -22,7 +31,7 @@ export const listBucketFiles = async (bucket: string, path: string = '') => {
   const { data, error } = await supabase.storage.from(bucket).list(path);
   
   if (error) {
-    console.error('Error listing files:', error);
+    console.error(`Error listing files in bucket ${bucket}:`, error);
     return null;
   }
   
@@ -47,4 +56,63 @@ export const getFilesMetadata = async (bucket: string, paths: string[]) => {
   });
   
   return Promise.all(promises);
+};
+
+// Fetch all files from multiple buckets
+export const fetchAllContentFromBuckets = async (buckets: string[]) => {
+  const results: Record<string, any[]> = {};
+  
+  for (const bucket of buckets) {
+    const files = await listBucketFiles(bucket);
+    if (files) {
+      results[bucket] = files.map(file => ({
+        ...file,
+        bucket,
+        publicUrl: getPublicUrl(bucket, file.name)
+      }));
+    } else {
+      results[bucket] = [];
+    }
+  }
+  
+  return results;
+};
+
+// Match storage files with database metadata if available
+export const matchStorageWithDatabaseMetadata = async (
+  bucket: string, 
+  files: any[], 
+  tableName: string, 
+  fileUrlField: string = 'video_url'
+) => {
+  if (!files || files.length === 0) return [];
+  
+  // Get metadata from the database table
+  const { data: metadata, error } = await supabase
+    .from(tableName)
+    .select('*');
+  
+  if (error) {
+    console.error(`Error fetching metadata from ${tableName}:`, error);
+    return files.map(file => ({
+      file,
+      metadata: null,
+      publicUrl: getPublicUrl(bucket, file.name)
+    }));
+  }
+  
+  // Match files with their metadata
+  return files.map(file => {
+    const publicUrl = getPublicUrl(bucket, file.name);
+    const matchedMetadata = metadata?.find(meta => 
+      meta[fileUrlField]?.includes(file.name) || 
+      meta[fileUrlField] === publicUrl
+    );
+    
+    return {
+      file,
+      metadata: matchedMetadata || null,
+      publicUrl
+    };
+  });
 };

@@ -1,10 +1,9 @@
 
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase, listBucketFiles, getPublicUrl } from "@/integrations/supabase/client";
+import { supabase, listBucketFiles, getPublicUrl, STORAGE_BUCKETS, matchStorageWithDatabaseMetadata } from "@/integrations/supabase/client";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Tables } from "@/integrations/supabase/types";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
@@ -12,23 +11,26 @@ import ReelView from "@/components/reels/ReelView";
 import { Video, Film, ArrowLeft, ArrowRight } from "lucide-react";
 import ReelsSkeleton from "@/components/reels/ReelsSkeleton";
 
+// Define the reel content types expected by our components
+interface ReelContent {
+  id: string;
+  user_id: string;
+  created_at: string;
+  video_url: string;
+  thumbnail_url?: string;
+  caption?: string;
+  audio_type?: string;
+  audio_url?: string; 
+  duration?: number;
+  original_audio_volume?: number;
+  overlay_audio_volume?: number;
+  tags?: string[];
+  allow_comments?: boolean;
+  allow_duets?: boolean;
+}
+
 interface ReelWithUser {
-  reel: {
-    id: string;
-    user_id: string;
-    created_at: string;
-    video_url: string;
-    thumbnail_url?: string;
-    caption?: string;
-    audio_type?: string;
-    audio_url?: string;
-    duration?: number;
-    original_audio_volume?: number;
-    overlay_audio_volume?: number;
-    tags?: string[];
-    allow_comments?: boolean;
-    allow_duets?: boolean;
-  };
+  reel: ReelContent;
   user: Tables<"profiles">;
 }
 
@@ -48,8 +50,8 @@ const Reels = () => {
       setLoading(true);
       
       // Fetch files from storage bucket "reels"
-      const storageFiles = await listBucketFiles('reels');
-      console.log("Storage files:", storageFiles);
+      const storageFiles = await listBucketFiles(STORAGE_BUCKETS.REELS);
+      console.log("Storage files from reels bucket:", storageFiles);
       
       if (!storageFiles || storageFiles.length === 0) {
         console.log("No reels found in storage");
@@ -64,7 +66,7 @@ const Reels = () => {
         (file.metadata?.mimetype?.startsWith('video/') || file.name.match(/\.(mp4|mov|webm)$/i))
       );
       
-      console.log("Video files:", videoFiles);
+      console.log("Video files filtered:", videoFiles);
 
       if (videoFiles.length === 0) {
         console.log("No video files found");
@@ -73,79 +75,84 @@ const Reels = () => {
         return;
       }
 
-      // Get associated metadata from the database if available
-      const { data: reelsMetadata, error: metadataError } = await supabase
-        .from("posts_reels")
-        .select("*");
-        
-      console.log("Reels metadata from DB:", reelsMetadata);
-      
-      // Also try to get older reels metadata
-      const { data: olderReelsData, error: olderReelsError } = await supabase
-        .from("reels")
-        .select("*");
-      
-      console.log("Older reels metadata:", olderReelsData);
-      
-      // Create reels array from storage files
-      const storageReels = await Promise.all(
+      // Process storage files and match with database metadata
+      const processedReels = await Promise.all(
         videoFiles.map(async (file) => {
           // Extract user_id from the file path (usually the first segment)
           const pathParts = file.name.split('/');
           const userId = pathParts[0] || 'unknown';
           const fileId = file.id || file.name;
           
-          // Check if we have metadata for this file in either table
-          let metadata = reelsMetadata?.find(rm => rm.video_url.includes(fileId)) || 
-                         olderReelsData?.find(or => or.video_url.includes(fileId));
-          
-          // Get thumbnail if available (usually has the same name with -thumb.jpg)
-          let thumbnailFile = storageFiles.find(f => 
-            f.name.includes(fileId.replace(/\.(mp4|mov|webm)$/i, '')) && f.name.includes('-thumb.jpg')
+          // Find thumbnail file if available
+          const thumbnailFile = storageFiles.find(f => 
+            f.name.includes(fileId.replace(/\.(mp4|mov|webm)$/i, '')) && 
+            f.name.includes('-thumb.jpg')
           );
           
-          // If no metadata found, create basic metadata
-          if (!metadata) {
-            metadata = {
-              id: fileId,
-              user_id: userId,
-              created_at: file.created_at || new Date().toISOString(),
-              video_url: getPublicUrl('reels', file.name),
-              thumbnail_url: thumbnailFile ? getPublicUrl('reels', thumbnailFile.name) : undefined,
-              caption: "",
-              audio_type: "original",
-              allow_comments: true,
-              allow_duets: true
-            };
-          } else if (metadata) {
-            // Ensure video_url is a full public URL
-            if (!metadata.video_url.startsWith('http')) {
-              metadata.video_url = getPublicUrl('reels', file.name);
-            }
+          // Check both posts_reels and reels tables for metadata
+          const { data: reelsMetadata, error: reelsError } = await supabase
+            .from("posts_reels")
+            .select("*")
+            .or(`video_url.ilike.%${fileId}%,id.eq.${fileId}`);
             
-            // Ensure thumbnail_url is a full public URL if available
-            if (metadata.thumbnail_url && !metadata.thumbnail_url.startsWith('http') && thumbnailFile) {
-              metadata.thumbnail_url = getPublicUrl('reels', thumbnailFile.name);
-            }
+          const { data: olderReelsData, error: olderReelsError } = await supabase
+            .from("reels")
+            .select("*")
+            .or(`video_url.ilike.%${fileId}%,id.eq.${fileId}`);
+          
+          // Get metadata from either table
+          let metadata = 
+            (reelsMetadata && reelsMetadata.length > 0 ? reelsMetadata[0] : null) || 
+            (olderReelsData && olderReelsData.length > 0 ? olderReelsData[0] : null);
+          
+          // Create a standardized reel content object
+          let reelContent: ReelContent = {
+            id: fileId,
+            user_id: userId,
+            created_at: file.created_at || new Date().toISOString(),
+            video_url: getPublicUrl(STORAGE_BUCKETS.REELS, file.name),
+            thumbnail_url: thumbnailFile ? getPublicUrl(STORAGE_BUCKETS.REELS, thumbnailFile.name) : undefined,
+            caption: "",
+            audio_type: "original",
+            audio_url: "", // Default empty string
+            duration: 0, // Default 0
+            original_audio_volume: 1, // Default 1
+            overlay_audio_volume: 0, // Default 0
+            tags: [], // Default empty array
+            allow_comments: true,
+            allow_duets: true
+          };
+          
+          // If we have metadata, override defaults with actual values
+          if (metadata) {
+            reelContent = {
+              ...reelContent,
+              ...metadata,
+              // Ensure these URLs are full public URLs
+              video_url: metadata.video_url?.startsWith('http') 
+                ? metadata.video_url 
+                : getPublicUrl(STORAGE_BUCKETS.REELS, file.name),
+              thumbnail_url: metadata.thumbnail_url?.startsWith('http') 
+                ? metadata.thumbnail_url 
+                : thumbnailFile ? getPublicUrl(STORAGE_BUCKETS.REELS, thumbnailFile.name) : undefined
+            };
           }
           
           // Get user profile
           const { data: userData, error: userError } = await supabase
             .from("profiles")
             .select("*")
-            .eq("id", metadata.user_id)
+            .eq("id", reelContent.user_id)
             .maybeSingle();
             
-          console.log(`User data for ${metadata.user_id}:`, userData);
-          
           if (userError) {
             console.error("Error fetching user:", userError);
           }
           
           return {
-            reel: metadata,
+            reel: reelContent,
             user: userData || { 
-              id: metadata.user_id, 
+              id: reelContent.user_id, 
               username: "Unknown User", 
               avatar: null 
             } as Tables<"profiles">
@@ -153,14 +160,13 @@ const Reels = () => {
         })
       );
       
-      console.log("Processed reels from storage:", storageReels);
-      
       // Sort by created_at (newest first)
-      const sortedReels = storageReels.sort((a, b) => {
+      const sortedReels = processedReels.sort((a, b) => {
         return new Date(b.reel.created_at).getTime() - new Date(a.reel.created_at).getTime();
       });
       
       setReels(sortedReels);
+      console.log("Processed and sorted reels:", sortedReels);
     } catch (error) {
       console.error("Error loading reels:", error);
       toast({
