@@ -87,8 +87,9 @@ export const matchStorageWithDatabaseMetadata = async (
 ) => {
   if (!files || files.length === 0) return [];
   
-  // Get metadata from the database table
-  const { data: metadata, error } = await supabase
+  // Use type assertion to bypass TypeScript's table name checking
+  // This is needed because we're accepting a dynamic table name as a parameter
+  const { data: metadata, error } = await (supabase as any)
     .from(tableName)
     .select('*');
   
@@ -104,7 +105,7 @@ export const matchStorageWithDatabaseMetadata = async (
   // Match files with their metadata
   return files.map(file => {
     const publicUrl = getPublicUrl(bucket, file.name);
-    const matchedMetadata = metadata?.find(meta => 
+    const matchedMetadata = metadata?.find((meta: any) => 
       meta[fileUrlField]?.includes(file.name) || 
       meta[fileUrlField] === publicUrl
     );
