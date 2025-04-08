@@ -3,8 +3,12 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Mail, Lock, ArrowRight } from "lucide-react";
+import { Mail, Lock, ArrowRight, UserPlus, LogIn } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface AccountCreationStepProps {
   onNext: () => void;
@@ -13,17 +17,86 @@ interface AccountCreationStepProps {
 const AccountCreationStep = ({ onNext }: AccountCreationStepProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<"signup" | "signin">("signup");
+  const { toast } = useToast();
+  const navigate = useNavigate();
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, you would handle authentication here
-    onNext();
+    setLoading(true);
+    
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Account created!",
+        description: "Welcome to Unmute. Let's continue with your onboarding.",
+      });
+      
+      onNext();
+    } catch (error: any) {
+      toast({
+        title: "Error creating account",
+        description: error.message || "Something went wrong",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Welcome back!",
+        description: "Successfully signed in",
+      });
+      
+      // Check if user has completed onboarding
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('is_onboarded')
+        .eq('id', data.user.id)
+        .single();
+      
+      if (profileData?.is_onboarded) {
+        // Skip onboarding if already completed
+        navigate("/home");
+      } else {
+        // Continue with onboarding
+        onNext();
+      }
+    } catch (error: any) {
+      toast({
+        title: "Sign in failed",
+        description: error.message || "Invalid credentials",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
   
   return (
     <div className="flex flex-col flex-grow p-6">
-      <h2 className="text-3xl font-bold mb-2 text-center">Create Account</h2>
-      <p className="text-center text-gray-600 mb-6">Let's unmute you...</p>
+      <h2 className="text-3xl font-bold mb-2 text-center">Join Unmute</h2>
+      <p className="text-center text-gray-600 mb-6">Let your voice be heard</p>
       
       <div className="flex justify-center space-x-4 mb-8">
         <button className="flex items-center justify-center bg-[#4285F4] text-white rounded-full h-12 w-12">
@@ -49,53 +122,114 @@ const AccountCreationStep = ({ onNext }: AccountCreationStepProps) => {
         </button>
       </div>
       
-      <div className="flex items-center mb-8">
+      <div className="flex items-center mb-4">
         <Separator className="flex-grow" />
-        <span className="px-4 text-sm text-gray-500">or continue with email</span>
+        <span className="px-4 text-sm text-gray-500">or use email</span>
         <Separator className="flex-grow" />
       </div>
       
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <div className="relative">
-            <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              id="email"
-              type="email"
-              placeholder="Enter your email"
-              className="pl-10"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
-        </div>
+      <Tabs defaultValue="signup" className="w-full" onValueChange={(value) => setActiveTab(value as "signup" | "signin")}>
+        <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsTrigger value="signup" className="flex items-center gap-2">
+            <UserPlus className="h-4 w-4" />
+            Create Account
+          </TabsTrigger>
+          <TabsTrigger value="signin" className="flex items-center gap-2">
+            <LogIn className="h-4 w-4" />
+            Sign In
+          </TabsTrigger>
+        </TabsList>
         
-        <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              id="password"
-              type="password"
-              placeholder="Create a password"
-              className="pl-10"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
-        </div>
+        <TabsContent value="signup">
+          <form onSubmit={handleSignUp} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="Enter your email"
+                  className="pl-10"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Create a password"
+                  className="pl-10"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+            
+            <Button 
+              type="submit" 
+              className="unmute-primary-button w-full"
+              disabled={loading}
+            >
+              {loading ? "Creating Account..." : "Create Account"}
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </form>
+        </TabsContent>
         
-        <Button 
-          type="submit" 
-          className="unmute-primary-button w-full"
-        >
-          Continue
-          <ArrowRight className="ml-2 h-4 w-4" />
-        </Button>
-      </form>
+        <TabsContent value="signin">
+          <form onSubmit={handleSignIn} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="signin-email">Email</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  id="signin-email"
+                  type="email"
+                  placeholder="Enter your email"
+                  className="pl-10"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="signin-password">Password</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  id="signin-password"
+                  type="password"
+                  placeholder="Enter your password"
+                  className="pl-10"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+            
+            <Button 
+              type="submit" 
+              className="unmute-primary-button w-full"
+              disabled={loading}
+            >
+              {loading ? "Signing In..." : "Sign In"}
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </form>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
