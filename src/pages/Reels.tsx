@@ -81,16 +81,23 @@ const Reels = () => {
               console.error("Error fetching user:", userError);
             }
             
-            // Ensure video_url is properly formed
+            // Ensure video_url is properly formed and valid
             let videoUrl = reel.video_url;
-            if (videoUrl && !videoUrl.startsWith('http')) {
-              // If URL doesn't start with http, it might be a storage path
+            console.log("Original video URL:", videoUrl);
+            
+            if (!videoUrl) {
+              console.error("Missing video URL for reel:", reel.id);
+              videoUrl = ""; // Set to empty string to trigger error handling in ReelVideo
+            } else if (!videoUrl.startsWith('http') && !videoUrl.startsWith('blob:')) {
+              // If URL doesn't start with http or blob, it might be a storage path
+              console.log("Converting relative path to full URL:", videoUrl);
               videoUrl = getPublicUrl(STORAGE_BUCKETS.REELS, videoUrl);
+              console.log("Converted to public URL:", videoUrl);
             }
             
             // Ensure thumbnail_url is properly formed
             let thumbnailUrl = reel.thumbnail_url;
-            if (thumbnailUrl && !thumbnailUrl.startsWith('http')) {
+            if (thumbnailUrl && !thumbnailUrl.startsWith('http') && !thumbnailUrl.startsWith('blob:')) {
               // If URL doesn't start with http, it might be a storage path
               thumbnailUrl = getPublicUrl(STORAGE_BUCKETS.REELS, thumbnailUrl);
             }
@@ -110,6 +117,7 @@ const Reels = () => {
           })
         );
         
+        console.log("Processed reels:", processedReels);
         setReels(processedReels);
         setLoading(false);
         return;
