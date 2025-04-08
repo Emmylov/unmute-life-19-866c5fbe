@@ -11,8 +11,6 @@ import ReelCaption from "./controls/ReelCaption";
 import ReelAudioInfo from "./controls/ReelAudioInfo";
 import ReelNavigation from "./controls/ReelNavigation";
 import ReelMuteButton from "./controls/ReelMuteButton";
-import ReelCommentSection from "./controls/ReelCommentSection";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ReelWithUser {
   reel: {
@@ -60,10 +58,8 @@ const ReelView = ({
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
-  const [showComments, setShowComments] = useState(false);
   const controls = useAnimation();
   const { reel, user } = reelWithUser;
-  const isMobile = useIsMobile();
 
   const togglePlay = () => {
     setIsPlaying(!isPlaying);
@@ -85,10 +81,6 @@ const ReelView = ({
   const toggleSave = () => {
     setSaved(!saved);
   };
-  
-  const toggleComments = () => {
-    setShowComments(!showComments);
-  };
 
   const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     const threshold = 50;
@@ -99,32 +91,10 @@ const ReelView = ({
       onSwipe("down");
     }
   };
-  
-  // Add keyboard navigation
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "ArrowUp" && hasPrevious) {
-        event.preventDefault();
-        onPrevious();
-      } else if (event.key === "ArrowDown" && hasNext) {
-        event.preventDefault();
-        onNext();
-      } else if (event.key === " " || event.key === "Spacebar") {
-        event.preventDefault();
-        togglePlay();
-      }
-    };
-    
-    window.addEventListener("keydown", handleKeyDown);
-    
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [hasNext, hasPrevious, onNext, onPrevious]);
 
   return (
     <motion.div 
-      className={`relative ${isMobile ? 'w-full h-full' : 'w-full max-w-md mx-auto aspect-[9/16]'} bg-black overflow-hidden`}
+      className="relative w-full h-full bg-black overflow-hidden"
       drag="y"
       dragConstraints={{ top: 0, bottom: 0 }}
       dragElastic={0.2}
@@ -157,10 +127,9 @@ const ReelView = ({
         <ReelActions 
           reelId={reel.id} 
           liked={liked} 
-          saved={saved}
+          saved={saved} 
           onLike={toggleLike} 
-          onSave={toggleSave}
-          onComment={toggleComments}
+          onSave={toggleSave} 
         />
 
         <div className="absolute bottom-6 left-4 right-24 pointer-events-auto">
@@ -179,14 +148,6 @@ const ReelView = ({
 
         <ReelMuteButton isMuted={isMuted} onToggleMute={toggleMute} />
       </div>
-      
-      {/* Comments section overlay */}
-      {showComments && (
-        <ReelCommentSection 
-          reelId={reel.id} 
-          onClose={() => setShowComments(false)} 
-        />
-      )}
     </motion.div>
   );
 };

@@ -1,6 +1,6 @@
 
 import React, { useRef, useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Play, AlertCircle } from "lucide-react";
 
 interface ReelVideoProps {
@@ -31,7 +31,6 @@ const ReelVideo = ({
   const [loadError, setLoadError] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [showPlayButton, setShowPlayButton] = useState<boolean>(false);
 
   useEffect(() => {
     if (videoRef.current) {
@@ -49,12 +48,8 @@ const ReelVideo = ({
             setErrorMessage("The video couldn't be played. It may be in an unsupported format or the file might be corrupted.");
           }
         });
-        // Hide play button when video is playing
-        setShowPlayButton(false);
       } else {
         videoRef.current.pause();
-        // Show play button when video is paused
-        setShowPlayButton(!isPlaying && !loadError && !isLoading);
       }
       
       videoRef.current.muted = isMuted;
@@ -66,7 +61,6 @@ const ReelVideo = ({
     setLoadError(false);
     setErrorMessage("");
     setIsLoading(true);
-    setShowPlayButton(false);
     
     if (videoRef.current) {
       videoRef.current.currentTime = 0;
@@ -99,11 +93,6 @@ const ReelVideo = ({
     setIsLoading(false);
   };
 
-  const handleTap = () => {
-    onTogglePlay();
-    setShowPlayButton(!isPlaying);
-  };
-
   return (
     <>
       <div className="absolute inset-0 flex items-center justify-center">
@@ -114,7 +103,7 @@ const ReelVideo = ({
             className="w-full h-full object-cover"
             playsInline
             loop
-            onClick={handleTap}
+            onClick={onTogglePlay}
             poster={thumbnailUrl || undefined}
             onError={handleVideoError}
             onLoadedData={handleLoadedData}
@@ -148,18 +137,16 @@ const ReelVideo = ({
         </div>
       )}
 
-      <AnimatePresence>
-        {showPlayButton && !loadError && !isLoading && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 flex items-center justify-center bg-black/30"
-          >
-            <Play className="w-16 h-16 text-white opacity-80" />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {!isPlaying && !loadError && !isLoading && (
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="absolute inset-0 flex items-center justify-center bg-black/30"
+        >
+          <Play className="w-16 h-16 text-white opacity-80" />
+        </motion.div>
+      )}
     </>
   );
 };
