@@ -9,8 +9,8 @@ import { motion } from "framer-motion";
 import ReelView from "@/components/reels/ReelView";
 import { Video, Film } from "lucide-react";
 import ReelsSkeleton from "@/components/reels/ReelsSkeleton";
+import { v4 as uuidv4 } from "uuid";
 
-// Define the reel content types expected by our components
 interface ReelContent {
   id: string;
   user_id: string;
@@ -49,7 +49,6 @@ const Reels = () => {
     try {
       setLoading(true);
       
-      // First try to fetch from the database table directly
       const { data: reelsData, error: reelsError } = await supabase
         .from("posts_reels")
         .select("*")
@@ -69,10 +68,8 @@ const Reels = () => {
       console.log("Reels from database:", reelsData);
       
       if (reelsData && reelsData.length > 0) {
-        // We have reels from the database, now get user data for each
         const processedReels = await Promise.all(
           reelsData.map(async (reel) => {
-            // Get user profile for this reel
             const { data: userData, error: userError } = await supabase
               .from("profiles")
               .select("*")
@@ -99,7 +96,6 @@ const Reels = () => {
         return;
       }
       
-      // If no reels in database, try fallback to storage bucket
       console.log("No reels found in database, checking storage...");
       const storageFiles = await listBucketFiles(STORAGE_BUCKETS.REELS);
       console.log("Storage files from reels bucket:", storageFiles);
@@ -111,7 +107,6 @@ const Reels = () => {
         return;
       }
       
-      // Filter for only video files - with proper null checks
       const videoFiles = storageFiles.filter(file => 
         file && file.name && (
           file.name.endsWith('.mp4') || 
@@ -130,21 +125,17 @@ const Reels = () => {
         return;
       }
 
-      // Process storage files
       const processedReels = await Promise.all(
         videoFiles.map(async (file) => {
-          // Extract user_id from the file path (usually the first segment)
           const pathParts = file.name ? file.name.split('/') : ['unknown'];
           const userId = pathParts[0] || 'unknown';
           
-          // Find thumbnail file if available
           const thumbnailFile = storageFiles.find(f => 
             f && f.name && 
             f.name.includes(file.name!.replace(/\.(mp4|mov|webm)$/i, '')) && 
             f.name.includes('-thumb.jpg')
           );
           
-          // Create a standardized reel content object
           const reelContent: ReelContent = {
             id: file.id || file.name || uuidv4(),
             user_id: userId,
@@ -163,7 +154,6 @@ const Reels = () => {
             allow_duets: true
           };
           
-          // Get user profile
           const { data: userData, error: userError } = await supabase
             .from("profiles")
             .select("*")
@@ -230,7 +220,6 @@ const Reels = () => {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
           >
-            {/* Full-screen immersive view for reels */}
             <ReelView 
               reelWithUser={reels[currentReelIndex]}
               onNext={handleNextReel}
