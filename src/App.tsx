@@ -15,6 +15,7 @@ import Auth from "./pages/Auth";
 import Reels from "./pages/Reels";
 import ContentCreator from "./pages/ContentCreator";
 import Explore from "./pages/Explore";
+import Chat from "./pages/Chat";
 
 // Create a QueryClient for React Query
 const queryClient = new QueryClient();
@@ -76,6 +77,8 @@ const App = () => {
             <Route path="/reels" element={<Reels />} />
             <Route path="/create" element={<ContentCreator />} />
             <Route path="/explore" element={<Explore />} />
+            <Route path="/chat" element={<Chat />} />
+            <Route path="/chat/:chatId" element={<Chat />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
