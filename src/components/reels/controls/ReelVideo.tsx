@@ -5,7 +5,7 @@ import { Play } from "lucide-react";
 
 interface ReelVideoProps {
   videoUrl: string;
-  thumbnailUrl?: string;
+  thumbnailUrl?: string | null;
   isPlaying: boolean;
   isMuted: boolean;
   currentIndex: number;

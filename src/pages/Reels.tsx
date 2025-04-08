@@ -1,14 +1,13 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase, listBucketFiles, getPublicUrl, STORAGE_BUCKETS, matchStorageWithDatabaseMetadata } from "@/integrations/supabase/client";
+import { supabase, listBucketFiles, getPublicUrl, STORAGE_BUCKETS } from "@/integrations/supabase/client";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Tables } from "@/integrations/supabase/types";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import ReelView from "@/components/reels/ReelView";
-import { Video, Film, ArrowLeft, ArrowRight } from "lucide-react";
+import { Video, Film } from "lucide-react";
 import ReelsSkeleton from "@/components/reels/ReelsSkeleton";
 
 // Define the reel content types expected by our components
@@ -17,16 +16,17 @@ interface ReelContent {
   user_id: string;
   created_at: string;
   video_url: string;
-  thumbnail_url?: string;
-  caption?: string;
-  audio_type?: string;
-  audio_url?: string; 
-  duration?: number;
-  original_audio_volume?: number;
-  overlay_audio_volume?: number;
-  tags?: string[];
-  allow_comments?: boolean;
-  allow_duets?: boolean;
+  thumbnail_url?: string | null;
+  caption?: string | null;
+  audio?: string | null;
+  audio_type?: string | null;
+  audio_url?: string | null; 
+  duration?: number | null;
+  original_audio_volume?: number | null;
+  overlay_audio_volume?: number | null;
+  tags?: string[] | null;
+  allow_comments?: boolean | null;
+  allow_duets?: boolean | null;
 }
 
 interface ReelWithUser {
@@ -49,7 +49,58 @@ const Reels = () => {
     try {
       setLoading(true);
       
-      // Fetch files from storage bucket "reels"
+      // First try to fetch from the database table directly
+      const { data: reelsData, error: reelsError } = await supabase
+        .from("posts_reels")
+        .select("*")
+        .order("created_at", { ascending: false });
+      
+      if (reelsError) {
+        console.error("Error fetching reels from database:", reelsError);
+        toast({
+          title: "Error loading reels",
+          description: "Could not fetch reels from database.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+      
+      console.log("Reels from database:", reelsData);
+      
+      if (reelsData && reelsData.length > 0) {
+        // We have reels from the database, now get user data for each
+        const processedReels = await Promise.all(
+          reelsData.map(async (reel) => {
+            // Get user profile for this reel
+            const { data: userData, error: userError } = await supabase
+              .from("profiles")
+              .select("*")
+              .eq("id", reel.user_id)
+              .maybeSingle();
+              
+            if (userError) {
+              console.error("Error fetching user:", userError);
+            }
+            
+            return {
+              reel: reel as ReelContent,
+              user: userData || { 
+                id: reel.user_id, 
+                username: "Unknown User", 
+                avatar: null 
+              } as Tables<"profiles">
+            };
+          })
+        );
+        
+        setReels(processedReels);
+        setLoading(false);
+        return;
+      }
+      
+      // If no reels in database, try fallback to storage bucket
+      console.log("No reels found in database, checking storage...");
       const storageFiles = await listBucketFiles(STORAGE_BUCKETS.REELS);
       console.log("Storage files from reels bucket:", storageFiles);
       
@@ -62,16 +113,12 @@ const Reels = () => {
       
       // Filter for only video files - with proper null checks
       const videoFiles = storageFiles.filter(file => 
-        file && file.id && 
-        (
-          (typeof file.id === 'string' && (file.id.endsWith('.mp4') || file.id.endsWith('.mov') || file.id.endsWith('.webm'))) ||
-          (typeof file.name === 'string' && (file.name.endsWith('.mp4') || file.name.endsWith('.mov') || file.name.endsWith('.webm')))
+        file && file.name && (
+          file.name.endsWith('.mp4') || 
+          file.name.endsWith('.mov') || 
+          file.name.endsWith('.webm')
         ) && 
-        !((typeof file.id === 'string' && file.id.endsWith('-thumb.jpg')) || 
-          (typeof file.name === 'string' && file.name.endsWith('-thumb.jpg'))) && 
-        (file.metadata?.mimetype?.startsWith('video/') || 
-         (typeof file.name === 'string' && 
-          /\.(mp4|mov|webm)$/i.test(file.name)))
+        !file.name.endsWith('-thumb.jpg')
       );
       
       console.log("Video files filtered:", videoFiles);
@@ -83,50 +130,31 @@ const Reels = () => {
         return;
       }
 
-      // Process storage files and match with database metadata
+      // Process storage files
       const processedReels = await Promise.all(
         videoFiles.map(async (file) => {
           // Extract user_id from the file path (usually the first segment)
           const pathParts = file.name ? file.name.split('/') : ['unknown'];
           const userId = pathParts[0] || 'unknown';
-          const fileId = file.id || file.name || '';
           
           // Find thumbnail file if available
           const thumbnailFile = storageFiles.find(f => 
-            f && f.name && fileId && 
-            typeof f.name === 'string' &&
-            typeof fileId === 'string' &&
-            f.name.includes(fileId.replace(/\.(mp4|mov|webm)$/i, '')) && 
+            f && f.name && 
+            f.name.includes(file.name!.replace(/\.(mp4|mov|webm)$/i, '')) && 
             f.name.includes('-thumb.jpg')
           );
           
-          // Check both posts_reels and reels tables for metadata
-          const { data: reelsMetadata, error: reelsError } = await supabase
-            .from("posts_reels")
-            .select("*")
-            .or(`video_url.ilike.%${fileId}%,id.eq.${fileId}`);
-            
-          const { data: olderReelsData, error: olderReelsError } = await supabase
-            .from("reels")
-            .select("*")
-            .or(`video_url.ilike.%${fileId}%,id.eq.${fileId}`);
-          
-          // Get metadata from either table
-          let metadata = 
-            (reelsMetadata && reelsMetadata.length > 0 ? reelsMetadata[0] : null) || 
-            (olderReelsData && olderReelsData.length > 0 ? olderReelsData[0] : null);
-          
           // Create a standardized reel content object
-          let reelContent: ReelContent = {
-            id: fileId,
+          const reelContent: ReelContent = {
+            id: file.id || file.name || uuidv4(),
             user_id: userId,
             created_at: file.created_at || new Date().toISOString(),
-            video_url: typeof file.name === 'string' ? getPublicUrl(STORAGE_BUCKETS.REELS, file.name) : '',
-            thumbnail_url: thumbnailFile && typeof thumbnailFile.name === 'string' ? 
+            video_url: file.name ? getPublicUrl(STORAGE_BUCKETS.REELS, file.name) : '',
+            thumbnail_url: thumbnailFile && thumbnailFile.name ? 
               getPublicUrl(STORAGE_BUCKETS.REELS, thumbnailFile.name) : undefined,
-            caption: "",
+            caption: null,
             audio_type: "original",
-            audio_url: "", 
+            audio_url: null, 
             duration: 0,
             original_audio_volume: 1,
             overlay_audio_volume: 0,
@@ -135,27 +163,11 @@ const Reels = () => {
             allow_duets: true
           };
           
-          // If we have metadata, override defaults with actual values
-          if (metadata) {
-            reelContent = {
-              ...reelContent,
-              ...metadata,
-              // Ensure these URLs are full public URLs
-              video_url: metadata.video_url?.startsWith('http') 
-                ? metadata.video_url 
-                : typeof file.name === 'string' ? getPublicUrl(STORAGE_BUCKETS.REELS, file.name) : '',
-              thumbnail_url: metadata.thumbnail_url?.startsWith('http') 
-                ? metadata.thumbnail_url 
-                : thumbnailFile && typeof thumbnailFile.name === 'string' ? 
-                  getPublicUrl(STORAGE_BUCKETS.REELS, thumbnailFile.name) : undefined
-            };
-          }
-          
           // Get user profile
           const { data: userData, error: userError } = await supabase
             .from("profiles")
             .select("*")
-            .eq("id", reelContent.user_id)
+            .eq("id", userId)
             .maybeSingle();
             
           if (userError) {
@@ -165,7 +177,7 @@ const Reels = () => {
           return {
             reel: reelContent,
             user: userData || { 
-              id: reelContent.user_id, 
+              id: userId, 
               username: "Unknown User", 
               avatar: null 
             } as Tables<"profiles">
@@ -173,13 +185,7 @@ const Reels = () => {
         })
       );
       
-      // Sort by created_at (newest first)
-      const sortedReels = processedReels.sort((a, b) => {
-        return new Date(b.reel.created_at).getTime() - new Date(a.reel.created_at).getTime();
-      });
-      
-      setReels(sortedReels);
-      console.log("Processed and sorted reels:", sortedReels);
+      setReels(processedReels);
     } catch (error) {
       console.error("Error loading reels:", error);
       toast({

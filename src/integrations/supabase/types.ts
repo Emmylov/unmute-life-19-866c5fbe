@@ -246,6 +246,7 @@ export type Database = {
         Row: {
           allow_comments: boolean | null
           allow_duets: boolean | null
+          audio: string | null
           audio_type: string | null
           audio_url: string | null
           caption: string | null
@@ -255,12 +256,14 @@ export type Database = {
           original_audio_volume: number | null
           overlay_audio_volume: number | null
           tags: string[] | null
+          thumbnail_url: string | null
           user_id: string
           video_url: string
         }
         Insert: {
           allow_comments?: boolean | null
           allow_duets?: boolean | null
+          audio?: string | null
           audio_type?: string | null
           audio_url?: string | null
           caption?: string | null
@@ -270,12 +273,14 @@ export type Database = {
           original_audio_volume?: number | null
           overlay_audio_volume?: number | null
           tags?: string[] | null
+          thumbnail_url?: string | null
           user_id: string
           video_url: string
         }
         Update: {
           allow_comments?: boolean | null
           allow_duets?: boolean | null
+          audio?: string | null
           audio_type?: string | null
           audio_url?: string | null
           caption?: string | null
@@ -285,6 +290,7 @@ export type Database = {
           original_audio_volume?: number | null
           overlay_audio_volume?: number | null
           tags?: string[] | null
+          thumbnail_url?: string | null
           user_id?: string
           video_url?: string
         }

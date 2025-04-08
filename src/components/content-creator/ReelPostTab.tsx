@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,7 @@ import { TagInput } from "@/components/content-creator/TagInput";
 import { FilmIcon, UploadCloud, Music, Volume2, VideoOff, Scissors } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from "uuid";
+import { useToast } from "@/hooks/use-toast";
 
 interface ReelPostTabProps {
   onSuccess: () => void;
@@ -45,6 +47,7 @@ const ReelPostTab: React.FC<ReelPostTabProps> = ({ onSuccess }) => {
   const videoInputRef = useRef<HTMLInputElement>(null);
   const audioInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const { toast } = useToast();
   
   // Audio library options - could fetch from backend
   const audioLibraryOptions = [
@@ -61,7 +64,11 @@ const ReelPostTab: React.FC<ReelPostTabProps> = ({ onSuccess }) => {
       
       // Check file size (100MB limit)
       if (file.size > 100 * 1024 * 1024) {
-        alert("Video file size must be under 100MB.");
+        toast({
+          title: "File too large",
+          description: "Video file size must be under 100MB.",
+          variant: "destructive"
+        });
         return;
       }
       
@@ -163,7 +170,11 @@ const ReelPostTab: React.FC<ReelPostTabProps> = ({ onSuccess }) => {
     setVideoValid(isValidDuration);
     
     if (!isValidDuration) {
-      alert(`Video must be between 3 seconds and 3 minutes. Current duration: ${video.duration.toFixed(1)} seconds.`);
+      toast({
+        title: "Invalid video duration",
+        description: `Video must be between 3 seconds and 3 minutes. Current duration: ${video.duration.toFixed(1)} seconds.`,
+        variant: "destructive"
+      });
     }
     
     // Generate thumbnail
@@ -172,7 +183,11 @@ const ReelPostTab: React.FC<ReelPostTabProps> = ({ onSuccess }) => {
   
   const handleSubmit = async () => {
     if (!videoFile || !videoValid) {
-      alert("Please upload a valid video (3s to 3min).");
+      toast({
+        title: "Invalid video",
+        description: "Please upload a valid video (3s to 3min).",
+        variant: "destructive"
+      });
       return;
     }
     
@@ -182,7 +197,12 @@ const ReelPostTab: React.FC<ReelPostTabProps> = ({ onSuccess }) => {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        console.error("User not authenticated");
+        toast({
+          title: "Not authenticated",
+          description: "Please sign in to post a reel.",
+          variant: "destructive"
+        });
+        setIsSubmitting(false);
         return;
       }
       
@@ -198,6 +218,8 @@ const ReelPostTab: React.FC<ReelPostTabProps> = ({ onSuccess }) => {
       // Set initial progress
       setUploadProgress(0);
       
+      console.log("Uploading video to path:", videoFilePath);
+      
       const { data: videoData, error: videoError } = await supabase.storage
         .from('reels')
         .upload(videoFilePath, videoFile, uploadOptions);
@@ -207,34 +229,57 @@ const ReelPostTab: React.FC<ReelPostTabProps> = ({ onSuccess }) => {
       
       if (videoError) {
         console.error("Error uploading video:", videoError);
+        toast({
+          title: "Upload failed",
+          description: `Error uploading video: ${videoError.message}`,
+          variant: "destructive"
+        });
+        setIsSubmitting(false);
         return;
       }
+      
+      console.log("Video upload successful:", videoData);
       
       // Get video URL
       const { data: { publicUrl: videoPublicUrl } } = supabase.storage
         .from('reels')
         .getPublicUrl(videoFilePath);
       
+      console.log("Video public URL:", videoPublicUrl);
+      
       // Generate and upload thumbnail
-      const thumbnailBlob = await getThumbnailBlob();
-      const thumbnailFile = new File([thumbnailBlob], "thumbnail.jpg", { type: "image/jpeg" });
-      const thumbnailFileName = `${uuidv4()}-thumb.jpg`;
-      const thumbnailFilePath = `${user.id}/${thumbnailFileName}`;
-      
-      const { data: thumbnailData, error: thumbnailError } = await supabase.storage
-        .from('reels')
-        .upload(thumbnailFilePath, thumbnailFile);
-      
-      if (thumbnailError) {
-        console.error("Error uploading thumbnail:", thumbnailError);
+      let thumbnailPublicUrl = "";
+      try {
+        const thumbnailBlob = await getThumbnailBlob();
+        const thumbnailFile = new File([thumbnailBlob], "thumbnail.jpg", { type: "image/jpeg" });
+        const thumbnailFileName = `${uuidv4()}-thumb.jpg`;
+        const thumbnailFilePath = `${user.id}/${thumbnailFileName}`;
+        
+        console.log("Uploading thumbnail to path:", thumbnailFilePath);
+        
+        const { data: thumbnailData, error: thumbnailError } = await supabase.storage
+          .from('reels')
+          .upload(thumbnailFilePath, thumbnailFile);
+        
+        if (thumbnailError) {
+          console.error("Error uploading thumbnail:", thumbnailError);
+          // We continue even if thumbnail upload fails
+        } else {
+          console.log("Thumbnail upload successful:", thumbnailData);
+          // Get thumbnail URL
+          const { data: { publicUrl } } = supabase.storage
+            .from('reels')
+            .getPublicUrl(thumbnailFilePath);
+          
+          thumbnailPublicUrl = publicUrl;
+          console.log("Thumbnail public URL:", thumbnailPublicUrl);
+        }
+      } catch (thumbnailError) {
+        console.error("Error processing thumbnail:", thumbnailError);
+        // Continue even if thumbnail generation fails
       }
       
-      // Get thumbnail URL
-      const { data: { publicUrl: thumbnailPublicUrl } } = supabase.storage
-        .from('reels')
-        .getPublicUrl(thumbnailFilePath);
-      
-      // Prepare audio data
+      // Prepare audio data - based on the audioType
       let audioUrl = null;
       if (audioType === "replaced" || audioType === "overlay") {
         // In a real app, you'd handle audio file upload and processing here
@@ -245,29 +290,37 @@ const ReelPostTab: React.FC<ReelPostTabProps> = ({ onSuccess }) => {
       const reelData = {
         user_id: user.id,
         video_url: videoPublicUrl,
-        thumbnail_url: thumbnailPublicUrl,
+        thumbnail_url: thumbnailPublicUrl || null,
         caption: caption,
-        tags: tags,
-        audio: audioName,
+        tags: tags.length > 0 ? tags : null,
+        audio: audioName || null,
         audio_type: audioType,
+        audio_url: audioUrl,
         original_audio_volume: originalVolume / 100,
         overlay_audio_volume: overlayVolume / 100,
         allow_duets: allowDuets,
         allow_comments: allowComments,
-        duration: videoDuration,
+        duration: videoDuration
       };
       
-      const { error: insertError } = await supabase.from('posts_reels').insert(reelData);
+      console.log("Saving reel data:", reelData);
+      
+      const { error: insertError } = await supabase
+        .from('posts_reels')
+        .insert(reelData);
       
       if (insertError) {
         console.error("Error creating reel:", insertError);
+        toast({
+          title: "Error creating reel",
+          description: `${insertError.message}`,
+          variant: "destructive"
+        });
+        setIsSubmitting(false);
         return;
       }
       
-      // Handle tags (in a real app you might have a separate tags table)
-      if (tags.length > 0) {
-        // Implementation would go here
-      }
+      console.log("Reel created successfully!");
       
       // Reset form
       setVideoFile(null);
@@ -285,9 +338,20 @@ const ReelPostTab: React.FC<ReelPostTabProps> = ({ onSuccess }) => {
       setAllowComments(true);
       setUploadProgress(0);
       
+      toast({
+        title: "Reel created!",
+        description: "Your reel has been posted successfully.",
+        variant: "default"
+      });
+      
       onSuccess();
     } catch (error) {
       console.error("Error in submission:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive"
+      });
     } finally {
       setIsSubmitting(false);
     }

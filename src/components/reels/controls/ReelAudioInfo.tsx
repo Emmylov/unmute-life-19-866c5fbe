@@ -3,9 +3,9 @@ import React from "react";
 import { motion } from "framer-motion";
 
 interface ReelAudioInfoProps {
-  audio?: string;
-  audioType?: string;
-  audioUrl?: string;
+  audio?: string | null;
+  audioType?: string | null;
+  audioUrl?: string | null;
 }
 
 const ReelAudioInfo = ({ audio, audioType, audioUrl }: ReelAudioInfoProps) => {

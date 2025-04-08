@@ -18,17 +18,17 @@ interface ReelWithUser {
     user_id: string;
     created_at: string;
     video_url: string;
-    thumbnail_url?: string;
-    caption?: string;
-    audio?: string;
-    audio_type?: string;
-    audio_url?: string;
-    allow_comments?: boolean;
-    allow_duets?: boolean;
-    duration?: number;
-    original_audio_volume?: number;
-    overlay_audio_volume?: number;
-    tags?: string[];
+    thumbnail_url?: string | null;
+    caption?: string | null;
+    audio?: string | null;
+    audio_type?: string | null;
+    audio_url?: string | null;
+    allow_comments?: boolean | null;
+    allow_duets?: boolean | null;
+    duration?: number | null;
+    original_audio_volume?: number | null;
+    overlay_audio_volume?: number | null;
+    tags?: string[] | null;
   };
   user: Tables<"profiles">;
 }
