@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase, listBucketFiles, getPublicUrl, STORAGE_BUCKETS } from "@/integrations/supabase/client";
@@ -80,8 +81,26 @@ const Reels = () => {
               console.error("Error fetching user:", userError);
             }
             
+            // Ensure video_url is properly formed
+            let videoUrl = reel.video_url;
+            if (videoUrl && !videoUrl.startsWith('http')) {
+              // If URL doesn't start with http, it might be a storage path
+              videoUrl = getPublicUrl(STORAGE_BUCKETS.REELS, videoUrl);
+            }
+            
+            // Ensure thumbnail_url is properly formed
+            let thumbnailUrl = reel.thumbnail_url;
+            if (thumbnailUrl && !thumbnailUrl.startsWith('http')) {
+              // If URL doesn't start with http, it might be a storage path
+              thumbnailUrl = getPublicUrl(STORAGE_BUCKETS.REELS, thumbnailUrl);
+            }
+            
             return {
-              reel: reel as ReelContent,
+              reel: {
+                ...reel,
+                video_url: videoUrl,
+                thumbnail_url: thumbnailUrl
+              } as ReelContent,
               user: userData || { 
                 id: reel.user_id, 
                 username: "Unknown User", 
@@ -136,13 +155,18 @@ const Reels = () => {
             f.name.includes('-thumb.jpg')
           );
           
+          const videoUrl = file.name ? getPublicUrl(STORAGE_BUCKETS.REELS, file.name) : '';
+          console.log("Generated video URL:", videoUrl); // Log the generated URL
+          
+          const thumbnailUrl = thumbnailFile && thumbnailFile.name ? 
+            getPublicUrl(STORAGE_BUCKETS.REELS, thumbnailFile.name) : undefined;
+          
           const reelContent: ReelContent = {
             id: file.id || file.name || uuidv4(),
             user_id: userId,
             created_at: file.created_at || new Date().toISOString(),
-            video_url: file.name ? getPublicUrl(STORAGE_BUCKETS.REELS, file.name) : '',
-            thumbnail_url: thumbnailFile && thumbnailFile.name ? 
-              getPublicUrl(STORAGE_BUCKETS.REELS, thumbnailFile.name) : undefined,
+            video_url: videoUrl,
+            thumbnail_url: thumbnailUrl,
             caption: null,
             audio_type: "original",
             audio_url: null, 
