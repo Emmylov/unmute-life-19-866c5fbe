@@ -63,8 +63,12 @@ const Reels = () => {
       // Filter for only video files - with proper null checks
       const videoFiles = storageFiles.filter(file => 
         file && file.id && 
-        (file.id.endsWith('.mp4') || file.id.endsWith('.mov') || file.id.endsWith('.webm')) && 
-        !file.id.endsWith('-thumb.jpg') && 
+        (
+          (typeof file.id === 'string' && (file.id.endsWith('.mp4') || file.id.endsWith('.mov') || file.id.endsWith('.webm'))) ||
+          (typeof file.name === 'string' && (file.name.endsWith('.mp4') || file.name.endsWith('.mov') || file.name.endsWith('.webm')))
+        ) && 
+        !((typeof file.id === 'string' && file.id.endsWith('-thumb.jpg')) || 
+          (typeof file.name === 'string' && file.name.endsWith('-thumb.jpg'))) && 
         (file.metadata?.mimetype?.startsWith('video/') || 
          (typeof file.name === 'string' && 
           /\.(mp4|mov|webm)$/i.test(file.name)))
@@ -90,6 +94,8 @@ const Reels = () => {
           // Find thumbnail file if available
           const thumbnailFile = storageFiles.find(f => 
             f && f.name && fileId && 
+            typeof f.name === 'string' &&
+            typeof fileId === 'string' &&
             f.name.includes(fileId.replace(/\.(mp4|mov|webm)$/i, '')) && 
             f.name.includes('-thumb.jpg')
           );
@@ -115,8 +121,9 @@ const Reels = () => {
             id: fileId,
             user_id: userId,
             created_at: file.created_at || new Date().toISOString(),
-            video_url: getPublicUrl(STORAGE_BUCKETS.REELS, file.name || ''),
-            thumbnail_url: thumbnailFile ? getPublicUrl(STORAGE_BUCKETS.REELS, thumbnailFile.name || '') : undefined,
+            video_url: typeof file.name === 'string' ? getPublicUrl(STORAGE_BUCKETS.REELS, file.name) : '',
+            thumbnail_url: thumbnailFile && typeof thumbnailFile.name === 'string' ? 
+              getPublicUrl(STORAGE_BUCKETS.REELS, thumbnailFile.name) : undefined,
             caption: "",
             audio_type: "original",
             audio_url: "", 
@@ -136,10 +143,11 @@ const Reels = () => {
               // Ensure these URLs are full public URLs
               video_url: metadata.video_url?.startsWith('http') 
                 ? metadata.video_url 
-                : getPublicUrl(STORAGE_BUCKETS.REELS, file.name || ''),
+                : typeof file.name === 'string' ? getPublicUrl(STORAGE_BUCKETS.REELS, file.name) : '',
               thumbnail_url: metadata.thumbnail_url?.startsWith('http') 
                 ? metadata.thumbnail_url 
-                : thumbnailFile ? getPublicUrl(STORAGE_BUCKETS.REELS, thumbnailFile.name || '') : undefined
+                : thumbnailFile && typeof thumbnailFile.name === 'string' ? 
+                  getPublicUrl(STORAGE_BUCKETS.REELS, thumbnailFile.name) : undefined
             };
           }
           

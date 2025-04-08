@@ -12,6 +12,7 @@ const ReelMuteButton = ({ isMuted, onToggleMute }: ReelMuteButtonProps) => {
     <button 
       className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center pointer-events-auto"
       onClick={onToggleMute}
+      aria-label={isMuted ? "Unmute video" : "Mute video"}
     >
       {isMuted ? (
         <VolumeX className="w-4 h-4 text-white" />
