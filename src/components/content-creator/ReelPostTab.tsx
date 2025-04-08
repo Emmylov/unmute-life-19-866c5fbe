@@ -300,7 +300,8 @@ const ReelPostTab: React.FC<ReelPostTabProps> = ({ onSuccess }) => {
         overlay_audio_volume: overlayVolume / 100,
         allow_duets: allowDuets,
         allow_comments: allowComments,
-        duration: videoDuration
+        // Convert video duration to integer to fix database type mismatch error
+        duration: Math.round(videoDuration)
       };
       
       console.log("Saving reel data:", reelData);
