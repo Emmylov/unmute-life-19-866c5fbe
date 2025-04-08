@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase, listBucketFiles, getPublicUrl, STORAGE_BUCKETS } from "@/integrations/supabase/client";
@@ -11,6 +10,7 @@ import ReelView from "@/components/reels/ReelView";
 import { Video, Film } from "lucide-react";
 import ReelsSkeleton from "@/components/reels/ReelsSkeleton";
 import { v4 as uuidv4 } from "uuid";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ReelContent {
   id: string;
@@ -41,10 +41,27 @@ const Reels = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     fetchReels();
   }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "ArrowUp" && currentReelIndex > 0) {
+        setCurrentReelIndex(currentReelIndex - 1);
+      } else if (event.key === "ArrowDown" && currentReelIndex < reels.length - 1) {
+        setCurrentReelIndex(currentReelIndex + 1);
+      }
+    };
+    
+    window.addEventListener("keydown", handleKeyDown);
+    
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [currentReelIndex, reels.length]);
 
   const fetchReels = async () => {
     try {
@@ -242,7 +259,7 @@ const Reels = () => {
 
   return (
     <AppLayout pageTitle="Reels">
-      <div className="h-[calc(100vh-12rem)] md:h-[calc(100vh-8rem)] relative overflow-hidden md:rounded-xl bg-gradient-to-br from-primary/90 via-primary to-secondary/80">
+      <div className={`${isMobile ? 'h-[calc(100vh-12rem)]' : 'h-[calc(100vh-8rem)] max-w-md mx-auto'} relative overflow-hidden md:rounded-xl bg-gradient-to-br from-primary/90 via-primary to-secondary/80`}>
         {loading ? (
           <ReelsSkeleton />
         ) : reels.length > 0 ? (
@@ -262,6 +279,14 @@ const Reels = () => {
               currentIndex={currentReelIndex}
               totalReels={reels.length}
             />
+            
+            {!isMobile && (
+              <div className="absolute bottom-4 left-0 right-0 flex justify-center items-center gap-2 text-white/70 text-xs">
+                <span>Use ↑ and ↓ keys to navigate</span>
+                <span className="mx-2">•</span>
+                <span>Spacebar to play/pause</span>
+              </div>
+            )}
           </motion.div>
         ) : (
           <div className="h-full flex flex-col items-center justify-center text-white p-8 text-center">

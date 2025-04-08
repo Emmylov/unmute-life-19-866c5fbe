@@ -10,9 +10,10 @@ interface ReelActionsProps {
   saved: boolean;
   onLike: () => void;
   onSave: () => void;
+  onComment: () => void;
 }
 
-const ReelActions = ({ reelId, liked, saved, onLike, onSave }: ReelActionsProps) => {
+const ReelActions = ({ reelId, liked, saved, onLike, onSave, onComment }: ReelActionsProps) => {
   return (
     <div className="absolute bottom-20 right-4 flex flex-col space-y-6 pointer-events-auto">
       <ReelActionButton 
@@ -26,6 +27,7 @@ const ReelActions = ({ reelId, liked, saved, onLike, onSave }: ReelActionsProps)
       <ReelActionButton 
         icon={MessageCircle} 
         label="Comment"
+        onClick={onComment}
       />
       
       <ReelActionButton 
