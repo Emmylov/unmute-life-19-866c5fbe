@@ -4,7 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ChatProvider } from "@/contexts/ChatContext";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Users } from "lucide-react";
 import ChatSidebar from "@/components/chat/ChatSidebar";
 import ChatHeader from "@/components/chat/ChatHeader";
 import ChatConversation from "@/components/chat/ChatConversation";
@@ -28,6 +28,7 @@ const ChatContent = () => {
           size="icon"
           className="absolute top-4 left-4 z-30"
           onClick={() => navigate("/chat")}
+          aria-label="Back to chat list"
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
@@ -56,6 +57,18 @@ const ChatContent = () => {
             <ChatInput />
           </>
         ) : null}
+        
+        {/* Empty state for mobile */}
+        {isMobile && !chatId && (
+          <div className="flex flex-col items-center justify-center h-full px-6 text-center">
+            <Users className="h-16 w-16 text-unmute-purple/50 mb-4" />
+            <h2 className="text-xl font-bold mb-2">Find someone to chat with</h2>
+            <p className="text-gray-500 mb-6">Search for users using the search bar above</p>
+            <Button onClick={() => {}} className="unmute-primary-button">
+              Start a new conversation
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

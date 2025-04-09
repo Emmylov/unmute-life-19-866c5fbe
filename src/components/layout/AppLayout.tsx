@@ -10,7 +10,8 @@ import {
   Film, 
   Users, 
   Bell, 
-  User
+  User,
+  MessageSquare
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -22,6 +23,7 @@ interface AppLayoutProps {
 const AppLayout = ({ children, pageTitle }: AppLayoutProps) => {
   const isMobile = useIsMobile();
   const location = useLocation();
+  const isChatPage = location.pathname.includes('/chat');
   
   return (
     <div className="min-h-screen bg-gray-50">
@@ -37,7 +39,10 @@ const AppLayout = ({ children, pageTitle }: AppLayoutProps) => {
         </main>
       </div>
       
-      {isMobile && <MobileNavigation currentPath={location.pathname} />}
+      {/* Only show mobile navigation on non-chat pages or when on chat list page */}
+      {isMobile && (!isChatPage || (isChatPage && !location.pathname.split('/')[2])) && (
+        <MobileNavigation currentPath={location.pathname} />
+      )}
     </div>
   );
 };
@@ -73,10 +78,10 @@ const MobileNavigation = ({ currentPath }: MobileNavigationProps) => {
         isActive={currentPath === '/reels'} 
       />
       <NavLink 
-        icon={<Users className="h-5 w-5" />} 
-        label="Community" 
-        to="/communities" 
-        isActive={currentPath === '/communities'} 
+        icon={<MessageSquare className="h-5 w-5" />} 
+        label="Chat" 
+        to="/chat" 
+        isActive={currentPath.includes('/chat')} 
       />
       <NavLink 
         icon={<User className="h-5 w-5" />} 
