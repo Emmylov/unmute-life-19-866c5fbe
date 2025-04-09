@@ -6,6 +6,7 @@ import { Mic, Video, X, Pause, Smile } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { supabase, STORAGE_BUCKETS } from "@/integrations/supabase/client";
+import { createStory } from "@/integrations/supabase/story-functions";
 import { v4 as uuidv4 } from "uuid";
 
 const MOOD_OPTIONS = [
@@ -158,16 +159,16 @@ const StoryModal = ({ isOpen, onClose, onSuccess, profile }: StoryModalProps) =>
         .from(STORAGE_BUCKETS.STORIES)
         .getPublicUrl(filePath);
       
-      const { error: dbError } = await supabase.rpc('insert_story', {
-        p_user_id: profile.id,
-        p_media_url: urlData.publicUrl,
-        p_caption: caption || null,
-        p_mood: mood || null,
-        p_storage_path: filePath
-      });
-      
-      if (dbError) {
-        console.error("Database error:", dbError);
+      try {
+        await createStory(
+          profile.id,
+          urlData.publicUrl,
+          caption || null,
+          mood || null,
+          filePath
+        );
+      } catch (err) {
+        console.error("Error using createStory function, falling back to direct insert:", err);
         const { error: insertError } = await (supabase as any)
           .from('stories')
           .insert({

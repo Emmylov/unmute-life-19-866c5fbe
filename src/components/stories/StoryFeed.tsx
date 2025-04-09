@@ -5,6 +5,7 @@ import { PlusCircle } from "lucide-react";
 import StoryModal from "./StoryModal";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { fetchStoriesWithProfiles } from "@/integrations/supabase/story-functions";
 
 interface StoryFeedProps {
   profile: any;
@@ -36,45 +37,8 @@ const StoryFeed = ({ profile }: StoryFeedProps) => {
   const fetchStories = async () => {
     try {
       setLoading(true);
-      
-      // Simpler query without the join that's causing issues
-      const { data, error } = await (supabase
-        .from('stories') as any)
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(10);
-
-      if (error) throw error;
-
-      // If we successfully got stories, try to fetch the associated profiles
-      if (data && data.length > 0) {
-        // Get unique user IDs from stories
-        const userIds = [...new Set(data.map(story => story.user_id))];
-        
-        // Fetch profiles for those user IDs
-        const { data: profilesData, error: profilesError } = await supabase
-          .from('profiles')
-          .select('id, username, full_name, avatar')
-          .in('id', userIds);
-        
-        // Merge profiles with stories
-        if (!profilesError && profilesData) {
-          const storiesWithProfiles = data.map(story => {
-            const userProfile = profilesData.find(profile => profile.id === story.user_id);
-            return {
-              ...story,
-              profiles: userProfile || undefined
-            };
-          });
-          
-          setStories(storiesWithProfiles);
-        } else {
-          // If we can't get profiles, just use the stories without profile data
-          setStories(data);
-        }
-      } else {
-        setStories([]);
-      }
+      const fetchedStories = await fetchStoriesWithProfiles();
+      setStories(fetchedStories);
     } catch (error) {
       console.error("Error fetching stories:", error);
       toast({

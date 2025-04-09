@@ -32,7 +32,7 @@ export const fetchStoriesWithProfiles = async (): Promise<Story[]> => {
     if (!storiesData || storiesData.length === 0) return [];
     
     // Get unique user IDs
-    const userIds = [...new Set(storiesData.map((story: any) => story.user_id))];
+    const userIds = [...new Set(storiesData.map((story: any) => story.user_id))] as string[];
     
     // Fetch profiles for those user IDs
     const { data: profilesData, error: profilesError } = await supabase
