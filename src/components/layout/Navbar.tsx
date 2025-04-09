@@ -2,7 +2,17 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Search, Menu, Bell, MessageCircle, LogOut, PlusCircle, Video, X } from "lucide-react";
+import { 
+  Search, 
+  Menu, 
+  Bell, 
+  MessageCircle, 
+  LogOut, 
+  PlusCircle, 
+  Video, 
+  X,
+  MessageSquare 
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -34,6 +44,7 @@ const Navbar = ({ pageTitle }: NavbarProps) => {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [unreadMessages, setUnreadMessages] = useState(0);
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -55,11 +66,49 @@ const Navbar = ({ pageTitle }: NavbarProps) => {
         if (data && !error) {
           setProfile(data);
         }
+        
+        // Check for unread messages
+        fetchUnreadMessages(user.id);
       }
     };
     
     getUser();
   }, []);
+
+  // Subscribe to new message notifications
+  useEffect(() => {
+    if (!user?.id) return;
+
+    // Subscribe to chat messages where the user is the receiver and the message is unread
+    const channel = supabase
+      .channel('public:chat_messages')
+      .on('postgres_changes', 
+        { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'chat_messages',
+          filter: `receiver_id=eq.${user.id}` 
+        }, 
+        (payload) => {
+          // Update unread message count when new message arrives
+          if (payload.new && !payload.new.read) {
+            setUnreadMessages(prev => prev + 1);
+            
+            // Show a toast notification for new message
+            toast({
+              title: "New message",
+              description: "You have received a new message",
+              duration: 3000,
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, toast]);
 
   // Focus search input when opened
   useEffect(() => {
@@ -69,6 +118,22 @@ const Navbar = ({ pageTitle }: NavbarProps) => {
       }, 100);
     }
   }, [isSearchOpen]);
+  
+  const fetchUnreadMessages = async (userId: string) => {
+    try {
+      const { count, error } = await supabase
+        .from('chat_messages')
+        .select('*', { count: 'exact', head: true })
+        .eq('receiver_id', userId)
+        .eq('read', false);
+      
+      if (!error && count !== null) {
+        setUnreadMessages(count);
+      }
+    } catch (error) {
+      console.error("Error fetching unread messages:", error);
+    }
+  };
   
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -103,6 +168,7 @@ const Navbar = ({ pageTitle }: NavbarProps) => {
     { name: "Explore", path: "/explore" },
     { name: "Reels", path: "/reels" },
     { name: "Communities", path: "/communities" },
+    { name: "Chat", path: "/chat" },
     { name: "Profile", path: "/profile" },
     { name: "Settings", path: "/settings" },
   ];
@@ -248,6 +314,22 @@ const Navbar = ({ pageTitle }: NavbarProps) => {
               <Video className="h-4 w-4" />
               Create
             </Button>
+
+            {/* New chat button */}
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className={`relative text-gray-500 hover:text-unmute-purple transition-colors ${location.pathname.includes('/chat') ? 'bg-unmute-purple/10 text-unmute-purple' : ''}`}
+              onClick={() => navigate('/chat')}
+            >
+              <MessageSquare className="h-5 w-5" />
+              {unreadMessages > 0 && (
+                <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-unmute-pink text-white text-xs flex items-center justify-center font-medium">
+                  {unreadMessages > 9 ? '9+' : unreadMessages}
+                </span>
+              )}
+              <span className="sr-only">Messages</span>
+            </Button>
             
             <Button 
               variant="ghost" 
@@ -256,10 +338,6 @@ const Navbar = ({ pageTitle }: NavbarProps) => {
             >
               <Bell className="h-5 w-5" />
               <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-unmute-pink"></span>
-            </Button>
-            
-            <Button variant="ghost" size="icon" className="text-gray-500">
-              <MessageCircle className="h-5 w-5" />
             </Button>
             
             <DropdownMenu>
@@ -289,6 +367,9 @@ const Navbar = ({ pageTitle }: NavbarProps) => {
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link to="/create" className="cursor-pointer">Create Content</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/chat" className="cursor-pointer">Messages {unreadMessages > 0 && `(${unreadMessages})`}</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link to="/settings" className="cursor-pointer">Settings</Link>
