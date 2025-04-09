@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -131,19 +130,8 @@ const Auth = () => {
           variant: "default"
         });
         
-        // Check if user has completed onboarding
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('is_onboarded')
-          .eq('id', data.user.id)
-          .single();
-        
-        // Redirect based on onboarding status
-        if (profileData?.is_onboarded) {
-          navigate("/home");
-        } else {
-          navigate("/onboarding");
-        }
+        // Immediately redirect to home page for returning users
+        navigate("/home");
       }
     } catch (error: any) {
       toast({

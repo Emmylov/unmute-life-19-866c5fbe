@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import OnboardingLayout from "@/components/onboarding/OnboardingLayout";
@@ -17,6 +18,7 @@ const TOTAL_STEPS = 8;
 const Onboarding = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const navigate = useNavigate();
   
   useEffect(() => {
@@ -24,6 +26,8 @@ const Onboarding = () => {
       const { data: { session } } = await supabase.auth.getSession();
 
       if (session) {
+        setIsLoggedIn(true);
+        // Check if user has completed onboarding
         const { data: profile } = await supabase
           .from('profiles')
           .select('is_onboarded')
@@ -31,8 +35,14 @@ const Onboarding = () => {
           .single();
           
         if (profile?.is_onboarded) {
+          // Redirect completed users to home
           navigate('/home');
           return;
+        }
+        
+        // Skip initial steps for logged-in users who haven't completed onboarding
+        if (currentStep < 4) {
+          setCurrentStep(4);
         }
       }
       
@@ -40,7 +50,7 @@ const Onboarding = () => {
     };
     
     checkOnboardingStatus();
-  }, [navigate]);
+  }, [navigate, currentStep]);
   
   const handleNext = () => {
     if (currentStep < TOTAL_STEPS - 1) {

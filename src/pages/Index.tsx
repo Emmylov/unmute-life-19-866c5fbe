@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,6 @@ import { supabase } from "@/integrations/supabase/client";
 const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [isOnboarded, setIsOnboarded] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -16,15 +14,8 @@ const Index = () => {
       
       if (session) {
         setIsAuthenticated(true);
-        
-        // Check if the user has completed onboarding
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('is_onboarded')
-          .eq('id', session.user.id)
-          .single();
-        
-        setIsOnboarded(profile?.is_onboarded || false);
+        // Redirect authenticated users directly to home
+        navigate('/home');
       } else {
         setIsAuthenticated(false);
       }
@@ -33,18 +24,7 @@ const Index = () => {
     };
 
     checkAuth();
-  }, []);
-
-  // Redirect authenticated and onboarded users directly to home
-  useEffect(() => {
-    if (isAuthenticated && !loading) {
-      if (isOnboarded) {
-        navigate('/home');
-      } else {
-        navigate('/onboarding');
-      }
-    }
-  }, [isAuthenticated, isOnboarded, loading, navigate]);
+  }, [navigate]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-unmute-purple/30 to-unmute-pink/30 p-6">

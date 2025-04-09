@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -68,20 +67,7 @@ const AccountCreationStep = ({ onNext }: AccountCreationStepProps) => {
         description: "Successfully signed in",
       });
       
-      // Check if user has completed onboarding
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('is_onboarded')
-        .eq('id', data.user.id)
-        .single();
-      
-      if (profileData?.is_onboarded) {
-        // Skip onboarding if already completed
-        navigate("/home");
-      } else {
-        // Continue with onboarding
-        onNext();
-      }
+      navigate("/home");
     } catch (error: any) {
       toast({
         title: "Sign in failed",
