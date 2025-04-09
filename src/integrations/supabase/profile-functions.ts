@@ -93,26 +93,27 @@ export const addProfileReaction = async (
 ) => {
   try {
     // First check if the table exists
-    const { data: tableExists } = await supabase
-      .from('profile_reactions')
-      .select('id')
-      .limit(1);
+    const { data: checkResult } = await supabase
+      .rpc('check_table_exists', { table_name: 'profile_reactions' });
+      
+    const tableExists = checkResult === true;
     
     // If the table doesn't exist yet, we'll just log it
-    if (tableExists === null) {
+    if (!tableExists) {
       console.log("profile_reactions table doesn't exist yet");
       return null;
     }
     
+    // Using the raw API to insert into the profile_reactions table
+    // This avoids TypeScript errors since the table might not be in the generated types yet
     const { data, error } = await supabase
       .from('profile_reactions')
       .insert({
         from_user_id: fromUserId,
         to_user_id: toUserId,
-        emoji
+        emoji: emoji
       })
-      .select()
-      .single();
+      .select();
     
     if (error) throw error;
     
@@ -122,7 +123,7 @@ export const addProfileReaction = async (
       .update({ notification_count: supabase.rpc('increment', { inc_amount: 1 }) })
       .eq('id', toUserId);
     
-    return data;
+    return data[0] || null;
   } catch (error) {
     console.error("Error adding profile reaction:", error);
     throw error;
@@ -133,16 +134,17 @@ export const addProfileReaction = async (
 export const getProfileReactions = async (userId: string) => {
   try {
     // First check if the table exists
-    const { data: tableExists } = await supabase
-      .from('profile_reactions')
-      .select('id')
-      .limit(1);
+    const { data: checkResult } = await supabase
+      .rpc('check_table_exists', { table_name: 'profile_reactions' });
+      
+    const tableExists = checkResult === true;
     
     // If the table doesn't exist yet, return empty array
-    if (tableExists === null) {
+    if (!tableExists) {
       return [];
     }
     
+    // Using the raw API to query the profile_reactions table
     const { data, error } = await supabase
       .from('profile_reactions')
       .select(`
@@ -208,26 +210,27 @@ export const uploadProfileAvatar = async (userId: string, file: File) => {
 export const toggleFollowUser = async (followerId: string, targetId: string) => {
   try {
     // First check if the table exists
-    const { data: tableExists } = await supabase
-      .from('user_follows')
-      .select('id')
-      .limit(1);
+    const { data: checkResult } = await supabase
+      .rpc('check_table_exists', { table_name: 'user_follows' });
+      
+    const tableExists = checkResult === true;
     
     // If the table doesn't exist yet, we'll just log it
-    if (tableExists === null) {
+    if (!tableExists) {
       console.log("user_follows table doesn't exist yet");
       return false;
     }
     
-    // Check if already following
-    const { data: existingFollow } = await supabase
+    // Check if already following using raw API
+    const { data: existingFollows } = await supabase
       .from('user_follows')
-      .select('id')
+      .select('follower_id')
       .eq('follower_id', followerId)
-      .eq('following_id', targetId)
-      .single();
+      .eq('following_id', targetId);
     
-    if (existingFollow) {
+    const isFollowing = existingFollows && existingFollows.length > 0;
+    
+    if (isFollowing) {
       // Unfollow
       await supabase
         .from('user_follows')
@@ -286,3 +289,18 @@ const getPublicUrl = (bucket: string, path: string): string => {
   const { data } = supabase.storage.from(bucket).getPublicUrl(path);
   return data.publicUrl;
 };
+
+// Helper function to check if table exists (needed for our code)
+const createCheckTableExistsFunction = async () => {
+  try {
+    await supabase.rpc('check_table_exists', { table_name: 'test' }).catch(() => {
+      // If the function doesn't exist, create it
+      return supabase.rpc('create_check_table_exists_function');
+    });
+  } catch (error) {
+    console.warn("Could not create/call check_table_exists function", error);
+  }
+};
+
+// Create the function when this module is imported
+createCheckTableExistsFunction();
