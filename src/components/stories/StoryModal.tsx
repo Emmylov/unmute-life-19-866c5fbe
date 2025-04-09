@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -88,7 +87,6 @@ const StoryModal = ({ isOpen, onClose, onSuccess, profile }: StoryModalProps) =>
       mediaRecorder.start();
       setIsRecording(true);
       
-      // Auto stop after 60 seconds
       setTimeout(() => {
         if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
           stopRecording();
@@ -109,7 +107,6 @@ const StoryModal = ({ isOpen, onClose, onSuccess, profile }: StoryModalProps) =>
       mediaRecorderRef.current.stop();
       setIsRecording(false);
       
-      // Stop all tracks in the stream
       if (mediaStreamRef.current) {
         mediaStreamRef.current.getTracks().forEach((track) => track.stop());
       }
@@ -149,7 +146,6 @@ const StoryModal = ({ isOpen, onClose, onSuccess, profile }: StoryModalProps) =>
       
       const mediaBlob = new Blob(mediaChunksRef.current, { type: mimeType });
       
-      // Upload media to storage
       const { data: fileData, error: uploadError } = await supabase.storage
         .from(STORAGE_BUCKETS.STORIES)
         .upload(filePath, mediaBlob);
@@ -158,24 +154,33 @@ const StoryModal = ({ isOpen, onClose, onSuccess, profile }: StoryModalProps) =>
         throw uploadError;
       }
       
-      // Get public URL
       const { data: urlData } = supabase.storage
         .from(STORAGE_BUCKETS.STORIES)
         .getPublicUrl(filePath);
       
-      // Save story metadata to database
-      const { error: dbError } = await (supabase
-        .from('stories') as any)
-        .insert({
-          user_id: profile.id,
-          media_url: urlData.publicUrl,
-          caption: caption,
-          mood: mood,
-          storage_path: filePath
-        });
+      const { error: dbError } = await supabase.rpc('insert_story', {
+        p_user_id: profile.id,
+        p_media_url: urlData.publicUrl,
+        p_caption: caption || null,
+        p_mood: mood || null,
+        p_storage_path: filePath
+      });
       
       if (dbError) {
-        throw dbError;
+        console.error("Database error:", dbError);
+        const { error: insertError } = await (supabase as any)
+          .from('stories')
+          .insert({
+            user_id: profile.id,
+            media_url: urlData.publicUrl,
+            caption: caption || null,
+            mood: mood || null,
+            storage_path: filePath
+          });
+          
+        if (insertError) {
+          throw insertError;
+        }
       }
       
       toast({
