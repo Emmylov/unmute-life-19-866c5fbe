@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "@/components/layout/AppLayout";
@@ -9,13 +8,14 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { 
   Mic, Music, Sparkles, 
-  Image as ImageIcon, Smile, Plus, Globe, 
+  Image as ImageIcon, Smile, Globe, 
   BookOpen, Pencil, UserPlus, Filter, HeartHandshake,
   PlusCircle, FileText
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import StoryFeed from "@/components/stories/StoryFeed";
 
 // Animation variants
 const fadeIn = {
@@ -292,49 +292,14 @@ const Home = () => {
             </div>
           </motion.div>
           
-          {/* Empty state for stories */}
+          {/* Stories Feed */}
           <motion.div 
             className="bg-white rounded-xl p-4 shadow-sm border border-gray-100"
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <div className="flex overflow-x-auto space-x-4 py-2 -mx-2 px-2 scrollbar-hide">
-              <motion.div 
-                className="flex flex-col items-center"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <div className="w-16 h-16 rounded-full bg-cosmic-crush p-[2px] shadow-md">
-                  <button className="w-full h-full rounded-full flex items-center justify-center bg-white">
-                    <Plus className="h-5 w-5 text-primary" />
-                  </button>
-                </div>
-                <span className="text-xs mt-1 font-medium">New Story</span>
-              </motion.div>
-              
-              {/* Empty story slots with gradients */}
-              {[1, 2, 3, 4, 5].map((i) => (
-                <motion.div 
-                  key={i} 
-                  className="flex flex-col items-center"
-                  whileHover={{ scale: 1.05 }}
-                >
-                  <div className="w-16 h-16 rounded-full bg-gray-100 p-[2px] flex items-center justify-center">
-                    <div className="w-full h-full rounded-full bg-dream-mist flex items-center justify-center text-gray-400/50">
-                      {i === 1 && <FileText className="h-6 w-6" />}
-                      {i === 2 && <Music className="h-6 w-6" />}
-                      {i === 3 && <BookOpen className="h-6 w-6" />}
-                      {i === 4 && <Pencil className="h-6 w-6" />}
-                      {i === 5 && <HeartHandshake className="h-6 w-6" />}
-                    </div>
-                  </div>
-                  <span className="text-xs mt-1 truncate w-16 text-center font-medium text-gray-400">
-                    {i === 1 ? "First" : i === 2 ? "Create" : i === 3 ? "Your" : i === 4 ? "Own" : "Story"}
-                  </span>
-                </motion.div>
-              ))}
-            </div>
+            <StoryFeed profile={profile} />
           </motion.div>
           
           {/* Filter Bar */}

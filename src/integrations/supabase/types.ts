@@ -502,6 +502,36 @@ export type Database = {
           },
         ]
       }
+      stories: {
+        Row: {
+          caption: string | null
+          created_at: string
+          id: string
+          media_url: string
+          mood: string | null
+          storage_path: string | null
+          user_id: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          media_url: string
+          mood?: string | null
+          storage_path?: string | null
+          user_id: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          media_url?: string
+          mood?: string | null
+          storage_path?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_files: {
         Row: {
           bucket_id: string
