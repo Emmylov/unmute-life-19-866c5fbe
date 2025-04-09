@@ -3,9 +3,8 @@ import React, { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Mic, Video, Camera, X, Pause, Smile } from "lucide-react";
+import { Mic, Video, X, Pause, Smile } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { supabase, STORAGE_BUCKETS } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from "uuid";
@@ -165,13 +164,15 @@ const StoryModal = ({ isOpen, onClose, onSuccess, profile }: StoryModalProps) =>
         .getPublicUrl(filePath);
       
       // Save story metadata to database
-      const { error: dbError } = await supabase.from('stories').insert({
-        user_id: profile.id,
-        media_url: urlData.publicUrl,
-        caption: caption,
-        mood: mood,
-        storage_path: filePath
-      });
+      const { error: dbError } = await (supabase
+        .from('stories') as any)
+        .insert({
+          user_id: profile.id,
+          media_url: urlData.publicUrl,
+          caption: caption,
+          mood: mood,
+          storage_path: filePath
+        });
       
       if (dbError) {
         throw dbError;

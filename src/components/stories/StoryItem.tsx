@@ -2,9 +2,8 @@
 import React, { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { formatDistanceToNow } from "date-fns";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { formatDistanceToNow } from "date-fns";
 import { Play, Pause, Heart } from "lucide-react";
 
 interface StoryItemProps {

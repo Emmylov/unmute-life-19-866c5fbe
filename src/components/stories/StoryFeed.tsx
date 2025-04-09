@@ -10,17 +10,35 @@ interface StoryFeedProps {
   profile: any;
 }
 
+// Define the Story type to match our database schema
+interface Story {
+  id: string;
+  user_id: string;
+  media_url: string;
+  caption?: string;
+  mood?: string;
+  created_at: string;
+  storage_path?: string;
+  profiles?: {
+    id: string;
+    username?: string;
+    full_name?: string;
+    avatar?: string;
+  };
+}
+
 const StoryFeed = ({ profile }: StoryFeedProps) => {
   const { toast } = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [stories, setStories] = useState<any[]>([]);
+  const [stories, setStories] = useState<Story[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchStories = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('stories')
+      // Use 'from' with type assertion to work around TypeScript limitations
+      const { data, error } = await (supabase
+        .from('stories') as any)
         .select(`
           *,
           profiles:user_id (id, username, full_name, avatar)
@@ -95,14 +113,14 @@ const StoryFeed = ({ profile }: StoryFeedProps) => {
           profile={profile}
         />
       ) : isModalOpen && (
-        <div>
+        <>
           {toast({
             title: "Login Required",
             description: "Please log in to create a story",
             variant: "destructive"
           })}
           {setIsModalOpen(false)}
-        </div>
+        </>
       )}
     </div>
   );
