@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import OnboardingLayout from "@/components/onboarding/OnboardingLayout";
@@ -12,6 +11,7 @@ import InterestsStep from "@/components/onboarding/InterestsStep";
 import ProfileSetupStep from "@/components/onboarding/ProfileSetupStep";
 import FinalWelcomeStep from "@/components/onboarding/FinalWelcomeStep";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const TOTAL_STEPS = 8;
 
@@ -19,7 +19,9 @@ const Onboarding = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [profileData, setProfileData] = useState<any>(null);
   const navigate = useNavigate();
+  const { toast } = useToast();
   
   useEffect(() => {
     const checkOnboardingStatus = async () => {
@@ -27,20 +29,34 @@ const Onboarding = () => {
 
       if (session) {
         setIsLoggedIn(true);
-        // Check if user has completed onboarding
-        const { data: profile } = await supabase
+        
+        const { data: profile, error } = await supabase
           .from('profiles')
-          .select('is_onboarded')
+          .select('*')
           .eq('id', session.user.id)
           .single();
           
-        if (profile?.is_onboarded) {
-          // Redirect completed users to home
-          navigate('/home');
-          return;
+        if (error) {
+          console.error("Error fetching profile:", error);
+          
+          if (error.code === 'PGRST116') {
+            await supabase
+              .from('profiles')
+              .insert({
+                id: session.user.id,
+                username: session.user.email,
+                is_onboarded: false
+              });
+          }
+        } else {
+          setProfileData(profile);
+          
+          if (profile?.is_onboarded) {
+            navigate('/home');
+            return;
+          }
         }
         
-        // Skip initial steps for logged-in users who haven't completed onboarding
         if (currentStep < 4) {
           setCurrentStep(4);
         }
@@ -59,25 +75,35 @@ const Onboarding = () => {
   };
   
   const handleCreateAccount = () => {
-    setCurrentStep(4); // Jump to account creation step
+    setCurrentStep(4);
   };
   
   const handleContinueAnyway = () => {
-    navigate("/home"); // Skip sign up and go to home
+    navigate("/home");
   };
   
   const handleComplete = async () => {
     const { data: { session } } = await supabase.auth.getSession();
 
     if (session) {
-      await supabase.from('profiles')
-        .update({
-          is_onboarded: true
-        })
-        .eq('id', session.user.id);
+      try {
+        await supabase
+          .from('profiles')
+          .update({
+            is_onboarded: true
+          })
+          .eq('id', session.user.id);
+          
+        toast({
+          title: "Welcome to Unmute!",
+          description: "Your profile is now ready to use.",
+        });
+      } catch (error) {
+        console.error("Error completing onboarding:", error);
+      }
     }
     
-    navigate("/home"); // Go to home after onboarding
+    navigate("/home");
   };
   
   const getBackgroundClass = () => {

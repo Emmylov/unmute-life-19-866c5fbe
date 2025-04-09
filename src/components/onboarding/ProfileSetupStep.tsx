@@ -1,10 +1,13 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Camera, User } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+import { supabase, STORAGE_BUCKETS, getPublicUrl } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { v4 as uuidv4 } from "uuid";
 
 interface ProfileSetupStepProps {
   onNext: () => void;
@@ -24,15 +27,112 @@ const ProfileSetupStep = ({ onNext }: ProfileSetupStepProps) => {
   const [bio, setBio] = useState("");
   const [selectedColor, setSelectedColor] = useState(themeColors[0].value);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const { toast } = useToast();
+  
+  // Fetch current user on component mount
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        setCurrentUser(session.user);
+        
+        // Check if user already has profile data
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('username, bio, avatar')
+          .eq('id', session.user.id)
+          .single();
+          
+        if (profile) {
+          setUsername(profile.username || '');
+          setBio(profile.bio || '');
+          if (profile.avatar) {
+            setPreviewImage(profile.avatar);
+          }
+        }
+      }
+    };
+    
+    fetchUser();
+  }, []);
   
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setImageFile(file);
       const reader = new FileReader();
       reader.onload = (event) => {
         setPreviewImage(event.target?.result as string);
       };
       reader.readAsDataURL(file);
+    }
+  };
+  
+  const saveProfile = async () => {
+    if (!currentUser) return;
+    
+    try {
+      setLoading(true);
+      
+      // Upload avatar if provided
+      let avatarUrl = previewImage;
+      if (imageFile) {
+        // Create avatars bucket if it doesn't exist yet
+        const { data: buckets } = await supabase.storage.listBuckets();
+        if (!buckets?.find(bucket => bucket.name === STORAGE_BUCKETS.AVATARS)) {
+          await supabase.storage.createBucket(STORAGE_BUCKETS.AVATARS, {
+            public: true,
+          });
+        }
+        
+        // Upload the avatar
+        const fileExt = imageFile.name.split('.').pop();
+        const fileName = `${uuidv4()}.${fileExt}`;
+        const filePath = `${currentUser.id}/${fileName}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from(STORAGE_BUCKETS.AVATARS)
+          .upload(filePath, imageFile);
+          
+        if (uploadError) {
+          throw uploadError;
+        }
+        
+        // Get the public URL
+        avatarUrl = getPublicUrl(STORAGE_BUCKETS.AVATARS, filePath);
+      }
+      
+      // Update the user profile
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          username,
+          bio,
+          avatar: avatarUrl,
+          theme_color: selectedColor.replace('bg-', ''),
+          is_onboarded: true
+        })
+        .eq('id', currentUser.id);
+        
+      if (updateError) throw updateError;
+      
+      toast({
+        title: "Profile updated!",
+        description: "Your profile has been set up successfully.",
+      });
+      
+      onNext();
+    } catch (error: any) {
+      toast({
+        title: "Error saving profile",
+        description: error.message || "Something went wrong",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
   
@@ -111,11 +211,11 @@ const ProfileSetupStep = ({ onNext }: ProfileSetupStepProps) => {
       
       <div className="mt-auto">
         <Button
-          onClick={onNext}
+          onClick={saveProfile}
           className="unmute-primary-button w-full"
-          disabled={!username}
+          disabled={!username || loading}
         >
-          Done!
+          {loading ? "Saving..." : "Done!"}
         </Button>
       </div>
     </div>
