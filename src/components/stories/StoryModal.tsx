@@ -1,8 +1,9 @@
-import React, { useState, useRef } from "react";
+
+import React, { useState, useRef, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Mic, Video, X, Pause, Smile } from "lucide-react";
+import { Mic, Video, X, Pause, Smile, VolumeX, Volume2 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { supabase, STORAGE_BUCKETS } from "@/integrations/supabase/client";
@@ -35,12 +36,36 @@ const StoryModal = ({ isOpen, onClose, onSuccess, profile }: StoryModalProps) =>
   const [caption, setCaption] = useState("");
   const [mood, setMood] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const mediaChunksRef = useRef<Blob[]>([]);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const recordingTimeoutRef = useRef<number | null>(null);
+  
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      if (recordingTimeoutRef.current) {
+        clearTimeout(recordingTimeoutRef.current);
+      }
+      
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
+  
+  // Reset everything when the modal is closed
+  useEffect(() => {
+    if (!isOpen) {
+      resetRecording();
+      setCaption("");
+      setMood(null);
+    }
+  }, [isOpen]);
   
   const startRecording = async (type: "voice" | "video") => {
     try {
@@ -49,16 +74,30 @@ const StoryModal = ({ isOpen, onClose, onSuccess, profile }: StoryModalProps) =>
         ? { audio: true } 
         : { audio: true, video: true };
       
+      toast({
+        title: "Starting recording...",
+        description: type === "voice" ? "Voice recording initiated" : "Video recording initiated",
+      });
+      
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       mediaStreamRef.current = stream;
       
       if (type === "video" && videoRef.current) {
         videoRef.current.srcObject = stream;
         videoRef.current.muted = true; // Avoid feedback
-        videoRef.current.play();
+        videoRef.current.play().catch(err => console.error("Error playing video preview:", err));
       }
       
-      const mediaRecorder = new MediaRecorder(stream);
+      // Set up correct MIME types for better compatibility
+      const mimeType = type === "voice" 
+        ? (MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4')
+        : (MediaRecorder.isTypeSupported('video/webm') ? 'video/webm' : 'video/mp4');
+      
+      const mediaRecorder = new MediaRecorder(stream, { 
+        mimeType,
+        audioBitsPerSecond: 128000 // Better audio quality
+      });
+      
       mediaRecorderRef.current = mediaRecorder;
       mediaChunksRef.current = [];
       
@@ -69,8 +108,9 @@ const StoryModal = ({ isOpen, onClose, onSuccess, profile }: StoryModalProps) =>
       };
       
       mediaRecorder.onstop = () => {
-        const mimeType = type === "voice" ? "audio/webm" : "video/webm";
-        const mediaBlob = new Blob(mediaChunksRef.current, { type: mimeType });
+        // Determine the correct mime type
+        const finalMimeType = type === "voice" ? "audio/webm" : "video/webm";
+        const mediaBlob = new Blob(mediaChunksRef.current, { type: finalMimeType });
         
         if (type === "voice" && audioRef.current) {
           const audioURL = URL.createObjectURL(mediaBlob);
@@ -85,14 +125,20 @@ const StoryModal = ({ isOpen, onClose, onSuccess, profile }: StoryModalProps) =>
         setRecordingComplete(true);
       };
       
-      mediaRecorder.start();
+      mediaRecorder.start(1000); // Record in 1-second chunks for better stability
       setIsRecording(true);
       
-      setTimeout(() => {
+      // Set a timeout to stop recording after 60 seconds
+      recordingTimeoutRef.current = window.setTimeout(() => {
         if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
           stopRecording();
+          toast({
+            title: "Recording complete",
+            description: "Maximum recording time reached (60 seconds)",
+          });
         }
       }, 60000);
+      
     } catch (error) {
       console.error("Error accessing media devices:", error);
       toast({
@@ -104,6 +150,11 @@ const StoryModal = ({ isOpen, onClose, onSuccess, profile }: StoryModalProps) =>
   };
   
   const stopRecording = () => {
+    if (recordingTimeoutRef.current) {
+      clearTimeout(recordingTimeoutRef.current);
+      recordingTimeoutRef.current = null;
+    }
+    
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
@@ -111,6 +162,11 @@ const StoryModal = ({ isOpen, onClose, onSuccess, profile }: StoryModalProps) =>
       if (mediaStreamRef.current) {
         mediaStreamRef.current.getTracks().forEach((track) => track.stop());
       }
+      
+      toast({
+        title: "Recording stopped",
+        description: mediaType === "voice" ? "Voice recording completed" : "Video recording completed",
+      });
     }
   };
   
@@ -120,10 +176,24 @@ const StoryModal = ({ isOpen, onClose, onSuccess, profile }: StoryModalProps) =>
     }
     if (videoRef.current) {
       videoRef.current.src = "";
+      if (videoRef.current.srcObject) {
+        videoRef.current.srcObject = null;
+      }
+    }
+    
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+    }
+    
+    if (recordingTimeoutRef.current) {
+      clearTimeout(recordingTimeoutRef.current);
+      recordingTimeoutRef.current = null;
     }
     
     setRecordingComplete(false);
     setMediaType(null);
+    setIsRecording(false);
+    mediaChunksRef.current = [];
   };
   
   const handlePublishStory = async () => {
@@ -140,6 +210,7 @@ const StoryModal = ({ isOpen, onClose, onSuccess, profile }: StoryModalProps) =>
     
     try {
       const storyId = uuidv4();
+      // Determine the correct mime type and extension
       const mimeType = mediaType === "voice" ? "audio/webm" : "video/webm";
       const extension = "webm";
       const fileName = `${storyId}.${extension}`;
@@ -210,14 +281,18 @@ const StoryModal = ({ isOpen, onClose, onSuccess, profile }: StoryModalProps) =>
     }
   };
   
+  const toggleMute = () => {
+    if (videoRef.current) {
+      videoRef.current.muted = !isMuted;
+      setIsMuted(!isMuted);
+    }
+  };
+  
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-xl">Create a Story</DialogTitle>
-          <p className="text-gray-500 text-sm">
-            Share a quick thought, experience, or update with your voice or a short video!
-          </p>
         </DialogHeader>
         
         <div className="flex flex-col items-center space-y-4 py-4">
@@ -260,7 +335,13 @@ const StoryModal = ({ isOpen, onClose, onSuccess, profile }: StoryModalProps) =>
                           size="sm" 
                           className="h-12 w-12 rounded-full"
                           onClick={() => {
-                            if (audioRef.current) audioRef.current.play();
+                            if (audioRef.current) {
+                              if (audioRef.current.paused) {
+                                audioRef.current.play().catch(err => console.error("Error playing audio:", err));
+                              } else {
+                                audioRef.current.pause();
+                              }
+                            }
                           }}
                         >
                           <Mic className="h-6 w-6 text-primary" />
@@ -274,11 +355,26 @@ const StoryModal = ({ isOpen, onClose, onSuccess, profile }: StoryModalProps) =>
                       ref={videoRef} 
                       className="w-full aspect-video object-cover bg-gray-100 dark:bg-gray-800 rounded-lg"
                       playsInline
+                      muted={!recordingComplete || isMuted}
+                      controls={recordingComplete}
                     />
                     
                     {isRecording && (
                       <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs flex items-center">
                         <span className="animate-pulse mr-1">●</span> Recording
+                      </div>
+                    )}
+                    
+                    {recordingComplete && (
+                      <div className="absolute top-2 right-2 flex space-x-1">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          className="h-8 w-8 p-0 rounded-full bg-black/50 text-white hover:bg-black/70"
+                          onClick={toggleMute}
+                        >
+                          {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                        </Button>
                       </div>
                     )}
                   </div>
@@ -314,7 +410,11 @@ const StoryModal = ({ isOpen, onClose, onSuccess, profile }: StoryModalProps) =>
                     size="sm"
                     className="rounded-full"
                   >
-                    <Mic className="h-4 w-4 mr-2" />
+                    {mediaType === "voice" ? (
+                      <Mic className="h-4 w-4 mr-2" />
+                    ) : (
+                      <Video className="h-4 w-4 mr-2" />
+                    )}
                     Start Recording
                   </Button>
                 )}

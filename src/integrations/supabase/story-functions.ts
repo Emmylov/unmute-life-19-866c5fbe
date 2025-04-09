@@ -31,6 +31,8 @@ export const fetchStoriesWithProfiles = async (): Promise<Story[]> => {
     if (storiesError) throw storiesError;
     if (!storiesData || storiesData.length === 0) return [];
     
+    console.log("Fetched stories:", storiesData);
+    
     // Get unique user IDs
     const userIds = [...new Set(storiesData.map((story: any) => story.user_id))] as string[];
     
@@ -65,11 +67,23 @@ export const fetchStoriesWithProfiles = async (): Promise<Story[]> => {
 export const createStory = async (
   userId: string,
   mediaUrl: string,
-  caption?: string,
-  mood?: string,
-  storagePath?: string
+  caption?: string | null,
+  mood?: string | null,
+  storagePath?: string | null
 ): Promise<string> => {
   try {
+    console.log("Creating story with: ", { userId, mediaUrl, caption, mood, storagePath });
+    
+    // Check if the media URL contains identifiable media types
+    const isVideo = mediaUrl.includes("video") || 
+                   mediaUrl.match(/\.(mp4|webm|mov|mkv)$/i) !== null;
+    
+    const isAudio = mediaUrl.includes("audio") || 
+                   mediaUrl.match(/\.(mp3|wav|ogg|m4a|aac)$/i) !== null ||
+                   (!isVideo && mediaUrl.endsWith(".webm"));
+                   
+    console.log("Media type detection:", { isVideo, isAudio });
+    
     const { data, error } = await (supabase
       .from('stories') as any)
       .insert({
@@ -83,6 +97,8 @@ export const createStory = async (
       .single();
     
     if (error) throw error;
+    
+    console.log("Story created successfully with ID:", data.id);
     return data.id;
   } catch (error) {
     console.error("Error in createStory:", error);

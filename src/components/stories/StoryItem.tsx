@@ -1,10 +1,10 @@
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { formatDistanceToNow } from "date-fns";
-import { Play, Pause, Heart } from "lucide-react";
+import { Play, Pause, Heart, Volume2, VolumeX } from "lucide-react";
 
 interface StoryItemProps {
   story: {
@@ -27,14 +27,50 @@ const StoryItem = ({ story, onClick }: StoryItemProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [liked, setLiked] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
   
-  const isAudio = story.media_url?.includes("audio") || !story.media_url?.includes("video");
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  
+  // Determine the media type based on the URL or file extension
+  const isAudio = story.media_url?.includes("audio") || 
+                 (story.media_url?.match(/\.(mp3|wav|ogg|m4a|aac)$/i) !== null);
+  const isVideo = story.media_url?.includes("video") || 
+                 (story.media_url?.match(/\.(mp4|webm|mov|mkv)$/i) !== null);
+                 
+  const mediaType = isAudio ? "audio" : isVideo ? "video" : "unknown";
+  
   const profile = story.profiles;
   const displayName = profile?.full_name || profile?.username || "User";
+  
+  useEffect(() => {
+    // Reset play state when dialog closes
+    if (!isDialogOpen) {
+      setIsPlaying(false);
+      if (audioRef.current) audioRef.current.pause();
+      if (videoRef.current) videoRef.current.pause();
+    }
+  }, [isDialogOpen]);
   
   const handlePlayPause = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsPlaying(!isPlaying);
+    
+    if (isDialogOpen) {
+      if (mediaType === "audio" && audioRef.current) {
+        if (isPlaying) {
+          audioRef.current.pause();
+        } else {
+          audioRef.current.play().catch(err => console.error("Error playing audio:", err));
+        }
+      } else if (mediaType === "video" && videoRef.current) {
+        if (isPlaying) {
+          videoRef.current.pause();
+        } else {
+          videoRef.current.play().catch(err => console.error("Error playing video:", err));
+        }
+      }
+    }
   };
   
   const handleLike = (e: React.MouseEvent) => {
@@ -44,6 +80,14 @@ const StoryItem = ({ story, onClick }: StoryItemProps) => {
   
   const toggleDialog = () => {
     setIsDialogOpen(!isDialogOpen);
+  };
+  
+  const toggleMute = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsMuted(!isMuted);
+    if (videoRef.current) {
+      videoRef.current.muted = !isMuted;
+    }
   };
   
   return (
@@ -85,6 +129,7 @@ const StoryItem = ({ story, onClick }: StoryItemProps) => {
       
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-md p-0 overflow-hidden">
+          <DialogTitle className="sr-only">Story</DialogTitle>
           <div className="flex flex-col h-[60vh]">
             <div className="p-4 border-b">
               <div className="flex items-center gap-3">
@@ -105,12 +150,21 @@ const StoryItem = ({ story, onClick }: StoryItemProps) => {
             </div>
             
             <div className="flex-grow flex items-center justify-center bg-gray-100 dark:bg-gray-900">
-              {isAudio ? (
+              {mediaType === "audio" ? (
                 <div className="w-full h-full flex flex-col items-center justify-center">
                   <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center">
                     <Button
                       className="h-16 w-16 rounded-full"
-                      onClick={() => setIsPlaying(!isPlaying)}
+                      onClick={() => {
+                        setIsPlaying(!isPlaying);
+                        if (audioRef.current) {
+                          if (isPlaying) {
+                            audioRef.current.pause();
+                          } else {
+                            audioRef.current.play().catch(err => console.error("Error playing audio:", err));
+                          }
+                        }
+                      }}
                     >
                       {isPlaying ? (
                         <Pause className="h-8 w-8" />
@@ -121,10 +175,12 @@ const StoryItem = ({ story, onClick }: StoryItemProps) => {
                   </div>
                   
                   <audio
+                    ref={audioRef}
                     src={story.media_url}
                     className="hidden"
                     controls
-                    autoPlay={isPlaying}
+                    onPlay={() => setIsPlaying(true)}
+                    onPause={() => setIsPlaying(false)}
                     onEnded={() => setIsPlaying(false)}
                   />
                   
@@ -132,23 +188,49 @@ const StoryItem = ({ story, onClick }: StoryItemProps) => {
                     <p className="text-center mt-8 max-w-xs px-4">{story.caption}</p>
                   )}
                 </div>
-              ) : (
+              ) : mediaType === "video" ? (
                 <div className="w-full h-full relative">
                   <video 
+                    ref={videoRef}
                     src={story.media_url}
                     className="w-full h-full object-contain"
-                    controls
-                    autoPlay={isPlaying}
+                    playsInline
+                    muted={isMuted}
                     onPlay={() => setIsPlaying(true)}
                     onPause={() => setIsPlaying(false)}
                     onEnded={() => setIsPlaying(false)}
+                    onClick={handlePlayPause}
                   />
+                  
+                  <div className="absolute top-4 right-4 space-x-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="opacity-70 hover:opacity-100"
+                      onClick={toggleMute}
+                    >
+                      {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                    </Button>
+                    
+                    <Button 
+                      variant="secondary"
+                      size="sm"
+                      className="opacity-70 hover:opacity-100"
+                      onClick={handlePlayPause}
+                    >
+                      {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                    </Button>
+                  </div>
                   
                   {story.caption && (
                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
                       <p className="text-white text-center">{story.caption}</p>
                     </div>
                   )}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center p-4">
+                  <p className="text-gray-500">Media type not supported</p>
                 </div>
               )}
             </div>
