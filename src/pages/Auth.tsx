@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -87,7 +88,7 @@ const Auth = () => {
           variant: "default"
         });
         
-        // Redirect to the onboarding page
+        // Redirect new users to the onboarding page
         navigate("/onboarding");
       }
     } catch (error: any) {
@@ -130,7 +131,7 @@ const Auth = () => {
           variant: "default"
         });
         
-        // Immediately redirect to home page for returning users
+        // Always redirect returning users directly to home page
         navigate("/home");
       }
     } catch (error: any) {

@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -67,6 +68,7 @@ const AccountCreationStep = ({ onNext }: AccountCreationStepProps) => {
         description: "Successfully signed in",
       });
       
+      // Redirect existing users directly to home
       navigate("/home");
     } catch (error: any) {
       toast({
