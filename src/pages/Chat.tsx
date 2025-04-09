@@ -15,7 +15,7 @@ import TypingIndicator from "@/components/chat/TypingIndicator";
 import ChatHeader from "@/components/chat/ChatHeader";
 import ChatInput from "@/components/chat/ChatInput";
 import { useToast } from "@/hooks/use-toast";
-import { useMediaQuery } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { ArrowLeft, MessageSquare, Users, Settings, Menu, Send } from "lucide-react";
 
 interface Message {
@@ -46,7 +46,7 @@ const Chat = () => {
   const [loading, setLoading] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
-  const isMobile = useMediaQuery("(max-width: 768px)");
+  const isMobile = useIsMobile();
   const [moodStatus, setMoodStatus] = useState<string>("chill");
 
   // Check authenticated user
