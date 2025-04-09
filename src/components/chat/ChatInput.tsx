@@ -4,16 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Send, Smile, Paperclip, Mic } from "lucide-react";
-
-interface ChatInputProps {
-  message: string;
-  setMessage: (message: string) => void;
-  handleSendMessage: (e: React.FormEvent) => void;
-}
+import { useChatContext } from "@/contexts/ChatContext";
 
 const emojis = ["😀", "😂", "❤️", "👍", "🔥", "🎉", "🙌", "👀", "💯", "✨"];
 
-const ChatInput = ({ message, setMessage, handleSendMessage }: ChatInputProps) => {
+const ChatInput = () => {
+  const { message, setMessage, handleSendMessage } = useChatContext();
   const [isRecording, setIsRecording] = useState(false);
 
   // Handle emoji selection
