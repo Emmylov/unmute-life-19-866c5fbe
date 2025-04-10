@@ -1,5 +1,5 @@
 
-import { supabase, STORAGE_BUCKETS } from "./client";
+import { supabase, STORAGE_BUCKETS, SUPABASE_URL, SUPABASE_KEY } from "./client";
 import { v4 as uuidv4 } from "uuid";
 
 // Type definitions for profile reactions
@@ -93,21 +93,33 @@ export const addProfileReaction = async (
 ) => {
   try {
     // First check if the table exists
-    const { data: tableExists } = await supabase
-      .rpc('check_table_exists', { table_name: 'profile_reactions' });
+    const tableExistsResponse = await fetch(
+      `${SUPABASE_URL}/rest/v1/rpc/check_table_exists`,
+      {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ table_name: 'profile_reactions' })
+      }
+    );
+    
+    const tableExistsData = await tableExistsResponse.json();
       
     // If the table doesn't exist yet, we'll just log it
-    if (!tableExists) {
+    if (!tableExistsData) {
       console.log("profile_reactions table doesn't exist yet");
       return null;
     }
     
     // Using raw API approach bypassing TypeScript checking
-    const response = await fetch(`${supabase.supabaseUrl}/rest/v1/profile_reactions`, {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/profile_reactions`, {
       method: 'POST',
       headers: {
-        'apikey': supabase.supabaseKey,
-        'Authorization': `Bearer ${supabase.supabaseKey}`,
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
         'Content-Type': 'application/json',
         'Prefer': 'return=representation'
       },
@@ -126,12 +138,16 @@ export const addProfileReaction = async (
     }
     
     // Increment notification count for recipient
-    await supabase
-      .from('profiles')
-      .update({
-        notification_count: supabase.rpc('increment', { inc_amount: 1 }) as any
-      })
-      .eq('id', toUserId);
+    try {
+      await supabase
+        .from('profiles')
+        .update({
+          notification_count: supabase.rpc('increment', { inc_amount: 1 })
+        })
+        .eq('id', toUserId);
+    } catch (incrementError) {
+      console.error("Error incrementing notification count:", incrementError);
+    }
     
     return data?.[0] || null;
   } catch (error) {
@@ -144,21 +160,33 @@ export const addProfileReaction = async (
 export const getProfileReactions = async (userId: string) => {
   try {
     // First check if the table exists
-    const { data: tableExists } = await supabase
-      .rpc('check_table_exists', { table_name: 'profile_reactions' });
+    const tableExistsResponse = await fetch(
+      `${SUPABASE_URL}/rest/v1/rpc/check_table_exists`,
+      {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ table_name: 'profile_reactions' })
+      }
+    );
+    
+    const tableExistsData = await tableExistsResponse.json();
       
     // If the table doesn't exist yet, return empty array
-    if (!tableExists) {
+    if (!tableExistsData) {
       return [];
     }
     
     // Using raw API approach to query the profile_reactions table
     const response = await fetch(
-      `${supabase.supabaseUrl}/rest/v1/profile_reactions?select=*,sender:profiles!from_user_id(username,avatar)&to_user_id=eq.${userId}&order=created_at.desc&limit=20`, 
+      `${SUPABASE_URL}/rest/v1/profile_reactions?select=*,sender:profiles!from_user_id(username,avatar)&to_user_id=eq.${userId}&order=created_at.desc&limit=20`, 
       {
         headers: {
-          'apikey': supabase.supabaseKey,
-          'Authorization': `Bearer ${supabase.supabaseKey}`
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`
         }
       }
     );
@@ -199,10 +227,14 @@ export const uploadProfileAvatar = async (userId: string, file: File) => {
     if (uploadError) throw uploadError;
     
     // Get the URL
-    const avatarUrl = getPublicUrl(STORAGE_BUCKETS.AVATARS, filePath);
+    const { data } = supabase.storage
+      .from(STORAGE_BUCKETS.AVATARS)
+      .getPublicUrl(filePath);
+      
+    const avatarUrl = data.publicUrl;
     
     // Update the profile
-    const { data, error } = await supabase
+    const { data: profileData, error } = await supabase
       .from('profiles')
       .update({ avatar: avatarUrl })
       .eq('id', userId)
@@ -211,7 +243,7 @@ export const uploadProfileAvatar = async (userId: string, file: File) => {
     
     if (error) throw error;
     
-    return data.avatar;
+    return profileData.avatar;
   } catch (error) {
     console.error("Error uploading avatar:", error);
     throw error;
@@ -222,22 +254,34 @@ export const uploadProfileAvatar = async (userId: string, file: File) => {
 export const toggleFollowUser = async (followerId: string, targetId: string) => {
   try {
     // First check if the table exists
-    const { data: tableExists } = await supabase
-      .rpc('check_table_exists', { table_name: 'user_follows' });
+    const tableExistsResponse = await fetch(
+      `${SUPABASE_URL}/rest/v1/rpc/check_table_exists`,
+      {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ table_name: 'user_follows' })
+      }
+    );
+    
+    const tableExistsData = await tableExistsResponse.json();
       
     // If the table doesn't exist yet, we'll just log it
-    if (!tableExists) {
+    if (!tableExistsData) {
       console.log("user_follows table doesn't exist yet");
       return false;
     }
     
     // Check if already following using raw fetch API
     const checkResponse = await fetch(
-      `${supabase.supabaseUrl}/rest/v1/user_follows?follower_id=eq.${followerId}&following_id=eq.${targetId}`,
+      `${SUPABASE_URL}/rest/v1/user_follows?follower_id=eq.${followerId}&following_id=eq.${targetId}`,
       {
         headers: {
-          'apikey': supabase.supabaseKey,
-          'Authorization': `Bearer ${supabase.supabaseKey}`
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`
         }
       }
     );
@@ -248,12 +292,12 @@ export const toggleFollowUser = async (followerId: string, targetId: string) => 
     if (isFollowing) {
       // Unfollow using raw fetch API
       const deleteResponse = await fetch(
-        `${supabase.supabaseUrl}/rest/v1/user_follows?follower_id=eq.${followerId}&following_id=eq.${targetId}`,
+        `${SUPABASE_URL}/rest/v1/user_follows?follower_id=eq.${followerId}&following_id=eq.${targetId}`,
         {
           method: 'DELETE',
           headers: {
-            'apikey': supabase.supabaseKey,
-            'Authorization': `Bearer ${supabase.supabaseKey}`
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`
           }
         }
       );
@@ -264,30 +308,38 @@ export const toggleFollowUser = async (followerId: string, targetId: string) => 
       }
       
       // Decrement follower/following counts
-      await supabase
-        .from('profiles')
-        .update({ 
-          followers: supabase.rpc('decrement', { dec_amount: 1 }) as any
-        })
-        .eq('id', targetId);
+      try {
+        await supabase
+          .from('profiles')
+          .update({ 
+            followers: supabase.rpc('decrement', { dec_amount: 1 })
+          })
+          .eq('id', targetId);
+      } catch (decrementError) {
+        console.error("Error decrementing followers count:", decrementError);
+      }
       
-      await supabase
-        .from('profiles')
-        .update({ 
-          following: supabase.rpc('decrement', { dec_amount: 1 }) as any
-        })
-        .eq('id', followerId);
+      try {
+        await supabase
+          .from('profiles')
+          .update({ 
+            following: supabase.rpc('decrement', { dec_amount: 1 })
+          })
+          .eq('id', followerId);
+      } catch (decrementError) {
+        console.error("Error decrementing following count:", decrementError);
+      }
       
       return false; // Not following anymore
     } else {
       // Follow using raw fetch API
       const insertResponse = await fetch(
-        `${supabase.supabaseUrl}/rest/v1/user_follows`,
+        `${SUPABASE_URL}/rest/v1/user_follows`,
         {
           method: 'POST',
           headers: {
-            'apikey': supabase.supabaseKey,
-            'Authorization': `Bearer ${supabase.supabaseKey}`,
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
             'Content-Type': 'application/json',
             'Prefer': 'return=minimal'
           },
@@ -304,27 +356,39 @@ export const toggleFollowUser = async (followerId: string, targetId: string) => 
       }
       
       // Increment follower/following counts
-      await supabase
-        .from('profiles')
-        .update({ 
-          followers: supabase.rpc('increment', { inc_amount: 1 }) as any
-        })
-        .eq('id', targetId);
+      try {
+        await supabase
+          .from('profiles')
+          .update({ 
+            followers: supabase.rpc('increment', { inc_amount: 1 })
+          })
+          .eq('id', targetId);
+      } catch (incrementError) {
+        console.error("Error incrementing followers count:", incrementError);
+      }
       
-      await supabase
-        .from('profiles')
-        .update({ 
-          following: supabase.rpc('increment', { inc_amount: 1 }) as any
-        })
-        .eq('id', followerId);
+      try {
+        await supabase
+          .from('profiles')
+          .update({ 
+            following: supabase.rpc('increment', { inc_amount: 1 })
+          })
+          .eq('id', followerId);
+      } catch (incrementError) {
+        console.error("Error incrementing following count:", incrementError);
+      }
       
       // Create notification for the target user
-      await supabase
-        .from('profiles')
-        .update({ 
-          notification_count: supabase.rpc('increment', { inc_amount: 1 }) as any
-        })
-        .eq('id', targetId);
+      try {
+        await supabase
+          .from('profiles')
+          .update({ 
+            notification_count: supabase.rpc('increment', { inc_amount: 1 })
+          })
+          .eq('id', targetId);
+      } catch (incrementError) {
+        console.error("Error incrementing notification count:", incrementError);
+      }
       
       return true; // Now following
     }
@@ -344,12 +408,12 @@ const getPublicUrl = (bucket: string, path: string): string => {
 export const checkIfTableExists = async (tableName: string): Promise<boolean> => {
   try {
     const response = await fetch(
-      `${supabase.supabaseUrl}/rest/v1/rpc/check_table_exists`,
+      `${SUPABASE_URL}/rest/v1/rpc/check_table_exists`,
       {
         method: 'POST',
         headers: {
-          'apikey': supabase.supabaseKey,
-          'Authorization': `Bearer ${supabase.supabaseKey}`,
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ table_name: tableName })

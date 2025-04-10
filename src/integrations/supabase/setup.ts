@@ -1,5 +1,5 @@
 
-import { supabase } from './client';
+import { supabase, SUPABASE_URL, SUPABASE_KEY } from './client';
 
 /**
  * Creates helper database functions in Supabase.
@@ -9,12 +9,12 @@ export const setupSupabaseFunctions = async () => {
   try {
     // Check if check_table_exists function exists using raw fetch API
     const checkFunctionResponse = await fetch(
-      `${supabase.supabaseUrl}/rest/v1/rpc/check_table_exists`,
+      `${SUPABASE_URL}/rest/v1/rpc/check_table_exists`,
       {
         method: 'POST',
         headers: {
-          'apikey': supabase.supabaseKey,
-          'Authorization': `Bearer ${supabase.supabaseKey}`,
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ table_name: 'pg_proc' })
@@ -27,12 +27,12 @@ export const setupSupabaseFunctions = async () => {
       
       // Try to create the function through RPC
       const createFunctionResponse = await fetch(
-        `${supabase.supabaseUrl}/rest/v1/rpc/create_check_table_exists_function`,
+        `${SUPABASE_URL}/rest/v1/rpc/create_check_table_exists_function`,
         {
           method: 'POST',
           headers: {
-            'apikey': supabase.supabaseKey,
-            'Authorization': `Bearer ${supabase.supabaseKey}`,
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({})
@@ -68,23 +68,27 @@ export const setupSupabaseFunctions = async () => {
           $$;
         `;
         
-        // Execute raw SQL using the REST API
-        const rawSqlResponse = await fetch(
-          `${supabase.supabaseUrl}/rest/v1/rpc/create_raw_sql`,
-          {
-            method: 'POST',
-            headers: {
-              'apikey': supabase.supabaseKey,
-              'Authorization': `Bearer ${supabase.supabaseKey}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ sql_query: sqlQuery })
+        try {
+          // Execute raw SQL using the REST API
+          const rawSqlResponse = await fetch(
+            `${SUPABASE_URL}/rest/v1/rpc/create_raw_sql`,
+            {
+              method: 'POST',
+              headers: {
+                'apikey': SUPABASE_KEY,
+                'Authorization': `Bearer ${SUPABASE_KEY}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ sql_query: sqlQuery })
+            }
+          );
+          
+          if (!rawSqlResponse.ok) {
+            console.error('Error creating functions:', await rawSqlResponse.text());
+            throw new Error('Failed to create database functions');
           }
-        );
-        
-        if (!rawSqlResponse.ok) {
-          console.error('Error creating functions:', await rawSqlResponse.text());
-          throw new Error('Failed to create database functions');
+        } catch (sqlError) {
+          console.error('Error executing raw SQL:', sqlError);
         }
       }
     }
