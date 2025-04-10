@@ -126,11 +126,15 @@ export const addProfileReaction = async (
     
     // Increment notification count for recipient
     try {
-      // Instead of directly assigning the query result, we execute it separately
-      await supabase
+      // Execute the update separately to avoid type errors
+      const { error } = await supabase
         .from('profiles')
-        .update({ notification_count: supabase.rpc('increment', { inc_amount: 1 }) })
+        .update({ notification_count: supabase.rpc('increment', { inc_amount: 1 }) as any })
         .eq('id', toUserId);
+        
+      if (error) {
+        console.error("Error incrementing notification count:", error);
+      }
     } catch (incrementError) {
       console.error("Error incrementing notification count:", incrementError);
     }
@@ -267,25 +271,29 @@ export const toggleFollowUser = async (followerId: string, targetId: string) => 
         throw new Error("Failed to unfollow user");
       }
       
-      // Decrement follower/following counts - execute separately, don't assign
+      // Decrement follower/following counts - execute separately
       try {
-        await supabase
+        const { error: followerError } = await supabase
           .from('profiles')
-          .update({ 
-            followers: supabase.rpc('decrement', { dec_amount: 1 })
-          })
+          .update({ followers: supabase.rpc('decrement', { dec_amount: 1 }) as any })
           .eq('id', targetId);
+          
+        if (followerError) {
+          console.error("Error decrementing followers count:", followerError);
+        }
       } catch (decrementError) {
         console.error("Error decrementing followers count:", decrementError);
       }
       
       try {
-        await supabase
+        const { error: followingError } = await supabase
           .from('profiles')
-          .update({ 
-            following: supabase.rpc('decrement', { dec_amount: 1 })
-          })
+          .update({ following: supabase.rpc('decrement', { dec_amount: 1 }) as any })
           .eq('id', followerId);
+          
+        if (followingError) {
+          console.error("Error decrementing following count:", followingError);
+        }
       } catch (decrementError) {
         console.error("Error decrementing following count:", decrementError);
       }
@@ -315,37 +323,43 @@ export const toggleFollowUser = async (followerId: string, targetId: string) => 
         throw new Error("Failed to follow user");
       }
       
-      // Increment follower/following counts - execute separately, don't assign
+      // Increment follower/following counts - execute separately
       try {
-        await supabase
+        const { error: followerError } = await supabase
           .from('profiles')
-          .update({ 
-            followers: supabase.rpc('increment', { inc_amount: 1 })
-          })
+          .update({ followers: supabase.rpc('increment', { inc_amount: 1 }) as any })
           .eq('id', targetId);
+          
+        if (followerError) {
+          console.error("Error incrementing followers count:", followerError);
+        }
       } catch (incrementError) {
         console.error("Error incrementing followers count:", incrementError);
       }
       
       try {
-        await supabase
+        const { error: followingError } = await supabase
           .from('profiles')
-          .update({ 
-            following: supabase.rpc('increment', { inc_amount: 1 })
-          })
+          .update({ following: supabase.rpc('increment', { inc_amount: 1 }) as any })
           .eq('id', followerId);
+          
+        if (followingError) {
+          console.error("Error incrementing following count:", followingError);
+        }
       } catch (incrementError) {
         console.error("Error incrementing following count:", incrementError);
       }
       
       // Create notification for the target user
       try {
-        await supabase
+        const { error: notificationError } = await supabase
           .from('profiles')
-          .update({ 
-            notification_count: supabase.rpc('increment', { inc_amount: 1 })
-          })
+          .update({ notification_count: supabase.rpc('increment', { inc_amount: 1 }) as any })
           .eq('id', targetId);
+          
+        if (notificationError) {
+          console.error("Error incrementing notification count:", notificationError);
+        }
       } catch (incrementError) {
         console.error("Error incrementing notification count:", incrementError);
       }
