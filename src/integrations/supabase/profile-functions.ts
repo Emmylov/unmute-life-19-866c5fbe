@@ -126,14 +126,25 @@ export const addProfileReaction = async (
     
     // Increment notification count for recipient
     try {
-      // Execute the update separately to avoid type errors
-      const { error } = await supabase
-        .from('profiles')
-        .update({ notification_count: supabase.rpc('increment', { inc_amount: 1 }) as any })
-        .eq('id', toUserId);
+      // Using raw API for incrementing notification count
+      const incrementResponse = await fetch(
+        `${SUPABASE_URL}/rest/v1/profiles?id=eq.${toUserId}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({
+            notification_count: supabase.rpc('increment', { inc_amount: 1 }) as any
+          })
+        }
+      );
         
-      if (error) {
-        console.error("Error incrementing notification count:", error);
+      if (!incrementResponse.ok) {
+        console.error("Error incrementing notification count");
       }
     } catch (incrementError) {
       console.error("Error incrementing notification count:", incrementError);
@@ -271,28 +282,51 @@ export const toggleFollowUser = async (followerId: string, targetId: string) => 
         throw new Error("Failed to unfollow user");
       }
       
-      // Decrement follower/following counts - execute separately
+      // Decrement follower count using raw fetch API
       try {
-        const { error: followerError } = await supabase
-          .from('profiles')
-          .update({ followers: supabase.rpc('decrement', { dec_amount: 1 }) as any })
-          .eq('id', targetId);
+        const decrementFollowerResponse = await fetch(
+          `${SUPABASE_URL}/rest/v1/profiles?id=eq.${targetId}`,
+          {
+            method: 'PATCH',
+            headers: {
+              'apikey': SUPABASE_KEY,
+              'Authorization': `Bearer ${SUPABASE_KEY}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=minimal'
+            },
+            body: JSON.stringify({
+              followers: supabase.rpc('decrement', { dec_amount: 1 }) as any
+            })
+          }
+        );
           
-        if (followerError) {
-          console.error("Error decrementing followers count:", followerError);
+        if (!decrementFollowerResponse.ok) {
+          console.error("Error decrementing followers count");
         }
       } catch (decrementError) {
         console.error("Error decrementing followers count:", decrementError);
       }
       
+      // Decrement following count using raw fetch API
       try {
-        const { error: followingError } = await supabase
-          .from('profiles')
-          .update({ following: supabase.rpc('decrement', { dec_amount: 1 }) as any })
-          .eq('id', followerId);
+        const decrementFollowingResponse = await fetch(
+          `${SUPABASE_URL}/rest/v1/profiles?id=eq.${followerId}`,
+          {
+            method: 'PATCH',
+            headers: {
+              'apikey': SUPABASE_KEY,
+              'Authorization': `Bearer ${SUPABASE_KEY}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=minimal'
+            },
+            body: JSON.stringify({
+              following: supabase.rpc('decrement', { dec_amount: 1 }) as any
+            })
+          }
+        );
           
-        if (followingError) {
-          console.error("Error decrementing following count:", followingError);
+        if (!decrementFollowingResponse.ok) {
+          console.error("Error decrementing following count");
         }
       } catch (decrementError) {
         console.error("Error decrementing following count:", decrementError);
@@ -323,42 +357,76 @@ export const toggleFollowUser = async (followerId: string, targetId: string) => 
         throw new Error("Failed to follow user");
       }
       
-      // Increment follower/following counts - execute separately
+      // Increment follower count using raw fetch API
       try {
-        const { error: followerError } = await supabase
-          .from('profiles')
-          .update({ followers: supabase.rpc('increment', { inc_amount: 1 }) as any })
-          .eq('id', targetId);
+        const incrementFollowerResponse = await fetch(
+          `${SUPABASE_URL}/rest/v1/profiles?id=eq.${targetId}`,
+          {
+            method: 'PATCH',
+            headers: {
+              'apikey': SUPABASE_KEY,
+              'Authorization': `Bearer ${SUPABASE_KEY}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=minimal'
+            },
+            body: JSON.stringify({
+              followers: supabase.rpc('increment', { inc_amount: 1 }) as any
+            })
+          }
+        );
           
-        if (followerError) {
-          console.error("Error incrementing followers count:", followerError);
+        if (!incrementFollowerResponse.ok) {
+          console.error("Error incrementing followers count");
         }
       } catch (incrementError) {
         console.error("Error incrementing followers count:", incrementError);
       }
       
+      // Increment following count using raw fetch API
       try {
-        const { error: followingError } = await supabase
-          .from('profiles')
-          .update({ following: supabase.rpc('increment', { inc_amount: 1 }) as any })
-          .eq('id', followerId);
+        const incrementFollowingResponse = await fetch(
+          `${SUPABASE_URL}/rest/v1/profiles?id=eq.${followerId}`,
+          {
+            method: 'PATCH',
+            headers: {
+              'apikey': SUPABASE_KEY,
+              'Authorization': `Bearer ${SUPABASE_KEY}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=minimal'
+            },
+            body: JSON.stringify({
+              following: supabase.rpc('increment', { inc_amount: 1 }) as any
+            })
+          }
+        );
           
-        if (followingError) {
-          console.error("Error incrementing following count:", followingError);
+        if (!incrementFollowingResponse.ok) {
+          console.error("Error incrementing following count");
         }
       } catch (incrementError) {
         console.error("Error incrementing following count:", incrementError);
       }
       
-      // Create notification for the target user
+      // Create notification for the target user using raw fetch API
       try {
-        const { error: notificationError } = await supabase
-          .from('profiles')
-          .update({ notification_count: supabase.rpc('increment', { inc_amount: 1 }) as any })
-          .eq('id', targetId);
+        const notificationResponse = await fetch(
+          `${SUPABASE_URL}/rest/v1/profiles?id=eq.${targetId}`,
+          {
+            method: 'PATCH',
+            headers: {
+              'apikey': SUPABASE_KEY,
+              'Authorization': `Bearer ${SUPABASE_KEY}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=minimal'
+            },
+            body: JSON.stringify({
+              notification_count: supabase.rpc('increment', { inc_amount: 1 }) as any
+            })
+          }
+        );
           
-        if (notificationError) {
-          console.error("Error incrementing notification count:", notificationError);
+        if (!notificationResponse.ok) {
+          console.error("Error incrementing notification count");
         }
       } catch (incrementError) {
         console.error("Error incrementing notification count:", incrementError);
