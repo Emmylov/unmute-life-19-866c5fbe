@@ -7,54 +7,86 @@ import { supabase } from './client';
  */
 export const setupSupabaseFunctions = async () => {
   try {
-    // Use a direct query with SQL since pg_proc is not in the typed schema
-    const { data, error } = await supabase
-      .rpc('check_table_exists', { table_name: 'pg_proc' })
-      .then(() => ({ data: true, error: null }))
-      .catch(() => {
-        console.log('Creating check_table_exists function...');
+    // Check if check_table_exists function exists using raw fetch API
+    const checkFunctionResponse = await fetch(
+      `${supabase.supabaseUrl}/rest/v1/rpc/check_table_exists`,
+      {
+        method: 'POST',
+        headers: {
+          'apikey': supabase.supabaseKey,
+          'Authorization': `Bearer ${supabase.supabaseKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ table_name: 'pg_proc' })
+      }
+    );
+    
+    // If the function doesn't exist yet, create it
+    if (!checkFunctionResponse.ok) {
+      console.log('Creating check_table_exists function...');
+      
+      // Try to create the function through RPC
+      const createFunctionResponse = await fetch(
+        `${supabase.supabaseUrl}/rest/v1/rpc/create_check_table_exists_function`,
+        {
+          method: 'POST',
+          headers: {
+            'apikey': supabase.supabaseKey,
+            'Authorization': `Bearer ${supabase.supabaseKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({})
+        }
+      );
+      
+      // If the RPC doesn't exist yet, create the functions using raw SQL
+      if (!createFunctionResponse.ok) {
+        // Create raw SQL execution function
+        const sqlQuery = `
+          CREATE OR REPLACE FUNCTION public.check_table_exists(table_name TEXT)
+          RETURNS BOOLEAN
+          LANGUAGE plpgsql
+          SECURITY DEFINER
+          AS $$
+          BEGIN
+            RETURN EXISTS (
+              SELECT FROM information_schema.tables 
+              WHERE table_schema = 'public'
+              AND table_name = $1
+            );
+          END;
+          $$;
+          
+          CREATE OR REPLACE FUNCTION public.create_check_table_exists_function()
+          RETURNS BOOLEAN
+          LANGUAGE plpgsql
+          SECURITY DEFINER
+          AS $$
+          BEGIN
+            RETURN TRUE;
+          END;
+          $$;
+        `;
         
-        // Use a direct query approach since supabase.sql is not available in the client
-        return supabase.rpc('create_check_table_exists_function')
-          .then(() => ({ data: true, error: null }))
-          .catch(() => {
-            // If the RPC doesn't exist yet, create the functions manually
-            return supabase.rpc('create_raw_sql' as any, { 
-              sql_query: `
-                CREATE OR REPLACE FUNCTION public.check_table_exists(table_name TEXT)
-                RETURNS BOOLEAN
-                LANGUAGE plpgsql
-                SECURITY DEFINER
-                AS $$
-                BEGIN
-                  RETURN EXISTS (
-                    SELECT FROM information_schema.tables 
-                    WHERE table_schema = 'public'
-                    AND table_name = $1
-                  );
-                END;
-                $$;
-                
-                CREATE OR REPLACE FUNCTION public.create_check_table_exists_function()
-                RETURNS BOOLEAN
-                LANGUAGE plpgsql
-                SECURITY DEFINER
-                AS $$
-                BEGIN
-                  RETURN TRUE;
-                END;
-                $$;
-              `
-            }).then(() => ({ data: true, error: null }))
-            .catch((err) => {
-              console.error('Error creating functions:', err);
-              return ({ data: false, error: err });
-            });
-          });
-      });
-
-    if (error) {
-      console.error('Error setting up Supabase functions:', error);
+        // Execute raw SQL using the REST API
+        const rawSqlResponse = await fetch(
+          `${supabase.supabaseUrl}/rest/v1/rpc/create_raw_sql`,
+          {
+            method: 'POST',
+            headers: {
+              'apikey': supabase.supabaseKey,
+              'Authorization': `Bearer ${supabase.supabaseKey}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ sql_query: sqlQuery })
+          }
+        );
+        
+        if (!rawSqlResponse.ok) {
+          console.error('Error creating functions:', await rawSqlResponse.text());
+          throw new Error('Failed to create database functions');
+        }
+      }
     }
   } catch (error) {
     console.error('Error in setupSupabaseFunctions:', error);

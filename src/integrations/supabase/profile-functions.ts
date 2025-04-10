@@ -102,23 +102,33 @@ export const addProfileReaction = async (
       return null;
     }
     
-    // Using raw REST API to bypass type checking
-    // This avoids TypeScript errors since the table might not be in the generated types yet
-    const { data, error } = await (supabase as any)
-      .from('profile_reactions')
-      .insert({
+    // Using raw API approach bypassing TypeScript checking
+    const response = await fetch(`${supabase.supabaseUrl}/rest/v1/profile_reactions`, {
+      method: 'POST',
+      headers: {
+        'apikey': supabase.supabaseKey,
+        'Authorization': `Bearer ${supabase.supabaseKey}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify({
         from_user_id: fromUserId,
         to_user_id: toUserId,
         emoji: emoji
       })
-      .select();
+    });
     
-    if (error) throw error;
+    const data = await response.json();
+    
+    if (!response.ok) {
+      console.error("Error response from API:", data);
+      throw new Error("Failed to add profile reaction");
+    }
     
     // Increment notification count for recipient
     await supabase
       .from('profiles')
-      .update({ 
+      .update({
         notification_count: supabase.rpc('increment', { inc_amount: 1 }) as any
       })
       .eq('id', toUserId);
@@ -142,19 +152,23 @@ export const getProfileReactions = async (userId: string) => {
       return [];
     }
     
-    // Using raw REST API to query the profile_reactions table
-    const { data, error } = await (supabase as any)
-      .from('profile_reactions')
-      .select(`
-        *,
-        sender:profiles!from_user_id(username, avatar)
-      `)
-      .eq('to_user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(20);
+    // Using raw API approach to query the profile_reactions table
+    const response = await fetch(
+      `${supabase.supabaseUrl}/rest/v1/profile_reactions?select=*,sender:profiles!from_user_id(username,avatar)&to_user_id=eq.${userId}&order=created_at.desc&limit=20`, 
+      {
+        headers: {
+          'apikey': supabase.supabaseKey,
+          'Authorization': `Bearer ${supabase.supabaseKey}`
+        }
+      }
+    );
     
-    if (error) throw error;
+    if (!response.ok) {
+      console.error("Error fetching profile reactions");
+      return [];
+    }
     
+    const data = await response.json();
     return data || [];
   } catch (error) {
     console.error("Error getting profile reactions:", error);
@@ -217,22 +231,37 @@ export const toggleFollowUser = async (followerId: string, targetId: string) => 
       return false;
     }
     
-    // Check if already following using raw API
-    const { data: existingFollows } = await (supabase as any)
-      .from('user_follows')
-      .select('follower_id')
-      .eq('follower_id', followerId)
-      .eq('following_id', targetId);
+    // Check if already following using raw fetch API
+    const checkResponse = await fetch(
+      `${supabase.supabaseUrl}/rest/v1/user_follows?follower_id=eq.${followerId}&following_id=eq.${targetId}`,
+      {
+        headers: {
+          'apikey': supabase.supabaseKey,
+          'Authorization': `Bearer ${supabase.supabaseKey}`
+        }
+      }
+    );
     
+    const existingFollows = await checkResponse.json();
     const isFollowing = existingFollows && existingFollows.length > 0;
     
     if (isFollowing) {
-      // Unfollow
-      await (supabase as any)
-        .from('user_follows')
-        .delete()
-        .eq('follower_id', followerId)
-        .eq('following_id', targetId);
+      // Unfollow using raw fetch API
+      const deleteResponse = await fetch(
+        `${supabase.supabaseUrl}/rest/v1/user_follows?follower_id=eq.${followerId}&following_id=eq.${targetId}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'apikey': supabase.supabaseKey,
+            'Authorization': `Bearer ${supabase.supabaseKey}`
+          }
+        }
+      );
+      
+      if (!deleteResponse.ok) {
+        console.error("Failed to unfollow");
+        throw new Error("Failed to unfollow user");
+      }
       
       // Decrement follower/following counts
       await supabase
@@ -251,13 +280,28 @@ export const toggleFollowUser = async (followerId: string, targetId: string) => 
       
       return false; // Not following anymore
     } else {
-      // Follow
-      await (supabase as any)
-        .from('user_follows')
-        .insert({
-          follower_id: followerId,
-          following_id: targetId
-        });
+      // Follow using raw fetch API
+      const insertResponse = await fetch(
+        `${supabase.supabaseUrl}/rest/v1/user_follows`,
+        {
+          method: 'POST',
+          headers: {
+            'apikey': supabase.supabaseKey,
+            'Authorization': `Bearer ${supabase.supabaseKey}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({
+            follower_id: followerId,
+            following_id: targetId
+          })
+        }
+      );
+      
+      if (!insertResponse.ok) {
+        console.error("Failed to follow");
+        throw new Error("Failed to follow user");
+      }
       
       // Increment follower/following counts
       await supabase
@@ -299,7 +343,25 @@ const getPublicUrl = (bucket: string, path: string): string => {
 // Helper function to check if table exists (needed for our code)
 export const checkIfTableExists = async (tableName: string): Promise<boolean> => {
   try {
-    const { data } = await supabase.rpc('check_table_exists', { table_name: tableName });
+    const response = await fetch(
+      `${supabase.supabaseUrl}/rest/v1/rpc/check_table_exists`,
+      {
+        method: 'POST',
+        headers: {
+          'apikey': supabase.supabaseKey,
+          'Authorization': `Bearer ${supabase.supabaseKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ table_name: tableName })
+      }
+    );
+    
+    if (!response.ok) {
+      console.warn(`Could not check if table ${tableName} exists:`, await response.text());
+      return false;
+    }
+    
+    const data = await response.json();
     return !!data;
   } catch (error) {
     console.warn(`Could not check if table ${tableName} exists:`, error);
