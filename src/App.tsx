@@ -17,6 +17,7 @@ import ContentCreator from "./pages/ContentCreator";
 import Explore from "./pages/Explore";
 import Chat from "./pages/Chat";
 import Wellness from "./pages/Wellness";
+import WellnessPlus from "./pages/WellnessPlus";
 
 // Create a QueryClient for React Query
 const queryClient = new QueryClient();
@@ -83,6 +84,7 @@ const App = () => {
               <Route path="/chat" element={<Chat />} />
               <Route path="/chat/:chatId" element={<Chat />} />
               <Route path="/wellness" element={<Wellness />} />
+              <Route path="/wellness/plus" element={<WellnessPlus />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

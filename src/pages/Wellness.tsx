@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Heart, Leaf, Sparkles, Calendar, Play, FileText, Headphones } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Heart, Leaf, Sparkles, Calendar, Play, FileText, Headphones, PlusCircle } from 'lucide-react';
 import { 
   Card, 
   CardContent, 
@@ -27,6 +27,24 @@ const Wellness = () => {
 
   return (
     <div className="container mx-auto px-4 py-10 max-w-7xl">
+      {/* Wellness+ Banner */}
+      <div className="mb-8 p-4 rounded-lg bg-gradient-to-r from-[#F1F0FB] to-[#FDE1D3]/20 border border-[#D6BCFA]/30 flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold mb-1 flex items-center">
+            <PlusCircle className="h-5 w-5 text-[#9b87f5] mr-2" />
+            Introducing Wellness+
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Experience our new emotional & mental wellbeing tools for deeper self-reflection and support.
+          </p>
+        </div>
+        <Link to="/wellness/plus">
+          <Button className="bg-[#9b87f5] hover:bg-[#7E69AB]">
+            Try Wellness+
+          </Button>
+        </Link>
+      </div>
+      
       {/* Welcome Banner */}
       <WelcomeBanner />
       
