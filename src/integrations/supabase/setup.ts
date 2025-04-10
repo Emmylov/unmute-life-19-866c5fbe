@@ -17,7 +17,7 @@ export const setupSupabaseFunctions = async () => {
           'Authorization': `Bearer ${SUPABASE_KEY}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ table_name: 'pg_proc' })
+        body: JSON.stringify({ table_name: "pg_proc" })
       }
     );
     

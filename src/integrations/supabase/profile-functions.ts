@@ -93,23 +93,10 @@ export const addProfileReaction = async (
 ) => {
   try {
     // First check if the table exists
-    const tableExistsResponse = await fetch(
-      `${SUPABASE_URL}/rest/v1/rpc/check_table_exists`,
-      {
-        method: 'POST',
-        headers: {
-          'apikey': SUPABASE_KEY,
-          'Authorization': `Bearer ${SUPABASE_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ table_name: 'profile_reactions' })
-      }
-    );
-    
-    const tableExistsData = await tableExistsResponse.json();
+    const tableExists = await checkIfTableExists("profile_reactions");
       
     // If the table doesn't exist yet, we'll just log it
-    if (!tableExistsData) {
+    if (!tableExists) {
       console.log("profile_reactions table doesn't exist yet");
       return null;
     }
@@ -139,11 +126,10 @@ export const addProfileReaction = async (
     
     // Increment notification count for recipient
     try {
+      // Instead of directly assigning the query result, we execute it separately
       await supabase
         .from('profiles')
-        .update({
-          notification_count: supabase.rpc('increment', { inc_amount: 1 })
-        })
+        .update({ notification_count: supabase.rpc('increment', { inc_amount: 1 }) })
         .eq('id', toUserId);
     } catch (incrementError) {
       console.error("Error incrementing notification count:", incrementError);
@@ -160,23 +146,10 @@ export const addProfileReaction = async (
 export const getProfileReactions = async (userId: string) => {
   try {
     // First check if the table exists
-    const tableExistsResponse = await fetch(
-      `${SUPABASE_URL}/rest/v1/rpc/check_table_exists`,
-      {
-        method: 'POST',
-        headers: {
-          'apikey': SUPABASE_KEY,
-          'Authorization': `Bearer ${SUPABASE_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ table_name: 'profile_reactions' })
-      }
-    );
-    
-    const tableExistsData = await tableExistsResponse.json();
+    const tableExists = await checkIfTableExists("profile_reactions");
       
     // If the table doesn't exist yet, return empty array
-    if (!tableExistsData) {
+    if (!tableExists) {
       return [];
     }
     
@@ -254,23 +227,10 @@ export const uploadProfileAvatar = async (userId: string, file: File) => {
 export const toggleFollowUser = async (followerId: string, targetId: string) => {
   try {
     // First check if the table exists
-    const tableExistsResponse = await fetch(
-      `${SUPABASE_URL}/rest/v1/rpc/check_table_exists`,
-      {
-        method: 'POST',
-        headers: {
-          'apikey': SUPABASE_KEY,
-          'Authorization': `Bearer ${SUPABASE_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ table_name: 'user_follows' })
-      }
-    );
-    
-    const tableExistsData = await tableExistsResponse.json();
+    const tableExists = await checkIfTableExists("user_follows");
       
     // If the table doesn't exist yet, we'll just log it
-    if (!tableExistsData) {
+    if (!tableExists) {
       console.log("user_follows table doesn't exist yet");
       return false;
     }
@@ -307,7 +267,7 @@ export const toggleFollowUser = async (followerId: string, targetId: string) => 
         throw new Error("Failed to unfollow user");
       }
       
-      // Decrement follower/following counts
+      // Decrement follower/following counts - execute separately, don't assign
       try {
         await supabase
           .from('profiles')
@@ -355,7 +315,7 @@ export const toggleFollowUser = async (followerId: string, targetId: string) => 
         throw new Error("Failed to follow user");
       }
       
-      // Increment follower/following counts
+      // Increment follower/following counts - execute separately, don't assign
       try {
         await supabase
           .from('profiles')
