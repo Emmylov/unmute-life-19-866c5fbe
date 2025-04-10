@@ -124,9 +124,8 @@ export const addProfileReaction = async (
       throw new Error("Failed to add profile reaction");
     }
     
-    // Increment notification count for recipient
+    // Increment notification count for recipient - using raw fetch API
     try {
-      // Using raw API for incrementing notification count
       const incrementResponse = await fetch(
         `${SUPABASE_URL}/rest/v1/profiles?id=eq.${toUserId}`,
         {
@@ -138,7 +137,16 @@ export const addProfileReaction = async (
             'Prefer': 'return=minimal'
           },
           body: JSON.stringify({
-            notification_count: supabase.rpc('increment', { inc_amount: 1 }) as any
+            notification_count: async () => {
+              // Get current count
+              const { data } = await supabase
+                .from('profiles')
+                .select('notification_count')
+                .eq('id', toUserId)
+                .single();
+              
+              return (data?.notification_count || 0) + 1;
+            }
           })
         }
       );
@@ -282,51 +290,71 @@ export const toggleFollowUser = async (followerId: string, targetId: string) => 
         throw new Error("Failed to unfollow user");
       }
       
-      // Decrement follower count using raw fetch API
+      // Decrement follower count using raw fetch API - get current count first
       try {
-        const decrementFollowerResponse = await fetch(
-          `${SUPABASE_URL}/rest/v1/profiles?id=eq.${targetId}`,
-          {
-            method: 'PATCH',
-            headers: {
-              'apikey': SUPABASE_KEY,
-              'Authorization': `Bearer ${SUPABASE_KEY}`,
-              'Content-Type': 'application/json',
-              'Prefer': 'return=minimal'
-            },
-            body: JSON.stringify({
-              followers: supabase.rpc('decrement', { dec_amount: 1 }) as any
-            })
+        const { data: targetData } = await supabase
+          .from('profiles')
+          .select('followers')
+          .eq('id', targetId)
+          .single();
+        
+        const currentFollowers = targetData?.followers || 0;
+        
+        if (currentFollowers > 0) {
+          const decrementFollowerResponse = await fetch(
+            `${SUPABASE_URL}/rest/v1/profiles?id=eq.${targetId}`,
+            {
+              method: 'PATCH',
+              headers: {
+                'apikey': SUPABASE_KEY,
+                'Authorization': `Bearer ${SUPABASE_KEY}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=minimal'
+              },
+              body: JSON.stringify({
+                followers: currentFollowers - 1
+              })
+            }
+          );
+            
+          if (!decrementFollowerResponse.ok) {
+            console.error("Error decrementing followers count");
           }
-        );
-          
-        if (!decrementFollowerResponse.ok) {
-          console.error("Error decrementing followers count");
         }
       } catch (decrementError) {
         console.error("Error decrementing followers count:", decrementError);
       }
       
-      // Decrement following count using raw fetch API
+      // Decrement following count using raw fetch API - get current count first
       try {
-        const decrementFollowingResponse = await fetch(
-          `${SUPABASE_URL}/rest/v1/profiles?id=eq.${followerId}`,
-          {
-            method: 'PATCH',
-            headers: {
-              'apikey': SUPABASE_KEY,
-              'Authorization': `Bearer ${SUPABASE_KEY}`,
-              'Content-Type': 'application/json',
-              'Prefer': 'return=minimal'
-            },
-            body: JSON.stringify({
-              following: supabase.rpc('decrement', { dec_amount: 1 }) as any
-            })
+        const { data: followerData } = await supabase
+          .from('profiles')
+          .select('following')
+          .eq('id', followerId)
+          .single();
+        
+        const currentFollowing = followerData?.following || 0;
+        
+        if (currentFollowing > 0) {
+          const decrementFollowingResponse = await fetch(
+            `${SUPABASE_URL}/rest/v1/profiles?id=eq.${followerId}`,
+            {
+              method: 'PATCH',
+              headers: {
+                'apikey': SUPABASE_KEY,
+                'Authorization': `Bearer ${SUPABASE_KEY}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=minimal'
+              },
+              body: JSON.stringify({
+                following: currentFollowing - 1
+              })
+            }
+          );
+            
+          if (!decrementFollowingResponse.ok) {
+            console.error("Error decrementing following count");
           }
-        );
-          
-        if (!decrementFollowingResponse.ok) {
-          console.error("Error decrementing following count");
         }
       } catch (decrementError) {
         console.error("Error decrementing following count:", decrementError);
@@ -357,8 +385,16 @@ export const toggleFollowUser = async (followerId: string, targetId: string) => 
         throw new Error("Failed to follow user");
       }
       
-      // Increment follower count using raw fetch API
+      // Increment follower count using raw fetch API - get current count first
       try {
+        const { data: targetData } = await supabase
+          .from('profiles')
+          .select('followers')
+          .eq('id', targetId)
+          .single();
+        
+        const currentFollowers = targetData?.followers || 0;
+        
         const incrementFollowerResponse = await fetch(
           `${SUPABASE_URL}/rest/v1/profiles?id=eq.${targetId}`,
           {
@@ -370,7 +406,7 @@ export const toggleFollowUser = async (followerId: string, targetId: string) => 
               'Prefer': 'return=minimal'
             },
             body: JSON.stringify({
-              followers: supabase.rpc('increment', { inc_amount: 1 }) as any
+              followers: currentFollowers + 1
             })
           }
         );
@@ -382,8 +418,16 @@ export const toggleFollowUser = async (followerId: string, targetId: string) => 
         console.error("Error incrementing followers count:", incrementError);
       }
       
-      // Increment following count using raw fetch API
+      // Increment following count using raw fetch API - get current count first
       try {
+        const { data: followerData } = await supabase
+          .from('profiles')
+          .select('following')
+          .eq('id', followerId)
+          .single();
+        
+        const currentFollowing = followerData?.following || 0;
+        
         const incrementFollowingResponse = await fetch(
           `${SUPABASE_URL}/rest/v1/profiles?id=eq.${followerId}`,
           {
@@ -395,7 +439,7 @@ export const toggleFollowUser = async (followerId: string, targetId: string) => 
               'Prefer': 'return=minimal'
             },
             body: JSON.stringify({
-              following: supabase.rpc('increment', { inc_amount: 1 }) as any
+              following: currentFollowing + 1
             })
           }
         );
@@ -407,8 +451,16 @@ export const toggleFollowUser = async (followerId: string, targetId: string) => 
         console.error("Error incrementing following count:", incrementError);
       }
       
-      // Create notification for the target user using raw fetch API
+      // Create notification for the target user - get current count first
       try {
+        const { data: targetData } = await supabase
+          .from('profiles')
+          .select('notification_count')
+          .eq('id', targetId)
+          .single();
+        
+        const currentNotifications = targetData?.notification_count || 0;
+        
         const notificationResponse = await fetch(
           `${SUPABASE_URL}/rest/v1/profiles?id=eq.${targetId}`,
           {
@@ -420,7 +472,7 @@ export const toggleFollowUser = async (followerId: string, targetId: string) => 
               'Prefer': 'return=minimal'
             },
             body: JSON.stringify({
-              notification_count: supabase.rpc('increment', { inc_amount: 1 }) as any
+              notification_count: currentNotifications + 1
             })
           }
         );
