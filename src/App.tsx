@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React from "react";
 import { BrowserRouter as Router, Routes, Route, useParams } from "react-router-dom";
 import Auth from "./pages/Auth";
 import Home from "./pages/Home";
@@ -20,29 +20,34 @@ import "./App.css";
 // Toast provider
 import { Toaster } from "@/components/ui/sonner";
 
+// Auth provider
+import { AuthProvider } from "./contexts/AuthContext";
+
 function App() {
   return (
     <Router>
-      <div className="w-full">
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/home" element={<Home />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/chat" element={<Chat />} />
-          <Route path="/chat/:id" element={<ChatWithId />} />
-          <Route path="/explore" element={<Explore />} />
-          <Route path="/wellness" element={<Wellness />} />
-          <Route path="/wellness-plus" element={<WellnessPlus />} />
-          <Route path="/onboarding" element={<Onboarding />} />
-          <Route path="/create" element={<ContentCreator />} />
-          <Route path="/create-collab" element={<CreateCollab />} />
-          <Route path="/reels" element={<Reels />} />
-          <Route path="/vibe-check" element={<VibeCheck />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-        <Toaster />
-      </div>
+      <AuthProvider>
+        <div className="w-full">
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/home" element={<Home />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/chat" element={<Chat />} />
+            <Route path="/chat/:id" element={<ChatWithId />} />
+            <Route path="/explore" element={<Explore />} />
+            <Route path="/wellness" element={<Wellness />} />
+            <Route path="/wellness-plus" element={<WellnessPlus />} />
+            <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/create" element={<ContentCreator />} />
+            <Route path="/create-collab" element={<CreateCollab />} />
+            <Route path="/reels" element={<Reels />} />
+            <Route path="/vibe-check" element={<VibeCheck />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          <Toaster />
+        </div>
+      </AuthProvider>
     </Router>
   );
 }

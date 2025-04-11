@@ -92,8 +92,88 @@ export const setupSupabaseFunctions = async () => {
         }
       }
     }
+
+    // Setup realtime subscriptions for key tables
+    await setupRealtimeSubscriptions();
+
   } catch (error) {
     console.error('Error in setupSupabaseFunctions:', error);
+  }
+};
+
+// Setup realtime subscriptions for the app
+const setupRealtimeSubscriptions = async () => {
+  try {
+    // Enable realtime for key tables
+    const tables = [
+      'profiles',
+      'posts_images',
+      'posts_text', 
+      'posts_reels',
+      'post_comments',
+      'post_likes',
+      'notifications',
+      'user_follows'
+    ];
+    
+    // For each table, check if it exists and enable realtime if it does
+    for (const table of tables) {
+      const tableExists = await checkIfTableExists(table);
+      if (tableExists) {
+        try {
+          // Enable REPLICA IDENTITY FULL for the table
+          await fetch(
+            `${SUPABASE_URL}/rest/v1/rpc/create_raw_sql`,
+            {
+              method: 'POST',
+              headers: {
+                'apikey': SUPABASE_KEY,
+                'Authorization': `Bearer ${SUPABASE_KEY}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ 
+                sql_query: `ALTER TABLE public.${table} REPLICA IDENTITY FULL;`
+              })
+            }
+          );
+          
+          console.log(`Enabled REPLICA IDENTITY FULL for ${table}`);
+        } catch (error) {
+          console.warn(`Could not enable REPLICA IDENTITY FULL for ${table}:`, error);
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error setting up realtime subscriptions:', error);
+  }
+};
+
+// Helper function to check if table exists (from the original file)
+export const checkIfTableExists = async (tableName: string): Promise<boolean> => {
+  try {
+    const response = await fetch(
+      `${SUPABASE_URL}/rest/v1/rpc/check_table_exists`,
+      {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ table_name: tableName })
+      }
+    );
+    
+    if (!response.ok) {
+      console.warn(`Could not check if table ${tableName} exists:`, await response.text());
+      return false;
+    }
+    
+    const data = await response.json();
+    return !!data;
+  } catch (error) {
+    console.warn(`Could not check if table ${tableName} exists:`, error);
+    return false;
   }
 };
 
