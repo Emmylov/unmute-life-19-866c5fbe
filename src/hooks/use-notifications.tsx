@@ -58,7 +58,7 @@ export const useNotifications = () => {
           };
         }
         return item;
-      }) as Notification[];
+      }) as unknown as Notification[];
       
       setNotifications(processedData);
       
