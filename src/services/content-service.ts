@@ -228,10 +228,7 @@ export const getFeedPosts = async (userId: string, limit: number = 20) => {
     if (userIds.length === 1) {
       const { data, error } = await supabase
         .from("posts_images")
-        .select(`
-          *,
-          profiles:user_id(username, avatar)
-        `)
+        .select('*, profiles!inner(*)')
         .order("created_at", { ascending: false })
         .limit(limit);
       
@@ -245,10 +242,7 @@ export const getFeedPosts = async (userId: string, limit: number = 20) => {
     // Fetch posts from followed users (including the user's own posts)
     const { data, error } = await supabase
       .from("posts_images")
-      .select(`
-        *,
-        profiles:user_id(username, avatar)
-      `)
+      .select('*, profiles!inner(*)')
       .in("user_id", userIds)
       .order("created_at", { ascending: false })
       .limit(limit);
@@ -294,10 +288,7 @@ export const getComments = async (postId: string) => {
   try {
     const { data, error } = await supabase
       .from("post_comments")
-      .select(`
-        *,
-        profiles:user_id(username, avatar)
-      `)
+      .select('*, profiles(*)')
       .eq("post_id", postId)
       .order("created_at", { ascending: true });
     

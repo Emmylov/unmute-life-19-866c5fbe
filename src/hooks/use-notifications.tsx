@@ -15,7 +15,7 @@ interface Notification {
   from_user?: {
     username: string;
     avatar: string;
-  };
+  } | null;
   reference_id?: string;
   reference_type?: string;
 }
@@ -34,12 +34,11 @@ export const useNotifications = () => {
     
     try {
       // Get notifications with user details of who created the notification
-      // Using 'notifications' table explicitly without type checking to bypass TypeScript error
       const { data, error } = await supabase
         .from('notifications')
         .select(`
           *,
-          from_user:profiles!from_user_id(username, avatar)
+          from_user:profiles(username, avatar)
         `)
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
@@ -49,10 +48,22 @@ export const useNotifications = () => {
         throw error;
       }
       
-      setNotifications(data as Notification[] || []);
+      // Cast the data to the Notification type after handling potential errors with from_user
+      const processedData = (data || []).map(item => {
+        // Handle case where from_user is an error object
+        if (item.from_user && 'error' in item.from_user) {
+          return {
+            ...item,
+            from_user: null
+          };
+        }
+        return item;
+      }) as Notification[];
+      
+      setNotifications(processedData);
       
       // Count unread notifications
-      const unread = (data as Notification[])?.filter(n => !n.read).length || 0;
+      const unread = processedData.filter(n => !n.read).length || 0;
       setUnreadCount(unread);
     } catch (error) {
       console.error("Error fetching notifications:", error);
@@ -65,7 +76,6 @@ export const useNotifications = () => {
   // Mark a notification as read
   const markAsRead = async (notificationId: string) => {
     try {
-      // Using 'notifications' table explicitly without type checking to bypass TypeScript error
       const { error } = await supabase
         .from('notifications')
         .update({ read: true })
@@ -102,7 +112,6 @@ export const useNotifications = () => {
     if (!user || notifications.length === 0) return;
     
     try {
-      // Using 'notifications' table explicitly without type checking to bypass TypeScript error
       const { error } = await supabase
         .from('notifications')
         .update({ read: true })
