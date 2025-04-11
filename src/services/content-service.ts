@@ -1,4 +1,3 @@
-
 import { supabase, STORAGE_BUCKETS } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from "uuid";
 
@@ -299,6 +298,392 @@ export const getComments = async (postId: string) => {
     return data;
   } catch (error) {
     console.error("Error fetching comments:", error);
+    throw error;
+  }
+};
+
+// Chat Functions
+export const sendMessage = async (senderId: string, receiverId: string, content: string) => {
+  try {
+    // Create the message
+    const { data, error } = await supabase
+      .from('chat_messages')
+      .insert({
+        sender_id: senderId,
+        receiver_id: receiverId,
+        content: content,
+        read: false
+      })
+      .select()
+      .single();
+    
+    if (error) {
+      throw error;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error("Error sending message:", error);
+    throw error;
+  }
+};
+
+export const markMessageAsRead = async (messageId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('chat_messages')
+      .update({ read: true })
+      .eq("id", messageId)
+      .select();
+    
+    if (error) {
+      throw error;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error("Error marking message as read:", error);
+    throw error;
+  }
+};
+
+export const getChatMessages = async (userId: string, partnerId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('chat_messages')
+      .select('*')
+      .or(`and(sender_id.eq.${userId},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${userId})`)
+      .order('created_at', { ascending: true });
+    
+    if (error) {
+      throw error;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error("Error getting chat messages:", error);
+    throw error;
+  }
+};
+
+export const getChatList = async (userId: string) => {
+  try {
+    // This is a more complex query that needs to get all users the current user has chatted with
+    const { data: sentMessages, error: sentError } = await supabase
+      .from('chat_messages')
+      .select('receiver_id')
+      .eq('sender_id', userId)
+      .distinct();
+    
+    if (sentError) throw sentError;
+    
+    const { data: receivedMessages, error: receivedError } = await supabase
+      .from('chat_messages')
+      .select('sender_id')
+      .eq('receiver_id', userId)
+      .distinct();
+    
+    if (receivedError) throw receivedError;
+    
+    // Combine unique user IDs
+    const chatPartnerIds = [
+      ...new Set([
+        ...sentMessages.map(msg => msg.receiver_id),
+        ...receivedMessages.map(msg => msg.sender_id)
+      ])
+    ];
+    
+    if (chatPartnerIds.length === 0) {
+      return [];
+    }
+    
+    // Get profile information for all chat partners
+    const { data: profiles, error: profilesError } = await supabase
+      .from('profiles')
+      .select('*')
+      .in('id', chatPartnerIds);
+    
+    if (profilesError) throw profilesError;
+    
+    // Get the latest message for each chat
+    const chatPreviews = await Promise.all(
+      chatPartnerIds.map(async (partnerId) => {
+        const { data, error } = await supabase
+          .from('chat_messages')
+          .select('*')
+          .or(`and(sender_id.eq.${userId},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${userId})`)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+        
+        if (error) {
+          console.error(`Error getting latest message with ${partnerId}:`, error);
+          return null;
+        }
+        
+        const profile = profiles?.find(p => p.id === partnerId);
+        
+        return {
+          partnerId,
+          profile,
+          latestMessage: data,
+          unreadCount: 0 // We'll calculate this separately
+        };
+      })
+    );
+    
+    // Filter out null results
+    const validChatPreviews = chatPreviews.filter(preview => preview !== null);
+    
+    // Calculate unread messages for each chat
+    await Promise.all(
+      validChatPreviews.map(async (preview) => {
+        if (!preview) return;
+        
+        const { data, error } = await supabase
+          .from('chat_messages')
+          .select('id', { count: 'exact' })
+          .eq('sender_id', preview.partnerId)
+          .eq('receiver_id', userId)
+          .eq('read', false);
+        
+        if (!error) {
+          preview.unreadCount = data?.length || 0;
+        }
+      })
+    );
+    
+    // Sort by latest message timestamp
+    return validChatPreviews.sort((a, b) => {
+      if (!a || !b || !a.latestMessage || !b.latestMessage) return 0;
+      return new Date(b.latestMessage.created_at).getTime() - new Date(a.latestMessage.created_at).getTime();
+    });
+  } catch (error) {
+    console.error("Error getting chat list:", error);
+    throw error;
+  }
+};
+
+// Search functionality
+export const searchUsers = async (query: string, limit: number = 20) => {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .or(`username.ilike.%${query}%,full_name.ilike.%${query}%`)
+      .limit(limit);
+    
+    if (error) {
+      throw error;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error("Error searching users:", error);
+    throw error;
+  }
+};
+
+export const searchContent = async (query: string, contentType?: 'images' | 'text' | 'reels', limit: number = 20) => {
+  try {
+    // Determine which table to query based on type
+    let table = '';
+    switch (contentType) {
+      case 'images':
+        table = 'posts_images';
+        break;
+      case 'text':
+        table = 'posts_text';
+        break;
+      case 'reels':
+        table = 'posts_reels';
+        break;
+      default:
+        // If no type is specified, search text posts
+        table = 'posts_text';
+    }
+    
+    // For text posts, search in title and body
+    if (table === 'posts_text') {
+      const { data, error } = await supabase
+        .from(table)
+        .select('*, profiles:profiles(*)')
+        .or(`title.ilike.%${query}%,body.ilike.%${query}%`)
+        .limit(limit);
+      
+      if (error) throw error;
+      return data;
+    }
+    
+    // For images and reels, search in caption and tags
+    const { data, error } = await supabase
+      .from(table)
+      .select('*, profiles:profiles(*)')
+      .or(`caption.ilike.%${query}%`)
+      .limit(limit);
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error(`Error searching ${contentType || 'content'}:`, error);
+    throw error;
+  }
+};
+
+// Wellness tracking
+export const saveWellnessGoal = async (userId: string, goalData: any) => {
+  try {
+    const { data, error } = await supabase
+      .from('wellness_goals')
+      .insert({
+        user_id: userId,
+        ...goalData
+      })
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error("Error saving wellness goal:", error);
+    throw error;
+  }
+};
+
+export const getWellnessGoals = async (userId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('wellness_goals')
+      .select('*')
+      .eq('user_id', userId);
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error("Error getting wellness goals:", error);
+    throw error;
+  }
+};
+
+export const saveWellnessActivity = async (userId: string, activityData: any) => {
+  try {
+    const { data, error } = await supabase
+      .from('wellness_activities')
+      .insert({
+        user_id: userId,
+        ...activityData
+      })
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error("Error saving wellness activity:", error);
+    throw error;
+  }
+};
+
+export const getWellnessActivities = async (userId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('wellness_activities')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error("Error getting wellness activities:", error);
+    throw error;
+  }
+};
+
+// User settings
+export const saveUserSettings = async (userId: string, settings: any) => {
+  try {
+    const { data, error } = await supabase
+      .from('user_settings')
+      .upsert({
+        user_id: userId,
+        settings
+      })
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error("Error saving user settings:", error);
+    throw error;
+  }
+};
+
+export const getUserSettings = async (userId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('user_settings')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+    
+    if (error && error.code !== 'PGRST116') { // PGRST116 means no rows found
+      throw error;
+    }
+    
+    return data || { user_id: userId, settings: {} };
+  } catch (error) {
+    console.error("Error getting user settings:", error);
+    throw error;
+  }
+};
+
+// Analytics
+export const trackAnalyticEvent = async (userId: string, eventType: string, eventData: any = {}) => {
+  try {
+    const { data, error } = await supabase
+      .from('user_analytics')
+      .insert({
+        user_id: userId,
+        event_type: eventType,
+        event_data: eventData
+      });
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error("Error tracking analytic event:", error);
+    // Don't throw here so it doesn't interrupt user experience
+    return null;
+  }
+};
+
+export const getUserAnalytics = async (userId: string, eventType?: string, startDate?: string, endDate?: string) => {
+  try {
+    let query = supabase
+      .from('user_analytics')
+      .select('*')
+      .eq('user_id', userId);
+    
+    if (eventType) {
+      query = query.eq('event_type', eventType);
+    }
+    
+    if (startDate) {
+      query = query.gte('created_at', startDate);
+    }
+    
+    if (endDate) {
+      query = query.lte('created_at', endDate);
+    }
+    
+    const { data, error } = await query.order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error("Error getting user analytics:", error);
     throw error;
   }
 };

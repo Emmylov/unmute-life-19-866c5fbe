@@ -1,5 +1,7 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import OnboardingLayout from "@/components/onboarding/OnboardingLayout";
 import OnboardingProgress from "@/components/onboarding/OnboardingProgress";
 import WelcomeStep from "@/components/onboarding/WelcomeStep";
@@ -11,7 +13,9 @@ import InterestsStep from "@/components/onboarding/InterestsStep";
 import ProfileSetupStep from "@/components/onboarding/ProfileSetupStep";
 import FinalWelcomeStep from "@/components/onboarding/FinalWelcomeStep";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { trackEvent } from "@/services/analytics-service";
+import { updateOnboardingStep, saveOnboardingData } from "@/services/user-settings-service";
+import { useAuth } from "@/contexts/AuthContext";
 
 const TOTAL_STEPS = 8;
 
@@ -19,46 +23,41 @@ const Onboarding = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [profileData, setProfileData] = useState<any>(null);
+  const [onboardingData, setOnboardingData] = useState<any>({});
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { user, profile, refreshProfile } = useAuth();
   
   useEffect(() => {
     const checkOnboardingStatus = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-
-      if (session) {
+      if (user) {
         setIsLoggedIn(true);
         
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
+        if (profile) {
+          setOnboardingData({
+            username: profile.username,
+            full_name: profile.full_name,
+            bio: profile.bio,
+            avatar: profile.avatar,
+            is_activist: profile.is_activist,
+            interests: profile.interests || [],
+          });
           
-        if (error) {
-          console.error("Error fetching profile:", error);
-          
-          if (error.code === 'PGRST116') {
-            await supabase
-              .from('profiles')
-              .insert({
-                id: session.user.id,
-                username: session.user.email,
-                is_onboarded: false
-              });
-          }
-        } else {
-          setProfileData(profile);
-          
-          if (profile?.is_onboarded) {
+          if (profile.is_onboarded) {
             navigate('/home');
             return;
           }
-        }
-        
-        if (currentStep < 4) {
-          setCurrentStep(4);
+          
+          // If the user is logged in but not onboarded, start from account creation step
+          if (currentStep < 4) {
+            setCurrentStep(4);
+            
+            // Update onboarding step in database
+            try {
+              await updateOnboardingStep(user.id, 'account-creation');
+            } catch (error) {
+              console.error("Error updating onboarding step:", error);
+            }
+          }
         }
       }
       
@@ -66,11 +65,40 @@ const Onboarding = () => {
     };
     
     checkOnboardingStatus();
-  }, [navigate, currentStep]);
+  }, [navigate, currentStep, user, profile]);
   
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentStep < TOTAL_STEPS - 1) {
-      setCurrentStep(currentStep + 1);
+      const nextStep = currentStep + 1;
+      setCurrentStep(nextStep);
+      
+      // Track analytics event for step completion
+      if (user) {
+        trackEvent(user.id, {
+          event_type: "onboarding_step_complete",
+          resource_type: "onboarding",
+          data: { step: currentStep, next_step: nextStep }
+        });
+        
+        // Update onboarding step in database
+        try {
+          let stepName = "";
+          switch (nextStep) {
+            case 1: stepName = "about"; break;
+            case 2: stepName = "how-it-works"; break;
+            case 3: stepName = "signup-prompt"; break;
+            case 4: stepName = "account-creation"; break;
+            case 5: stepName = "interests"; break;
+            case 6: stepName = "profile-setup"; break;
+            case 7: stepName = "final-welcome"; break;
+            default: stepName = "welcome"; break;
+          }
+          
+          await updateOnboardingStep(user.id, stepName);
+        } catch (error) {
+          console.error("Error updating onboarding step:", error);
+        }
+      }
     }
   };
   
@@ -82,28 +110,45 @@ const Onboarding = () => {
     navigate("/home");
   };
   
+  const handleUpdateOnboardingData = (data: any) => {
+    setOnboardingData(prev => ({ ...prev, ...data }));
+  };
+  
   const handleComplete = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-
-    if (session) {
-      try {
-        await supabase
-          .from('profiles')
-          .update({
-            is_onboarded: true
-          })
-          .eq('id', session.user.id);
-          
-        toast({
-          title: "Welcome to Unmute!",
-          description: "Your profile is now ready to use.",
-        });
-      } catch (error) {
-        console.error("Error completing onboarding:", error);
-      }
+    if (!user) {
+      navigate("/home");
+      return;
     }
     
-    navigate("/home");
+    try {
+      setLoading(true);
+      
+      // Save all onboarding data
+      await saveOnboardingData(user.id, {
+        ...onboardingData,
+        is_onboarded: true
+      });
+      
+      // Track completion event
+      trackEvent(user.id, {
+        event_type: "onboarding_complete",
+        resource_type: "onboarding"
+      });
+      
+      // Refresh the user profile
+      await refreshProfile();
+      
+      toast.success("Welcome to Unmute!", {
+        description: "Your profile is now ready to use."
+      });
+      
+      navigate("/home");
+    } catch (error) {
+      console.error("Error completing onboarding:", error);
+      toast.error("There was an error completing your onboarding. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
   
   const getBackgroundClass = () => {
@@ -145,13 +190,31 @@ const Onboarding = () => {
           />
         );
       case 4:
-        return <AccountCreationStep onNext={handleNext} />;
+        return (
+          <AccountCreationStep 
+            onNext={handleNext} 
+            onUpdateData={handleUpdateOnboardingData}
+            initialData={onboardingData}
+          />
+        );
       case 5:
-        return <InterestsStep onNext={handleNext} />;
+        return (
+          <InterestsStep 
+            onNext={handleNext} 
+            onUpdateData={handleUpdateOnboardingData}
+            initialInterests={onboardingData.interests || []}
+          />
+        );
       case 6:
-        return <ProfileSetupStep onNext={handleNext} />;
+        return (
+          <ProfileSetupStep 
+            onNext={handleNext}
+            onUpdateData={handleUpdateOnboardingData}
+            initialData={onboardingData}
+          />
+        );
       case 7:
-        return <FinalWelcomeStep onComplete={handleComplete} />;
+        return <FinalWelcomeStep onComplete={handleComplete} userData={onboardingData} />;
       default:
         return null;
     }
