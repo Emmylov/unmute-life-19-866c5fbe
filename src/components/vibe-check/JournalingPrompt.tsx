@@ -19,14 +19,21 @@ const prompts = [
   "What's a small step you could take toward a goal today?"
 ];
 
-const JournalingPrompt: React.FC = () => {
+interface JournalingPromptProps {
+  className?: string;
+}
+
+const JournalingPrompt: React.FC<JournalingPromptProps> = ({ className }) => {
   const [prompt, setPrompt] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    // Get a random prompt
-    const randomIndex = Math.floor(Math.random() * prompts.length);
-    const selectedPrompt = prompts[randomIndex];
+    // Get a deterministic prompt based on the current date
+    const today = new Date();
+    const dateString = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
+    const dateHash = Array.from(dateString).reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const promptIndex = dateHash % prompts.length;
+    const selectedPrompt = prompts[promptIndex];
     
     // Simulate loading delay
     const timer = setTimeout(() => {
@@ -38,7 +45,7 @@ const JournalingPrompt: React.FC = () => {
   }, []);
 
   return (
-    <div className="flex flex-col items-center text-center">
+    <div className={`flex flex-col items-center text-center ${className}`}>
       <h3 className="font-medium text-primary mb-2">Today's Reflection Prompt</h3>
       
       {isLoading ? (

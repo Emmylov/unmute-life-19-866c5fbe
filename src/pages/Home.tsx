@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "@/components/layout/AppLayout";
@@ -10,12 +11,13 @@ import {
   Mic, Music, Sparkles, 
   Image as ImageIcon, Smile, Globe, 
   BookOpen, Pencil, UserPlus, Filter, HeartHandshake,
-  PlusCircle, FileText
+  PlusCircle, FileText, Users
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import StoryFeed from "@/components/stories/StoryFeed";
+import JournalingPrompt from "@/components/vibe-check/JournalingPrompt";
 
 // Animation variants
 const fadeIn = {
@@ -33,6 +35,20 @@ const staggerItems = {
   }
 };
 
+// Motivational quotes
+const motivationalQuotes = [
+  "Ready to unmute your world today?",
+  "Your voice matters - let it be heard!",
+  "Every story shared creates connection.",
+  "Express yourself freely today.",
+  "What's your unmuted story?",
+  "Today is a perfect day to share your voice.",
+  "Be authentically you today!",
+  "Your perspective is worth sharing.",
+  "Create ripples with your unique voice.",
+  "Speak your truth, someone needs to hear it."
+];
+
 const Home = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -44,6 +60,7 @@ const Home = () => {
   const [newPostText, setNewPostText] = useState("");
   const [activeTab, setActiveTab] = useState("for-you");
   const [loadingPosts, setLoadingPosts] = useState(false);
+  const [motivationalQuote, setMotivationalQuote] = useState("");
 
   // Generate a personalized greeting
   useEffect(() => {
@@ -59,6 +76,10 @@ const Home = () => {
     }
     
     setUserGreeting(greeting);
+    
+    // Set a random motivational quote
+    const randomIndex = Math.floor(Math.random() * motivationalQuotes.length);
+    setMotivationalQuote(motivationalQuotes[randomIndex]);
   }, []);
 
   // Check if user is logged in and fetch posts
@@ -212,11 +233,11 @@ const Home = () => {
             variants={fadeIn}
           >
             <div className="flex justify-between items-center">
-              <div>
+              <div className="space-y-1">
                 <h2 className="text-xl font-medium">
-                  {userGreeting}, {profile?.full_name || profile?.username || "there"}! 👋
+                  {userGreeting}, {profile?.username || profile?.full_name || "there"}! 👋
                 </h2>
-                <p className="text-gray-600">Ready to unmute your world today?</p>
+                <p className="text-gray-600">{motivationalQuote}</p>
               </div>
               <div className="flex gap-2">
                 <Button 
@@ -236,6 +257,14 @@ const Home = () => {
                 </Button>
               </div>
             </div>
+          </motion.div>
+          
+          {/* Daily Journaling Prompt */}
+          <motion.div 
+            variants={fadeIn}
+            className="bg-white rounded-xl p-6 shadow-sm border border-gray-100"
+          >
+            <JournalingPrompt />
           </motion.div>
           
           {/* Create Post */}
@@ -262,11 +291,11 @@ const Home = () => {
               </div>
               
               <div className="flex items-center justify-between mt-4 border-t pt-3">
-                <div className="flex gap-2">
+                <div className="flex gap-2 overflow-x-auto scrollbar-hide">
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    className="text-gray-600 flex items-center gap-1 hover:bg-gray-50 hover:text-primary"
+                    className="text-gray-600 flex items-center gap-1 hover:bg-gray-50 hover:text-primary shrink-0"
                   >
                     <ImageIcon className="h-4 w-4" />
                     <span>Photo</span>
@@ -274,7 +303,7 @@ const Home = () => {
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    className="text-gray-600 flex items-center gap-1 hover:bg-gray-50 hover:text-primary"
+                    className="text-gray-600 flex items-center gap-1 hover:bg-gray-50 hover:text-primary shrink-0"
                   >
                     <Smile className="h-4 w-4" />
                     <span>Mood</span>
@@ -282,7 +311,16 @@ const Home = () => {
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    className="text-gray-600 flex items-center gap-1 hover:bg-gray-50 hover:text-primary"
+                    className="text-gray-600 flex items-center gap-1 hover:bg-gray-50 hover:text-primary shrink-0"
+                    onClick={() => navigate('/create-collab')}
+                  >
+                    <Users className="h-4 w-4" />
+                    <span>Collab</span>
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-gray-600 flex items-center gap-1 hover:bg-gray-50 hover:text-primary shrink-0"
                   >
                     <Globe className="h-4 w-4" />
                     <span>Public</span>
@@ -360,6 +398,17 @@ const Home = () => {
                 >
                   <Sparkles className="h-3.5 w-3.5 mr-1" />
                   Trending
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="collabs" 
+                  className={`${
+                    activeTab === 'collabs' 
+                      ? 'bg-white text-primary shadow-sm' 
+                      : 'bg-transparent text-gray-600'
+                  } border-none px-4 py-1.5 rounded-full`}
+                >
+                  <Users className="h-3.5 w-3.5 mr-1" />
+                  Collabs
                 </TabsTrigger>
               </TabsList>
             </Tabs>
@@ -448,6 +497,30 @@ const Home = () => {
               onClick={() => navigate("/vibe-check")}
             >
               Check Your Vibe
+            </Button>
+          </motion.div>
+          
+          {/* Unmute Collabs Card */}
+          <motion.div
+            className="bg-gradient-to-br from-pink-50 to-orange-50 rounded-xl p-6 shadow-sm border border-white/40"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4, delay: 0.4 }}
+          >
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2 rounded-full bg-cosmic-crush/10">
+                <Users className="h-5 w-5 text-cosmic-crush" />
+              </div>
+              <h3 className="font-semibold text-lg">Unmute Collabs</h3>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">
+              Create content together with friends, artists, or advocates. Share your combined voices!
+            </p>
+            <Button 
+              className="w-full bg-cosmic-crush/20 hover:bg-cosmic-crush/30 text-cosmic-crush font-medium"
+              onClick={() => navigate("/create-collab")}
+            >
+              Start a Collab
             </Button>
           </motion.div>
         </div>
