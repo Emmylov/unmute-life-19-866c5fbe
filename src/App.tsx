@@ -19,6 +19,7 @@ import Explore from "./pages/Explore";
 import Chat from "./pages/Chat";
 import Wellness from "./pages/Wellness";
 import WellnessPlus from "./pages/WellnessPlus";
+import VibeCheck from "./pages/VibeCheck";
 
 // Create a QueryClient for React Query
 const queryClient = new QueryClient();
@@ -88,6 +89,7 @@ const App = () => {
               <Route path="/chat/:chatId" element={<Chat />} />
               <Route path="/wellness" element={<Wellness />} />
               <Route path="/wellness/plus" element={<WellnessPlus />} />
+              <Route path="/vibe-check" element={<VibeCheck />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

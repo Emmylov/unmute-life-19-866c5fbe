@@ -218,13 +218,21 @@ const Home = () => {
                 </h2>
                 <p className="text-gray-600">Ready to unmute your world today?</p>
               </div>
-              <div>
+              <div className="flex gap-2">
                 <Button 
                   className="bg-cosmic-crush hover:bg-cosmic-crush/90 text-white border-none shadow-md"
                   onClick={() => navigate('/create')}
                 >
                   <Mic className="h-4 w-4 mr-2" />
                   Record a Reel
+                </Button>
+                <Button 
+                  variant="outline"
+                  className="border-primary/30 text-primary hover:bg-primary/10"
+                  onClick={() => navigate('/vibe-check')}
+                >
+                  <Smile className="h-4 w-4 mr-2" />
+                  Vibe Check
                 </Button>
               </div>
             </div>
@@ -419,6 +427,29 @@ const Home = () => {
           <WelcomeCard profile={profile} />
           <SuggestedUsers />
           <TrendingTopics />
+          {/* Add Vibe Check Card */}
+          <motion.div
+            className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl p-6 shadow-sm border border-white/40"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4, delay: 0.3 }}
+          >
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2 rounded-full bg-primary/10">
+                <Smile className="h-5 w-5 text-primary" />
+              </div>
+              <h3 className="font-semibold text-lg">Daily Vibe Check</h3>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">
+              Take a moment to reflect on how you're feeling today. Track your mood, energy, and peace.
+            </p>
+            <Button 
+              className="w-full bg-dream-mist hover:bg-dream-mist/90 text-primary font-medium"
+              onClick={() => navigate("/vibe-check")}
+            >
+              Check Your Vibe
+            </Button>
+          </motion.div>
         </div>
       </motion.div>
     </AppLayout>

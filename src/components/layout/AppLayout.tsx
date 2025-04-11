@@ -11,7 +11,8 @@ import {
   Users, 
   Bell, 
   User,
-  Heart
+  Heart,
+  Smile
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -75,10 +76,10 @@ const MobileNavigation = ({ currentPath }: MobileNavigationProps) => {
         isActive={currentPath === '/reels'} 
       />
       <NavLink 
-        icon={<Heart className="h-5 w-5" />} 
-        label="Wellness" 
-        to="/wellness" 
-        isActive={currentPath === '/wellness' || currentPath === '/wellness/plus'} 
+        icon={<Smile className="h-5 w-5" />} 
+        label="Vibe" 
+        to="/vibe-check" 
+        isActive={currentPath === '/vibe-check'} 
       />
       <NavLink 
         icon={<User className="h-5 w-5" />} 
