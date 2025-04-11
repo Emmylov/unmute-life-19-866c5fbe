@@ -12,6 +12,10 @@ import ChatInput from "@/components/chat/ChatInput";
 import WelcomeScreen from "@/components/chat/WelcomeScreen";
 import { useChatContext } from "@/contexts/ChatContext";
 
+interface ChatProps {
+  chatId?: string;
+}
+
 const ChatContent = () => {
   const { chatId } = useParams();
   const navigate = useNavigate();
@@ -61,9 +65,7 @@ const ChatContent = () => {
   );
 };
 
-const Chat = () => {
-  const { chatId } = useParams();
-  
+const Chat: React.FC<ChatProps> = ({ chatId }) => {
   return (
     <ChatProvider chatId={chatId}>
       <ChatContent />
