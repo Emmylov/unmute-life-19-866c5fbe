@@ -267,8 +267,9 @@ export const getFeedPosts = async (userId: string, limit: number = 20) => {
 // Add a comment to a post
 export const addComment = async (userId: string, postId: string, content: string) => {
   try {
+    // Using string literal for table name to avoid TypeScript issues with the new schema
     const { data, error } = await supabase
-      .from("post_comments")
+      .from('post_comments')
       .insert({
         user_id: userId,
         post_id: postId,
