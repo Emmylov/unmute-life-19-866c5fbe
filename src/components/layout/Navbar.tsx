@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -167,7 +168,7 @@ const Navbar = ({ pageTitle }: NavbarProps) => {
   ];
   
   return (
-    <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-gray-100">
+    <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-gray-100 w-full">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
         <div className="flex items-center justify-between h-14 md:h-16">
           <div className="flex items-center">
