@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -15,7 +14,7 @@ import {
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useIsMobile, useIsTablet, useIsDesktop } from "@/hooks/use-responsive";
 import { supabase } from "@/integrations/supabase/client";
 import {
   DropdownMenu,
@@ -40,6 +39,8 @@ interface NavbarProps {
 
 const Navbar = ({ pageTitle }: NavbarProps) => {
   const isMobile = useIsMobile();
+  const isTablet = useIsTablet();
+  const isDesktop = useIsDesktop();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
@@ -56,7 +57,6 @@ const Navbar = ({ pageTitle }: NavbarProps) => {
       setUser(user);
       
       if (user) {
-        // Fetch profile data
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
@@ -67,7 +67,6 @@ const Navbar = ({ pageTitle }: NavbarProps) => {
           setProfile(data);
         }
         
-        // Check for unread messages
         fetchUnreadMessages(user.id);
       }
     };
@@ -75,11 +74,9 @@ const Navbar = ({ pageTitle }: NavbarProps) => {
     getUser();
   }, []);
 
-  // Subscribe to new message notifications
   useEffect(() => {
     if (!user?.id) return;
 
-    // Subscribe to chat messages where the user is the receiver and the message is unread
     const channel = supabase
       .channel('public:chat_messages')
       .on('postgres_changes', 
@@ -90,11 +87,9 @@ const Navbar = ({ pageTitle }: NavbarProps) => {
           filter: `receiver_id=eq.${user.id}` 
         }, 
         (payload) => {
-          // Update unread message count when new message arrives
           if (payload.new && !payload.new.read) {
             setUnreadMessages(prev => prev + 1);
             
-            // Show a toast notification for new message
             toast({
               title: "New message",
               description: "You have received a new message",
@@ -110,7 +105,6 @@ const Navbar = ({ pageTitle }: NavbarProps) => {
     };
   }, [user?.id, toast]);
 
-  // Focus search input when opened
   useEffect(() => {
     if (isSearchOpen && searchInputRef.current) {
       setTimeout(() => {
@@ -153,7 +147,6 @@ const Navbar = ({ pageTitle }: NavbarProps) => {
   const getAvatarFallbackColor = (userId?: string) => {
     if (!userId) return "bg-unmute-purple";
     
-    // Generate a deterministic color based on user ID
     const colors = [
       "bg-unmute-purple", "bg-unmute-pink", "bg-unmute-lavender", 
       "bg-unmute-blue", "bg-unmute-mint"
@@ -175,9 +168,8 @@ const Navbar = ({ pageTitle }: NavbarProps) => {
   
   return (
     <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-gray-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo and Mobile Menu */}
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
+        <div className="flex items-center justify-between h-14 md:h-16">
           <div className="flex items-center">
             {isMobile && (
               <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
@@ -186,7 +178,7 @@ const Navbar = ({ pageTitle }: NavbarProps) => {
                     <Menu className="h-5 w-5" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="p-0">
+                <SheetContent side="left" className="p-0 w-[280px] sm:w-[350px]">
                   <SheetHeader className="px-4 py-3 border-b">
                     <SheetTitle>
                       <span className="text-xl font-bold bg-gradient-to-r from-unmute-purple to-unmute-pink bg-clip-text text-transparent">
@@ -270,27 +262,36 @@ const Navbar = ({ pageTitle }: NavbarProps) => {
             {pageTitle && (
               <div className="ml-4 md:ml-6 flex items-center">
                 <span className="text-gray-400 mx-2">/</span>
-                <h1 className="text-lg font-medium text-gray-900">{pageTitle}</h1>
+                <h1 className="text-lg font-medium text-gray-900 truncate max-w-[120px] sm:max-w-none">{pageTitle}</h1>
               </div>
             )}
           </div>
           
-          {/* Desktop Search */}
-          {!isMobile && (
-            <div className="max-w-md w-full mx-4">
-              <div className="relative">
+          {(!isMobile || (isMobile && isSearchOpen)) && (
+            <div className={`${isSearchOpen ? 'absolute inset-x-0 top-0 bg-white px-3 py-3 z-30' : 'relative'} max-w-md w-full mx-4 ${isMobile ? 'hidden' : 'flex'} ${isTablet ? 'max-w-[180px] lg:max-w-md' : ''}`}>
+              <div className="relative w-full">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input 
                   type="text" 
-                  placeholder="Search voices, people, and communities..." 
-                  className="pl-10 bg-gray-50/80 border-none focus-visible:ring-unmute-purple/30 rounded-full"
+                  placeholder={isDesktop ? "Search voices, people, and communities..." : "Search..."}
+                  className="pl-10 bg-gray-50/80 border-none focus-visible:ring-unmute-purple/30 rounded-full w-full"
+                  ref={searchInputRef}
                 />
+                {isSearchOpen && (
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7" 
+                    onClick={() => setIsSearchOpen(false)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
             </div>
           )}
           
-          {/* Right Nav Items */}
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-1 sm:space-x-2 md:space-x-3">
             {isMobile && (
               <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(!isSearchOpen)} className="text-gray-500">
                 <Search className="h-5 w-5" />
@@ -312,10 +313,9 @@ const Navbar = ({ pageTitle }: NavbarProps) => {
               onClick={() => navigate('/create')}
             >
               <Video className="h-4 w-4" />
-              Create
+              {isDesktop ? "Create" : ""}
             </Button>
 
-            {/* New chat button */}
             <Button 
               variant="ghost" 
               size="icon" 
@@ -342,7 +342,7 @@ const Navbar = ({ pageTitle }: NavbarProps) => {
             
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Avatar className="h-9 w-9 cursor-pointer ring-2 ring-white hover:ring-unmute-purple/20 transition-all">
+                <Avatar className="h-8 w-8 md:h-9 md:w-9 cursor-pointer ring-2 ring-white hover:ring-unmute-purple/20 transition-all">
                   <AvatarImage 
                     src={profile?.avatar || ''} 
                     alt={profile?.username || user?.email || 'User'}
@@ -383,29 +383,6 @@ const Navbar = ({ pageTitle }: NavbarProps) => {
             </DropdownMenu>
           </div>
         </div>
-        
-        {/* Mobile Search (expandable) */}
-        {isMobile && isSearchOpen && (
-          <div className="pb-4 relative">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input 
-                ref={searchInputRef}
-                type="text" 
-                placeholder="Search..." 
-                className="pl-10 rounded-full pr-10"
-              />
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7" 
-                onClick={() => setIsSearchOpen(false)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        )}
       </div>
     </header>
   );

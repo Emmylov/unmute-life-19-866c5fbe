@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useIsMobile, useIsTablet } from "@/hooks/use-responsive";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Onboarding from "./pages/Onboarding";
@@ -25,6 +26,8 @@ const queryClient = new QueryClient();
 const App = () => {
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const isMobile = useIsMobile();
+  const isTablet = useIsTablet();
 
   useEffect(() => {
     // Get initial session
@@ -45,18 +48,18 @@ const App = () => {
     return (
       <div className="h-screen flex items-center justify-center bg-dream-mist">
         <div className="flex flex-col items-center">
-          <div className="text-2xl font-bold unmute-gradient-text mb-4">Unmute</div>
-          <div className="space-y-3">
+          <div className="text-xl sm:text-2xl font-bold unmute-gradient-text mb-3 sm:mb-4">Unmute</div>
+          <div className="space-y-2 sm:space-y-3">
             <div className="flex space-x-2">
               {[1, 2, 3].map((i) => (
                 <div 
                   key={i}
-                  className="w-3 h-3 bg-primary rounded-full animate-bounce" 
+                  className="w-2 h-2 sm:w-3 sm:h-3 bg-primary rounded-full animate-bounce" 
                   style={{ animationDelay: `${i * 0.1}s` }}
                 />
               ))}
             </div>
-            <p className="text-gray-500">Loading your experience...</p>
+            <p className="text-sm sm:text-base text-gray-500">Loading your experience...</p>
           </div>
         </div>
       </div>

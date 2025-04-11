@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, Heart, BookOpen, Headphones, MessageCircle, Users, Calendar } from 'lucide-react';
+import { useIsMobile, useIsTablet } from "@/hooks/use-responsive";
 import AppLayout from '@/components/layout/AppLayout';
 import DailyCheckIn from '@/components/wellness-plus/DailyCheckIn';
 import AudioJournal from '@/components/wellness-plus/AudioJournal';
@@ -13,33 +14,36 @@ import SupportCircles from '@/components/wellness-plus/SupportCircles';
 import AnonymousSupport from '@/components/wellness-plus/AnonymousSupport';
 
 const WellnessPlus = () => {
+  const isMobile = useIsMobile();
+  const isTablet = useIsTablet();
+
   return (
     <AppLayout pageTitle="Wellness+">
-      <div className="container mx-auto px-4 py-6 max-w-7xl">
+      <div className="container mx-auto px-3 sm:px-4 md:px-6 py-4 md:py-6 max-w-7xl">
         {/* Header with navigation back to regular wellness page */}
-        <div className="flex items-center mb-6">
+        <div className="flex items-center mb-4 md:mb-6">
           <Link to="/wellness" className="flex items-center text-gray-600 hover:text-primary transition-colors">
-            <ChevronLeft className="h-5 w-5 mr-1" />
+            <ChevronLeft className="h-4 w-4 md:h-5 md:w-5 mr-1" />
             <span>Back to Wellness</span>
           </Link>
         </div>
         
         {/* Welcome Banner */}
-        <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-[#E5DEFF] to-[#FDE1D3] p-6 md:p-8 mb-8">
-          <div className="flex flex-col md:flex-row items-center gap-6">
-            <div className="md:w-3/4 space-y-4 z-10">
-              <span className="inline-block px-3 py-1 bg-white/70 rounded-full text-sm font-medium text-purple-800">
+        <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-[#E5DEFF] to-[#FDE1D3] p-4 md:p-6 lg:p-8 mb-6 md:mb-8">
+          <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6">
+            <div className="md:w-3/4 space-y-2 md:space-y-4 z-10">
+              <span className="inline-block px-2 md:px-3 py-0.5 md:py-1 bg-white/70 rounded-full text-xs md:text-sm font-medium text-purple-800">
                 Unmute Wellness+
               </span>
-              <h1 className="text-2xl md:text-3xl font-bold text-slate-800">
+              <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-slate-800">
                 Your safe space for emotional & mental wellbeing
               </h1>
-              <p className="text-slate-700">
+              <p className="text-sm md:text-base text-slate-700">
                 A private sanctuary for reflection, support, and growth. Track your moods, journal your thoughts, and connect with supportive circles.
               </p>
             </div>
             <div className="md:w-1/4 flex justify-center">
-              <div className="w-40 h-40 rounded-full overflow-hidden border-4 border-white shadow-lg">
+              <div className="w-24 h-24 md:w-32 md:h-32 lg:w-40 lg:h-40 rounded-full overflow-hidden border-4 border-white shadow-lg">
                 <img
                   src="/lovable-uploads/f55055fc-5460-456c-acf2-f6fbd2695ac5.png"
                   alt="Chioma Iyayi"
@@ -53,7 +57,7 @@ const WellnessPlus = () => {
         </div>
         
         {/* Main Tabs for Wellness+ Features */}
-        <Tabs defaultValue="daily-check-in" className="space-y-6">
+        <Tabs defaultValue="daily-check-in" className="space-y-4 md:space-y-6">
           <TabsList className="w-full justify-start overflow-x-auto">
             <TabsTrigger value="daily-check-in" className="flex gap-2">
               <Heart className="h-4 w-4" />
@@ -97,6 +101,9 @@ const WellnessPlus = () => {
             <AnonymousSupport />
           </TabsContent>
         </Tabs>
+
+        {/* Add padding at bottom for mobile view to account for bottom navigation */}
+        {isMobile && <div className="h-16"></div>}
       </div>
     </AppLayout>
   );

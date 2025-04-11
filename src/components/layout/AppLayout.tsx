@@ -2,7 +2,7 @@
 import React, { ReactNode } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Sidebar from "@/components/layout/Sidebar";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useIsMobile, useIsTablet } from "@/hooks/use-responsive";
 import { useLocation, Link } from "react-router-dom";
 import { 
   Home, 
@@ -10,7 +10,8 @@ import {
   Film, 
   Users, 
   Bell, 
-  User
+  User,
+  Heart
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -21,6 +22,7 @@ interface AppLayoutProps {
 
 const AppLayout = ({ children, pageTitle }: AppLayoutProps) => {
   const isMobile = useIsMobile();
+  const isTablet = useIsTablet();
   const location = useLocation();
   
   return (
@@ -28,10 +30,10 @@ const AppLayout = ({ children, pageTitle }: AppLayoutProps) => {
       <Navbar pageTitle={pageTitle} />
       
       <div className="flex">
-        {!isMobile && <Sidebar />}
+        {!isMobile && <Sidebar collapsed={isTablet} />}
         
         <main className="flex-1 overflow-hidden">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 md:py-6">
             {children}
           </div>
         </main>
@@ -52,7 +54,7 @@ const MobileNavigation = ({ currentPath }: MobileNavigationProps) => {
       initial={{ y: 100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.3, ease: "easeOut" }}
-      className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-2 py-2 flex items-center justify-around z-10 shadow-lg"
+      className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-2 py-1 flex items-center justify-around z-50 shadow-lg"
     >
       <NavLink 
         icon={<Home className="h-5 w-5" />} 
@@ -73,10 +75,10 @@ const MobileNavigation = ({ currentPath }: MobileNavigationProps) => {
         isActive={currentPath === '/reels'} 
       />
       <NavLink 
-        icon={<Users className="h-5 w-5" />} 
-        label="Community" 
-        to="/communities" 
-        isActive={currentPath === '/communities'} 
+        icon={<Heart className="h-5 w-5" />} 
+        label="Wellness" 
+        to="/wellness" 
+        isActive={currentPath === '/wellness' || currentPath === '/wellness/plus'} 
       />
       <NavLink 
         icon={<User className="h-5 w-5" />} 
@@ -99,7 +101,7 @@ const NavLink = ({ icon, label, to, isActive = false }: NavLinkProps) => {
   return (
     <Link
       to={to}
-      className="relative flex flex-col items-center py-1"
+      className="relative flex flex-col items-center py-1.5"
     >
       <motion.div
         whileHover={{ scale: 1.1 }}
