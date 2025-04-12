@@ -262,7 +262,7 @@ export async function fetchCollabsFeed(limit: number, offset: number): Promise<P
 
 // Helper function to search for collabs in other post types
 async function searchCollabsInPosts(limit: number, offset: number): Promise<Post[]> {
-  // Fetch image posts with collab content
+  // Apply the same toTypedPromise pattern to all Supabase queries
   const imagePostsPromise = toTypedPromise<any[]>(
     supabase
       .from("posts_images")
@@ -272,7 +272,6 @@ async function searchCollabsInPosts(limit: number, offset: number): Promise<Post
       .range(offset, offset + limit - 1)
   );
   
-  // Fetch text posts with collab content
   const textPostsPromise = toTypedPromise<any[]>(
     supabase
       .from("posts_text")
@@ -282,7 +281,6 @@ async function searchCollabsInPosts(limit: number, offset: number): Promise<Post
       .range(offset, offset + limit - 1)
   );
   
-  // Fetch reels posts with collab content
   const reelsPostsPromise = toTypedPromise<any[]>(
     supabase
       .from("posts_reels")
@@ -314,7 +312,7 @@ async function searchCollabsInPosts(limit: number, offset: number): Promise<Post
 export async function fetchPersonalizedFeed(userId: string, interests: string[] = [], limit: number, offset: number): Promise<Post[]> {
   try {
     if (interests && interests.length > 0) {
-      // Fetch posts based on user interests
+      // Fetch posts based on user interests, using toTypedPromise for all queries
       const imagePostsPromise = toTypedPromise<any[]>(
         supabase
           .from("posts_images")
