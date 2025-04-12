@@ -87,8 +87,8 @@ export const checkReelSaveStatus = async (reelId: string, userId: string) => {
       p_user_id: userId
     };
     
-    // Using the proper type for rpc function (unknown return type)
-    const { data, error } = await supabase.rpc<boolean>("is_reel_saved", params);
+    // Fix: Properly specify both type parameters (return type and params type)
+    const { data, error } = await supabase.rpc<boolean, ReelIdUserIdParams>("is_reel_saved", params);
       
     if (error) throw error;
     return !!data;
@@ -105,25 +105,25 @@ export const toggleReelSave = async (reelId: string, userId: string) => {
     const isSaved = await checkReelSaveStatus(reelId, userId);
     
     if (isSaved) {
-      // Unsave using proper type
+      // Unsave with both type parameters
       const params: ReelIdUserIdParams = {
         p_reel_id: reelId,
         p_user_id: userId
       };
       
-      const { error } = await supabase.rpc<void>("unsave_reel", params);
+      const { error } = await supabase.rpc<null, ReelIdUserIdParams>("unsave_reel", params);
         
       if (error) throw error;
       return false;
     } else {
-      // Save using proper type
+      // Save with both type parameters
       const params: SaveReelParams = {
         p_reel_id: reelId,
         p_user_id: userId,
         p_created_at: new Date().toISOString()
       };
       
-      const { error } = await supabase.rpc<void>("save_reel", params);
+      const { error } = await supabase.rpc<null, SaveReelParams>("save_reel", params);
         
       if (error) throw error;
       return true;
@@ -142,7 +142,7 @@ export const checkReelRepostStatus = async (reelId: string, userId: string) => {
       p_user_id: userId
     };
     
-    const { data } = await supabase.rpc<boolean>("is_reel_reposted", params);
+    const { data } = await supabase.rpc<boolean, ReelIdUserIdParams>("is_reel_reposted", params);
     
     return !!data;
   } catch (error) {
@@ -162,7 +162,7 @@ export const repostReel = async (reelId: string, userId: string, originalUserId:
       return false;
     }
     
-    // Repost using proper type
+    // Repost with both type parameters
     const params: RepostReelParams = {
       p_reel_id: reelId,
       p_user_id: userId,
@@ -170,7 +170,7 @@ export const repostReel = async (reelId: string, userId: string, originalUserId:
       p_created_at: new Date().toISOString()
     };
     
-    const { error } = await supabase.rpc<void>("repost_reel", params);
+    const { error } = await supabase.rpc<null, RepostReelParams>("repost_reel", params);
       
     if (error) throw error;
     return true;
@@ -191,7 +191,7 @@ export const reportReel = async (reelId: string, userId: string, reason: string 
       p_created_at: new Date().toISOString()
     };
     
-    const { error } = await supabase.rpc<void>("report_content", params);
+    const { error } = await supabase.rpc<null, ReportContentParams>("report_content", params);
       
     if (error) throw error;
     return true;
