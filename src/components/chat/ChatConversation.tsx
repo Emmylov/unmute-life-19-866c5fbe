@@ -8,7 +8,7 @@ const ChatConversation = () => {
   const { messages, currentUserId, profiles, isTyping, getChatPartner } = useChatContext();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Check if getChatPartner is a function before calling it
+  // Properly handle the chat partner retrieval
   const chatPartner = typeof getChatPartner === 'function' ? getChatPartner() : null;
 
   // Auto-scroll to bottom of messages
