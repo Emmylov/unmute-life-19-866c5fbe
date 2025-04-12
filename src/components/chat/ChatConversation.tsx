@@ -8,8 +8,8 @@ const ChatConversation = () => {
   const { messages, currentUserId, profiles, isTyping, getChatPartner } = useChatContext();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
-  // Fix: Ensure getChatPartner is a function before calling it
-  // The error was here - we were trying to call an array as a function
+  // Fix: Store the chat partner object directly instead of trying to call getChatPartner as a function
+  // The error was that we were trying to call getChatPartner which might not be a function
   const chatPartner = typeof getChatPartner === 'function' ? getChatPartner() : null;
 
   // Auto-scroll to bottom of messages

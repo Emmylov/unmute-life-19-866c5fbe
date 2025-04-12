@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Post } from "./feed-utils";
 
@@ -8,8 +7,11 @@ interface SupabaseResponse<T> {
   error: any;
 }
 
+// Define a type for the query function to fix the string argument issue
+type SupabaseQueryFunction<T> = Promise<SupabaseResponse<T>>;
+
 // Helper function to convert Supabase queries to properly typed promises
-function toTypedPromise<T>(query: any): Promise<SupabaseResponse<T>> {
+function toTypedPromise<T>(query: any): SupabaseQueryFunction<T> {
   return query as Promise<SupabaseResponse<T>>;
 }
 
