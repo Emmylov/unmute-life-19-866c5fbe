@@ -16,10 +16,13 @@ const ChatConversation = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Get the current chat partner's messages if chatId is available
+  const currentMessages = Array.isArray(messages[chatPartner?.id || '']) ? messages[chatPartner?.id || ''] : [];
+
   return (
     <div className="flex-grow p-4 overflow-y-auto bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950">
       <div className="max-w-3xl mx-auto space-y-4">
-        {messages.map((msg) => (
+        {currentMessages.map((msg) => (
           <MessageBubble 
             key={msg.id} 
             message={msg} 

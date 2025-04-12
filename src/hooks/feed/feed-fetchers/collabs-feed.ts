@@ -13,7 +13,7 @@ export async function fetchCollabsFeed(limit: number, offset: number): Promise<P
       try {
         const { data, error } = await toTypedPromise<any[]>(
           // Use any to bypass TypeScript's strict checking temporarily
-          (supabase as any).from("collabs")
+          supabase.from("collabs")
             .select("*, profiles:user_id(*)")
             .order("created_at", { ascending: false })
             .range(offset, offset + limit - 1)
