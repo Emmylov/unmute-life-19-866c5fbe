@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase, listBucketFiles, getPublicUrl, STORAGE_BUCKETS } from "@/integrations/supabase/client";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -35,16 +35,41 @@ interface ReelWithUser {
   user: Tables<"profiles">;
 }
 
-const Reels = () => {
+interface ReelsProps {
+  initialReelId?: string | null;
+}
+
+const Reels = ({ initialReelId }: ReelsProps = {}) => {
   const [reels, setReels] = useState<ReelWithUser[]>([]);
   const [currentReelIndex, setCurrentReelIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
     fetchReels();
   }, []);
+
+  useEffect(() => {
+    // If initialReelId is provided, find and set the corresponding reel
+    if (initialReelId && reels.length > 0) {
+      const reelIndex = reels.findIndex(item => item.reel.id === initialReelId);
+      if (reelIndex !== -1) {
+        setCurrentReelIndex(reelIndex);
+      }
+    }
+  }, [initialReelId, reels]);
+
+  // Update URL when current reel changes
+  useEffect(() => {
+    if (reels.length > 0) {
+      const currentReel = reels[currentReelIndex];
+      if (currentReel) {
+        setSearchParams({ reel: currentReel.reel.id });
+      }
+    }
+  }, [currentReelIndex, reels, setSearchParams]);
 
   const fetchReels = async () => {
     try {

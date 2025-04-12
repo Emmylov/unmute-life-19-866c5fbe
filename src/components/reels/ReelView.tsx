@@ -11,6 +11,7 @@ import ReelCaption from "./controls/ReelCaption";
 import ReelAudioInfo from "./controls/ReelAudioInfo";
 import ReelNavigation from "./controls/ReelNavigation";
 import ReelMuteButton from "./controls/ReelMuteButton";
+import { toast } from "sonner";
 
 interface ReelWithUser {
   reel: {
@@ -81,6 +82,25 @@ const ReelView = ({
   const toggleSave = () => {
     setSaved(!saved);
   };
+  
+  // Share functionality tracking
+  const handleShare = () => {
+    console.log("Reel shared:", reel.id);
+  };
+  
+  // Generate share data for the reel
+  const getShareData = () => {
+    const username = user?.username || 'User';
+    const caption = reel.caption || 'Check out this reel';
+    // Use the current URL as the base and add the reel ID as a parameter
+    const url = window.location.origin + '/reels?reel=' + reel.id;
+    
+    return {
+      title: `${username}'s reel on Unmute Life`,
+      text: caption.length > 50 ? caption.substring(0, 50) + '...' : caption,
+      url: url
+    };
+  };
 
   const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     const threshold = 50;
@@ -129,7 +149,9 @@ const ReelView = ({
           liked={liked} 
           saved={saved} 
           onLike={toggleLike} 
-          onSave={toggleSave} 
+          onSave={toggleSave}
+          onShare={handleShare}
+          shareData={getShareData()}
         />
 
         <div className="absolute bottom-6 left-4 right-24 pointer-events-auto">

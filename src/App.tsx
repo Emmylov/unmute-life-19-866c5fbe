@@ -1,6 +1,6 @@
 
 import React from "react";
-import { BrowserRouter as Router, Routes, Route, useParams } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useParams, useSearchParams } from "react-router-dom";
 import Auth from "./pages/Auth";
 import Home from "./pages/Home";
 import Profile from "./pages/Profile";
@@ -42,7 +42,7 @@ function App() {
             <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/create" element={<ContentCreator />} />
             <Route path="/create-collab" element={<CreateCollab />} />
-            <Route path="/reels" element={<Reels />} />
+            <Route path="/reels" element={<ReelsWithParams />} />
             <Route path="/vibe-check" element={<VibeCheck />} />
             <Route path="/notifications" element={<Notifications />} />
             <Route path="*" element={<NotFound />} />
@@ -58,6 +58,13 @@ function App() {
 function ChatWithId() {
   const { id } = useParams();
   return <Chat chatId={id} />;
+}
+
+// Helper component to handle reels with query parameters
+function ReelsWithParams() {
+  const [searchParams] = useSearchParams();
+  const reelId = searchParams.get('reel');
+  return <Reels initialReelId={reelId} />;
 }
 
 export default App;
