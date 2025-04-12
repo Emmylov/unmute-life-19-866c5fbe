@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNotifications } from "@/hooks/use-notifications";
@@ -8,33 +8,42 @@ import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Loader2 } from "lucide-react";
+import { Loader2, Bell, Check } from "lucide-react";
 
 const Notifications = () => {
-  const { notifications, loading, unreadCount, markAsRead, markAllAsRead } = useNotifications();
+  const { notifications, loading, unreadCount, markAsRead, markAllAsRead, fetchNotifications } = useNotifications();
   
+  // Fetch notifications when the page loads
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+
   return (
     <AppLayout>
       <div className="container max-w-4xl mx-auto py-6">
         <Card className="border-none shadow-md">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-2xl font-bold">
-                Notifications 
-                {unreadCount > 0 && (
-                  <Badge variant="default" className="ml-2 bg-unmute-purple">
-                    {unreadCount} new
-                  </Badge>
-                )}
-              </CardTitle>
+              <div className="flex items-center gap-2">
+                <Bell className="h-5 w-5 text-unmute-purple" />
+                <CardTitle className="text-2xl font-bold">
+                  Notifications 
+                  {unreadCount > 0 && (
+                    <Badge variant="default" className="ml-2 bg-unmute-purple animate-pulse">
+                      {unreadCount} new
+                    </Badge>
+                  )}
+                </CardTitle>
+              </div>
               
               {unreadCount > 0 && (
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={markAllAsRead}
-                  className="text-xs"
+                  className="text-xs flex items-center gap-1"
                 >
+                  <Check className="h-3 w-3" />
                   Mark all as read
                 </Button>
               )}
@@ -134,9 +143,10 @@ const NotificationsList = ({ notifications, loading, markAsRead, showAll }: Noti
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-xs text-unmute-purple hover:text-unmute-purple/80"
+                  className="text-xs text-unmute-purple hover:text-unmute-purple/80 flex items-center gap-1"
                   onClick={() => markAsRead(notification.id)}
                 >
+                  <Check className="h-3 w-3" />
                   Mark as read
                 </Button>
               )}

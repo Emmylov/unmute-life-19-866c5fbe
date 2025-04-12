@@ -20,6 +20,9 @@ interface Notification {
   reference_type?: string;
 }
 
+// Create audio element for notification sounds
+const notificationSound = new Audio("/notification-sound.mp3");
+
 export const useNotifications = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -99,11 +102,14 @@ export const useNotifications = () => {
       if (user && profile?.notification_count > 0) {
         await supabase
           .from("profiles")
-          .update({ notification_count: profile.notification_count - 1 })
+          .update({ notification_count: Math.max(0, profile.notification_count - 1) })
           .eq("id", user.id);
       }
+
+      toast.success("Notification marked as read");
     } catch (error) {
       console.error("Error marking notification as read:", error);
+      toast.error("Failed to mark notification as read");
     }
   };
   
@@ -160,6 +166,13 @@ export const useNotifications = () => {
           filter: `user_id=eq.${user.id}`
         },
         (payload) => {
+          // Play notification sound
+          try {
+            notificationSound.play().catch(err => console.log('Audio playback prevented:', err));
+          } catch (e) {
+            console.log('Audio playback error:', e);
+          }
+          
           // Add the new notification to our state
           const newNotification = payload.new as Notification;
           setNotifications(prev => [newNotification, ...prev]);

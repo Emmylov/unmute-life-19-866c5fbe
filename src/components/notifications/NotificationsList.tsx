@@ -3,7 +3,7 @@ import React from "react";
 import { useNotifications } from "@/hooks/use-notifications";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Loader2, Check } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 const NotificationsList: React.FC = () => {
@@ -39,8 +39,9 @@ const NotificationsList: React.FC = () => {
             variant="ghost"
             size="sm"
             onClick={markAllAsRead}
-            className="text-xs text-unmute-purple hover:text-unmute-purple/80"
+            className="text-xs text-unmute-purple hover:text-unmute-purple/80 flex items-center gap-1"
           >
+            <Check className="h-3 w-3" />
             Mark all as read
           </Button>
         )}
@@ -52,7 +53,7 @@ const NotificationsList: React.FC = () => {
             key={notification.id}
             className={`p-3 border-b hover:bg-gray-50 ${
               !notification.read ? "bg-gray-50" : ""
-            }`}
+            } transition-colors`}
           >
             <div className="flex items-start gap-3">
               <Avatar className="h-9 w-9">
@@ -78,9 +79,10 @@ const NotificationsList: React.FC = () => {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-xs text-unmute-purple hover:text-unmute-purple/80"
+                  className="text-xs text-unmute-purple hover:text-unmute-purple/80 flex items-center gap-1"
                   onClick={() => markAsRead(notification.id)}
                 >
+                  <Check className="h-3 w-3" />
                   Mark as read
                 </Button>
               )}
