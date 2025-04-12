@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { searchUsers, searchContent, searchCommunities } from '@/services/search-service';
-import { trackEvent } from '@/services/analytics-service';
+import { trackAnalyticEvent } from '@/services/analytics-service';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
@@ -79,15 +79,12 @@ export const useSearch = (options: SearchOptions = {}) => {
       
       // Track search event
       if (user) {
-        trackEvent(user.id, {
-          event_type: 'search',
-          data: { 
-            query: searchQuery,
-            results_count: {
-              users: usersResults?.length || 0,
-              content: contentResults.items?.length || 0,
-              communities: communitiesResults?.length || 0
-            }
+        trackAnalyticEvent(user.id, 'search', { 
+          query: searchQuery,
+          results_count: {
+            users: usersResults?.length || 0,
+            content: contentResults.items?.length || 0,
+            communities: communitiesResults?.length || 0
           }
         });
       }

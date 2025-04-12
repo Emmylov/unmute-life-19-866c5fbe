@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 export const searchUsers = async (query: string, limit: number = 20) => {
@@ -25,7 +26,7 @@ export const searchContent = async (query: string, options: { contentType?: 'ima
   try {
     // Define result structure
     const result = {
-      items: [],
+      items: [] as any[],
       total: 0
     };
     
@@ -88,7 +89,7 @@ const searchContentByType = async (query: string, contentType: 'images' | 'text'
     // For text posts, search in title and body
     if (table === 'posts_text') {
       const { data, error } = await supabase
-        .from(table)
+        .from(table as any)
         .select('*, profiles(*)')
         .or(`title.ilike.%${query}%,body.ilike.%${query}%`)
         .limit(limit);
@@ -99,7 +100,7 @@ const searchContentByType = async (query: string, contentType: 'images' | 'text'
     
     // For images and reels, search in caption and tags
     const { data, error } = await supabase
-      .from(table)
+      .from(table as any)
       .select('*, profiles(*)')
       .or(`caption.ilike.%${query}%`)
       .limit(limit);

@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { trackEvent } from "@/services/analytics-service";
+import { trackAnalyticEvent } from "@/services/analytics-service";
 import { toast } from "sonner";
 
 interface FeedOptions {
@@ -81,11 +81,7 @@ export const useFeed = (options: FeedOptions = {}) => {
       }
       
       // Track feed view event
-      trackEvent(user.id, {
-        event_type: 'feed_view',
-        resource_type: 'feed',
-        data: { feed_type: feedType, offset: newOffset, limit }
-      });
+      trackAnalyticEvent(user.id, 'feed_view', { feed_type: feedType, offset: newOffset, limit });
     } catch (err: any) {
       console.error("Error fetching feed:", err);
       setError(err.message || "Failed to load feed");
@@ -156,7 +152,7 @@ async function fetchFollowingFeed(userId: string, limit: number, offset: number)
     const [imagePostsRes, textPostsRes, reelsPostsRes] = await Promise.all([
       // Get image posts
       supabase
-        .from("posts_images")
+        .from("posts_images" as any)
         .select("*, profiles:profiles(*)")
         .in("user_id", userIds)
         .order("created_at", { ascending: false })
@@ -164,7 +160,7 @@ async function fetchFollowingFeed(userId: string, limit: number, offset: number)
       
       // Get text posts
       supabase
-        .from("posts_text")
+        .from("posts_text" as any)
         .select("*, profiles:profiles(*)")
         .in("user_id", userIds)
         .order("created_at", { ascending: false })
@@ -172,7 +168,7 @@ async function fetchFollowingFeed(userId: string, limit: number, offset: number)
       
       // Get reels
       supabase
-        .from("posts_reels")
+        .from("posts_reels" as any)
         .select("*, profiles:profiles(*)")
         .in("user_id", userIds)
         .order("created_at", { ascending: false })
@@ -281,7 +277,7 @@ async function fetchMusicFeed(limit: number, offset: number): Promise<any[]> {
   try {
     // For music feed, focus on reels with audio
     const { data: reels, error } = await supabase
-      .from("posts_reels")
+      .from("posts_reels" as any)
       .select("*, profiles:profiles(*)")
       .not("audio_url", "is", null)
       .order("created_at", { ascending: false })
@@ -304,7 +300,7 @@ async function fetchCollabsFeed(limit: number, offset: number): Promise<any[]> {
     if (hasCollabs) {
       // If collabs table exists, fetch from there
       const { data, error } = await supabase
-        .from("collabs")
+        .from("collabs" as any)
         .select("*, profiles:user_id(*)")
         .order("created_at", { ascending: false })
         .range(offset, offset + limit - 1);
@@ -316,7 +312,7 @@ async function fetchCollabsFeed(limit: number, offset: number): Promise<any[]> {
       const [imagePostsRes, textPostsRes, reelsPostsRes] = await Promise.all([
         // Get image posts
         supabase
-          .from("posts_images")
+          .from("posts_images" as any)
           .select("*, profiles:profiles(*)")
           .or('caption.ilike.%collab%,tags.cs.{collab}')
           .order("created_at", { ascending: false })
@@ -324,7 +320,7 @@ async function fetchCollabsFeed(limit: number, offset: number): Promise<any[]> {
         
         // Get text posts
         supabase
-          .from("posts_text")
+          .from("posts_text" as any)
           .select("*, profiles:profiles(*)")
           .or('title.ilike.%collab%,body.ilike.%collab%,tags.cs.{collab}')
           .order("created_at", { ascending: false })
@@ -332,7 +328,7 @@ async function fetchCollabsFeed(limit: number, offset: number): Promise<any[]> {
         
         // Get reels
         supabase
-          .from("posts_reels")
+          .from("posts_reels" as any)
           .select("*, profiles:profiles(*)")
           .or('caption.ilike.%collab%,tags.cs.{collab}')
           .order("created_at", { ascending: false })
@@ -365,7 +361,7 @@ async function fetchPersonalizedFeed(userId: string, interests: string[] = [], l
       const [imagePostsRes, textPostsRes, reelsPostsRes] = await Promise.all([
         // Get image posts
         supabase
-          .from("posts_images")
+          .from("posts_images" as any)
           .select("*, profiles:profiles(*)")
           .overlaps('tags', interests)
           .order("created_at", { ascending: false })
@@ -373,7 +369,7 @@ async function fetchPersonalizedFeed(userId: string, interests: string[] = [], l
         
         // Get text posts
         supabase
-          .from("posts_text")
+          .from("posts_text" as any)
           .select("*, profiles:profiles(*)")
           .overlaps('tags', interests)
           .order("created_at", { ascending: false })
@@ -381,7 +377,7 @@ async function fetchPersonalizedFeed(userId: string, interests: string[] = [], l
         
         // Get reels
         supabase
-          .from("posts_reels")
+          .from("posts_reels" as any)
           .select("*, profiles:profiles(*)")
           .overlaps('tags', interests)
           .order("created_at", { ascending: false })

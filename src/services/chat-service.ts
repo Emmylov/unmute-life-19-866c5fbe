@@ -8,16 +8,14 @@ export const getUserChats = async (userId: string) => {
     const { data: sentChats, error: sentError } = await supabase
       .from("chat_messages")
       .select("receiver_id")
-      .eq("sender_id", userId)
-      .distinct();
+      .eq("sender_id", userId);
       
     if (sentError) throw sentError;
     
     const { data: receivedChats, error: receivedError } = await supabase
       .from("chat_messages")
       .select("sender_id")
-      .eq("receiver_id", userId)
-      .distinct();
+      .eq("receiver_id", userId);
       
     if (receivedError) throw receivedError;
     

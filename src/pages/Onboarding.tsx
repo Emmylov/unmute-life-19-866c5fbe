@@ -13,7 +13,7 @@ import InterestsStep from "@/components/onboarding/InterestsStep";
 import ProfileSetupStep from "@/components/onboarding/ProfileSetupStep";
 import FinalWelcomeStep from "@/components/onboarding/FinalWelcomeStep";
 import { supabase } from "@/integrations/supabase/client";
-import { trackEvent } from "@/services/analytics-service";
+import { trackAnalyticEvent } from "@/services/analytics-service";
 import { updateOnboardingStep, saveOnboardingData } from "@/services/user-settings-service";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -74,10 +74,10 @@ const Onboarding = () => {
       
       // Track analytics event for step completion
       if (user) {
-        trackEvent(user.id, {
-          event_type: "onboarding_step_complete",
-          resource_type: "onboarding",
-          data: { step: currentStep, next_step: nextStep }
+        trackAnalyticEvent(user.id, "onboarding_step_complete", { 
+          resource_type: "onboarding", 
+          step: currentStep, 
+          next_step: nextStep 
         });
         
         // Update onboarding step in database
@@ -130,10 +130,7 @@ const Onboarding = () => {
       });
       
       // Track completion event
-      trackEvent(user.id, {
-        event_type: "onboarding_complete",
-        resource_type: "onboarding"
-      });
+      trackAnalyticEvent(user.id, "onboarding_complete", { resource_type: "onboarding" });
       
       // Refresh the user profile
       await refreshProfile();
@@ -193,28 +190,22 @@ const Onboarding = () => {
         return (
           <AccountCreationStep 
             onNext={handleNext} 
-            onUpdateData={handleUpdateOnboardingData}
-            initialData={onboardingData}
           />
         );
       case 5:
         return (
           <InterestsStep 
             onNext={handleNext} 
-            onUpdateData={handleUpdateOnboardingData}
-            initialInterests={onboardingData.interests || []}
           />
         );
       case 6:
         return (
           <ProfileSetupStep 
             onNext={handleNext}
-            onUpdateData={handleUpdateOnboardingData}
-            initialData={onboardingData}
           />
         );
       case 7:
-        return <FinalWelcomeStep onComplete={handleComplete} userData={onboardingData} />;
+        return <FinalWelcomeStep onComplete={handleComplete} />;
       default:
         return null;
     }

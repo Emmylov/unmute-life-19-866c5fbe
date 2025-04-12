@@ -1,261 +1,168 @@
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./AuthContext";
-import { toast } from "sonner";
-import { 
-  getUserChats, 
-  getChatMessages, 
-  sendMessage, 
-  markMessageAsRead, 
-  markConversationAsRead, 
-  setupChatRealtime,
-  updateTypingStatus,
-  subscribeToTypingIndicator
-} from "@/services/chat-service";
+import { getChatMessages, markMessageAsRead } from "@/services/content-service";
+import { getUserChats, setupChatRealtime } from "@/services/chat-service";
 
 interface ChatContextType {
-  messages: any[];
-  chats: any[];
-  currentChatId: string | null;
-  loading: boolean;
-  sending: boolean;
-  currentUserId: string;
-  message: string;
+  messages: Record<string, any[]>;
+  loadingMessages: boolean;
   profiles: Record<string, any>;
-  moodStatus: string;
-  isTyping: boolean;
-  setMessage: (message: string) => void;
-  setMoodStatus: (status: string) => void;
-  handleSendMessage: (e: React.FormEvent) => void;
-  getChatPartner: () => any;
-  fetchMessages: () => Promise<void>;
+  loadingProfiles: boolean;
+  activeChats: any[]; // Add the missing property
+  isTyping: Record<string, boolean>;
+  currentUserId: string | null;
+  refreshMessages: (chatId: string) => Promise<void>;
+  markAsRead: (messageId: string) => Promise<void>;
+  markConversationAsRead: (partnerId: string) => Promise<void>;
+  setTypingStatus: (partnerId: string, isTyping: boolean) => void;
+  refreshChats: () => Promise<void>;
 }
 
 const ChatContext = createContext<ChatContextType>({
-  messages: [],
-  chats: [],
-  currentChatId: null,
-  loading: false,
-  sending: false,
-  currentUserId: "",
-  message: "",
+  messages: {},
+  loadingMessages: false,
   profiles: {},
-  moodStatus: "😊",
-  isTyping: false,
-  setMessage: () => {},
-  setMoodStatus: () => {},
-  handleSendMessage: () => {},
-  getChatPartner: () => null,
-  fetchMessages: async () => {}
+  loadingProfiles: false,
+  activeChats: [],
+  isTyping: {},
+  currentUserId: null,
+  refreshMessages: async () => {},
+  markAsRead: async () => {},
+  markConversationAsRead: async () => {},
+  setTypingStatus: () => {},
+  refreshChats: async () => {},
 });
 
-interface ChatProviderProps {
-  children: React.ReactNode;
-  chatId?: string;
-}
-
-export const ChatProvider: React.FC<ChatProviderProps> = ({ children, chatId }) => {
-  const [messages, setMessages] = useState<any[]>([]);
-  const [chats, setChats] = useState<any[]>([]);
-  const [currentChatId, setCurrentChatId] = useState<string | null>(chatId || null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [sending, setSending] = useState<boolean>(false);
-  const [message, setMessage] = useState<string>("");
+export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ 
+  children 
+}) => {
+  const [messages, setMessages] = useState<Record<string, any[]>>({});
+  const [loadingMessages, setLoadingMessages] = useState(false);
   const [profiles, setProfiles] = useState<Record<string, any>>({});
-  const [moodStatus, setMoodStatus] = useState<string>("😊");
-  const [isTyping, setIsTyping] = useState<boolean>(false);
-  const { user, profile } = useAuth();
+  const [loadingProfiles, setLoadingProfiles] = useState(false);
+  const [activeChats, setActiveChats] = useState<any[]>([]);
+  const [isTyping, setIsTyping] = useState<Record<string, boolean>>({});
+  const { user } = useAuth();
 
-  // Fetch user chats
-  const fetchChats = useCallback(async () => {
-    if (!user?.id) return;
+  // Initialize chat data
+  useEffect(() => {
+    if (user) {
+      fetchChats();
+      
+      // Set up realtime subscription for new messages
+      const cleanup = setupChatRealtime(user.id, (newMessage) => {
+        // Update messages for the relevant chat
+        setMessages(prev => {
+          const chatId = newMessage.sender_id;
+          const updatedMessages = { ...prev };
+          
+          if (updatedMessages[chatId]) {
+            updatedMessages[chatId] = [...updatedMessages[chatId], newMessage];
+          } else {
+            updatedMessages[chatId] = [newMessage];
+          }
+          
+          return updatedMessages;
+        });
+        
+        // Refresh chats list to update previews
+        fetchChats();
+      });
+      
+      return () => {
+        cleanup();
+      };
+    }
+  }, [user]);
+
+  const fetchChats = async () => {
+    if (!user) return;
     
     try {
-      const chatList = await getUserChats(user.id);
-      setChats(chatList);
+      setLoadingProfiles(true);
+      const chats = await getUserChats(user.id);
+      setActiveChats(chats);
       
-      // Build profiles object
+      // Update profiles
       const profilesMap: Record<string, any> = {};
-      chatList.forEach(chat => {
+      chats.forEach(chat => {
         if (chat.profile) {
           profilesMap[chat.id] = chat.profile;
         }
       });
       
-      setProfiles(prevProfiles => ({
-        ...prevProfiles,
-        ...profilesMap
-      }));
+      setProfiles(profilesMap);
     } catch (error) {
       console.error("Error fetching chats:", error);
-      toast.error("Failed to load chats");
-    }
-  }, [user?.id]);
-
-  // Fetch chat messages
-  const fetchMessages = useCallback(async () => {
-    if (!user?.id || !currentChatId) {
-      setMessages([]);
-      setLoading(false);
-      return;
-    }
-    
-    setLoading(true);
-    
-    try {
-      const messagesData = await getChatMessages(user.id, currentChatId);
-      setMessages(messagesData || []);
-      
-      // Mark conversation as read
-      await markConversationAsRead(user.id, currentChatId);
-      
-      // Update chat list to reflect read messages
-      fetchChats();
-    } catch (error) {
-      console.error("Error fetching messages:", error);
-      toast.error("Failed to load messages");
     } finally {
-      setLoading(false);
-    }
-  }, [user?.id, currentChatId, fetchChats]);
-
-  // Send a message
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!message.trim() || !user?.id || !currentChatId) return;
-    
-    setSending(true);
-    
-    try {
-      const newMessage = await sendMessage(user.id, currentChatId, message);
-      
-      // Add message to local state for immediate feedback
-      setMessages(prev => [...prev, newMessage]);
-      
-      // Clear message input
-      setMessage("");
-      
-      // Update chat list
-      fetchChats();
-    } catch (error) {
-      console.error("Error sending message:", error);
-      toast.error("Failed to send message");
-    } finally {
-      setSending(false);
+      setLoadingProfiles(false);
     }
   };
 
-  // Handle typing indicator
-  const handleTyping = useCallback((isTyping: boolean) => {
-    if (!user?.id || !currentChatId) return;
+  const refreshMessages = async (chatId: string) => {
+    if (!user || !chatId) return;
     
-    updateTypingStatus(user.id, currentChatId, isTyping);
-  }, [user?.id, currentChatId]);
+    try {
+      setLoadingMessages(true);
+      const chatMessages = await getChatMessages(user.id, chatId);
+      setMessages(prev => ({
+        ...prev,
+        [chatId]: chatMessages
+      }));
+    } catch (error) {
+      console.error("Error refreshing messages:", error);
+    } finally {
+      setLoadingMessages(false);
+    }
+  };
 
-  // Get the chat partner's profile
-  const getChatPartner = useCallback(() => {
-    if (!currentChatId) return null;
-    return profiles[currentChatId] || null;
-  }, [currentChatId, profiles]);
+  const markAsRead = async (messageId: string) => {
+    try {
+      await markMessageAsRead(messageId);
+    } catch (error) {
+      console.error("Error marking message as read:", error);
+    }
+  };
 
-  // Set up real-time message updates
-  useEffect(() => {
-    if (!user?.id) return;
+  const markConversationAsRead = async (partnerId: string) => {
+    if (!user) return;
     
-    const cleanup = setupChatRealtime(user.id, (newMessage) => {
-      // Only update if this is for the current chat
-      if (newMessage.sender_id === currentChatId || newMessage.receiver_id === currentChatId) {
-        setMessages(prev => [...prev, newMessage]);
-        
-        // Mark as read if we're in the chat
-        markMessageAsRead(newMessage.id);
-      }
+    try {
+      await fetch(`/api/chats/${user.id}/read/${partnerId}`, { 
+        method: 'POST'
+      });
       
-      // Update chat list regardless
+      // Refresh chats to update unread counts
       fetchChats();
-      
-      // Show notification if the message is not in the current chat
-      if (newMessage.sender_id !== currentChatId) {
-        const sender = profiles[newMessage.sender_id];
-        toast.info(
-          `New message from ${sender?.username || 'Someone'}`,
-          {
-            description: newMessage.content.substring(0, 50) + (newMessage.content.length > 50 ? '...' : '')
-          }
-        );
-      }
-    });
-    
-    return cleanup;
-  }, [user?.id, currentChatId, profiles, fetchChats]);
-
-  // Subscribe to typing indicators
-  useEffect(() => {
-    if (!user?.id || !currentChatId) return;
-    
-    const cleanup = subscribeToTypingIndicator(
-      user.id,
-      currentChatId,
-      setIsTyping
-    );
-    
-    return cleanup;
-  }, [user?.id, currentChatId]);
-
-  // Watch for message input changes to trigger typing indicator
-  useEffect(() => {
-    if (!message.trim()) {
-      handleTyping(false);
-      return;
+    } catch (error) {
+      console.error("Error marking conversation as read:", error);
     }
-    
-    const timeout = setTimeout(() => {
-      handleTyping(true);
-    }, 300);
-    
-    return () => {
-      clearTimeout(timeout);
-      handleTyping(false);
-    };
-  }, [message, handleTyping]);
+  };
 
-  // Load initial chats
-  useEffect(() => {
-    if (user?.id) {
-      fetchChats();
-    }
-  }, [user?.id, fetchChats]);
-
-  // Load messages when currentChatId changes
-  useEffect(() => {
-    if (chatId && chatId !== currentChatId) {
-      setCurrentChatId(chatId);
-    }
-    
-    if (user?.id && currentChatId) {
-      fetchMessages();
-    }
-  }, [user?.id, currentChatId, chatId, fetchMessages]);
+  const setTypingStatus = (partnerId: string, isTyping: boolean) => {
+    setIsTyping(prev => ({
+      ...prev,
+      [partnerId]: isTyping
+    }));
+  };
 
   return (
     <ChatContext.Provider
       value={{
         messages,
-        chats,
-        currentChatId,
-        loading,
-        sending,
-        currentUserId: user?.id || "",
-        message,
+        loadingMessages,
         profiles,
-        moodStatus,
+        loadingProfiles,
+        activeChats,
         isTyping,
-        setMessage,
-        setMoodStatus,
-        handleSendMessage,
-        getChatPartner,
-        fetchMessages
+        currentUserId: user?.id || null,
+        refreshMessages,
+        markAsRead,
+        markConversationAsRead,
+        setTypingStatus,
+        refreshChats: fetchChats
       }}
     >
       {children}

@@ -22,6 +22,9 @@ export const trackAnalyticEvent = async (userId: string, eventType: string, even
   }
 };
 
+// Alias for trackAnalyticEvent to maintain compatibility with existing code
+export const trackEvent = trackAnalyticEvent;
+
 export const getUserAnalytics = async (userId: string, eventType?: string, startDate?: string, endDate?: string) => {
   try {
     // For TypeScript safety, using type assertion

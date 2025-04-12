@@ -6,7 +6,7 @@ export const saveUserSettings = async (userId: string, settings: any) => {
   try {
     // Check if settings already exist for this user
     const { data: existingSettings, error: fetchError } = await supabase
-      .from("user_settings")
+      .from("user_settings" as any)
       .select("*")
       .eq("user_id", userId)
       .maybeSingle();
@@ -18,7 +18,7 @@ export const saveUserSettings = async (userId: string, settings: any) => {
     // If settings exist, update them; otherwise create new settings
     if (existingSettings) {
       const { data, error } = await supabase
-        .from("user_settings")
+        .from("user_settings" as any)
         .update({
           settings: settings,
           updated_at: new Date().toISOString()
@@ -31,7 +31,7 @@ export const saveUserSettings = async (userId: string, settings: any) => {
       return data;
     } else {
       const { data, error } = await supabase
-        .from("user_settings")
+        .from("user_settings" as any)
         .insert({
           user_id: userId,
           settings: settings,
@@ -54,7 +54,7 @@ export const saveUserSettings = async (userId: string, settings: any) => {
 export const getUserSettings = async (userId: string) => {
   try {
     const { data, error } = await supabase
-      .from("user_settings")
+      .from("user_settings" as any)
       .select("*")
       .eq("user_id", userId)
       .maybeSingle();
@@ -132,10 +132,10 @@ export const updateSetting = async (userId: string, settingPath: string[], value
 // Get specific setting by path
 export const getSetting = async (userId: string, settingPath: string[]): Promise<any> => {
   try {
-    const settings = await getUserSettings(userId);
+    const data = await getUserSettings(userId);
     
     // Navigate to the nested property
-    let value = settings.settings;
+    let value = data.settings;
     for (const key of settingPath) {
       if (!value || typeof value !== 'object') {
         return undefined;

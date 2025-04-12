@@ -120,7 +120,7 @@ export const getUserPosts = async (userId: string, limit: number = 10, type?: 'i
     
     // Fetch the posts
     const { data, error } = await supabase
-      .from(table)
+      .from(table as any)
       .select('*')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
