@@ -1,20 +1,21 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Post } from "../feed-utils";
-import { toTypedPromise, dynamicTableQuery } from "./utils";
+import { rpcCall, toTypedPromise, dynamicTableQuery } from "./utils";
 
 export async function fetchCollabsFeed(limit: number, offset: number): Promise<Post[]> {
   try {
     // First check if the collabs table exists
-    const { data: hasCollabs } = await rpcCall<boolean>('check_table_exists', { table_name: 'collabs' });
+    const hasCollabs = await rpcCall<boolean>('check_table_exists', { table_name: 'collabs' });
     
-    if (hasCollabs) {
+    if (hasCollabs.data) {
       // Handle collabs table if it exists - using dynamic approach to handle non-typed tables
       try {
         const { data, error } = await dynamicTableQuery<any[]>('collabs')
           .select("*, profiles:user_id(*)")
           .order("created_at", { ascending: false })
-          .range(offset, offset + limit - 1);
+          .range(offset, offset + limit - 1)
+          .execute();
         
         if (error) throw error;
         return (data || []).map((collab: any) => ({ ...collab, type: 'collab' }));
@@ -33,12 +34,8 @@ export async function fetchCollabsFeed(limit: number, offset: number): Promise<P
   }
 }
 
-// Import the rpc helper function that we're using above
-import { rpcCall } from "./utils";
-
 // Helper function to search for collabs in other post types
 async function searchCollabsInPosts(limit: number, offset: number): Promise<Post[]> {
-  // Apply the same toTypedPromise pattern to all Supabase queries
   const imagePostsPromise = toTypedPromise<any[]>(
     supabase
       .from("posts_images")

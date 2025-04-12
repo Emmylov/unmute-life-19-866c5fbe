@@ -1,35 +1,24 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { SupabaseResponse } from "./types";
+import { PostgrestQueryBuilder } from "@supabase/supabase-js";
+import { Database } from "@/integrations/supabase/types-patch";
 
-/**
- * Helper function to properly type Supabase queries
- * This addresses the TypeScript error where dynamic table/function names aren't in the generated types
- */
-export function toTypedPromise<T>(query: Promise<any>): Promise<SupabaseResponse<T>> {
-  return query as Promise<SupabaseResponse<T>>;
+// Generic type-safe query execution function
+export async function toTypedPromise<T>(query: PostgrestQueryBuilder<Database, never>) {
+  const result = await query.select().execute();
+  return result as { data: T | null; error: any };
 }
 
-/**
- * Helper function specifically for RPC calls that aren't in the generated types
- * This addresses the TypeScript errors in trending-feed.ts
- */
-export function rpcCall<T>(functionName: string, params?: Record<string, any>): Promise<SupabaseResponse<T>> {
-  // Using type assertion to bypass TypeScript's strict checking for dynamic RPC function calls
-  return (supabase.rpc as any)(functionName, params) as Promise<SupabaseResponse<T>>;
+// Enhanced RPC call function with type safety
+export async function rpcCall<T>(
+  fn: string, 
+  params: Record<string, any> = {}
+): Promise<{ data: T | null; error: any }> {
+  const result = await supabase.rpc(fn, params).execute();
+  return result as { data: T | null; error: any };
 }
 
-/**
- * Helper function for accessing tables that aren't in the generated types
- * This addresses the TypeScript errors in collabs-feed.ts
- */
-export function dynamicTableQuery<T>(tableName: string) {
-  // Using type assertion to bypass TypeScript's strict checking for dynamic table names
-  return (supabase.from as any)(tableName) as {
-    select: (columns: string) => {
-      order: (column: string, options: { ascending: boolean }) => {
-        range: (from: number, to: number) => Promise<SupabaseResponse<T>>
-      }
-    }
-  };
+// Dynamic table query helper
+export function dynamicTableQuery<T>(tableName: keyof Database['public']['Tables']) {
+  return supabase.from(tableName) as unknown as PostgrestQueryBuilder<Database, never>;
 }
