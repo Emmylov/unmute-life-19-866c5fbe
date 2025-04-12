@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Loader2, Check } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { motion } from "framer-motion";
 
 const NotificationsList: React.FC = () => {
   const { notifications, loading, unreadCount, markAsRead, markAllAsRead } = useNotifications();
@@ -49,8 +50,11 @@ const NotificationsList: React.FC = () => {
 
       <div className="overflow-y-auto max-h-[400px]">
         {notifications.map((notification) => (
-          <div
+          <motion.div
             key={notification.id}
+            initial={{ opacity: !notification.read ? 0.8 : 1, backgroundColor: !notification.read ? "rgba(243, 244, 246, 1)" : "rgba(255, 255, 255, 1)" }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             className={`p-3 border-b hover:bg-gray-50 ${
               !notification.read ? "bg-gray-50" : ""
             } transition-colors`}
@@ -79,15 +83,21 @@ const NotificationsList: React.FC = () => {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-xs text-unmute-purple hover:text-unmute-purple/80 flex items-center gap-1"
+                  className="text-xs text-unmute-purple hover:text-unmute-purple/80 flex items-center gap-1 transition-all hover:bg-unmute-purple/10"
                   onClick={() => markAsRead(notification.id)}
                 >
-                  <Check className="h-3 w-3" />
-                  Mark as read
+                  <motion.div
+                    initial={{ scale: 0.8 }}
+                    animate={{ scale: 1 }}
+                    className="flex items-center"
+                  >
+                    <Check className="h-3 w-3 mr-1" />
+                    Mark as read
+                  </motion.div>
                 </Button>
               )}
             </div>
-          </div>
+          </motion.div>
         ))}
       </div>
     </div>

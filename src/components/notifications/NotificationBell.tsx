@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Bell } from "lucide-react";
 import { 
   Popover, 
@@ -10,11 +10,38 @@ import { Button } from "@/components/ui/button";
 import { useNotifications } from "@/hooks/use-notifications";
 import NotificationsList from "./NotificationsList";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 const NotificationBell: React.FC = () => {
   const [open, setOpen] = useState(false);
-  const { unreadCount, fetchNotifications } = useNotifications();
+  const { unreadCount, fetchNotifications, notifications } = useNotifications();
   const navigate = useNavigate();
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const previousUnreadCount = useRef(unreadCount);
+  
+  // Initialize audio element
+  useEffect(() => {
+    audioRef.current = new Audio("/notification-sound.mp3");
+  }, []);
+
+  // Play sound when new notifications arrive
+  useEffect(() => {
+    if (unreadCount > previousUnreadCount.current && previousUnreadCount.current !== 0) {
+      // Play notification sound
+      if (audioRef.current) {
+        audioRef.current.play().catch(err => {
+          console.error("Error playing notification sound:", err);
+        });
+      }
+      
+      // Show toast notification
+      toast("New notification", {
+        description: "You have received a new notification",
+        position: "top-right",
+      });
+    }
+    previousUnreadCount.current = unreadCount;
+  }, [unreadCount]);
   
   const handleOpenChange = (newOpen: boolean) => {
     setOpen(newOpen);

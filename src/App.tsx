@@ -19,7 +19,7 @@ import Notifications from "./pages/Notifications";
 import "./App.css";
 
 // Toast provider
-import { Toaster } from "@/components/ui/sonner";
+import { Toaster } from "sonner";
 
 // Auth provider
 import { AuthProvider } from "./contexts/AuthContext";
@@ -47,7 +47,7 @@ function App() {
             <Route path="/notifications" element={<Notifications />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
-          <Toaster />
+          <Toaster position="top-right" />
         </div>
       </AuthProvider>
     </Router>
