@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { motion, useAnimation, PanInfo } from "framer-motion";
 import { Heart, Flag } from "lucide-react";
@@ -11,9 +12,16 @@ import ReelAudioInfo from "./controls/ReelAudioInfo";
 import ReelNavigation from "./controls/ReelNavigation";
 import ReelMuteButton from "./controls/ReelMuteButton";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { getCommentCount } from "@/services/comment-service";
+import { 
+  checkReelLikeStatus, 
+  toggleReelLike, 
+  checkReelSaveStatus, 
+  toggleReelSave,
+  repostReel,
+  reportReel
+} from "@/services/reel-service";
 
 interface ReelWithUser {
   reel: {
@@ -68,56 +76,27 @@ const ReelView = ({
   const { user: currentUser } = useAuth();
 
   useEffect(() => {
-    const checkLikeStatus = async () => {
+    const fetchReelData = async () => {
       if (!currentUser) return;
       
       try {
-        const { data, error } = await supabase
-          .from("reel_likes")
-          .select("*")
-          .eq("reel_id", reel.id)
-          .eq("user_id", currentUser.id)
-          .maybeSingle();
-          
-        if (!error && data) {
-          setLiked(true);
-        }
-      } catch (error) {
-        console.error("Error checking like status:", error);
-      }
-    };
-    
-    const checkSaveStatus = async () => {
-      if (!currentUser) return;
-      
-      try {
-        const { data, error } = await supabase
-          .from("saved_reels")
-          .select("*")
-          .eq("reel_id", reel.id)
-          .eq("user_id", currentUser.id)
-          .maybeSingle();
-          
-        if (!error && data) {
-          setSaved(true);
-        }
-      } catch (error) {
-        console.error("Error checking save status:", error);
-      }
-    };
-    
-    const fetchCommentCount = async () => {
-      try {
+        // Get comment count
         const count = await getCommentCount(reel.id);
         setCommentCount(count || 0);
+        
+        // Check if reel is liked
+        const isLiked = await checkReelLikeStatus(reel.id, currentUser.id);
+        setLiked(isLiked);
+        
+        // Check if reel is saved
+        const isSaved = await checkReelSaveStatus(reel.id, currentUser.id);
+        setSaved(isSaved);
       } catch (error) {
-        console.error("Error fetching comment count:", error);
+        console.error("Error fetching reel data:", error);
       }
     };
     
-    checkLikeStatus();
-    checkSaveStatus();
-    fetchCommentCount();
+    fetchReelData();
   }, [reel.id, currentUser]);
 
   const togglePlay = () => {
@@ -128,32 +107,17 @@ const ReelView = ({
     setIsMuted(!isMuted);
   };
 
-  const toggleLike = async () => {
+  const handleToggleLike = async () => {
     if (!currentUser) {
       toast.error("You must be logged in to like reels");
       return;
     }
     
     try {
-      if (liked) {
-        await supabase
-          .from("reel_likes")
-          .delete()
-          .eq("reel_id", reel.id)
-          .eq("user_id", currentUser.id);
-          
-        setLiked(false);
-        toast.success("Reel unliked!");
-      } 
-      else {
-        await supabase
-          .from("reel_likes")
-          .insert({
-            reel_id: reel.id,
-            user_id: currentUser.id
-          });
-          
-        setLiked(true);
+      const result = await toggleReelLike(reel.id, currentUser.id);
+      setLiked(result);
+      
+      if (result) {
         toast.success("Reel liked!");
         
         controls.start({
@@ -161,6 +125,8 @@ const ReelView = ({
           opacity: [1, 1, 0],
           transition: { duration: 0.8 }
         });
+      } else {
+        toast.success("Reel unliked!");
       }
     } catch (error) {
       console.error("Error toggling like:", error);
@@ -168,34 +134,20 @@ const ReelView = ({
     }
   };
 
-  const toggleSave = async () => {
+  const handleToggleSave = async () => {
     if (!currentUser) {
       toast.error("You must be logged in to save reels");
       return;
     }
     
     try {
-      if (saved) {
-        await supabase
-          .from("saved_reels")
-          .delete()
-          .eq("reel_id", reel.id)
-          .eq("user_id", currentUser.id);
-          
-        setSaved(false);
-        toast.success("Reel removed from saved items");
-      } 
-      else {
-        await supabase
-          .from("saved_reels")
-          .insert({
-            reel_id: reel.id,
-            user_id: currentUser.id,
-            created_at: new Date().toISOString()
-          });
-          
-        setSaved(true);
+      const result = await toggleReelSave(reel.id, currentUser.id);
+      setSaved(result);
+      
+      if (result) {
         toast.success("Reel saved to your collection");
+      } else {
+        toast.success("Reel removed from saved items");
       }
     } catch (error) {
       console.error("Error toggling save:", error);
@@ -203,44 +155,25 @@ const ReelView = ({
     }
   };
   
-  const repostReel = async () => {
+  const handleRepostReel = async () => {
     if (!currentUser) {
       toast.error("You must be logged in to repost");
       return;
     }
     
     try {
-      const { data: existingRepost, error: checkError } = await supabase
-        .from("reposted_reels")
-        .select("*")
-        .eq("reel_id", reel.id)
-        .eq("user_id", currentUser.id)
-        .maybeSingle();
-        
-      if (checkError) throw checkError;
+      const result = await repostReel(reel.id, currentUser.id, user.id);
       
-      if (existingRepost) {
-        toast.info("You've already reposted this reel");
-        return;
+      if (result) {
+        toast.success("Reel reposted to your profile");
       }
-      
-      await supabase
-        .from("reposted_reels")
-        .insert({
-          reel_id: reel.id,
-          user_id: currentUser.id,
-          original_user_id: user.id,
-          created_at: new Date().toISOString()
-        });
-        
-      toast.success("Reel reposted to your profile");
     } catch (error) {
       console.error("Error reposting:", error);
       toast.error("Failed to repost the reel");
     }
   };
   
-  const reportReel = async () => {
+  const handleReportReel = async () => {
     if (!currentUser) {
       toast.error("You must be logged in to report content");
       return;
@@ -251,17 +184,7 @@ const ReelView = ({
     setIsReporting(true);
     
     try {
-      await supabase
-        .from("reported_content")
-        .insert({
-          content_id: reel.id,
-          content_type: "reel",
-          user_id: currentUser.id,
-          reason: "inappropriate content",
-          status: "pending",
-          created_at: new Date().toISOString()
-        });
-        
+      await reportReel(reel.id, currentUser.id);
       toast.success("Reel reported. Thank you for helping keep our platform safe.");
     } catch (error) {
       console.error("Error reporting reel:", error);
@@ -331,7 +254,7 @@ const ReelView = ({
         
         <div className="absolute top-4 right-4 z-10 pointer-events-auto">
           <button 
-            onClick={reportReel}
+            onClick={handleReportReel}
             disabled={isReporting}
             className="p-2 rounded-full bg-black/30 backdrop-blur-md"
           >
@@ -344,9 +267,9 @@ const ReelView = ({
           liked={liked} 
           saved={saved}
           commentCount={commentCount}
-          onLike={toggleLike} 
-          onSave={toggleSave}
-          onRepost={repostReel}
+          onLike={handleToggleLike} 
+          onSave={handleToggleSave}
+          onRepost={handleRepostReel}
           onShare={handleShare}
           shareData={getShareData()}
         />
