@@ -25,11 +25,6 @@ interface ReportContentParams {
   p_created_at: string;
 }
 
-// Define return types for our RPC functions
-type ReelSavedReturnType = boolean;
-type ReelRepostedReturnType = boolean;
-type VoidReturnType = null;
-
 // Check if a reel is liked by the current user
 export const checkReelLikeStatus = async (reelId: string, userId: string) => {
   try {
@@ -94,7 +89,7 @@ export const checkReelSaveStatus = async (reelId: string, userId: string) => {
     };
     
     const { data, error } = await supabase
-      .rpc<ReelSavedReturnType, Database>('is_reel_saved', params);
+      .rpc('is_reel_saved', params);
       
     if (error) throw error;
     return !!data;
@@ -118,7 +113,7 @@ export const toggleReelSave = async (reelId: string, userId: string) => {
       };
       
       const { error } = await supabase
-        .rpc<VoidReturnType, Database>('unsave_reel', params);
+        .rpc('unsave_reel', params);
         
       if (error) throw error;
       return false;
@@ -131,7 +126,7 @@ export const toggleReelSave = async (reelId: string, userId: string) => {
       };
       
       const { error } = await supabase
-        .rpc<VoidReturnType, Database>('save_reel', params);
+        .rpc('save_reel', params);
         
       if (error) throw error;
       return true;
@@ -151,7 +146,7 @@ export const checkReelRepostStatus = async (reelId: string, userId: string) => {
     };
     
     const { data } = await supabase
-      .rpc<ReelRepostedReturnType, Database>('is_reel_reposted', params);
+      .rpc('is_reel_reposted', params);
     
     return !!data;
   } catch (error) {
@@ -180,7 +175,7 @@ export const repostReel = async (reelId: string, userId: string, originalUserId:
     };
     
     const { error } = await supabase
-      .rpc<VoidReturnType, Database>('repost_reel', params);
+      .rpc('repost_reel', params);
       
     if (error) throw error;
     return true;
@@ -202,7 +197,7 @@ export const reportReel = async (reelId: string, userId: string, reason: string 
     };
     
     const { error } = await supabase
-      .rpc<VoidReturnType, Database>('report_content', params);
+      .rpc('report_content', params);
       
     if (error) throw error;
     return true;
