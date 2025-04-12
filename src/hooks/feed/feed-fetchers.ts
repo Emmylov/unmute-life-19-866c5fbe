@@ -1,112 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from "@/contexts/AuthContext";
+
 import { supabase } from "@/integrations/supabase/client";
-import { trackAnalyticEvent } from "@/services/analytics-service";
-import { toast } from "sonner";
+import { fetchSupplementalPosts } from "./feed-utils";
 
-interface FeedOptions {
-  feedType?: 'forYou' | 'following' | 'trending' | 'music' | 'collabs';
-  limit?: number;
-  tags?: string[];
-}
-
-export const useFeed = (options: FeedOptions = {}) => {
-  const [posts, setPosts] = useState<any[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState<boolean>(true);
-  const [offset, setOffset] = useState<number>(0);
-  const { user, profile } = useAuth();
-  
-  const { 
-    feedType = 'forYou', 
-    limit = 10,
-    tags
-  } = options;
-  
-  const fetchFeed = useCallback(async (reset: boolean = false) => {
-    if (!user) return;
-    
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const newOffset = reset ? 0 : offset;
-      let newPosts: any[] = [];
-      
-      switch (feedType) {
-        case 'following':
-          newPosts = await fetchFollowingFeed(user.id, limit, newOffset);
-          break;
-          
-        case 'trending':
-          newPosts = await fetchTrendingFeed(limit, newOffset);
-          break;
-          
-        case 'music':
-          newPosts = await fetchMusicFeed(limit, newOffset);
-          break;
-          
-        case 'collabs':
-          newPosts = await fetchCollabsFeed(limit, newOffset);
-          break;
-          
-        case 'forYou':
-        default:
-          newPosts = await fetchPersonalizedFeed(user.id, profile?.interests, limit, newOffset);
-          break;
-      }
-      
-      setHasMore(newPosts.length === limit);
-      
-      if (reset) {
-        setPosts(newPosts);
-      } else {
-        setPosts(prev => [...prev, ...newPosts]);
-      }
-      
-      if (reset) {
-        setOffset(limit);
-      } else {
-        setOffset(offset + limit);
-      }
-      
-      trackAnalyticEvent(user.id, 'feed_view', { feed_type: feedType, offset: newOffset, limit });
-    } catch (err: any) {
-      console.error("Error fetching feed:", err);
-      setError(err.message || "Failed to load feed");
-      toast.error("Failed to load feed");
-    } finally {
-      setLoading(false);
-    }
-  }, [user, profile, feedType, limit, offset, tags]);
-  
-  const fetchMore = useCallback(() => {
-    if (loading || !hasMore) return;
-    fetchFeed();
-  }, [fetchFeed, loading, hasMore]);
-  
-  const refresh = useCallback(() => {
-    fetchFeed(true);
-  }, [fetchFeed]);
-  
-  useEffect(() => {
-    if (user) {
-      fetchFeed(true);
-    }
-  }, [user, feedType, tags]);
-  
-  return {
-    posts,
-    loading,
-    error,
-    hasMore,
-    fetchMore,
-    refresh
-  };
-};
-
-async function fetchFollowingFeed(userId: string, limit: number, offset: number): Promise<any[]> {
+export async function fetchFollowingFeed(userId: string, limit: number, offset: number): Promise<any[]> {
   try {
     const { data: followingData, error: followingError } = await supabase
       .from("user_follows" as any)
@@ -172,7 +68,7 @@ async function fetchFollowingFeed(userId: string, limit: number, offset: number)
   }
 }
 
-async function fetchTrendingFeed(limit: number, offset: number): Promise<any[]> {
+export async function fetchTrendingFeed(limit: number, offset: number): Promise<any[]> {
   try {
     const imagePostsWithEngagementPromise = supabase
       .rpc('get_image_posts_with_engagement' as any)
@@ -186,14 +82,20 @@ async function fetchTrendingFeed(limit: number, offset: number): Promise<any[]> 
       .rpc('get_reels_with_engagement' as any)
       .range(offset, offset + limit - 1);
     
-    const imagePostsWithEngagementRes = await imagePostsWithEngagementPromise;
-    const textPostsWithEngagementRes = await textPostsWithEngagementPromise;
-    const reelsWithEngagementRes = await reelsWithEngagementPromise;
+    const results = await Promise.all([
+      imagePostsWithEngagementPromise,
+      textPostsWithEngagementPromise,
+      reelsWithEngagementPromise
+    ]);
+    
+    const imagePostsWithEngagementRes = results[0];
+    const textPostsWithEngagementRes = results[1];
+    const reelsWithEngagementRes = results[2];
     
     let combinedPosts: any[] = [];
     
     if (imagePostsWithEngagementRes.error || textPostsWithEngagementRes.error || reelsWithEngagementRes.error) {
-      const [imagePostsRes, textPostsRes, reelsPostsRes] = await Promise.all([
+      const results = await Promise.all([
         supabase
           .from("posts_images" as any)
           .select("*, profiles:profiles(*)")
@@ -212,6 +114,10 @@ async function fetchTrendingFeed(limit: number, offset: number): Promise<any[]> 
           .order("created_at", { ascending: false })
           .range(offset, offset + limit - 1)
       ]);
+      
+      const imagePostsRes = results[0];
+      const textPostsRes = results[1];
+      const reelsPostsRes = results[2];
       
       if (imagePostsRes.error) throw imagePostsRes.error;
       if (textPostsRes.error) throw textPostsRes.error;
@@ -244,7 +150,7 @@ async function fetchTrendingFeed(limit: number, offset: number): Promise<any[]> 
   }
 }
 
-async function fetchMusicFeed(limit: number, offset: number): Promise<any[]> {
+export async function fetchMusicFeed(limit: number, offset: number): Promise<any[]> {
   try {
     const { data: reels, error } = await supabase
       .from("posts_reels" as any)
@@ -262,7 +168,7 @@ async function fetchMusicFeed(limit: number, offset: number): Promise<any[]> {
   }
 }
 
-async function fetchCollabsFeed(limit: number, offset: number): Promise<any[]> {
+export async function fetchCollabsFeed(limit: number, offset: number): Promise<any[]> {
   try {
     const { data: hasCollabs } = await supabase.rpc('check_table_exists' as any, { table_name: 'collabs' });
     
@@ -276,7 +182,7 @@ async function fetchCollabsFeed(limit: number, offset: number): Promise<any[]> {
       if (error) throw error;
       return (data || []).map((collab: any) => ({ ...collab, type: 'collab' }));
     } else {
-      const [imagePostsRes, textPostsRes, reelsPostsRes] = await Promise.all([
+      const results = await Promise.all([
         supabase
           .from("posts_images" as any)
           .select("*, profiles:profiles(*)")
@@ -299,6 +205,10 @@ async function fetchCollabsFeed(limit: number, offset: number): Promise<any[]> {
           .range(offset, offset + limit - 1)
       ]);
       
+      const imagePostsRes = results[0];
+      const textPostsRes = results[1];
+      const reelsPostsRes = results[2];
+      
       const combinedPosts = [
         ...(imagePostsRes.data || []).map((post: any) => ({ ...post, type: 'image' })),
         ...(textPostsRes.data || []).map((post: any) => ({ ...post, type: 'text' })),
@@ -315,10 +225,10 @@ async function fetchCollabsFeed(limit: number, offset: number): Promise<any[]> {
   }
 }
 
-async function fetchPersonalizedFeed(userId: string, interests: string[] = [], limit: number, offset: number): Promise<any[]> {
+export async function fetchPersonalizedFeed(userId: string, interests: string[] = [], limit: number, offset: number): Promise<any[]> {
   try {
     if (interests && interests.length > 0) {
-      const [imagePostsRes, textPostsRes, reelsPostsRes] = await Promise.all([
+      const results = await Promise.all([
         supabase
           .from("posts_images" as any)
           .select("*, profiles:profiles(*)")
@@ -340,6 +250,10 @@ async function fetchPersonalizedFeed(userId: string, interests: string[] = [], l
           .order("created_at", { ascending: false })
           .range(offset, offset + limit - 1)
       ]);
+      
+      const imagePostsRes = results[0];
+      const textPostsRes = results[1];
+      const reelsPostsRes = results[2];
       
       const imagePosts = imagePostsRes.data ? imagePostsRes.data.map((post: any) => ({ ...post, type: 'image' })) : [];
       const textPosts = textPostsRes.data ? textPostsRes.data.map((post: any) => ({ ...post, type: 'text' })) : [];
@@ -373,25 +287,6 @@ async function fetchPersonalizedFeed(userId: string, interests: string[] = [], l
     }
   } catch (error) {
     console.error("Error fetching personalized feed:", error);
-    return [];
-  }
-}
-
-async function fetchSupplementalPosts(userId: string, limit: number, offset: number): Promise<any[]> {
-  try {
-    const [trendingPosts, followingPosts] = await Promise.all([
-      fetchTrendingFeed(Math.ceil(limit / 2), offset),
-      fetchFollowingFeed(userId, Math.ceil(limit / 2), offset)
-    ]);
-    
-    const combined = [...trendingPosts, ...followingPosts];
-    const uniquePosts = Array.from(
-      new Map(combined.map(post => [post.id, post])).values()
-    );
-    
-    return uniquePosts.slice(0, limit);
-  } catch (error) {
-    console.error("Error fetching supplemental posts:", error);
     return [];
   }
 }
