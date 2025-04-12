@@ -64,7 +64,7 @@ export const checkReelSaveStatus = async (reelId: string, userId: string) => {
       .rpc('is_reel_saved', { 
         p_reel_id: reelId, 
         p_user_id: userId 
-      });
+      } as any);
       
     if (error) throw error;
     return !!data;
@@ -86,7 +86,7 @@ export const toggleReelSave = async (reelId: string, userId: string) => {
         .rpc('unsave_reel', { 
           p_reel_id: reelId, 
           p_user_id: userId 
-        });
+        } as any);
         
       if (error) throw error;
       return false;
@@ -97,7 +97,7 @@ export const toggleReelSave = async (reelId: string, userId: string) => {
           p_reel_id: reelId, 
           p_user_id: userId,
           p_created_at: new Date().toISOString()
-        });
+        } as any);
         
       if (error) throw error;
       return true;
@@ -115,7 +115,7 @@ export const checkReelRepostStatus = async (reelId: string, userId: string) => {
       .rpc('is_reel_reposted', { 
         p_reel_id: reelId, 
         p_user_id: userId 
-      });
+      } as any);
     
     return !!data;
   } catch (error) {
@@ -142,7 +142,7 @@ export const repostReel = async (reelId: string, userId: string, originalUserId:
         p_user_id: userId,
         p_original_user_id: originalUserId,
         p_created_at: new Date().toISOString()
-      });
+      } as any);
       
     if (error) throw error;
     return true;
@@ -162,7 +162,7 @@ export const reportReel = async (reelId: string, userId: string, reason: string 
         p_content_type: 'reel',
         p_reason: reason,
         p_created_at: new Date().toISOString()
-      });
+      } as any);
       
     if (error) throw error;
     return true;
