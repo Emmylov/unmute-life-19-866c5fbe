@@ -2,7 +2,6 @@
 import React, { useState } from "react";
 import { Heart, MessageCircle, Repeat, Bookmark, Share2 } from "lucide-react";
 import ReelActionButton from "./ReelActionButton";
-import { useAnimation } from "framer-motion";
 import { toast } from "sonner";
 import ReelCommentModal from "../ReelCommentModal";
 
@@ -78,6 +77,7 @@ const ReelActions = ({
         <ReelActionButton 
           icon={Repeat} 
           label="Repost"
+          onClick={() => toast.info("Repost functionality coming soon!")}
         />
         
         <ReelActionButton 
