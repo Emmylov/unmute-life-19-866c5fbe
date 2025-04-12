@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -175,7 +174,6 @@ async function fetchFollowingFeed(userId: string, limit: number, offset: number)
 
 async function fetchTrendingFeed(limit: number, offset: number): Promise<any[]> {
   try {
-    // Fix: Create proper promises for PostgrestFilterBuilder results
     const imagePostsWithEngagementPromise = supabase
       .rpc('get_image_posts_with_engagement' as any)
       .range(offset, offset + limit - 1);
@@ -188,21 +186,13 @@ async function fetchTrendingFeed(limit: number, offset: number): Promise<any[]> 
       .rpc('get_reels_with_engagement' as any)
       .range(offset, offset + limit - 1);
     
-    // Fix: Properly await the PostgrestFilterBuilder results
-    const [
-      imagePostsWithEngagementRes, 
-      textPostsWithEngagementRes, 
-      reelsWithEngagementRes
-    ] = await Promise.all([
-      imagePostsWithEngagementPromise,
-      textPostsWithEngagementPromise,
-      reelsWithEngagementPromise
-    ]);
+    const imagePostsWithEngagementRes = await imagePostsWithEngagementPromise;
+    const textPostsWithEngagementRes = await textPostsWithEngagementPromise;
+    const reelsWithEngagementRes = await reelsWithEngagementPromise;
     
     let combinedPosts: any[] = [];
     
     if (imagePostsWithEngagementRes.error || textPostsWithEngagementRes.error || reelsWithEngagementRes.error) {
-      // Fix: Handle the fallback case with direct queries
       const [imagePostsRes, textPostsRes, reelsPostsRes] = await Promise.all([
         supabase
           .from("posts_images" as any)
@@ -233,7 +223,6 @@ async function fetchTrendingFeed(limit: number, offset: number): Promise<any[]> 
       
       combinedPosts = [...imagePosts, ...textPosts, ...reelPosts];
     } else {
-      // Fix: Safely access data properties with proper type checking
       const imagePostsWithEngagement = imagePostsWithEngagementRes.data ? 
         imagePostsWithEngagementRes.data.map((post: any) => ({ ...post, type: 'image' })) : [];
       
