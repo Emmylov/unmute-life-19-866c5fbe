@@ -2,6 +2,28 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+// Define interfaces for our RPC function parameters
+interface ReelIdUserIdParams {
+  p_reel_id: string;
+  p_user_id: string;
+}
+
+interface SaveReelParams extends ReelIdUserIdParams {
+  p_created_at: string;
+}
+
+interface RepostReelParams extends SaveReelParams {
+  p_original_user_id: string;
+}
+
+interface ReportContentParams {
+  p_content_id: string;
+  p_user_id: string;
+  p_content_type: string;
+  p_reason: string;
+  p_created_at: string;
+}
+
 // Check if a reel is liked by the current user
 export const checkReelLikeStatus = async (reelId: string, userId: string) => {
   try {
@@ -60,11 +82,13 @@ export const toggleReelLike = async (reelId: string, userId: string) => {
 export const checkReelSaveStatus = async (reelId: string, userId: string) => {
   try {
     // We need to use raw SQL query as the saved_reels table isn't in the generated types
+    const params: ReelIdUserIdParams = {
+      p_reel_id: reelId,
+      p_user_id: userId
+    };
+    
     const { data, error } = await supabase
-      .rpc('is_reel_saved', { 
-        p_reel_id: reelId, 
-        p_user_id: userId 
-      } as any);
+      .rpc('is_reel_saved', params);
       
     if (error) throw error;
     return !!data;
@@ -82,22 +106,26 @@ export const toggleReelSave = async (reelId: string, userId: string) => {
     
     if (isSaved) {
       // Unsave using raw query
+      const params: ReelIdUserIdParams = {
+        p_reel_id: reelId,
+        p_user_id: userId
+      };
+      
       const { error } = await supabase
-        .rpc('unsave_reel', { 
-          p_reel_id: reelId, 
-          p_user_id: userId 
-        } as any);
+        .rpc('unsave_reel', params);
         
       if (error) throw error;
       return false;
     } else {
       // Save using raw query
+      const params: SaveReelParams = {
+        p_reel_id: reelId,
+        p_user_id: userId,
+        p_created_at: new Date().toISOString()
+      };
+      
       const { error } = await supabase
-        .rpc('save_reel', { 
-          p_reel_id: reelId, 
-          p_user_id: userId,
-          p_created_at: new Date().toISOString()
-        } as any);
+        .rpc('save_reel', params);
         
       if (error) throw error;
       return true;
@@ -111,11 +139,13 @@ export const toggleReelSave = async (reelId: string, userId: string) => {
 // Check if a reel is already reposted by the user
 export const checkReelRepostStatus = async (reelId: string, userId: string) => {
   try {
+    const params: ReelIdUserIdParams = {
+      p_reel_id: reelId,
+      p_user_id: userId
+    };
+    
     const { data } = await supabase
-      .rpc('is_reel_reposted', { 
-        p_reel_id: reelId, 
-        p_user_id: userId 
-      } as any);
+      .rpc('is_reel_reposted', params);
     
     return !!data;
   } catch (error) {
@@ -136,13 +166,15 @@ export const repostReel = async (reelId: string, userId: string, originalUserId:
     }
     
     // Repost using raw query
+    const params: RepostReelParams = {
+      p_reel_id: reelId,
+      p_user_id: userId,
+      p_original_user_id: originalUserId,
+      p_created_at: new Date().toISOString()
+    };
+    
     const { error } = await supabase
-      .rpc('repost_reel', { 
-        p_reel_id: reelId, 
-        p_user_id: userId,
-        p_original_user_id: originalUserId,
-        p_created_at: new Date().toISOString()
-      } as any);
+      .rpc('repost_reel', params);
       
     if (error) throw error;
     return true;
@@ -155,14 +187,16 @@ export const repostReel = async (reelId: string, userId: string, originalUserId:
 // Report a reel
 export const reportReel = async (reelId: string, userId: string, reason: string = "inappropriate content") => {
   try {
+    const params: ReportContentParams = {
+      p_content_id: reelId,
+      p_user_id: userId,
+      p_content_type: 'reel',
+      p_reason: reason,
+      p_created_at: new Date().toISOString()
+    };
+    
     const { error } = await supabase
-      .rpc('report_content', { 
-        p_content_id: reelId, 
-        p_user_id: userId,
-        p_content_type: 'reel',
-        p_reason: reason,
-        p_created_at: new Date().toISOString()
-      } as any);
+      .rpc('report_content', params);
       
     if (error) throw error;
     return true;
