@@ -8,6 +8,11 @@ interface SupabaseResponse<T> {
   error: any;
 }
 
+// Helper function to convert Supabase queries to properly typed promises
+function toTypedPromise<T>(query: any): Promise<SupabaseResponse<T>> {
+  return query as Promise<SupabaseResponse<T>>;
+}
+
 export async function fetchFollowingFeed(userId: string, limit: number, offset: number): Promise<Post[]> {
   try {
     const { data: followingData, error: followingError } = await supabase
@@ -35,28 +40,34 @@ export async function fetchFollowingFeed(userId: string, limit: number, offset: 
     }
     
     // Fetch image posts with proper type annotations
-    const imagePostsPromise: Promise<SupabaseResponse<any[]>> = supabase
-      .from("posts_images")
-      .select("*, profiles:profiles(*)")
-      .in("user_id", userIds)
-      .order("created_at", { ascending: false })
-      .range(offset, offset + limit - 1);
+    const imagePostsPromise = toTypedPromise<any[]>(
+      supabase
+        .from("posts_images")
+        .select("*, profiles:profiles(*)")
+        .in("user_id", userIds)
+        .order("created_at", { ascending: false })
+        .range(offset, offset + limit - 1)
+    );
       
     // Fetch text posts with proper type annotations
-    const textPostsPromise: Promise<SupabaseResponse<any[]>> = supabase
-      .from("posts_text")
-      .select("*, profiles:profiles(*)")
-      .in("user_id", userIds)
-      .order("created_at", { ascending: false })
-      .range(offset, offset + limit - 1);
+    const textPostsPromise = toTypedPromise<any[]>(
+      supabase
+        .from("posts_text")
+        .select("*, profiles:profiles(*)")
+        .in("user_id", userIds)
+        .order("created_at", { ascending: false })
+        .range(offset, offset + limit - 1)
+    );
       
     // Fetch reels posts with proper type annotations
-    const reelsPostsPromise: Promise<SupabaseResponse<any[]>> = supabase
-      .from("posts_reels")
-      .select("*, profiles:profiles(*)")
-      .in("user_id", userIds)
-      .order("created_at", { ascending: false })
-      .range(offset, offset + limit - 1);
+    const reelsPostsPromise = toTypedPromise<any[]>(
+      supabase
+        .from("posts_reels")
+        .select("*, profiles:profiles(*)")
+        .in("user_id", userIds)
+        .order("created_at", { ascending: false })
+        .range(offset, offset + limit - 1)
+    );
     
     // Wait for all promises to resolve
     const [imagePostsRes, textPostsRes, reelsPostsRes] = await Promise.all([
@@ -85,30 +96,35 @@ export async function fetchFollowingFeed(userId: string, limit: number, offset: 
   }
 }
 
+interface PostWithEngagement {
+  id: string;
+  user_id: string;
+  created_at: string;
+  [key: string]: any;
+}
+
 export async function fetchTrendingFeed(limit: number, offset: number): Promise<Post[]> {
   try {
-    // Define types for RPC responses
-    interface PostWithEngagement {
-      id: string;
-      user_id: string;
-      created_at: string;
-      [key: string]: any;
-    }
-    
     // Fetch image posts with engagement with proper type annotations
-    const imagePostsWithEngagementPromise: Promise<SupabaseResponse<PostWithEngagement[]>> = supabase
-      .rpc('get_image_posts_with_engagement')
-      .range(offset, offset + limit - 1);
+    const imagePostsWithEngagementPromise = toTypedPromise<PostWithEngagement[]>(
+      supabase
+        .rpc('get_image_posts_with_engagement')
+        .range(offset, offset + limit - 1)
+    );
     
     // Fetch text posts with engagement with proper type annotations
-    const textPostsWithEngagementPromise: Promise<SupabaseResponse<PostWithEngagement[]>> = supabase
-      .rpc('get_text_posts_with_engagement')
-      .range(offset, offset + limit - 1);
+    const textPostsWithEngagementPromise = toTypedPromise<PostWithEngagement[]>(
+      supabase
+        .rpc('get_text_posts_with_engagement')
+        .range(offset, offset + limit - 1)
+    );
     
     // Fetch reels with engagement with proper type annotations
-    const reelsWithEngagementPromise: Promise<SupabaseResponse<PostWithEngagement[]>> = supabase
-      .rpc('get_reels_with_engagement')
-      .range(offset, offset + limit - 1);
+    const reelsWithEngagementPromise = toTypedPromise<PostWithEngagement[]>(
+      supabase
+        .rpc('get_reels_with_engagement')
+        .range(offset, offset + limit - 1)
+    );
     
     // Wait for all promises to resolve
     const results = await Promise.all([
@@ -123,23 +139,29 @@ export async function fetchTrendingFeed(limit: number, offset: number): Promise<
     
     if (imagePostsWithEngagementRes.error || textPostsWithEngagementRes.error || reelsWithEngagementRes.error) {
       // Fallback to regular posts if the RPC functions fail
-      const imagePostsPromise: Promise<SupabaseResponse<any[]>> = supabase
-        .from("posts_images")
-        .select("*, profiles:profiles(*)")
-        .order("created_at", { ascending: false })
-        .range(offset, offset + limit - 1);
+      const imagePostsPromise = toTypedPromise<any[]>(
+        supabase
+          .from("posts_images")
+          .select("*, profiles:profiles(*)")
+          .order("created_at", { ascending: false })
+          .range(offset, offset + limit - 1)
+      );
       
-      const textPostsPromise: Promise<SupabaseResponse<any[]>> = supabase
-        .from("posts_text")
-        .select("*, profiles:profiles(*)")
-        .order("created_at", { ascending: false })
-        .range(offset, offset + limit - 1);
+      const textPostsPromise = toTypedPromise<any[]>(
+        supabase
+          .from("posts_text")
+          .select("*, profiles:profiles(*)")
+          .order("created_at", { ascending: false })
+          .range(offset, offset + limit - 1)
+      );
       
-      const reelsPostsPromise: Promise<SupabaseResponse<any[]>> = supabase
-        .from("posts_reels")
-        .select("*, profiles:profiles(*)")
-        .order("created_at", { ascending: false })
-        .range(offset, offset + limit - 1);
+      const reelsPostsPromise = toTypedPromise<any[]>(
+        supabase
+          .from("posts_reels")
+          .select("*, profiles:profiles(*)")
+          .order("created_at", { ascending: false })
+          .range(offset, offset + limit - 1)
+      );
       
       // Wait for all fallback promises to resolve
       const [imagePostsRes, textPostsRes, reelsPostsRes] = await Promise.all([
@@ -211,12 +233,13 @@ export async function fetchCollabsFeed(limit: number, offset: number): Promise<P
     if (hasCollabs) {
       // Handle collabs table if it exists - using dynamic approach to handle non-typed tables
       try {
-        // Use any type to bypass TypeScript's table name checking
-        const collabsQuery: any = supabase.from("collabs");
-        const { data, error } = await collabsQuery
-          .select("*, profiles:user_id(*)")
-          .order("created_at", { ascending: false })
-          .range(offset, offset + limit - 1);
+        const { data, error } = await toTypedPromise<any[]>(
+          // Use any to bypass TypeScript's strict checking temporarily
+          (supabase as any).from("collabs")
+            .select("*, profiles:user_id(*)")
+            .order("created_at", { ascending: false })
+            .range(offset, offset + limit - 1)
+        );
         
         if (error) throw error;
         return (data || []).map((collab: any) => ({ ...collab, type: 'collab' }));
@@ -238,28 +261,34 @@ export async function fetchCollabsFeed(limit: number, offset: number): Promise<P
 // Helper function to search for collabs in other post types
 async function searchCollabsInPosts(limit: number, offset: number): Promise<Post[]> {
   // Fetch image posts with collab content
-  const imagePostsPromise: Promise<SupabaseResponse<any[]>> = supabase
-    .from("posts_images")
-    .select("*, profiles:profiles(*)")
-    .or('caption.ilike.%collab%,tags.cs.{collab}')
-    .order("created_at", { ascending: false })
-    .range(offset, offset + limit - 1);
+  const imagePostsPromise = toTypedPromise<any[]>(
+    supabase
+      .from("posts_images")
+      .select("*, profiles:profiles(*)")
+      .or('caption.ilike.%collab%,tags.cs.{collab}')
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1)
+  );
   
   // Fetch text posts with collab content
-  const textPostsPromise: Promise<SupabaseResponse<any[]>> = supabase
-    .from("posts_text")
-    .select("*, profiles:profiles(*)")
-    .or('title.ilike.%collab%,body.ilike.%collab%,tags.cs.{collab}')
-    .order("created_at", { ascending: false })
-    .range(offset, offset + limit - 1);
+  const textPostsPromise = toTypedPromise<any[]>(
+    supabase
+      .from("posts_text")
+      .select("*, profiles:profiles(*)")
+      .or('title.ilike.%collab%,body.ilike.%collab%,tags.cs.{collab}')
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1)
+  );
   
   // Fetch reels posts with collab content
-  const reelsPostsPromise: Promise<SupabaseResponse<any[]>> = supabase
-    .from("posts_reels")
-    .select("*, profiles:profiles(*)")
-    .or('caption.ilike.%collab%,tags.cs.{collab}')
-    .order("created_at", { ascending: false })
-    .range(offset, offset + limit - 1);
+  const reelsPostsPromise = toTypedPromise<any[]>(
+    supabase
+      .from("posts_reels")
+      .select("*, profiles:profiles(*)")
+      .or('caption.ilike.%collab%,tags.cs.{collab}')
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1)
+  );
   
   // Wait for all promises to resolve
   const [imagePostsRes, textPostsRes, reelsPostsRes] = await Promise.all([
@@ -284,26 +313,32 @@ export async function fetchPersonalizedFeed(userId: string, interests: string[] 
   try {
     if (interests && interests.length > 0) {
       // Fetch posts based on user interests
-      const imagePostsPromise: Promise<SupabaseResponse<any[]>> = supabase
-        .from("posts_images")
-        .select("*, profiles:profiles(*)")
-        .overlaps('tags', interests)
-        .order("created_at", { ascending: false })
-        .range(offset, offset + limit - 1);
+      const imagePostsPromise = toTypedPromise<any[]>(
+        supabase
+          .from("posts_images")
+          .select("*, profiles:profiles(*)")
+          .overlaps('tags', interests)
+          .order("created_at", { ascending: false })
+          .range(offset, offset + limit - 1)
+      );
       
-      const textPostsPromise: Promise<SupabaseResponse<any[]>> = supabase
-        .from("posts_text")
-        .select("*, profiles:profiles(*)")
-        .overlaps('tags', interests)
-        .order("created_at", { ascending: false })
-        .range(offset, offset + limit - 1);
+      const textPostsPromise = toTypedPromise<any[]>(
+        supabase
+          .from("posts_text")
+          .select("*, profiles:profiles(*)")
+          .overlaps('tags', interests)
+          .order("created_at", { ascending: false })
+          .range(offset, offset + limit - 1)
+      );
       
-      const reelsPostsPromise: Promise<SupabaseResponse<any[]>> = supabase
-        .from("posts_reels")
-        .select("*, profiles:profiles(*)")
-        .overlaps('tags', interests)
-        .order("created_at", { ascending: false })
-        .range(offset, offset + limit - 1);
+      const reelsPostsPromise = toTypedPromise<any[]>(
+        supabase
+          .from("posts_reels")
+          .select("*, profiles:profiles(*)")
+          .overlaps('tags', interests)
+          .order("created_at", { ascending: false })
+          .range(offset, offset + limit - 1)
+      );
       
       // Wait for all promises to resolve
       const [imagePostsRes, textPostsRes, reelsPostsRes] = await Promise.all([

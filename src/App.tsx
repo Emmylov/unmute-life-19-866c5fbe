@@ -15,6 +15,7 @@ import Reels from "./pages/Reels";
 import VibeCheck from "./pages/VibeCheck";
 import WellnessPlus from "./pages/WellnessPlus";
 import CreateCollab from "./pages/CreateCollab";
+import Notifications from "./pages/Notifications";
 import "./App.css";
 
 // Toast provider
@@ -43,6 +44,7 @@ function App() {
             <Route path="/create-collab" element={<CreateCollab />} />
             <Route path="/reels" element={<Reels />} />
             <Route path="/vibe-check" element={<VibeCheck />} />
+            <Route path="/notifications" element={<Notifications />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <Toaster />
