@@ -1,21 +1,27 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Post } from "../feed-utils";
-import { rpcCall, toTypedPromise, dynamicTableQuery } from "./utils";
+import { rpcCall, toTypedPromise } from "./utils";
 
 export async function fetchCollabsFeed(limit: number, offset: number): Promise<Post[]> {
   try {
-    // First check if the collabs table exists
-    const hasCollabs = await rpcCall<boolean>('check_table_exists', { table_name: 'collabs' });
+    // Check if the collabs table exists using a safer approach
+    const { data: hasCollabsData, error: hasCollabsError } = await rpcCall<boolean>('check_table_exists', { table_name: 'collabs' });
     
-    if (hasCollabs.data) {
-      // Handle collabs table if it exists - using dynamic approach to handle non-typed tables
+    if (hasCollabsError) {
+      console.error("Error checking if collabs table exists:", hasCollabsError);
+      return await searchCollabsInPosts(limit, offset);
+    }
+    
+    if (hasCollabsData) {
+      // Handle collabs table if it exists
       try {
-        const { data, error } = await dynamicTableQuery<any[]>('collabs')
+        // Use a safer approach to query a dynamically named table
+        const { data, error } = await supabase
+          .from('collabs')
           .select("*, profiles:user_id(*)")
           .order("created_at", { ascending: false })
-          .range(offset, offset + limit - 1)
-          .execute();
+          .range(offset, offset + limit - 1);
         
         if (error) throw error;
         return (data || []).map((collab: any) => ({ ...collab, type: 'collab' }));

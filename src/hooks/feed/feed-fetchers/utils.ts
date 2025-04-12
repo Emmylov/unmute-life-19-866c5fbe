@@ -1,12 +1,10 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { PostgrestQueryBuilder } from "@supabase/supabase-js";
 import { Database } from "@/integrations/supabase/types-patch";
 
 // Generic type-safe query execution function
-export async function toTypedPromise<T>(query: PostgrestQueryBuilder<Database, never>) {
-  const result = await query.select().execute();
-  return result as { data: T | null; error: any };
+export async function toTypedPromise<T>(query: any) {
+  return query as { data: T | null; error: any };
 }
 
 // Enhanced RPC call function with type safety
@@ -14,11 +12,21 @@ export async function rpcCall<T>(
   fn: string, 
   params: Record<string, any> = {}
 ): Promise<{ data: T | null; error: any }> {
-  const result = await supabase.rpc(fn, params).execute();
+  const result = await supabase.rpc(fn, params);
   return result as { data: T | null; error: any };
 }
 
-// Dynamic table query helper
-export function dynamicTableQuery<T>(tableName: keyof Database['public']['Tables']) {
-  return supabase.from(tableName) as unknown as PostgrestQueryBuilder<Database, never>;
+// Check if a table exists in the database
+export async function checkTableExists(tableName: string): Promise<boolean> {
+  const { data, error } = await rpcCall<boolean>('check_table_exists', { table_name: tableName });
+  if (error) {
+    console.error(`Error checking if table ${tableName} exists:`, error);
+    return false;
+  }
+  return !!data;
+}
+
+// Dynamic table query helper - simplified version that avoids type checking
+export function dynamicTableQuery(tableName: string) {
+  return supabase.from(tableName);
 }
