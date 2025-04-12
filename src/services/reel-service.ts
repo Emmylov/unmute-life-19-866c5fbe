@@ -1,7 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Database } from "@/integrations/supabase/types";
 
 // Define interfaces for our RPC function parameters
 interface ReelIdUserIdParams {
@@ -87,8 +86,8 @@ export const checkReelSaveStatus = async (reelId: string, userId: string) => {
       p_user_id: userId
     };
     
-    // Use type assertion to bypass TypeScript's type checking
-    const { data, error } = await supabase.rpc<boolean>(
+    // Using type assertion with correct generic type parameters
+    const { data, error } = await (supabase.rpc as any)<boolean, ReelIdUserIdParams>(
       "is_reel_saved", 
       params
     );
@@ -151,7 +150,8 @@ export const checkReelRepostStatus = async (reelId: string, userId: string) => {
       p_user_id: userId
     };
     
-    const { data } = await supabase.rpc<boolean>(
+    // Using type assertion with correct generic type parameters
+    const { data } = await (supabase.rpc as any)<boolean, ReelIdUserIdParams>(
       "is_reel_reposted", 
       params
     );

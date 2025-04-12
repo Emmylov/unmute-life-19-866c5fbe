@@ -120,3 +120,51 @@ const updateFollowingCount = async (userId: string, increment: number): Promise<
     console.error('Error updating following count:', error);
   }
 };
+
+// Fetch user profile
+export const fetchUserProfile = async (userId: string) => {
+  try {
+    // First try by username
+    let { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('username', userId)
+      .maybeSingle();
+      
+    if (!data && !error) {
+      // If not found by username, try by ID
+      const { data: idData, error: idError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+        
+      if (idError) throw idError;
+      data = idData;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Error fetching user profile:', error);
+    return null;
+  }
+};
+
+// Add profile reaction
+export const addProfileReaction = async (fromUserId: string, toUserId: string, emoji: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('profile_reactions')
+      .insert({
+        from_user_id: fromUserId,
+        to_user_id: toUserId,
+        emoji: emoji
+      });
+      
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error adding profile reaction:', error);
+    throw error;
+  }
+};

@@ -9,10 +9,12 @@ interface AuthContextType {
   user: User | null;
   profile: any | null;
   isLoading: boolean;
+  loading: boolean; // Added missing property
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, metadata?: any) => Promise<void>;
   signOut: () => Promise<void>;
   updateProfile: (data: any) => Promise<void>;
+  refreshProfile: () => Promise<void>; // Added missing property
 }
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -22,6 +24,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // Added for backward compatibility
 
   useEffect(() => {
     // Get initial session
@@ -29,6 +32,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(session);
       setUser(session?.user ?? null);
       setIsLoading(false);
+      setLoading(false); // Update both loading states
       
       if (session?.user) {
         fetchProfile(session.user.id);
@@ -41,6 +45,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(session);
         setUser(session?.user ?? null);
         setIsLoading(false);
+        setLoading(false); // Update both loading states
         
         if (event === 'SIGNED_IN' && session?.user) {
           fetchProfile(session.user.id);
@@ -69,6 +74,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       console.error('Error fetching profile:', error);
     }
+  };
+
+  // Added refreshProfile function
+  const refreshProfile = async () => {
+    if (!user) return;
+    await fetchProfile(user.id);
   };
 
   const signIn = async (email: string, password: string) => {
@@ -131,7 +142,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
       if (error) throw error;
       
-      fetchProfile(user.id);
+      await fetchProfile(user.id);
       toast.success('Profile updated successfully');
     } catch (error: any) {
       toast.error(error.message || 'Failed to update profile');
@@ -146,10 +157,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         user,
         profile,
         isLoading,
+        loading, // Added
         signIn,
         signUp,
         signOut,
         updateProfile,
+        refreshProfile, // Added
       }}
     >
       {children}

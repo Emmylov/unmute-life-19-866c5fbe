@@ -76,3 +76,44 @@ export const deleteReelComment = async (commentId: string, userId: string) => {
     throw error;
   }
 };
+
+// Generic comment functions for backward compatibility
+export const addComment = async (postId: string, userId: string, content: string) => {
+  try {
+    const { data, error } = await supabase
+      .from("post_comments")
+      .insert({
+        post_id: postId,
+        user_id: userId,
+        content: content
+      })
+      .select();
+    
+    if (error) throw error;
+    return data[0];
+  } catch (error) {
+    console.error("Error adding comment:", error);
+    throw error;
+  }
+};
+
+export const getComments = async (postId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from("post_comments")
+      .select(`
+        *,
+        profiles:user_id (
+          id, username, avatar, full_name
+        )
+      `)
+      .eq("post_id", postId)
+      .order("created_at", { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error("Error getting comments:", error);
+    return [];
+  }
+};
