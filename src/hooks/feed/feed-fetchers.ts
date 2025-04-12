@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { fetchSupplementalPosts, Post } from "./feed-utils";
+import { Post } from "./feed-utils";
 
 // Extended post interfaces for specific use cases
 interface ProfileWithPosts extends Post {
@@ -9,6 +9,12 @@ interface ProfileWithPosts extends Post {
 
 interface PostWithEngagement extends Post {
   engagement_score: number;
+}
+
+// Define a type for API responses
+interface SupabaseResponse<T> {
+  data: T | null;
+  error: any;
 }
 
 export async function fetchFollowingFeed(userId: string, limit: number, offset: number): Promise<Post[]> {
@@ -37,22 +43,22 @@ export async function fetchFollowingFeed(userId: string, limit: number, offset: 
       return data ? data.map((post: any) => ({ ...post, type: 'image' })) : [];
     }
     
-    // These promises are properly typed now
-    const imagePostsPromise = supabase
+    // Type the promises properly
+    const imagePostsPromise: Promise<SupabaseResponse<any[]>> = supabase
       .from("posts_images")
       .select("*, profiles:profiles(*)")
       .in("user_id", userIds)
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
       
-    const textPostsPromise = supabase
+    const textPostsPromise: Promise<SupabaseResponse<any[]>> = supabase
       .from("posts_text")
       .select("*, profiles:profiles(*)")
       .in("user_id", userIds)
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
       
-    const reelsPostsPromise = supabase
+    const reelsPostsPromise: Promise<SupabaseResponse<any[]>> = supabase
       .from("posts_reels")
       .select("*, profiles:profiles(*)")
       .in("user_id", userIds)
@@ -88,15 +94,15 @@ export async function fetchFollowingFeed(userId: string, limit: number, offset: 
 export async function fetchTrendingFeed(limit: number, offset: number): Promise<Post[]> {
   try {
     // Properly typed promise definitions
-    const imagePostsWithEngagementPromise = supabase
+    const imagePostsWithEngagementPromise: Promise<SupabaseResponse<any[]>> = supabase
       .rpc('get_image_posts_with_engagement')
       .range(offset, offset + limit - 1);
     
-    const textPostsWithEngagementPromise = supabase
+    const textPostsWithEngagementPromise: Promise<SupabaseResponse<any[]>> = supabase
       .rpc('get_text_posts_with_engagement')
       .range(offset, offset + limit - 1);
     
-    const reelsWithEngagementPromise = supabase
+    const reelsWithEngagementPromise: Promise<SupabaseResponse<any[]>> = supabase
       .rpc('get_reels_with_engagement')
       .range(offset, offset + limit - 1);
     
@@ -112,19 +118,19 @@ export async function fetchTrendingFeed(limit: number, offset: number): Promise<
     
     if (imagePostsWithEngagementRes.error || textPostsWithEngagementRes.error || reelsWithEngagementRes.error) {
       // Fallback to regular posts if the RPC functions fail
-      const imagePostsPromise = supabase
+      const imagePostsPromise: Promise<SupabaseResponse<any[]>> = supabase
         .from("posts_images")
         .select("*, profiles:profiles(*)")
         .order("created_at", { ascending: false })
         .range(offset, offset + limit - 1);
       
-      const textPostsPromise = supabase
+      const textPostsPromise: Promise<SupabaseResponse<any[]>> = supabase
         .from("posts_text")
         .select("*, profiles:profiles(*)")
         .order("created_at", { ascending: false })
         .range(offset, offset + limit - 1);
       
-      const reelsPostsPromise = supabase
+      const reelsPostsPromise: Promise<SupabaseResponse<any[]>> = supabase
         .from("posts_reels")
         .select("*, profiles:profiles(*)")
         .order("created_at", { ascending: false })
@@ -193,10 +199,12 @@ export async function fetchMusicFeed(limit: number, offset: number): Promise<Pos
 
 export async function fetchCollabsFeed(limit: number, offset: number): Promise<Post[]> {
   try {
+    // First check if the collabs table exists
     const { data: hasCollabs } = await supabase.rpc('check_table_exists', { table_name: 'collabs' });
     
     if (hasCollabs) {
-      const { data, error } = await supabase
+      // Use the 'any' type for the dynamic table query
+      const { data, error } = await (supabase as any)
         .from("collabs")
         .select("*, profiles:user_id(*)")
         .order("created_at", { ascending: false })
@@ -206,21 +214,21 @@ export async function fetchCollabsFeed(limit: number, offset: number): Promise<P
       return (data || []).map((collab: any) => ({ ...collab, type: 'collab' }));
     } else {
       // Search for collabs in other posts
-      const imagePostsPromise = supabase
+      const imagePostsPromise: Promise<SupabaseResponse<any[]>> = supabase
         .from("posts_images")
         .select("*, profiles:profiles(*)")
         .or('caption.ilike.%collab%,tags.cs.{collab}')
         .order("created_at", { ascending: false })
         .range(offset, offset + limit - 1);
       
-      const textPostsPromise = supabase
+      const textPostsPromise: Promise<SupabaseResponse<any[]>> = supabase
         .from("posts_text")
         .select("*, profiles:profiles(*)")
         .or('title.ilike.%collab%,body.ilike.%collab%,tags.cs.{collab}')
         .order("created_at", { ascending: false })
         .range(offset, offset + limit - 1);
       
-      const reelsPostsPromise = supabase
+      const reelsPostsPromise: Promise<SupabaseResponse<any[]>> = supabase
         .from("posts_reels")
         .select("*, profiles:profiles(*)")
         .or('caption.ilike.%collab%,tags.cs.{collab}')
@@ -254,21 +262,21 @@ export async function fetchPersonalizedFeed(userId: string, interests: string[] 
   try {
     if (interests && interests.length > 0) {
       // Fetch posts based on user interests
-      const imagePostsPromise = supabase
+      const imagePostsPromise: Promise<SupabaseResponse<any[]>> = supabase
         .from("posts_images")
         .select("*, profiles:profiles(*)")
         .overlaps('tags', interests)
         .order("created_at", { ascending: false })
         .range(offset, offset + limit - 1);
       
-      const textPostsPromise = supabase
+      const textPostsPromise: Promise<SupabaseResponse<any[]>> = supabase
         .from("posts_text")
         .select("*, profiles:profiles(*)")
         .overlaps('tags', interests)
         .order("created_at", { ascending: false })
         .range(offset, offset + limit - 1);
       
-      const reelsPostsPromise = supabase
+      const reelsPostsPromise: Promise<SupabaseResponse<any[]>> = supabase
         .from("posts_reels")
         .select("*, profiles:profiles(*)")
         .overlaps('tags', interests)
@@ -295,7 +303,9 @@ export async function fetchPersonalizedFeed(userId: string, interests: string[] 
       }
       
       const remainingNeeded = limit - interestMatchedPosts.length;
-      const supplementalPosts = await fetchSupplementalPosts(userId, remainingNeeded, offset);
+      const supplementalPosts = await import('./feed-utils').then(module => 
+        module.fetchSupplementalPosts(userId, remainingNeeded, offset, fetchTrendingFeed, fetchFollowingFeed)
+      );
       
       return [...interestMatchedPosts, ...supplementalPosts]
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
