@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -116,7 +115,10 @@ async function fetchFollowingFeed(userId: string, limit: number, offset: number)
     
     if (followingError) throw followingError;
     
-    const followingIds = followingData.map(item => item.following_id);
+    const followingIds = followingData && Array.isArray(followingData) 
+      ? followingData.map((item: any) => item.following_id) 
+      : [];
+    
     const userIds = [...followingIds, userId];
     
     if (userIds.length === 1) {
@@ -158,9 +160,9 @@ async function fetchFollowingFeed(userId: string, limit: number, offset: number)
     if (reelsPostsRes.error) throw reelsPostsRes.error;
     
     const combinedPosts = [
-      ...(imagePostsRes.data || []).map((post: any) => ({ ...post, type: 'image' })),
-      ...(textPostsRes.data || []).map((post: any) => ({ ...post, type: 'text' })),
-      ...(reelsPostsRes.data || []).map((post: any) => ({ ...post, type: 'reel' }))
+      ...((imagePostsRes.data || []) as any[]).map((post: any) => ({ ...post, type: 'image' })),
+      ...((textPostsRes.data || []) as any[]).map((post: any) => ({ ...post, type: 'text' })),
+      ...((reelsPostsRes.data || []) as any[]).map((post: any) => ({ ...post, type: 'reel' }))
     ];
     
     return combinedPosts.sort((a, b) => 
@@ -335,9 +337,9 @@ async function fetchPersonalizedFeed(userId: string, interests: string[] = [], l
       ]);
       
       const interestMatchedPosts = [
-        ...(imagePostsRes.data || []).map((post: any) => ({ ...post, type: 'image' })),
-        ...(textPostsRes.data || []).map((post: any) => ({ ...post, type: 'text' })),
-        ...(reelsPostsRes.data || []).map((post: any) => ({ ...post, type: 'reel' }))
+        ...((imagePostsRes.data || []) as any[]).map((post: any) => ({ ...post, type: 'image' })),
+        ...((textPostsRes.data || []) as any[]).map((post: any) => ({ ...post, type: 'text' })),
+        ...((reelsPostsRes.data || []) as any[]).map((post: any) => ({ ...post, type: 'reel' }))
       ];
       
       if (interestMatchedPosts.length >= limit) {
