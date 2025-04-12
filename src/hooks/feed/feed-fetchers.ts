@@ -87,6 +87,14 @@ export async function fetchFollowingFeed(userId: string, limit: number, offset: 
 
 export async function fetchTrendingFeed(limit: number, offset: number): Promise<Post[]> {
   try {
+    // Define types for RPC responses
+    interface PostWithEngagement {
+      id: string;
+      user_id: string;
+      created_at: string;
+      [key: string]: any;
+    }
+    
     // Fetch image posts with engagement
     const imagePostsWithEngagementPromise = supabase
       .rpc('get_image_posts_with_engagement')
