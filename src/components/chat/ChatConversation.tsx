@@ -7,9 +7,8 @@ import { useChatContext } from "@/contexts/ChatContext";
 const ChatConversation = () => {
   const { messages, currentUserId, profiles, isTyping, getChatPartner } = useChatContext();
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  
-  // Fix: Store the chat partner object directly instead of trying to call getChatPartner as a function
-  // The error was that we were trying to call getChatPartner which might not be a function
+
+  // Check if getChatPartner is a function before calling it
   const chatPartner = typeof getChatPartner === 'function' ? getChatPartner() : null;
 
   // Auto-scroll to bottom of messages
