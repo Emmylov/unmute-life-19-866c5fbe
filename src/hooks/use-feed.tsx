@@ -132,28 +132,26 @@ async function fetchFollowingFeed(userId: string, limit: number, offset: number)
       return data ? data.map((post: any) => ({ ...post, type: 'image' })) : [];
     }
     
-    const [imagePostsRes, textPostsRes, reelsPostsRes] = await Promise.all([
-      supabase
-        .from("posts_images" as any)
-        .select("*, profiles:profiles(*)")
-        .in("user_id", userIds)
-        .order("created_at", { ascending: false })
-        .range(offset, offset + limit - 1),
+    const imagePostsRes = await supabase
+      .from("posts_images" as any)
+      .select("*, profiles:profiles(*)")
+      .in("user_id", userIds)
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
       
-      supabase
-        .from("posts_text" as any)
-        .select("*, profiles:profiles(*)")
-        .in("user_id", userIds)
-        .order("created_at", { ascending: false })
-        .range(offset, offset + limit - 1),
+    const textPostsRes = await supabase
+      .from("posts_text" as any)
+      .select("*, profiles:profiles(*)")
+      .in("user_id", userIds)
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
       
-      supabase
-        .from("posts_reels" as any)
-        .select("*, profiles:profiles(*)")
-        .in("user_id", userIds)
-        .order("created_at", { ascending: false })
-        .range(offset, offset + limit - 1)
-    ]);
+    const reelsPostsRes = await supabase
+      .from("posts_reels" as any)
+      .select("*, profiles:profiles(*)")
+      .in("user_id", userIds)
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
     
     if (imagePostsRes.error) throw imagePostsRes.error;
     if (textPostsRes.error) throw textPostsRes.error;
@@ -179,15 +177,15 @@ async function fetchTrendingFeed(limit: number, offset: number): Promise<any[]> 
     const [imagePostsWithEngagementRes, textPostsWithEngagementRes, reelsWithEngagementRes] = await Promise.all([
       supabase
         .rpc('get_image_posts_with_engagement' as any)
-        .range(offset, offset + limit - 1),
+        .range(offset, offset + limit - 1) as Promise<any>,
       
       supabase
         .rpc('get_text_posts_with_engagement' as any)
-        .range(offset, offset + limit - 1),
+        .range(offset, offset + limit - 1) as Promise<any>,
       
       supabase
         .rpc('get_reels_with_engagement' as any)
-        .range(offset, offset + limit - 1)
+        .range(offset, offset + limit - 1) as Promise<any>
     ]);
     
     let combinedPosts: any[] = [];

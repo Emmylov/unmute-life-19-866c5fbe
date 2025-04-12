@@ -1,8 +1,32 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
+interface UserSettings {
+  id: string | null;
+  user_id: string;
+  settings: {
+    notifications?: {
+      push?: boolean;
+      email?: boolean;
+      mentions?: boolean;
+      comments?: boolean;
+      likes?: boolean;
+      follows?: boolean;
+    };
+    privacy?: {
+      private_account?: boolean;
+      show_online_status?: boolean;
+      activity_status?: boolean;
+    };
+    theme?: 'light' | 'dark' | 'system';
+    language?: string;
+  };
+  created_at?: string;
+  updated_at?: string;
+}
+
 // Get user settings
-export const getUserSettings = async (userId: string) => {
+export const getUserSettings = async (userId: string): Promise<UserSettings> => {
   try {
     const { data, error } = await supabase
       .from("user_settings" as any)
@@ -38,7 +62,7 @@ export const getUserSettings = async (userId: string) => {
       throw error;
     }
 
-    return data;
+    return data as UserSettings;
   } catch (error) {
     console.error("Error getting user settings:", error);
     throw error;
@@ -97,8 +121,8 @@ export const getUserSetting = async (userId: string, settingKey: string) => {
       return null;
     }
     
-    // Access settings with type assertion to avoid TypeScript error
-    const settingsObj = userSettings.settings as Record<string, any> | undefined;
+    // Access settings with type safety
+    const settingsObj = userSettings.settings as Record<string, any>;
     if (!settingsObj) return null;
     
     // Handle nested keys like 'notifications.push'
@@ -134,8 +158,8 @@ export const updateUserSetting = async (userId: string, settingKey: string, valu
       throw new Error("User settings not found");
     }
     
-    // Access settings with type assertion to avoid TypeScript error
-    const settingsObj = userSettings.settings as Record<string, any> | undefined;
+    // Access settings with type safety
+    const settingsObj = userSettings.settings as Record<string, any>;
     if (!settingsObj) {
       throw new Error("Settings object not found");
     }
