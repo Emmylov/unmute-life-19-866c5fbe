@@ -10,14 +10,7 @@ import {
   fetchCollabsFeed,
   fetchPersonalizedFeed
 } from './feed-fetchers';
-
-// Define the post type
-interface Post {
-  id: string;
-  created_at: string;
-  type?: 'image' | 'text' | 'reel' | 'collab';
-  [key: string]: any;
-}
+import { Post } from './feed-utils';
 
 interface FeedOptions {
   feedType?: 'forYou' | 'following' | 'trending' | 'music' | 'collabs';

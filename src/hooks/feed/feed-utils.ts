@@ -2,7 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 // Define proper type for posts
-interface Post {
+export interface Post {
   id: string;
   created_at: string;
   type?: 'image' | 'text' | 'reel' | 'collab';
@@ -10,8 +10,8 @@ interface Post {
 }
 
 // These function types match what will be imported from feed-fetchers
-type FetchTrendingFeedFunc = (limit: number, offset: number) => Promise<Post[]>;
-type FetchFollowingFeedFunc = (userId: string, limit: number, offset: number) => Promise<Post[]>;
+export type FetchTrendingFeedFunc = (limit: number, offset: number) => Promise<Post[]>;
+export type FetchFollowingFeedFunc = (userId: string, limit: number, offset: number) => Promise<Post[]>;
 
 // To avoid circular dependency, we'll receive the functions as parameters
 export async function fetchSupplementalPosts(
