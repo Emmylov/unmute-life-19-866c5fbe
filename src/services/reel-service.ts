@@ -89,7 +89,7 @@ export const checkReelSaveStatus = async (reelId: string, userId: string) => {
     };
     
     const { data, error } = await supabase
-      .rpc<boolean>('is_reel_saved', params);
+      .rpc<boolean, ReelIdUserIdParams>('is_reel_saved', params);
       
     if (error) throw error;
     return !!data;
@@ -113,7 +113,7 @@ export const toggleReelSave = async (reelId: string, userId: string) => {
       };
       
       const { error } = await supabase
-        .rpc<null>('unsave_reel', params);
+        .rpc<null, ReelIdUserIdParams>('unsave_reel', params);
         
       if (error) throw error;
       return false;
@@ -126,7 +126,7 @@ export const toggleReelSave = async (reelId: string, userId: string) => {
       };
       
       const { error } = await supabase
-        .rpc<null>('save_reel', params);
+        .rpc<null, SaveReelParams>('save_reel', params);
         
       if (error) throw error;
       return true;
@@ -146,7 +146,7 @@ export const checkReelRepostStatus = async (reelId: string, userId: string) => {
     };
     
     const { data } = await supabase
-      .rpc<boolean>('is_reel_reposted', params);
+      .rpc<boolean, ReelIdUserIdParams>('is_reel_reposted', params);
     
     return !!data;
   } catch (error) {
@@ -175,7 +175,7 @@ export const repostReel = async (reelId: string, userId: string, originalUserId:
     };
     
     const { error } = await supabase
-      .rpc<null>('repost_reel', params);
+      .rpc<null, RepostReelParams>('repost_reel', params);
       
     if (error) throw error;
     return true;
@@ -197,7 +197,7 @@ export const reportReel = async (reelId: string, userId: string, reason: string 
     };
     
     const { error } = await supabase
-      .rpc<null>('report_content', params);
+      .rpc<null, ReportContentParams>('report_content', params);
       
     if (error) throw error;
     return true;
