@@ -14,6 +14,7 @@ import ReelMuteButton from "./controls/ReelMuteButton";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { getCommentCount } from "@/services/comment-service";
+import { useIsMobile, useIsTablet } from "@/hooks/use-responsive";
 import { 
   checkReelLikeStatus, 
   toggleReelLike, 
@@ -74,6 +75,8 @@ const ReelView = ({
   const controls = useAnimation();
   const { reel, user } = reelWithUser;
   const { user: currentUser } = useAuth();
+  const isMobile = useIsMobile();
+  const isTablet = useIsTablet();
 
   useEffect(() => {
     const fetchReelData = async () => {
@@ -238,7 +241,7 @@ const ReelView = ({
       />
 
       <motion.div
-        className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+        className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30"
         animate={controls}
         initial={{ opacity: 0, scale: 1 }}
       >
@@ -247,21 +250,26 @@ const ReelView = ({
 
       <ReelNavigation hasNext={hasNext} hasPrevious={hasPrevious} />
 
+      {/* Glass overlay effect */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/40 pointer-events-none" />
+
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-4 left-4 right-4 z-10">
-          <ReelUserInfo user={user} />
-        </div>
-        
-        <div className="absolute top-4 right-4 z-10 pointer-events-auto">
+        {/* Top section with user info and report button */}
+        <div className="absolute top-0 left-0 right-0 p-4 z-20 flex justify-between items-start">
+          <div className="backdrop-blur-sm bg-black/20 rounded-full px-3 py-2 pointer-events-auto">
+            <ReelUserInfo user={user} />
+          </div>
+          
           <button 
             onClick={handleReportReel}
             disabled={isReporting}
-            className="p-2 rounded-full bg-black/30 backdrop-blur-md"
+            className="p-2 rounded-full bg-black/30 backdrop-blur-sm pointer-events-auto hover:bg-black/50 transition-colors"
           >
             <Flag className="w-5 h-5 text-white/80 hover:text-white" />
           </button>
         </div>
         
+        {/* Side actions */}
         <ReelActions 
           reelId={reel.id} 
           liked={liked} 
@@ -274,21 +282,28 @@ const ReelView = ({
           shareData={getShareData()}
         />
 
-        <div className="absolute bottom-6 left-4 right-24 pointer-events-auto">
-          <ReelCaption caption={reel.caption} />
-          
-          <ReelAudioInfo 
-            audio={reel.audio} 
-            audioType={reel.audio_type} 
-            audioUrl={reel.audio_url} 
-          />
+        {/* Bottom section with caption and audio info */}
+        <div className={`absolute bottom-6 left-4 ${isMobile ? 'right-16' : 'right-24'} pointer-events-auto`}>
+          <div className="backdrop-blur-sm bg-black/20 rounded-xl p-3 space-y-2">
+            <ReelCaption caption={reel.caption} />
+            
+            <ReelAudioInfo 
+              audio={reel.audio} 
+              audioType={reel.audio_type} 
+              audioUrl={reel.audio_url} 
+            />
+          </div>
         </div>
 
-        <div className="absolute bottom-28 left-4 pointer-events-auto">
+        {/* Bottom left emoji reactions */}
+        <div className={`absolute ${isMobile ? 'bottom-20' : 'bottom-28'} left-4 pointer-events-auto`}>
           <EmojiReactions reelId={reel.id} />
         </div>
 
-        <ReelMuteButton isMuted={isMuted} onToggleMute={toggleMute} />
+        {/* Mute button in slightly different position based on device */}
+        <div className={`absolute ${isMobile ? 'bottom-4 right-4' : 'top-20 left-4'} pointer-events-auto`}>
+          <ReelMuteButton isMuted={isMuted} onToggleMute={toggleMute} />
+        </div>
       </div>
     </motion.div>
   );

@@ -4,6 +4,7 @@ import { Heart, MessageCircle, Repeat, Bookmark, Share2 } from "lucide-react";
 import ReelActionButton from "./ReelActionButton";
 import { toast } from "sonner";
 import ReelCommentModal from "../ReelCommentModal";
+import { useIsMobile } from "@/hooks/use-responsive";
 
 interface ReelActionsProps {
   reelId: string;
@@ -33,6 +34,7 @@ const ReelActions = ({
   shareData
 }: ReelActionsProps) => {
   const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
+  const isMobile = useIsMobile();
   
   const handleShare = async () => {
     if (!shareData) return;
@@ -69,27 +71,33 @@ const ReelActions = ({
     }
   };
 
+  // Use different spacing based on screen size
+  const buttonSpacingClass = isMobile ? "space-y-4" : "space-y-6";
+
   return (
     <>
-      <div className="absolute bottom-20 right-4 flex flex-col space-y-6 pointer-events-auto">
+      <div className={`absolute bottom-20 right-4 flex flex-col ${buttonSpacingClass} pointer-events-auto z-20`}>
         <ReelActionButton 
           icon={Heart} 
           label={liked ? "Liked" : "Like"}
           isActive={liked}
           activeColor="text-pink-500 fill-pink-500"
           onClick={onLike}
+          isMobile={isMobile}
         />
         
         <ReelActionButton 
           icon={MessageCircle} 
           label={commentCount > 0 ? `${commentCount}` : "Comment"}
           onClick={handleOpenComments}
+          isMobile={isMobile}
         />
         
         <ReelActionButton 
           icon={Repeat} 
           label="Repost"
           onClick={handleRepost}
+          isMobile={isMobile}
         />
         
         <ReelActionButton 
@@ -98,12 +106,14 @@ const ReelActions = ({
           isActive={saved}
           activeColor="text-blue-400 fill-blue-400"
           onClick={onSave}
+          isMobile={isMobile}
         />
         
         <ReelActionButton 
           icon={Share2}
           label="Share"
           onClick={handleShare}
+          isMobile={isMobile}
         />
       </div>
 

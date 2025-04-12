@@ -82,14 +82,13 @@ export const toggleReelLike = async (reelId: string, userId: string) => {
 // Check if a reel is saved by the current user
 export const checkReelSaveStatus = async (reelId: string, userId: string) => {
   try {
-    // We need to use raw SQL query as the saved_reels table isn't in the generated types
     const params: ReelIdUserIdParams = {
       p_reel_id: reelId,
       p_user_id: userId
     };
     
-    // Use type casting to any to bypass TypeScript constraints
-    const { data, error } = await (supabase.rpc as any)('is_reel_saved', params);
+    // Using the proper type for rpc function (unknown return type)
+    const { data, error } = await supabase.rpc<boolean>("is_reel_saved", params);
       
     if (error) throw error;
     return !!data;
@@ -106,27 +105,25 @@ export const toggleReelSave = async (reelId: string, userId: string) => {
     const isSaved = await checkReelSaveStatus(reelId, userId);
     
     if (isSaved) {
-      // Unsave using raw query
+      // Unsave using proper type
       const params: ReelIdUserIdParams = {
         p_reel_id: reelId,
         p_user_id: userId
       };
       
-      // Use type casting to any to bypass TypeScript constraints
-      const { error } = await (supabase.rpc as any)('unsave_reel', params);
+      const { error } = await supabase.rpc<void>("unsave_reel", params);
         
       if (error) throw error;
       return false;
     } else {
-      // Save using raw query
+      // Save using proper type
       const params: SaveReelParams = {
         p_reel_id: reelId,
         p_user_id: userId,
         p_created_at: new Date().toISOString()
       };
       
-      // Use type casting to any to bypass TypeScript constraints
-      const { error } = await (supabase.rpc as any)('save_reel', params);
+      const { error } = await supabase.rpc<void>("save_reel", params);
         
       if (error) throw error;
       return true;
@@ -145,8 +142,7 @@ export const checkReelRepostStatus = async (reelId: string, userId: string) => {
       p_user_id: userId
     };
     
-    // Use type casting to any to bypass TypeScript constraints
-    const { data } = await (supabase.rpc as any)('is_reel_reposted', params);
+    const { data } = await supabase.rpc<boolean>("is_reel_reposted", params);
     
     return !!data;
   } catch (error) {
@@ -166,7 +162,7 @@ export const repostReel = async (reelId: string, userId: string, originalUserId:
       return false;
     }
     
-    // Repost using raw query
+    // Repost using proper type
     const params: RepostReelParams = {
       p_reel_id: reelId,
       p_user_id: userId,
@@ -174,8 +170,7 @@ export const repostReel = async (reelId: string, userId: string, originalUserId:
       p_created_at: new Date().toISOString()
     };
     
-    // Use type casting to any to bypass TypeScript constraints
-    const { error } = await (supabase.rpc as any)('repost_reel', params);
+    const { error } = await supabase.rpc<void>("repost_reel", params);
       
     if (error) throw error;
     return true;
@@ -196,8 +191,7 @@ export const reportReel = async (reelId: string, userId: string, reason: string 
       p_created_at: new Date().toISOString()
     };
     
-    // Use type casting to any to bypass TypeScript constraints
-    const { error } = await (supabase.rpc as any)('report_content', params);
+    const { error } = await supabase.rpc<void>("report_content", params);
       
     if (error) throw error;
     return true;

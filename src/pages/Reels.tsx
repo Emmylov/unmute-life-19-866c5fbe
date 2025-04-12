@@ -6,10 +6,12 @@ import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Tables } from "@/integrations/supabase/types";
 import { useToast } from "@/hooks/use-toast";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import ReelView from "@/components/reels/ReelView";
-import { Video, Film } from "lucide-react";
+import { Video, Film, LoaderCircle } from "lucide-react";
 import ReelsSkeleton from "@/components/reels/ReelsSkeleton";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { useIsMobile, useIsTablet, useIsDesktop } from "@/hooks/use-responsive";
 import { v4 as uuidv4 } from "uuid";
 
 interface ReelContent {
@@ -46,6 +48,9 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
+  const isMobile = useIsMobile();
+  const isTablet = useIsTablet();
+  const isDesktop = useIsDesktop();
 
   useEffect(() => {
     fetchReels();
@@ -265,29 +270,45 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
     }
   };
 
+  // Determine the height based on device
+  const getContainerHeight = () => {
+    if (isMobile) return "h-[calc(100vh-12rem)]";
+    if (isTablet) return "h-[calc(100vh-10rem)]";
+    return "h-[calc(100vh-8rem)]";
+  };
+
   return (
     <AppLayout pageTitle="Reels">
-      <div className="h-[calc(100vh-12rem)] md:h-[calc(100vh-8rem)] relative overflow-hidden md:rounded-xl bg-gradient-to-br from-primary/90 via-primary to-secondary/80">
+      <div className={`${getContainerHeight()} relative overflow-hidden md:rounded-xl bg-gradient-to-br from-primary/90 via-primary to-secondary/80`}>
         {loading ? (
-          <ReelsSkeleton />
+          <div className="h-full flex items-center justify-center">
+            <div className="glass-card p-8 rounded-2xl flex flex-col items-center">
+              <LoaderCircle className="h-8 w-8 text-white animate-spin mb-4" />
+              <p className="text-white font-medium">Loading reels...</p>
+            </div>
+          </div>
         ) : reels.length > 0 ? (
-          <motion.div 
-            className="h-full w-full relative"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-          >
-            <ReelView 
-              reelWithUser={reels[currentReelIndex]}
-              onNext={handleNextReel}
-              onPrevious={handlePrevReel}
-              onSwipe={handleReelSwipe}
-              hasNext={currentReelIndex < reels.length - 1}
-              hasPrevious={currentReelIndex > 0}
-              currentIndex={currentReelIndex}
-              totalReels={reels.length}
-            />
-          </motion.div>
+          <AnimatePresence mode="wait">
+            <motion.div 
+              key={`reel-${currentReelIndex}`}
+              className="h-full w-full relative"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <ReelView 
+                reelWithUser={reels[currentReelIndex]}
+                onNext={handleNextReel}
+                onPrevious={handlePrevReel}
+                onSwipe={handleReelSwipe}
+                hasNext={currentReelIndex < reels.length - 1}
+                hasPrevious={currentReelIndex > 0}
+                currentIndex={currentReelIndex}
+                totalReels={reels.length}
+              />
+            </motion.div>
+          </AnimatePresence>
         ) : (
           <div className="h-full flex flex-col items-center justify-center text-white p-8 text-center">
             <motion.div
@@ -297,7 +318,7 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
               className="glass-card bg-white/10 p-8 rounded-2xl max-w-md backdrop-blur-sm"
             >
               <div className="mb-6 flex justify-center">
-                <div className="p-4 bg-unmute-purple/30 rounded-full">
+                <div className="p-4 bg-primary/30 rounded-full">
                   <Film className="h-12 w-12" />
                 </div>
               </div>
@@ -312,6 +333,24 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
                 Create Reel
               </Button>
             </motion.div>
+          </div>
+        )}
+        
+        {/* Progress indicator for reels */}
+        {reels.length > 1 && (
+          <div className="absolute top-2 left-2 right-2 z-10 flex justify-center">
+            <div className="flex gap-1">
+              {reels.map((_, index) => (
+                <div
+                  key={`progress-${index}`}
+                  className={`h-1 rounded-full ${
+                    currentReelIndex === index 
+                      ? 'w-8 bg-white' 
+                      : 'w-4 bg-white/40'
+                  } transition-all duration-300`}
+                />
+              ))}
+            </div>
           </div>
         )}
       </div>
