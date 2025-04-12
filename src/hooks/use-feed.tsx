@@ -129,7 +129,7 @@ async function fetchFollowingFeed(userId: string, limit: number, offset: number)
         .range(offset, offset + limit - 1);
       
       if (error) throw error;
-      return (data || []).map((post: any) => ({ ...post, type: 'image' }));
+      return data ? data.map((post: any) => ({ ...post, type: 'image' })) : [];
     }
     
     const [imagePostsRes, textPostsRes, reelsPostsRes] = await Promise.all([
@@ -159,11 +159,11 @@ async function fetchFollowingFeed(userId: string, limit: number, offset: number)
     if (textPostsRes.error) throw textPostsRes.error;
     if (reelsPostsRes.error) throw reelsPostsRes.error;
     
-    const combinedPosts = [
-      ...((imagePostsRes.data || []) as any[]).map((post: any) => ({ ...post, type: 'image' })),
-      ...((textPostsRes.data || []) as any[]).map((post: any) => ({ ...post, type: 'text' })),
-      ...((reelsPostsRes.data || []) as any[]).map((post: any) => ({ ...post, type: 'reel' }))
-    ];
+    const imagePosts = imagePostsRes.data ? imagePostsRes.data.map((post: any) => ({ ...post, type: 'image' })) : [];
+    const textPosts = textPostsRes.data ? textPostsRes.data.map((post: any) => ({ ...post, type: 'text' })) : [];
+    const reelPosts = reelsPostsRes.data ? reelsPostsRes.data.map((post: any) => ({ ...post, type: 'reel' })) : [];
+    
+    const combinedPosts = [...imagePosts, ...textPosts, ...reelPosts];
     
     return combinedPosts.sort((a, b) => 
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -217,17 +217,22 @@ async function fetchTrendingFeed(limit: number, offset: number): Promise<any[]> 
       if (textPostsRes.error) throw textPostsRes.error;
       if (reelsPostsRes.error) throw reelsPostsRes.error;
       
-      combinedPosts = [
-        ...(imagePostsRes.data || []).map((post: any) => ({ ...post, type: 'image' })),
-        ...(textPostsRes.data || []).map((post: any) => ({ ...post, type: 'text' })),
-        ...(reelsPostsRes.data || []).map((post: any) => ({ ...post, type: 'reel' }))
-      ];
+      const imagePosts = imagePostsRes.data ? imagePostsRes.data.map((post: any) => ({ ...post, type: 'image' })) : [];
+      const textPosts = textPostsRes.data ? textPostsRes.data.map((post: any) => ({ ...post, type: 'text' })) : [];
+      const reelPosts = reelsPostsRes.data ? reelsPostsRes.data.map((post: any) => ({ ...post, type: 'reel' })) : [];
+      
+      combinedPosts = [...imagePosts, ...textPosts, ...reelPosts];
     } else {
-      combinedPosts = [
-        ...(imagePostsWithEngagementRes.data || []).map((post: any) => ({ ...post, type: 'image' })),
-        ...(textPostsWithEngagementRes.data || []).map((post: any) => ({ ...post, type: 'text' })),
-        ...(reelsWithEngagementRes.data || []).map((post: any) => ({ ...post, type: 'reel' }))
-      ];
+      const imagePostsWithEngagement = imagePostsWithEngagementRes.data ? 
+        imagePostsWithEngagementRes.data.map((post: any) => ({ ...post, type: 'image' })) : [];
+      
+      const textPostsWithEngagement = textPostsWithEngagementRes.data ?
+        textPostsWithEngagementRes.data.map((post: any) => ({ ...post, type: 'text' })) : [];
+      
+      const reelsWithEngagement = reelsWithEngagementRes.data ?
+        reelsWithEngagementRes.data.map((post: any) => ({ ...post, type: 'reel' })) : [];
+      
+      combinedPosts = [...imagePostsWithEngagement, ...textPostsWithEngagement, ...reelsWithEngagement];
       
       combinedPosts.sort((a, b) => b.engagement_score - a.engagement_score);
     }
@@ -336,11 +341,11 @@ async function fetchPersonalizedFeed(userId: string, interests: string[] = [], l
           .range(offset, offset + limit - 1)
       ]);
       
-      const interestMatchedPosts = [
-        ...((imagePostsRes.data || []) as any[]).map((post: any) => ({ ...post, type: 'image' })),
-        ...((textPostsRes.data || []) as any[]).map((post: any) => ({ ...post, type: 'text' })),
-        ...((reelsPostsRes.data || []) as any[]).map((post: any) => ({ ...post, type: 'reel' }))
-      ];
+      const imagePosts = imagePostsRes.data ? imagePostsRes.data.map((post: any) => ({ ...post, type: 'image' })) : [];
+      const textPosts = textPostsRes.data ? textPostsRes.data.map((post: any) => ({ ...post, type: 'text' })) : [];
+      const reelPosts = reelsPostsRes.data ? reelsPostsRes.data.map((post: any) => ({ ...post, type: 'reel' })) : [];
+      
+      const interestMatchedPosts = [...imagePosts, ...textPosts, ...reelPosts];
       
       if (interestMatchedPosts.length >= limit) {
         return interestMatchedPosts

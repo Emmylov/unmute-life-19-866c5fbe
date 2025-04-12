@@ -97,14 +97,14 @@ export const getUserSetting = async (userId: string, settingKey: string) => {
       return null;
     }
     
-    // Type guard to ensure settings exists
-    const settings = userSettings.settings as Record<string, any>;
-    if (!settings) return null;
+    // Access settings with type assertion to avoid TypeScript error
+    const settingsObj = userSettings.settings as Record<string, any> | undefined;
+    if (!settingsObj) return null;
     
     // Handle nested keys like 'notifications.push'
     if (settingKey.includes('.')) {
       const keys = settingKey.split('.');
-      let value = settings;
+      let value: any = settingsObj;
       
       for (const key of keys) {
         if (value && typeof value === 'object' && key in value) {
@@ -118,9 +118,7 @@ export const getUserSetting = async (userId: string, settingKey: string) => {
     }
     
     // Handle top-level keys
-    return settings && settings[settingKey] !== undefined
-      ? settings[settingKey]
-      : null;
+    return settingsObj[settingKey] !== undefined ? settingsObj[settingKey] : null;
   } catch (error) {
     console.error(`Error getting user setting ${settingKey}:`, error);
     return null;
@@ -136,13 +134,13 @@ export const updateUserSetting = async (userId: string, settingKey: string, valu
       throw new Error("User settings not found");
     }
     
-    // Type guard to ensure settings exists
-    const settings = userSettings.settings as Record<string, any>;
-    if (!settings) {
+    // Access settings with type assertion to avoid TypeScript error
+    const settingsObj = userSettings.settings as Record<string, any> | undefined;
+    if (!settingsObj) {
       throw new Error("Settings object not found");
     }
     
-    const updatedSettings = { ...settings };
+    const updatedSettings = { ...settingsObj };
     
     // Handle nested keys like 'notifications.push'
     if (settingKey.includes('.')) {
