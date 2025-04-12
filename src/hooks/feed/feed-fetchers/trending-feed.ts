@@ -1,31 +1,24 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Post } from "../feed-utils";
 import { PostWithEngagement } from "./types";
-import { toTypedPromise } from "./utils";
+import { toTypedPromise, rpcCall } from "./utils";
 
 export async function fetchTrendingFeed(limit: number, offset: number): Promise<Post[]> {
   try {
     // Fetch image posts with engagement with proper type annotations
-    const imagePostsWithEngagementPromise = toTypedPromise<PostWithEngagement[]>(
-      supabase
-        .rpc('get_image_posts_with_engagement')
-        .range(offset, offset + limit - 1)
-    );
+    const imagePostsWithEngagementPromise = rpcCall<PostWithEngagement[]>(
+      'get_image_posts_with_engagement'
+    ).range(offset, offset + limit - 1);
     
     // Fetch text posts with engagement with proper type annotations
-    const textPostsWithEngagementPromise = toTypedPromise<PostWithEngagement[]>(
-      supabase
-        .rpc('get_text_posts_with_engagement')
-        .range(offset, offset + limit - 1)
-    );
+    const textPostsWithEngagementPromise = rpcCall<PostWithEngagement[]>(
+      'get_text_posts_with_engagement'
+    ).range(offset, offset + limit - 1);
     
     // Fetch reels with engagement with proper type annotations
-    const reelsWithEngagementPromise = toTypedPromise<PostWithEngagement[]>(
-      supabase
-        .rpc('get_reels_with_engagement')
-        .range(offset, offset + limit - 1)
-    );
+    const reelsWithEngagementPromise = rpcCall<PostWithEngagement[]>(
+      'get_reels_with_engagement'
+    ).range(offset, offset + limit - 1);
     
     // Wait for all promises to resolve
     const results = await Promise.all([
