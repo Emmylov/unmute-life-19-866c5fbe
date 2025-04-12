@@ -86,8 +86,8 @@ export const checkReelSaveStatus = async (reelId: string, userId: string) => {
       p_user_id: userId
     };
     
-    // Using type assertion with correct generic type parameters
-    const { data, error } = await (supabase.rpc as any)<boolean, ReelIdUserIdParams>(
+    // Fix: Remove type arguments and use type assertion after the call
+    const { data, error } = await supabase.rpc(
       "is_reel_saved", 
       params
     );
@@ -150,8 +150,8 @@ export const checkReelRepostStatus = async (reelId: string, userId: string) => {
       p_user_id: userId
     };
     
-    // Using type assertion with correct generic type parameters
-    const { data } = await (supabase.rpc as any)<boolean, ReelIdUserIdParams>(
+    // Fix: Remove type arguments and use type assertion after the call
+    const { data } = await supabase.rpc(
       "is_reel_reposted", 
       params
     );
