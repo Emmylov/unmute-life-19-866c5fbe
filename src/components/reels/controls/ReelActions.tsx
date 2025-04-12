@@ -1,9 +1,10 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Heart, MessageCircle, Repeat, Bookmark, Share2 } from "lucide-react";
 import ReelActionButton from "./ReelActionButton";
 import { useAnimation } from "framer-motion";
 import { toast } from "sonner";
+import ReelCommentModal from "../ReelCommentModal";
 
 interface ReelActionsProps {
   reelId: string;
@@ -28,6 +29,8 @@ const ReelActions = ({
   onShare,
   shareData
 }: ReelActionsProps) => {
+  const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
+  
   const handleShare = async () => {
     if (!shareData) return;
     
@@ -51,40 +54,53 @@ const ReelActions = ({
     if (onShare) onShare();
   };
 
+  const handleOpenComments = () => {
+    setIsCommentModalOpen(true);
+  };
+
   return (
-    <div className="absolute bottom-20 right-4 flex flex-col space-y-6 pointer-events-auto">
-      <ReelActionButton 
-        icon={Heart} 
-        label={liked ? "Liked" : "Like"}
-        isActive={liked}
-        activeColor="text-pink-500 fill-pink-500"
-        onClick={onLike}
+    <>
+      <div className="absolute bottom-20 right-4 flex flex-col space-y-6 pointer-events-auto">
+        <ReelActionButton 
+          icon={Heart} 
+          label={liked ? "Liked" : "Like"}
+          isActive={liked}
+          activeColor="text-pink-500 fill-pink-500"
+          onClick={onLike}
+        />
+        
+        <ReelActionButton 
+          icon={MessageCircle} 
+          label="Comment"
+          onClick={handleOpenComments}
+        />
+        
+        <ReelActionButton 
+          icon={Repeat} 
+          label="Repost"
+        />
+        
+        <ReelActionButton 
+          icon={Bookmark} 
+          label={saved ? "Saved" : "Save"}
+          isActive={saved}
+          activeColor="text-blue-400 fill-blue-400"
+          onClick={onSave}
+        />
+        
+        <ReelActionButton 
+          icon={Share2}
+          label="Share"
+          onClick={handleShare}
+        />
+      </div>
+
+      <ReelCommentModal
+        reelId={reelId}
+        isOpen={isCommentModalOpen}
+        onClose={() => setIsCommentModalOpen(false)}
       />
-      
-      <ReelActionButton 
-        icon={MessageCircle} 
-        label="Comment"
-      />
-      
-      <ReelActionButton 
-        icon={Repeat} 
-        label="Repost"
-      />
-      
-      <ReelActionButton 
-        icon={Bookmark} 
-        label={saved ? "Saved" : "Save"}
-        isActive={saved}
-        activeColor="text-blue-400 fill-blue-400"
-        onClick={onSave}
-      />
-      
-      <ReelActionButton 
-        icon={Share2}
-        label="Share"
-        onClick={handleShare}
-      />
-    </div>
+    </>
   );
 };
 

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { motion, useAnimation, PanInfo } from "framer-motion";
 import { Heart } from "lucide-react";
@@ -83,16 +82,13 @@ const ReelView = ({
     setSaved(!saved);
   };
   
-  // Share functionality tracking
   const handleShare = () => {
     console.log("Reel shared:", reel.id);
   };
   
-  // Generate share data for the reel
   const getShareData = () => {
     const username = user?.username || 'User';
     const caption = reel.caption || 'Check out this reel';
-    // Use the current URL as the base and add the reel ID as a parameter
     const url = window.location.origin + '/reels?reel=' + reel.id;
     
     return {
