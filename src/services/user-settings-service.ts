@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 interface UserSettings {
@@ -61,8 +62,33 @@ export const getUserSettings = async (userId: string): Promise<UserSettings> => 
       throw error;
     }
 
-    // Fix: Use type assertion after ensuring data is valid
-    return data as UserSettings;
+    // Fix: Add a type check before returning data to ensure it's a valid UserSettings object
+    if (data && 'user_id' in data && 'settings' in data) {
+      return data as UserSettings;
+    }
+    
+    // Return default settings as a fallback
+    return { 
+      id: null,
+      user_id: userId,
+      settings: {
+        notifications: {
+          push: true,
+          email: true,
+          mentions: true,
+          comments: true,
+          likes: true,
+          follows: true
+        },
+        privacy: {
+          private_account: false,
+          show_online_status: true,
+          activity_status: true
+        },
+        theme: "system",
+        language: "en"
+      }
+    };
   } catch (error) {
     console.error("Error getting user settings:", error);
     throw error;

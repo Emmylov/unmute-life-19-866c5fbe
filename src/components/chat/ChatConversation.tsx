@@ -7,8 +7,8 @@ import { useChatContext } from "@/contexts/ChatContext";
 const ChatConversation = () => {
   const { messages, currentUserId, profiles, isTyping, getChatPartner } = useChatContext();
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  // Fix: Ensure getChatPartner is used as a function, not an array
-  const chatPartner = getChatPartner();
+  // Fix: Call the getChatPartner function properly
+  const chatPartner = getChatPartner ? getChatPartner() : null;
 
   // Auto-scroll to bottom of messages
   useEffect(() => {
