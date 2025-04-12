@@ -88,6 +88,7 @@ export const checkReelSaveStatus = async (reelId: string, userId: string) => {
       p_user_id: userId
     };
     
+    // Use correct typing for RPC calls
     const { data, error } = await supabase
       .rpc('is_reel_saved', params);
       
