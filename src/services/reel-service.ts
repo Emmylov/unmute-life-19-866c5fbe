@@ -25,15 +25,10 @@ interface ReportContentParams {
   p_created_at: string;
 }
 
-// Extend the Supabase type definitions for our custom RPC functions
-type SupabaseCustomFunctions = {
-  is_reel_saved: (args: ReelIdUserIdParams) => boolean;
-  unsave_reel: (args: ReelIdUserIdParams) => void;
-  save_reel: (args: SaveReelParams) => void;
-  is_reel_reposted: (args: ReelIdUserIdParams) => boolean;
-  repost_reel: (args: RepostReelParams) => void;
-  report_content: (args: ReportContentParams) => void;
-}
+// Define return types for our RPC functions
+type ReelSavedReturnType = boolean;
+type ReelRepostedReturnType = boolean;
+type VoidReturnType = null;
 
 // Check if a reel is liked by the current user
 export const checkReelLikeStatus = async (reelId: string, userId: string) => {
@@ -99,7 +94,7 @@ export const checkReelSaveStatus = async (reelId: string, userId: string) => {
     };
     
     const { data, error } = await supabase
-      .rpc<boolean>('is_reel_saved', params);
+      .rpc<ReelSavedReturnType, Database>('is_reel_saved', params);
       
     if (error) throw error;
     return !!data;
@@ -123,7 +118,7 @@ export const toggleReelSave = async (reelId: string, userId: string) => {
       };
       
       const { error } = await supabase
-        .rpc<void>('unsave_reel', params);
+        .rpc<VoidReturnType, Database>('unsave_reel', params);
         
       if (error) throw error;
       return false;
@@ -136,7 +131,7 @@ export const toggleReelSave = async (reelId: string, userId: string) => {
       };
       
       const { error } = await supabase
-        .rpc<void>('save_reel', params);
+        .rpc<VoidReturnType, Database>('save_reel', params);
         
       if (error) throw error;
       return true;
@@ -156,7 +151,7 @@ export const checkReelRepostStatus = async (reelId: string, userId: string) => {
     };
     
     const { data } = await supabase
-      .rpc<boolean>('is_reel_reposted', params);
+      .rpc<ReelRepostedReturnType, Database>('is_reel_reposted', params);
     
     return !!data;
   } catch (error) {
@@ -185,7 +180,7 @@ export const repostReel = async (reelId: string, userId: string, originalUserId:
     };
     
     const { error } = await supabase
-      .rpc<void>('repost_reel', params);
+      .rpc<VoidReturnType, Database>('repost_reel', params);
       
     if (error) throw error;
     return true;
@@ -207,7 +202,7 @@ export const reportReel = async (reelId: string, userId: string, reason: string 
     };
     
     const { error } = await supabase
-      .rpc<void>('report_content', params);
+      .rpc<VoidReturnType, Database>('report_content', params);
       
     if (error) throw error;
     return true;
