@@ -27,7 +27,7 @@ const ChatConversation = () => {
             profile={profiles[msg.sender_id]}
           />
         ))}
-        {isTyping && (
+        {isTyping && chatPartner && (
           <TypingIndicator 
             profile={chatPartner} 
           />

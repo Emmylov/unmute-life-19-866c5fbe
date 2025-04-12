@@ -2,7 +2,24 @@
 import { supabase } from "@/integrations/supabase/client";
 import { fetchSupplementalPosts } from "./feed-utils";
 
-export async function fetchFollowingFeed(userId: string, limit: number, offset: number): Promise<any[]> {
+// Define proper types for post objects
+interface Post {
+  id: string;
+  created_at: string;
+  user_id?: string;
+  type?: 'image' | 'text' | 'reel' | 'collab';
+  [key: string]: any; // For additional properties
+}
+
+interface ProfileWithPosts extends Post {
+  profiles: any;
+}
+
+interface PostWithEngagement extends Post {
+  engagement_score: number;
+}
+
+export async function fetchFollowingFeed(userId: string, limit: number, offset: number): Promise<Post[]> {
   try {
     const { data: followingData, error: followingError } = await supabase
       .from("user_follows" as any)
@@ -53,11 +70,12 @@ export async function fetchFollowingFeed(userId: string, limit: number, offset: 
     if (textPostsRes.error) throw textPostsRes.error;
     if (reelsPostsRes.error) throw reelsPostsRes.error;
     
-    const imagePosts = imagePostsRes.data ? imagePostsRes.data.map((post: any) => ({ ...post, type: 'image' })) : [];
-    const textPosts = textPostsRes.data ? textPostsRes.data.map((post: any) => ({ ...post, type: 'text' })) : [];
-    const reelPosts = reelsPostsRes.data ? reelsPostsRes.data.map((post: any) => ({ ...post, type: 'reel' })) : [];
+    // Fix type annotations here
+    const imagePosts: Post[] = imagePostsRes.data ? imagePostsRes.data.map((post: any) => ({ ...post, type: 'image' })) : [];
+    const textPosts: Post[] = textPostsRes.data ? textPostsRes.data.map((post: any) => ({ ...post, type: 'text' })) : [];
+    const reelPosts: Post[] = reelsPostsRes.data ? reelsPostsRes.data.map((post: any) => ({ ...post, type: 'reel' })) : [];
     
-    const combinedPosts = [...imagePosts, ...textPosts, ...reelPosts];
+    const combinedPosts: Post[] = [...imagePosts, ...textPosts, ...reelPosts];
     
     return combinedPosts.sort((a, b) => 
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -68,7 +86,7 @@ export async function fetchFollowingFeed(userId: string, limit: number, offset: 
   }
 }
 
-export async function fetchTrendingFeed(limit: number, offset: number): Promise<any[]> {
+export async function fetchTrendingFeed(limit: number, offset: number): Promise<Post[]> {
   try {
     const imagePostsWithEngagementPromise = supabase
       .rpc('get_image_posts_with_engagement' as any)
@@ -92,7 +110,7 @@ export async function fetchTrendingFeed(limit: number, offset: number): Promise<
     const textPostsWithEngagementRes = results[1];
     const reelsWithEngagementRes = results[2];
     
-    let combinedPosts: any[] = [];
+    let combinedPosts: Post[] = [];
     
     if (imagePostsWithEngagementRes.error || textPostsWithEngagementRes.error || reelsWithEngagementRes.error) {
       const results = await Promise.all([
@@ -123,24 +141,28 @@ export async function fetchTrendingFeed(limit: number, offset: number): Promise<
       if (textPostsRes.error) throw textPostsRes.error;
       if (reelsPostsRes.error) throw reelsPostsRes.error;
       
-      const imagePosts = imagePostsRes.data ? imagePostsRes.data.map((post: any) => ({ ...post, type: 'image' })) : [];
-      const textPosts = textPostsRes.data ? textPostsRes.data.map((post: any) => ({ ...post, type: 'text' })) : [];
-      const reelPosts = reelsPostsRes.data ? reelsPostsRes.data.map((post: any) => ({ ...post, type: 'reel' })) : [];
+      // Fix type annotations for these arrays
+      const imagePosts: Post[] = imagePostsRes.data ? imagePostsRes.data.map((post: any) => ({ ...post, type: 'image' })) : [];
+      const textPosts: Post[] = textPostsRes.data ? textPostsRes.data.map((post: any) => ({ ...post, type: 'text' })) : [];
+      const reelPosts: Post[] = reelsPostsRes.data ? reelsPostsRes.data.map((post: any) => ({ ...post, type: 'reel' })) : [];
       
       combinedPosts = [...imagePosts, ...textPosts, ...reelPosts];
     } else {
-      const imagePostsWithEngagement = imagePostsWithEngagementRes.data ? 
+      // Fix type annotations for these arrays
+      const imagePostsWithEngagement: PostWithEngagement[] = imagePostsWithEngagementRes.data ? 
         imagePostsWithEngagementRes.data.map((post: any) => ({ ...post, type: 'image' })) : [];
       
-      const textPostsWithEngagement = textPostsWithEngagementRes.data ?
+      const textPostsWithEngagement: PostWithEngagement[] = textPostsWithEngagementRes.data ?
         textPostsWithEngagementRes.data.map((post: any) => ({ ...post, type: 'text' })) : [];
       
-      const reelsWithEngagement = reelsWithEngagementRes.data ?
+      const reelsWithEngagement: PostWithEngagement[] = reelsWithEngagementRes.data ?
         reelsWithEngagementRes.data.map((post: any) => ({ ...post, type: 'reel' })) : [];
       
       combinedPosts = [...imagePostsWithEngagement, ...textPostsWithEngagement, ...reelsWithEngagement];
       
-      combinedPosts.sort((a, b) => b.engagement_score - a.engagement_score);
+      combinedPosts.sort((a: PostWithEngagement, b: PostWithEngagement) => 
+        ('engagement_score' in b && 'engagement_score' in a) ? b.engagement_score - a.engagement_score : 0
+      );
     }
     
     return combinedPosts.slice(0, limit);
@@ -150,7 +172,7 @@ export async function fetchTrendingFeed(limit: number, offset: number): Promise<
   }
 }
 
-export async function fetchMusicFeed(limit: number, offset: number): Promise<any[]> {
+export async function fetchMusicFeed(limit: number, offset: number): Promise<Post[]> {
   try {
     const { data: reels, error } = await supabase
       .from("posts_reels" as any)
@@ -168,7 +190,7 @@ export async function fetchMusicFeed(limit: number, offset: number): Promise<any
   }
 }
 
-export async function fetchCollabsFeed(limit: number, offset: number): Promise<any[]> {
+export async function fetchCollabsFeed(limit: number, offset: number): Promise<Post[]> {
   try {
     const { data: hasCollabs } = await supabase.rpc('check_table_exists' as any, { table_name: 'collabs' });
     
@@ -209,7 +231,8 @@ export async function fetchCollabsFeed(limit: number, offset: number): Promise<a
       const textPostsRes = results[1];
       const reelsPostsRes = results[2];
       
-      const combinedPosts = [
+      // Fix type annotations
+      const combinedPosts: Post[] = [
         ...(imagePostsRes.data || []).map((post: any) => ({ ...post, type: 'image' })),
         ...(textPostsRes.data || []).map((post: any) => ({ ...post, type: 'text' })),
         ...(reelsPostsRes.data || []).map((post: any) => ({ ...post, type: 'reel' }))
@@ -225,7 +248,7 @@ export async function fetchCollabsFeed(limit: number, offset: number): Promise<a
   }
 }
 
-export async function fetchPersonalizedFeed(userId: string, interests: string[] = [], limit: number, offset: number): Promise<any[]> {
+export async function fetchPersonalizedFeed(userId: string, interests: string[] = [], limit: number, offset: number): Promise<Post[]> {
   try {
     if (interests && interests.length > 0) {
       const results = await Promise.all([
@@ -255,11 +278,12 @@ export async function fetchPersonalizedFeed(userId: string, interests: string[] 
       const textPostsRes = results[1];
       const reelsPostsRes = results[2];
       
-      const imagePosts = imagePostsRes.data ? imagePostsRes.data.map((post: any) => ({ ...post, type: 'image' })) : [];
-      const textPosts = textPostsRes.data ? textPostsRes.data.map((post: any) => ({ ...post, type: 'text' })) : [];
-      const reelPosts = reelsPostsRes.data ? reelsPostsRes.data.map((post: any) => ({ ...post, type: 'reel' })) : [];
+      // Fix type annotations
+      const imagePosts: Post[] = imagePostsRes.data ? imagePostsRes.data.map((post: any) => ({ ...post, type: 'image' })) : [];
+      const textPosts: Post[] = textPostsRes.data ? textPostsRes.data.map((post: any) => ({ ...post, type: 'text' })) : [];
+      const reelPosts: Post[] = reelsPostsRes.data ? reelsPostsRes.data.map((post: any) => ({ ...post, type: 'reel' })) : [];
       
-      const interestMatchedPosts = [...imagePosts, ...textPosts, ...reelPosts];
+      const interestMatchedPosts: Post[] = [...imagePosts, ...textPosts, ...reelPosts];
       
       if (interestMatchedPosts.length >= limit) {
         return interestMatchedPosts

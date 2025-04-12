@@ -1,15 +1,40 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { fetchTrendingFeed, fetchFollowingFeed } from "./feed-fetchers";
 
-export async function fetchSupplementalPosts(userId: string, limit: number, offset: number): Promise<any[]> {
+// Define proper type for posts
+interface Post {
+  id: string;
+  created_at: string;
+  type?: 'image' | 'text' | 'reel' | 'collab';
+  [key: string]: any; // For additional properties
+}
+
+// These function types match what will be imported from feed-fetchers
+type FetchTrendingFeedFunc = (limit: number, offset: number) => Promise<Post[]>;
+type FetchFollowingFeedFunc = (userId: string, limit: number, offset: number) => Promise<Post[]>;
+
+// To avoid circular dependency, we'll receive the functions as parameters
+export async function fetchSupplementalPosts(
+  userId: string, 
+  limit: number, 
+  offset: number,
+  trendingFeedFetcher?: FetchTrendingFeedFunc,
+  followingFeedFetcher?: FetchFollowingFeedFunc
+): Promise<Post[]> {
   try {
+    // Import the functions dynamically if not provided
+    if (!trendingFeedFetcher || !followingFeedFetcher) {
+      const feedFetchers = await import('./feed-fetchers');
+      trendingFeedFetcher = feedFetchers.fetchTrendingFeed;
+      followingFeedFetcher = feedFetchers.fetchFollowingFeed;
+    }
+    
     const [trendingPosts, followingPosts] = await Promise.all([
-      fetchTrendingFeed(Math.ceil(limit / 2), offset),
-      fetchFollowingFeed(userId, Math.ceil(limit / 2), offset)
+      trendingFeedFetcher(Math.ceil(limit / 2), offset),
+      followingFeedFetcher(userId, Math.ceil(limit / 2), offset)
     ]);
     
-    const combined = [...trendingPosts, ...followingPosts];
+    const combined: Post[] = [...trendingPosts, ...followingPosts];
     const uniquePosts = Array.from(
       new Map(combined.map(post => [post.id, post])).values()
     );

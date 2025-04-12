@@ -11,6 +11,14 @@ import {
   fetchPersonalizedFeed
 } from './feed-fetchers';
 
+// Define the post type
+interface Post {
+  id: string;
+  created_at: string;
+  type?: 'image' | 'text' | 'reel' | 'collab';
+  [key: string]: any;
+}
+
 interface FeedOptions {
   feedType?: 'forYou' | 'following' | 'trending' | 'music' | 'collabs';
   limit?: number;
@@ -18,7 +26,7 @@ interface FeedOptions {
 }
 
 export const useFeed = (options: FeedOptions = {}) => {
-  const [posts, setPosts] = useState<any[]>([]);
+  const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState<boolean>(true);
@@ -39,7 +47,7 @@ export const useFeed = (options: FeedOptions = {}) => {
       setError(null);
       
       const newOffset = reset ? 0 : offset;
-      let newPosts: any[] = [];
+      let newPosts: Post[] = [];
       
       switch (feedType) {
         case 'following':
