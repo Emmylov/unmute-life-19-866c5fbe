@@ -13,7 +13,7 @@ export interface Post {
 export type FetchTrendingFeedFunc = (limit: number, offset: number) => Promise<Post[]>;
 export type FetchFollowingFeedFunc = (userId: string, limit: number, offset: number) => Promise<Post[]>;
 
-// To avoid circular dependency, we'll receive the functions as parameters
+// This function is kept for backward compatibility but now delegates to the specialized modules
 export async function fetchSupplementalPosts(
   userId: string, 
   limit: number, 
