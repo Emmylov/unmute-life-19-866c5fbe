@@ -88,9 +88,8 @@ export const checkReelSaveStatus = async (reelId: string, userId: string) => {
       p_user_id: userId
     };
     
-    // Fix the generic type parameters - use any for the output since boolean is causing constraints issue
-    const { data, error } = await supabase
-      .rpc('is_reel_saved', params);
+    // Use type casting to any to bypass TypeScript constraints
+    const { data, error } = await (supabase.rpc as any)('is_reel_saved', params);
       
     if (error) throw error;
     return !!data;
@@ -113,9 +112,8 @@ export const toggleReelSave = async (reelId: string, userId: string) => {
         p_user_id: userId
       };
       
-      // Fix the generic type parameters
-      const { error } = await supabase
-        .rpc('unsave_reel', params);
+      // Use type casting to any to bypass TypeScript constraints
+      const { error } = await (supabase.rpc as any)('unsave_reel', params);
         
       if (error) throw error;
       return false;
@@ -127,9 +125,8 @@ export const toggleReelSave = async (reelId: string, userId: string) => {
         p_created_at: new Date().toISOString()
       };
       
-      // Fix the generic type parameters
-      const { error } = await supabase
-        .rpc('save_reel', params);
+      // Use type casting to any to bypass TypeScript constraints
+      const { error } = await (supabase.rpc as any)('save_reel', params);
         
       if (error) throw error;
       return true;
@@ -148,9 +145,8 @@ export const checkReelRepostStatus = async (reelId: string, userId: string) => {
       p_user_id: userId
     };
     
-    // Fix the generic type parameters
-    const { data } = await supabase
-      .rpc('is_reel_reposted', params);
+    // Use type casting to any to bypass TypeScript constraints
+    const { data } = await (supabase.rpc as any)('is_reel_reposted', params);
     
     return !!data;
   } catch (error) {
@@ -178,9 +174,8 @@ export const repostReel = async (reelId: string, userId: string, originalUserId:
       p_created_at: new Date().toISOString()
     };
     
-    // Fix the generic type parameters
-    const { error } = await supabase
-      .rpc('repost_reel', params);
+    // Use type casting to any to bypass TypeScript constraints
+    const { error } = await (supabase.rpc as any)('repost_reel', params);
       
     if (error) throw error;
     return true;
@@ -201,9 +196,8 @@ export const reportReel = async (reelId: string, userId: string, reason: string 
       p_created_at: new Date().toISOString()
     };
     
-    // Fix the generic type parameters
-    const { error } = await supabase
-      .rpc('report_content', params);
+    // Use type casting to any to bypass TypeScript constraints
+    const { error } = await (supabase.rpc as any)('report_content', params);
       
     if (error) throw error;
     return true;
