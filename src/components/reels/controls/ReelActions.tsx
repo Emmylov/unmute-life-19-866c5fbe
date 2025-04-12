@@ -9,8 +9,10 @@ interface ReelActionsProps {
   reelId: string;
   liked: boolean;
   saved: boolean;
+  commentCount?: number;
   onLike: () => void;
   onSave: () => void;
+  onRepost?: () => void;
   onShare?: () => void;
   shareData?: {
     title: string;
@@ -23,8 +25,10 @@ const ReelActions = ({
   reelId, 
   liked, 
   saved, 
+  commentCount = 0,
   onLike, 
   onSave,
+  onRepost,
   onShare,
   shareData
 }: ReelActionsProps) => {
@@ -57,6 +61,14 @@ const ReelActions = ({
     setIsCommentModalOpen(true);
   };
 
+  const handleRepost = () => {
+    if (onRepost) {
+      onRepost();
+    } else {
+      toast.info("Repost functionality coming soon!");
+    }
+  };
+
   return (
     <>
       <div className="absolute bottom-20 right-4 flex flex-col space-y-6 pointer-events-auto">
@@ -70,14 +82,14 @@ const ReelActions = ({
         
         <ReelActionButton 
           icon={MessageCircle} 
-          label="Comment"
+          label={commentCount > 0 ? `${commentCount}` : "Comment"}
           onClick={handleOpenComments}
         />
         
         <ReelActionButton 
           icon={Repeat} 
           label="Repost"
-          onClick={() => toast.info("Repost functionality coming soon!")}
+          onClick={handleRepost}
         />
         
         <ReelActionButton 
