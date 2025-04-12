@@ -1,6 +1,5 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Database } from "@/integrations/supabase/types-patch";
 
 // Generic type-safe query execution function
 export async function toTypedPromise<T>(query: any) {
@@ -24,9 +23,4 @@ export async function checkTableExists(tableName: string): Promise<boolean> {
     return false;
   }
   return !!data;
-}
-
-// Dynamic table query helper - simplified version that avoids type checking
-export function dynamicTableQuery(tableName: string) {
-  return supabase.from(tableName);
 }
