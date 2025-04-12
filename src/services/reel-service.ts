@@ -87,9 +87,11 @@ export const checkReelSaveStatus = async (reelId: string, userId: string) => {
       p_user_id: userId
     };
     
-    // Fix the RPC call by casting the supabase client to any to bypass TypeScript checks
-    const { data, error } = await (supabase as any)
-      .rpc("is_reel_saved", params);
+    // Use type assertion to bypass TypeScript's type checking
+    const { data, error } = await supabase.rpc<boolean>(
+      "is_reel_saved", 
+      params
+    );
       
     if (error) throw error;
     return !!data;
@@ -112,8 +114,10 @@ export const toggleReelSave = async (reelId: string, userId: string) => {
         p_user_id: userId
       };
       
-      const { error } = await (supabase as any)
-        .rpc("unsave_reel", params);
+      const { error } = await supabase.rpc(
+        "unsave_reel", 
+        params
+      );
         
       if (error) throw error;
       return false;
@@ -125,8 +129,10 @@ export const toggleReelSave = async (reelId: string, userId: string) => {
         p_created_at: new Date().toISOString()
       };
       
-      const { error } = await (supabase as any)
-        .rpc("save_reel", params);
+      const { error } = await supabase.rpc(
+        "save_reel", 
+        params
+      );
         
       if (error) throw error;
       return true;
@@ -145,8 +151,10 @@ export const checkReelRepostStatus = async (reelId: string, userId: string) => {
       p_user_id: userId
     };
     
-    const { data } = await (supabase as any)
-      .rpc("is_reel_reposted", params);
+    const { data } = await supabase.rpc<boolean>(
+      "is_reel_reposted", 
+      params
+    );
     
     return !!data;
   } catch (error) {
@@ -174,8 +182,10 @@ export const repostReel = async (reelId: string, userId: string, originalUserId:
       p_created_at: new Date().toISOString()
     };
     
-    const { error } = await (supabase as any)
-      .rpc("repost_reel", params);
+    const { error } = await supabase.rpc(
+      "repost_reel", 
+      params
+    );
       
     if (error) throw error;
     return true;
@@ -196,8 +206,10 @@ export const reportReel = async (reelId: string, userId: string, reason: string 
       p_created_at: new Date().toISOString()
     };
     
-    const { error } = await (supabase as any)
-      .rpc("report_content", params);
+    const { error } = await supabase.rpc(
+      "report_content", 
+      params
+    );
       
     if (error) throw error;
     return true;

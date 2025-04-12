@@ -861,7 +861,41 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_reel_reposted: {
+        Args: { p_reel_id: string; p_user_id: string }
+        Returns: boolean
+      }
+      is_reel_saved: {
+        Args: { p_reel_id: string; p_user_id: string }
+        Returns: boolean
+      }
+      report_content: {
+        Args: {
+          p_content_id: string
+          p_user_id: string
+          p_content_type: string
+          p_reason: string
+          p_created_at: string
+        }
+        Returns: undefined
+      }
+      repost_reel: {
+        Args: {
+          p_reel_id: string
+          p_user_id: string
+          p_original_user_id: string
+          p_created_at: string
+        }
+        Returns: undefined
+      }
+      save_reel: {
+        Args: { p_reel_id: string; p_user_id: string; p_created_at: string }
+        Returns: undefined
+      }
+      unsave_reel: {
+        Args: { p_reel_id: string; p_user_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
