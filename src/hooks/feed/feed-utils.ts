@@ -9,17 +9,13 @@ export interface Post {
   [key: string]: any; // For additional properties
 }
 
-// These function types match what will be imported from feed-fetchers
-export type FetchTrendingFeedFunc = (limit: number, offset: number) => Promise<Post[]>;
-export type FetchFollowingFeedFunc = (userId: string, limit: number, offset: number) => Promise<Post[]>;
-
 // This function is kept for backward compatibility but now delegates to the specialized modules
 export async function fetchSupplementalPosts(
   userId: string, 
   limit: number, 
   offset: number,
-  trendingFeedFetcher?: FetchTrendingFeedFunc,
-  followingFeedFetcher?: FetchFollowingFeedFunc
+  trendingFeedFetcher?: (limit: number, offset: number) => Promise<Post[]>,
+  followingFeedFetcher?: (userId: string, limit: number, offset: number) => Promise<Post[]>
 ): Promise<Post[]> {
   try {
     // Import the functions dynamically if not provided
