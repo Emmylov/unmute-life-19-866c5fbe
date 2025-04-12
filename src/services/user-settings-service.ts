@@ -161,3 +161,36 @@ export const updateUserSetting = async (userId: string, settingKey: string, valu
     throw error;
   }
 };
+
+// Functions for Onboarding
+export const updateOnboardingStep = async (userId: string, step: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({ onboarding_step: step })
+      .eq('id', userId)
+      .select();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error("Error updating onboarding step:", error);
+    throw error;
+  }
+};
+
+export const saveOnboardingData = async (userId: string, userData: any) => {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .update(userData)
+      .eq('id', userId)
+      .select();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error("Error saving onboarding data:", error);
+    throw error;
+  }
+};

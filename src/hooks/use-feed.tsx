@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -109,7 +110,7 @@ export const useFeed = (options: FeedOptions = {}) => {
 async function fetchFollowingFeed(userId: string, limit: number, offset: number): Promise<any[]> {
   try {
     const { data: followingData, error: followingError } = await supabase
-      .from("user_follows")
+      .from("user_follows" as any)
       .select("following_id")
       .eq("follower_id", userId);
     
@@ -120,7 +121,7 @@ async function fetchFollowingFeed(userId: string, limit: number, offset: number)
     
     if (userIds.length === 1) {
       const { data, error } = await supabase
-        .from("posts_images")
+        .from("posts_images" as any)
         .select("*, profiles:profiles(*)")
         .order("created_at", { ascending: false })
         .range(offset, offset + limit - 1);
