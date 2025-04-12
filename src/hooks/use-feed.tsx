@@ -174,18 +174,26 @@ async function fetchFollowingFeed(userId: string, limit: number, offset: number)
 
 async function fetchTrendingFeed(limit: number, offset: number): Promise<any[]> {
   try {
-    const [imagePostsWithEngagementRes, textPostsWithEngagementRes, reelsWithEngagementRes] = await Promise.all([
-      supabase
-        .rpc('get_image_posts_with_engagement' as any)
-        .range(offset, offset + limit - 1) as Promise<any>,
-      
-      supabase
-        .rpc('get_text_posts_with_engagement' as any)
-        .range(offset, offset + limit - 1) as Promise<any>,
-      
-      supabase
-        .rpc('get_reels_with_engagement' as any)
-        .range(offset, offset + limit - 1) as Promise<any>
+    const imagePostsWithEngagementPromise = supabase
+      .rpc('get_image_posts_with_engagement' as any)
+      .range(offset, offset + limit - 1);
+    
+    const textPostsWithEngagementPromise = supabase
+      .rpc('get_text_posts_with_engagement' as any)
+      .range(offset, offset + limit - 1);
+    
+    const reelsWithEngagementPromise = supabase
+      .rpc('get_reels_with_engagement' as any)
+      .range(offset, offset + limit - 1);
+    
+    const [
+      imagePostsWithEngagementRes, 
+      textPostsWithEngagementRes, 
+      reelsWithEngagementRes
+    ] = await Promise.all([
+      imagePostsWithEngagementPromise,
+      textPostsWithEngagementPromise,
+      reelsWithEngagementPromise
     ]);
     
     let combinedPosts: any[] = [];

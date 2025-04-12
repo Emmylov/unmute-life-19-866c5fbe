@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 interface UserSettings {
@@ -62,6 +61,7 @@ export const getUserSettings = async (userId: string): Promise<UserSettings> => 
       throw error;
     }
 
+    // Fix: Use type assertion after ensuring data is valid
     return data as UserSettings;
   } catch (error) {
     console.error("Error getting user settings:", error);
