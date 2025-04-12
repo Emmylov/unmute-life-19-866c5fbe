@@ -35,6 +35,7 @@ const testimonials: Testimonial[] = [
 const TestimonialSlider = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(0);
+  const [sound] = useState(() => new Audio('/notification-sound.mp3'));
 
   // Auto-advance testimonials
   useEffect(() => {
@@ -49,6 +50,7 @@ const TestimonialSlider = () => {
   }, [currentIndex]);
 
   const goToPrevious = () => {
+    sound.play().catch(err => console.error("Error playing sound:", err));
     setDirection(-1);
     setCurrentIndex((prevIndex) => 
       prevIndex === 0 ? testimonials.length - 1 : prevIndex - 1
@@ -56,10 +58,19 @@ const TestimonialSlider = () => {
   };
 
   const goToNext = () => {
+    sound.play().catch(err => console.error("Error playing sound:", err));
     setDirection(1);
     setCurrentIndex((prevIndex) => 
       prevIndex === testimonials.length - 1 ? 0 : prevIndex + 1
     );
+  };
+
+  const goToSlide = (index: number) => {
+    if (index === currentIndex) return;
+    
+    sound.play().catch(err => console.error("Error playing sound:", err));
+    setDirection(index > currentIndex ? 1 : -1);
+    setCurrentIndex(index);
   };
 
   const slideVariants = {
@@ -115,7 +126,7 @@ const TestimonialSlider = () => {
           {testimonials.map((_, index) => (
             <button
               key={index}
-              onClick={() => setCurrentIndex(index)}
+              onClick={() => goToSlide(index)}
               className={`w-2 h-2 rounded-full transition-all ${
                 index === currentIndex
                   ? "bg-unmute-purple w-4"

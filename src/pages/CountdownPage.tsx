@@ -32,10 +32,10 @@ const CountdownPage = () => {
     setIsSubmitting(true);
     
     try {
-      // Save to waitlist table
+      // Save to waitlist table - using the typed client
       const { error } = await supabase
         .from('waitlist')
-        .insert([{ email, name, created_at: new Date().toISOString() }]);
+        .insert({ email, name });
       
       if (error) throw error;
       
