@@ -16,6 +16,7 @@ import VibeCheck from "./pages/VibeCheck";
 import WellnessPlus from "./pages/WellnessPlus";
 import CreateCollab from "./pages/CreateCollab";
 import Notifications from "./pages/Notifications";
+import CountdownPage from "./pages/CountdownPage";
 import "./App.css";
 
 // Toast provider
@@ -30,7 +31,7 @@ function App() {
       <AuthProvider>
         <div className="w-full">
           <Routes>
-            <Route path="/" element={<Index />} />
+            <Route path="/" element={<CountdownPage />} />
             <Route path="/home" element={<Home />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/profile" element={<Profile />} />
@@ -45,6 +46,7 @@ function App() {
             <Route path="/reels" element={<ReelsWithParams />} />
             <Route path="/vibe-check" element={<VibeCheck />} />
             <Route path="/notifications" element={<Notifications />} />
+            <Route path="/countdown" element={<Index />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <Toaster position="top-right" />
