@@ -1,55 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
-// Save user settings
-export const saveUserSettings = async (userId: string, settings: any) => {
-  try {
-    // Check if settings already exist for this user
-    const { data: existingSettings, error: fetchError } = await supabase
-      .from("user_settings" as any)
-      .select("*")
-      .eq("user_id", userId)
-      .maybeSingle();
-    
-    if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 means no rows found
-      throw fetchError;
-    }
-    
-    // If settings exist, update them; otherwise create new settings
-    if (existingSettings) {
-      const { data, error } = await supabase
-        .from("user_settings" as any)
-        .update({
-          settings: settings,
-          updated_at: new Date().toISOString()
-        })
-        .eq("user_id", userId)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
-    } else {
-      const { data, error } = await supabase
-        .from("user_settings" as any)
-        .insert({
-          user_id: userId,
-          settings: settings,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
-    }
-  } catch (error) {
-    console.error("Error saving user settings:", error);
-    throw error;
-  }
-};
-
 // Get user settings
 export const getUserSettings = async (userId: string) => {
   try {
@@ -57,160 +8,156 @@ export const getUserSettings = async (userId: string) => {
       .from("user_settings" as any)
       .select("*")
       .eq("user_id", userId)
-      .maybeSingle();
-    
-    if (error && error.code !== 'PGRST116') { // PGRST116 means no rows found
+      .single();
+
+    if (error) {
+      // If settings don't exist yet, return default settings
+      if (error.code === "PGRST116") {
+        return { 
+          id: null,
+          user_id: userId,
+          settings: {
+            notifications: {
+              push: true,
+              email: true,
+              mentions: true,
+              comments: true,
+              likes: true,
+              follows: true
+            },
+            privacy: {
+              private_account: false,
+              show_online_status: true,
+              activity_status: true
+            },
+            theme: "system",
+            language: "en"
+          }
+        };
+      }
       throw error;
     }
+
+    return data;
+  } catch (error) {
+    console.error("Error getting user settings:", error);
+    throw error;
+  }
+};
+
+// Create or update user settings
+export const updateUserSettings = async (userId: string, settings: any) => {
+  try {
+    // Check if settings already exist
+    const { data: existingSettings, error: checkError } = await supabase
+      .from("user_settings" as any)
+      .select("id")
+      .eq("user_id", userId);
+
+    if (checkError) throw checkError;
+
+    if (existingSettings && existingSettings.length > 0) {
+      // Update existing settings
+      const { data, error } = await supabase
+        .from("user_settings" as any)
+        .update({ 
+          settings: settings,
+          updated_at: new Date().toISOString()
+        })
+        .eq("user_id", userId)
+        .select();
+
+      if (error) throw error;
+      return data;
+    } else {
+      // Create new settings
+      const { data, error } = await supabase
+        .from("user_settings" as any)
+        .insert({
+          user_id: userId,
+          settings: settings
+        })
+        .select();
+
+      if (error) throw error;
+      return data;
+    }
+  } catch (error) {
+    console.error("Error updating user settings:", error);
+    throw error;
+  }
+};
+
+// Get specific setting by key
+export const getUserSetting = async (userId: string, settingKey: string) => {
+  try {
+    const userSettings = await getUserSettings(userId);
     
-    // Return default settings if none found
-    return data || {
-      user_id: userId,
-      settings: {
-        notifications: {
-          push: true,
-          email: true,
-          chat: true,
-          mentions: true,
-          follows: true
-        },
-        privacy: {
-          profile_visibility: "public",
-          message_requests: "followers",
-          activity_status: true
-        },
-        theme: {
-          mode: "system",
-          color: "default"
-        },
-        content_preferences: {
-          language: "english",
-          safe_mode: false,
-          content_sensitivity: "medium"
+    if (!userSettings) {
+      return null;
+    }
+    
+    // Handle nested keys like 'notifications.push'
+    if (settingKey.includes('.')) {
+      const keys = settingKey.split('.');
+      let value = userSettings.settings;
+      
+      for (const key of keys) {
+        if (value && typeof value === 'object' && key in value) {
+          value = value[key];
+        } else {
+          return null;
         }
-      },
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-  } catch (error) {
-    console.error("Error fetching user settings:", error);
-    throw error;
-  }
-};
-
-// Update specific setting
-export const updateSetting = async (userId: string, settingPath: string[], value: any) => {
-  try {
-    // Get current settings
-    const currentSettings = await getUserSettings(userId);
-    
-    // Make a deep copy of current settings
-    const newSettings = JSON.parse(JSON.stringify(currentSettings.settings || {}));
-    
-    // Navigate to the nested property and update it
-    let current = newSettings;
-    for (let i = 0; i < settingPath.length - 1; i++) {
-      const key = settingPath[i];
-      if (!current[key]) {
-        current[key] = {};
       }
-      current = current[key];
+      
+      return value;
     }
     
-    // Set the value
-    const lastKey = settingPath[settingPath.length - 1];
-    current[lastKey] = value;
-    
-    // Save updated settings
-    return await saveUserSettings(userId, newSettings);
+    // Handle top-level keys
+    return userSettings.settings && userSettings.settings[settingKey] !== undefined
+      ? userSettings.settings[settingKey]
+      : null;
   } catch (error) {
-    console.error("Error updating setting:", error);
-    throw error;
+    console.error(`Error getting user setting ${settingKey}:`, error);
+    return null;
   }
 };
 
-// Get specific setting by path
-export const getSetting = async (userId: string, settingPath: string[]): Promise<any> => {
+// Update specific setting by key
+export const updateUserSetting = async (userId: string, settingKey: string, value: any) => {
   try {
-    const data = await getUserSettings(userId);
+    const userSettings = await getUserSettings(userId);
     
-    // Navigate to the nested property
-    let value = data.settings;
-    for (const key of settingPath) {
-      if (!value || typeof value !== 'object') {
-        return undefined;
-      }
-      value = value[key];
+    if (!userSettings || !userSettings.settings) {
+      throw new Error("User settings not found");
     }
     
-    return value;
-  } catch (error) {
-    console.error("Error getting specific setting:", error);
-    throw error;
-  }
-};
-
-// Save onboarding information
-export const saveOnboardingData = async (userId: string, onboardingData: any) => {
-  try {
-    // Update the user's profile with onboarding information
-    const { data, error } = await supabase
-      .from("profiles")
-      .update({
-        ...onboardingData,
-        is_onboarded: true,
-        updated_at: new Date().toISOString()
-      })
-      .eq("id", userId)
-      .select()
-      .single();
+    const updatedSettings = { ...userSettings.settings };
     
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error("Error saving onboarding data:", error);
-    throw error;
-  }
-};
-
-// Get onboarding status
-export const getOnboardingStatus = async (userId: string) => {
-  try {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("is_onboarded, onboarding_step")
-      .eq("id", userId)
-      .single();
+    // Handle nested keys like 'notifications.push'
+    if (settingKey.includes('.')) {
+      const keys = settingKey.split('.');
+      let current = updatedSettings;
+      
+      // Navigate to the nested object that contains our target key
+      for (let i = 0; i < keys.length - 1; i++) {
+        const key = keys[i];
+        if (!(key in current)) {
+          current[key] = {};
+        }
+        current = current[key];
+      }
+      
+      // Set the value for the final key
+      current[keys[keys.length - 1]] = value;
+    } else {
+      // Handle top-level keys
+      updatedSettings[settingKey] = value;
+    }
     
-    if (error) throw error;
-    
-    return {
-      isOnboarded: data?.is_onboarded || false,
-      currentStep: data?.onboarding_step || 'activist-choice'
-    };
+    return await updateUserSettings(userId, updatedSettings);
   } catch (error) {
-    console.error("Error getting onboarding status:", error);
-    throw error;
-  }
-};
-
-// Update onboarding step
-export const updateOnboardingStep = async (userId: string, step: string) => {
-  try {
-    const { data, error } = await supabase
-      .from("profiles")
-      .update({
-        onboarding_step: step,
-        updated_at: new Date().toISOString()
-      })
-      .eq("id", userId)
-      .select()
-      .single();
-    
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error("Error updating onboarding step:", error);
+    console.error(`Error updating user setting ${settingKey}:`, error);
     throw error;
   }
 };

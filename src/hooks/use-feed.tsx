@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,50 +36,41 @@ export const useFeed = (options: FeedOptions = {}) => {
       
       switch (feedType) {
         case 'following':
-          // Get posts from users the current user follows
           newPosts = await fetchFollowingFeed(user.id, limit, newOffset);
           break;
           
         case 'trending':
-          // Get trending posts based on engagement metrics
           newPosts = await fetchTrendingFeed(limit, newOffset);
           break;
           
         case 'music':
-          // Get music-related content
           newPosts = await fetchMusicFeed(limit, newOffset);
           break;
           
         case 'collabs':
-          // Get collaboration posts
           newPosts = await fetchCollabsFeed(limit, newOffset);
           break;
           
         case 'forYou':
         default:
-          // Get personalized feed based on user interests
           newPosts = await fetchPersonalizedFeed(user.id, profile?.interests, limit, newOffset);
           break;
       }
       
-      // Check if there are more posts to load
       setHasMore(newPosts.length === limit);
       
-      // Update the posts state
       if (reset) {
         setPosts(newPosts);
       } else {
         setPosts(prev => [...prev, ...newPosts]);
       }
       
-      // Update the offset for the next fetch
       if (reset) {
         setOffset(limit);
       } else {
         setOffset(offset + limit);
       }
       
-      // Track feed view event
       trackAnalyticEvent(user.id, 'feed_view', { feed_type: feedType, offset: newOffset, limit });
     } catch (err: any) {
       console.error("Error fetching feed:", err);
@@ -91,18 +81,15 @@ export const useFeed = (options: FeedOptions = {}) => {
     }
   }, [user, profile, feedType, limit, offset, tags]);
   
-  // Fetch more posts when user scrolls to bottom
   const fetchMore = useCallback(() => {
     if (loading || !hasMore) return;
     fetchFeed();
   }, [fetchFeed, loading, hasMore]);
   
-  // Refresh feed
   const refresh = useCallback(() => {
     fetchFeed(true);
   }, [fetchFeed]);
   
-  // Initial fetch
   useEffect(() => {
     if (user) {
       fetchFeed(true);
@@ -119,10 +106,8 @@ export const useFeed = (options: FeedOptions = {}) => {
   };
 };
 
-// Helper functions for different feed types
 async function fetchFollowingFeed(userId: string, limit: number, offset: number): Promise<any[]> {
   try {
-    // Get the list of users the current user follows
     const { data: followingData, error: followingError } = await supabase
       .from("user_follows")
       .select("following_id")
@@ -130,13 +115,9 @@ async function fetchFollowingFeed(userId: string, limit: number, offset: number)
     
     if (followingError) throw followingError;
     
-    // Extract the user IDs
     const followingIds = followingData.map(item => item.following_id);
-    
-    // Add the current user's ID to see their own posts too
     const userIds = [...followingIds, userId];
     
-    // If the user doesn't follow anyone yet, just return some recent posts
     if (userIds.length === 1) {
       const { data, error } = await supabase
         .from("posts_images")
@@ -145,12 +126,10 @@ async function fetchFollowingFeed(userId: string, limit: number, offset: number)
         .range(offset, offset + limit - 1);
       
       if (error) throw error;
-      return (data || []).map(post => ({ ...post, type: 'image' }));
+      return (data || []).map((post: any) => ({ ...post, type: 'image' }));
     }
     
-    // Combine posts from different content types
     const [imagePostsRes, textPostsRes, reelsPostsRes] = await Promise.all([
-      // Get image posts
       supabase
         .from("posts_images" as any)
         .select("*, profiles:profiles(*)")
@@ -158,7 +137,6 @@ async function fetchFollowingFeed(userId: string, limit: number, offset: number)
         .order("created_at", { ascending: false })
         .range(offset, offset + limit - 1),
       
-      // Get text posts
       supabase
         .from("posts_text" as any)
         .select("*, profiles:profiles(*)")
@@ -166,7 +144,6 @@ async function fetchFollowingFeed(userId: string, limit: number, offset: number)
         .order("created_at", { ascending: false })
         .range(offset, offset + limit - 1),
       
-      // Get reels
       supabase
         .from("posts_reels" as any)
         .select("*, profiles:profiles(*)")
@@ -175,19 +152,16 @@ async function fetchFollowingFeed(userId: string, limit: number, offset: number)
         .range(offset, offset + limit - 1)
     ]);
     
-    // Check for errors
     if (imagePostsRes.error) throw imagePostsRes.error;
     if (textPostsRes.error) throw textPostsRes.error;
     if (reelsPostsRes.error) throw reelsPostsRes.error;
     
-    // Combine and add type information
     const combinedPosts = [
-      ...(imagePostsRes.data || []).map(post => ({ ...post, type: 'image' })),
-      ...(textPostsRes.data || []).map(post => ({ ...post, type: 'text' })),
-      ...(reelsPostsRes.data || []).map(post => ({ ...post, type: 'reel' }))
+      ...(imagePostsRes.data || []).map((post: any) => ({ ...post, type: 'image' })),
+      ...(textPostsRes.data || []).map((post: any) => ({ ...post, type: 'text' })),
+      ...(reelsPostsRes.data || []).map((post: any) => ({ ...post, type: 'reel' }))
     ];
     
-    // Sort by created_at
     return combinedPosts.sort((a, b) => 
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     ).slice(0, limit);
@@ -199,48 +173,38 @@ async function fetchFollowingFeed(userId: string, limit: number, offset: number)
 
 async function fetchTrendingFeed(limit: number, offset: number): Promise<any[]> {
   try {
-    // For trending posts, we want to get posts with the most engagement
-    // In a real app, you'd use a more sophisticated algorithm
     const [imagePostsWithEngagementRes, textPostsWithEngagementRes, reelsWithEngagementRes] = await Promise.all([
-      // Get image posts with likes and comments
       supabase
-        .rpc('get_image_posts_with_engagement')
+        .rpc('get_image_posts_with_engagement' as any)
         .range(offset, offset + limit - 1),
       
-      // Get text posts with likes and comments
       supabase
-        .rpc('get_text_posts_with_engagement')
+        .rpc('get_text_posts_with_engagement' as any)
         .range(offset, offset + limit - 1),
       
-      // Get reels with likes and comments
       supabase
-        .rpc('get_reels_with_engagement')
+        .rpc('get_reels_with_engagement' as any)
         .range(offset, offset + limit - 1)
     ]);
     
-    // If RPC functions don't exist yet, fall back to a simpler method
-    let combinedPosts = [];
+    let combinedPosts: any[] = [];
     
     if (imagePostsWithEngagementRes.error || textPostsWithEngagementRes.error || reelsWithEngagementRes.error) {
-      // Fallback: get recent posts and sort by created_at
       const [imagePostsRes, textPostsRes, reelsPostsRes] = await Promise.all([
-        // Get image posts
         supabase
-          .from("posts_images")
+          .from("posts_images" as any)
           .select("*, profiles:profiles(*)")
           .order("created_at", { ascending: false })
           .range(offset, offset + limit - 1),
         
-        // Get text posts
         supabase
-          .from("posts_text")
+          .from("posts_text" as any)
           .select("*, profiles:profiles(*)")
           .order("created_at", { ascending: false })
           .range(offset, offset + limit - 1),
         
-        // Get reels
         supabase
-          .from("posts_reels")
+          .from("posts_reels" as any)
           .select("*, profiles:profiles(*)")
           .order("created_at", { ascending: false })
           .range(offset, offset + limit - 1)
@@ -251,18 +215,17 @@ async function fetchTrendingFeed(limit: number, offset: number): Promise<any[]> 
       if (reelsPostsRes.error) throw reelsPostsRes.error;
       
       combinedPosts = [
-        ...(imagePostsRes.data || []).map(post => ({ ...post, type: 'image' })),
-        ...(textPostsRes.data || []).map(post => ({ ...post, type: 'text' })),
-        ...(reelsPostsRes.data || []).map(post => ({ ...post, type: 'reel' }))
+        ...(imagePostsRes.data || []).map((post: any) => ({ ...post, type: 'image' })),
+        ...(textPostsRes.data || []).map((post: any) => ({ ...post, type: 'text' })),
+        ...(reelsPostsRes.data || []).map((post: any) => ({ ...post, type: 'reel' }))
       ];
     } else {
       combinedPosts = [
-        ...(imagePostsWithEngagementRes.data || []).map(post => ({ ...post, type: 'image' })),
-        ...(textPostsWithEngagementRes.data || []).map(post => ({ ...post, type: 'text' })),
-        ...(reelsWithEngagementRes.data || []).map(post => ({ ...post, type: 'reel' }))
+        ...(imagePostsWithEngagementRes.data || []).map((post: any) => ({ ...post, type: 'image' })),
+        ...(textPostsWithEngagementRes.data || []).map((post: any) => ({ ...post, type: 'text' })),
+        ...(reelsWithEngagementRes.data || []).map((post: any) => ({ ...post, type: 'reel' }))
       ];
       
-      // Sort by engagement score (likes + comments)
       combinedPosts.sort((a, b) => b.engagement_score - a.engagement_score);
     }
     
@@ -275,7 +238,6 @@ async function fetchTrendingFeed(limit: number, offset: number): Promise<any[]> 
 
 async function fetchMusicFeed(limit: number, offset: number): Promise<any[]> {
   try {
-    // For music feed, focus on reels with audio
     const { data: reels, error } = await supabase
       .from("posts_reels" as any)
       .select("*, profiles:profiles(*)")
@@ -285,7 +247,7 @@ async function fetchMusicFeed(limit: number, offset: number): Promise<any[]> {
     
     if (error) throw error;
     
-    return (reels || []).map(reel => ({ ...reel, type: 'reel' }));
+    return (reels || []).map((reel: any) => ({ ...reel, type: 'reel' }));
   } catch (error) {
     console.error("Error fetching music feed:", error);
     return [];
@@ -294,11 +256,9 @@ async function fetchMusicFeed(limit: number, offset: number): Promise<any[]> {
 
 async function fetchCollabsFeed(limit: number, offset: number): Promise<any[]> {
   try {
-    // Check if collabs table exists
-    const { data: hasCollabs } = await supabase.rpc('check_table_exists', { table_name: 'collabs' });
+    const { data: hasCollabs } = await supabase.rpc('check_table_exists' as any, { table_name: 'collabs' });
     
     if (hasCollabs) {
-      // If collabs table exists, fetch from there
       const { data, error } = await supabase
         .from("collabs" as any)
         .select("*, profiles:user_id(*)")
@@ -306,11 +266,9 @@ async function fetchCollabsFeed(limit: number, offset: number): Promise<any[]> {
         .range(offset, offset + limit - 1);
       
       if (error) throw error;
-      return (data || []).map(collab => ({ ...collab, type: 'collab' }));
+      return (data || []).map((collab: any) => ({ ...collab, type: 'collab' }));
     } else {
-      // Fallback: Get posts with 'collab' in the caption or tags
       const [imagePostsRes, textPostsRes, reelsPostsRes] = await Promise.all([
-        // Get image posts
         supabase
           .from("posts_images" as any)
           .select("*, profiles:profiles(*)")
@@ -318,7 +276,6 @@ async function fetchCollabsFeed(limit: number, offset: number): Promise<any[]> {
           .order("created_at", { ascending: false })
           .range(offset, offset + limit - 1),
         
-        // Get text posts
         supabase
           .from("posts_text" as any)
           .select("*, profiles:profiles(*)")
@@ -326,7 +283,6 @@ async function fetchCollabsFeed(limit: number, offset: number): Promise<any[]> {
           .order("created_at", { ascending: false })
           .range(offset, offset + limit - 1),
         
-        // Get reels
         supabase
           .from("posts_reels" as any)
           .select("*, profiles:profiles(*)")
@@ -335,14 +291,12 @@ async function fetchCollabsFeed(limit: number, offset: number): Promise<any[]> {
           .range(offset, offset + limit - 1)
       ]);
       
-      // Combine results
       const combinedPosts = [
-        ...(imagePostsRes.data || []).map(post => ({ ...post, type: 'image' })),
-        ...(textPostsRes.data || []).map(post => ({ ...post, type: 'text' })),
-        ...(reelsPostsRes.data || []).map(post => ({ ...post, type: 'reel' }))
+        ...(imagePostsRes.data || []).map((post: any) => ({ ...post, type: 'image' })),
+        ...(textPostsRes.data || []).map((post: any) => ({ ...post, type: 'text' })),
+        ...(reelsPostsRes.data || []).map((post: any) => ({ ...post, type: 'reel' }))
       ];
       
-      // Sort by created_at
       return combinedPosts
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
         .slice(0, limit);
@@ -355,11 +309,8 @@ async function fetchCollabsFeed(limit: number, offset: number): Promise<any[]> {
 
 async function fetchPersonalizedFeed(userId: string, interests: string[] = [], limit: number, offset: number): Promise<any[]> {
   try {
-    // If user has interests, prioritize content with matching tags
     if (interests && interests.length > 0) {
-      // Get posts with matching tags
       const [imagePostsRes, textPostsRes, reelsPostsRes] = await Promise.all([
-        // Get image posts
         supabase
           .from("posts_images" as any)
           .select("*, profiles:profiles(*)")
@@ -367,7 +318,6 @@ async function fetchPersonalizedFeed(userId: string, interests: string[] = [], l
           .order("created_at", { ascending: false })
           .range(offset, offset + limit - 1),
         
-        // Get text posts
         supabase
           .from("posts_text" as any)
           .select("*, profiles:profiles(*)")
@@ -375,7 +325,6 @@ async function fetchPersonalizedFeed(userId: string, interests: string[] = [], l
           .order("created_at", { ascending: false })
           .range(offset, offset + limit - 1),
         
-        // Get reels
         supabase
           .from("posts_reels" as any)
           .select("*, profiles:profiles(*)")
@@ -384,33 +333,27 @@ async function fetchPersonalizedFeed(userId: string, interests: string[] = [], l
           .range(offset, offset + limit - 1)
       ]);
       
-      // Combine results
       const interestMatchedPosts = [
-        ...(imagePostsRes.data || []).map(post => ({ ...post, type: 'image' })),
-        ...(textPostsRes.data || []).map(post => ({ ...post, type: 'text' })),
-        ...(reelsPostsRes.data || []).map(post => ({ ...post, type: 'reel' }))
+        ...(imagePostsRes.data || []).map((post: any) => ({ ...post, type: 'image' })),
+        ...(textPostsRes.data || []).map((post: any) => ({ ...post, type: 'text' })),
+        ...(reelsPostsRes.data || []).map((post: any) => ({ ...post, type: 'reel' }))
       ];
       
-      // If we have enough posts, return them
       if (interestMatchedPosts.length >= limit) {
         return interestMatchedPosts
           .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
           .slice(0, limit);
       }
       
-      // If not enough posts match interests, supplement with other content
       const remainingNeeded = limit - interestMatchedPosts.length;
       const supplementalPosts = await fetchSupplementalPosts(userId, remainingNeeded, offset);
       
-      // Combine and sort
       return [...interestMatchedPosts, ...supplementalPosts]
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
         .slice(0, limit);
     } else {
-      // If no interests, fall back to a mix of following and trending
       const followingPosts = await fetchFollowingFeed(userId, Math.ceil(limit / 2), offset);
       
-      // If not following many users, supplement with trending
       if (followingPosts.length < Math.ceil(limit / 2)) {
         const trendingPosts = await fetchTrendingFeed(limit - followingPosts.length, offset);
         return [...followingPosts, ...trendingPosts]
@@ -426,16 +369,13 @@ async function fetchPersonalizedFeed(userId: string, interests: string[] = [], l
   }
 }
 
-// Helper function to get supplemental posts when interest-based posts aren't enough
 async function fetchSupplementalPosts(userId: string, limit: number, offset: number): Promise<any[]> {
   try {
-    // Get a mix of trending and recent posts
     const [trendingPosts, followingPosts] = await Promise.all([
       fetchTrendingFeed(Math.ceil(limit / 2), offset),
       fetchFollowingFeed(userId, Math.ceil(limit / 2), offset)
     ]);
     
-    // Combine, deduplicate by ID, and return
     const combined = [...trendingPosts, ...followingPosts];
     const uniquePosts = Array.from(
       new Map(combined.map(post => [post.id, post])).values()

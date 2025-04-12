@@ -3,14 +3,14 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./AuthContext";
 import { getChatMessages, markMessageAsRead } from "@/services/content-service";
-import { getUserChats, setupChatRealtime } from "@/services/chat-service";
+import { getUserChats, setupChatRealtime, sendMessage } from "@/services/chat-service";
 
 interface ChatContextType {
   messages: Record<string, any[]>;
   loadingMessages: boolean;
   profiles: Record<string, any>;
   loadingProfiles: boolean;
-  activeChats: any[]; // Add the missing property
+  activeChats: any[];
   isTyping: Record<string, boolean>;
   currentUserId: string | null;
   refreshMessages: (chatId: string) => Promise<void>;
@@ -18,6 +18,13 @@ interface ChatContextType {
   markConversationAsRead: (partnerId: string) => Promise<void>;
   setTypingStatus: (partnerId: string, isTyping: boolean) => void;
   refreshChats: () => Promise<void>;
+  // Add missing properties
+  getChatPartner: () => any;
+  moodStatus: string;
+  setMoodStatus: (status: string) => void;
+  message: string;
+  setMessage: (message: string) => void;
+  handleSendMessage: (e: React.FormEvent) => void;
 }
 
 const ChatContext = createContext<ChatContextType>({
@@ -33,10 +40,23 @@ const ChatContext = createContext<ChatContextType>({
   markConversationAsRead: async () => {},
   setTypingStatus: () => {},
   refreshChats: async () => {},
+  // Add missing properties to default context
+  getChatPartner: () => null,
+  moodStatus: 'chill',
+  setMoodStatus: () => {},
+  message: '',
+  setMessage: () => {},
+  handleSendMessage: () => {},
 });
 
-export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ 
-  children 
+interface ChatProviderProps {
+  children: React.ReactNode;
+  chatId?: string;
+}
+
+export const ChatProvider: React.FC<ChatProviderProps> = ({ 
+  children,
+  chatId 
 }) => {
   const [messages, setMessages] = useState<Record<string, any[]>>({});
   const [loadingMessages, setLoadingMessages] = useState(false);
@@ -45,6 +65,10 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
   const [activeChats, setActiveChats] = useState<any[]>([]);
   const [isTyping, setIsTyping] = useState<Record<string, boolean>>({});
   const { user } = useAuth();
+  
+  // Add new state variables
+  const [moodStatus, setMoodStatus] = useState('chill');
+  const [message, setMessage] = useState('');
 
   // Initialize chat data
   useEffect(() => {
@@ -77,6 +101,13 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [user]);
 
+  // Add effect to load messages when chatId changes
+  useEffect(() => {
+    if (chatId && user) {
+      refreshMessages(chatId);
+    }
+  }, [chatId, user]);
+
   const fetchChats = async () => {
     if (!user) return;
     
@@ -101,15 +132,15 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const refreshMessages = async (chatId: string) => {
-    if (!user || !chatId) return;
+  const refreshMessages = async (partnerId: string) => {
+    if (!user || !partnerId) return;
     
     try {
       setLoadingMessages(true);
-      const chatMessages = await getChatMessages(user.id, chatId);
+      const chatMessages = await getChatMessages(user.id, partnerId);
       setMessages(prev => ({
         ...prev,
-        [chatId]: chatMessages
+        [partnerId]: chatMessages
       }));
     } catch (error) {
       console.error("Error refreshing messages:", error);
@@ -148,6 +179,28 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
     }));
   };
 
+  // Get chat partner profile function
+  const getChatPartner = () => {
+    if (!chatId || !profiles) return null;
+    return profiles[chatId] || null;
+  };
+
+  // Handle send message
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!message.trim() || !user || !chatId) return;
+    
+    try {
+      await sendMessage(user.id, chatId, message);
+      setMessage('');
+      // Refresh messages after sending
+      await refreshMessages(chatId);
+    } catch (error) {
+      console.error("Error sending message:", error);
+    }
+  };
+
   return (
     <ChatContext.Provider
       value={{
@@ -162,7 +215,14 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
         markAsRead,
         markConversationAsRead,
         setTypingStatus,
-        refreshChats: fetchChats
+        refreshChats: fetchChats,
+        // Add new properties
+        getChatPartner,
+        moodStatus,
+        setMoodStatus,
+        message,
+        setMessage,
+        handleSendMessage
       }}
     >
       {children}

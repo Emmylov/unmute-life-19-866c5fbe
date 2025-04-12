@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { getChatMessages, sendMessage, markMessageAsRead } from "./content-service";
+import { getChatMessages, sendMessage, markMessageAsRead } from "./message-service";
 
 // Get all chat conversations for a user
 export const getUserChats = async (userId: string) => {
@@ -75,7 +75,11 @@ export const getUserChats = async (userId: string) => {
           profile,
           latestMessage: latestMessage || null,
           unreadCount: unreadCount || 0,
-          lastActivity: latestMessage?.created_at || new Date().toISOString()
+          lastActivity: latestMessage?.created_at || new Date().toISOString(),
+          // Add formatted data for ChatList component
+          lastMessage: latestMessage?.content || '',
+          timestamp: latestMessage?.created_at || new Date().toISOString(),
+          unread: unreadCount || 0
         };
       })
     );

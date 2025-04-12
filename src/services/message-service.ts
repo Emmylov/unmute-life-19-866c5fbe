@@ -58,7 +58,7 @@ export const getChatMessages = async (userId: string, partnerId: string) => {
       throw error;
     }
     
-    return data;
+    return data || [];
   } catch (error) {
     console.error("Error getting chat messages:", error);
     throw error;
@@ -67,26 +67,27 @@ export const getChatMessages = async (userId: string, partnerId: string) => {
 
 export const getChatList = async (userId: string) => {
   try {
-    // This is a more complex query that needs to get all users the current user has chatted with
-    const { data: sentMessages, error: sentError } = await supabase
+    // Get all unique user IDs the current user has chatted with
+    const sentQuery = supabase
       .from('chat_messages')
       .select('receiver_id')
       .eq('sender_id', userId);
-    
-    if (sentError) throw sentError;
-    
-    const { data: receivedMessages, error: receivedError } = await supabase
+      
+    const receivedQuery = supabase
       .from('chat_messages')
       .select('sender_id')
       .eq('receiver_id', userId);
+      
+    const [sentRes, receivedRes] = await Promise.all([sentQuery, receivedQuery]);
     
-    if (receivedError) throw receivedError;
-    
+    if (sentRes.error) throw sentRes.error;
+    if (receivedRes.error) throw receivedRes.error;
+      
     // Combine unique user IDs
     const chatPartnerIds = [
       ...new Set([
-        ...sentMessages.map(msg => msg.receiver_id),
-        ...receivedMessages.map(msg => msg.sender_id)
+        ...(sentRes.data || []).map(msg => msg.receiver_id),
+        ...(receivedRes.data || []).map(msg => msg.sender_id)
       ])
     ];
     
@@ -113,7 +114,7 @@ export const getChatList = async (userId: string) => {
           .limit(1)
           .single();
         
-        if (error) {
+        if (error && error.code !== 'PGRST116') {
           console.error(`Error getting latest message with ${partnerId}:`, error);
           return null;
         }
@@ -123,29 +124,29 @@ export const getChatList = async (userId: string) => {
         return {
           partnerId,
           profile,
-          latestMessage: data,
-          unreadCount: 0 // We'll calculate this separately
+          latestMessage: data || null,
+          unreadCount: 0 // Will be calculated next
         };
       })
     );
     
     // Filter out null results
-    const validChatPreviews = chatPreviews.filter(preview => preview !== null);
+    const validChatPreviews = chatPreviews.filter(Boolean);
     
     // Calculate unread messages for each chat
     await Promise.all(
       validChatPreviews.map(async (preview) => {
         if (!preview) return;
         
-        const { data, error } = await supabase
+        const { count, error } = await supabase
           .from('chat_messages')
-          .select('id')
+          .select('*', { count: 'exact', head: true })
           .eq('sender_id', preview.partnerId)
           .eq('receiver_id', userId)
           .eq('read', false);
         
         if (!error) {
-          preview.unreadCount = data?.length || 0;
+          preview.unreadCount = count || 0;
         }
       })
     );

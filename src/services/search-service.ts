@@ -39,9 +39,9 @@ export const searchContent = async (query: string, options: { contentType?: 'ima
       ]);
       
       result.items = [
-        ...imageResults.map(item => ({ ...item, content_type: 'image' })),
-        ...textResults.map(item => ({ ...item, content_type: 'text' })),
-        ...reelResults.map(item => ({ ...item, content_type: 'reel' }))
+        ...(imageResults || []).map((item: any) => ({ ...item, content_type: 'image' })),
+        ...(textResults || []).map((item: any) => ({ ...item, content_type: 'text' })),
+        ...(reelResults || []).map((item: any) => ({ ...item, content_type: 'reel' }))
       ];
       
       result.total = result.items.length;
@@ -56,8 +56,8 @@ export const searchContent = async (query: string, options: { contentType?: 'ima
     } else {
       // Search in specific content type
       const items = await searchContentByType(query, contentType, limit);
-      result.items = items.map(item => ({ ...item, content_type: contentType }));
-      result.total = items.length;
+      result.items = (items || []).map((item: any) => ({ ...item, content_type: contentType }));
+      result.total = items?.length || 0;
     }
     
     return result;
