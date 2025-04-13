@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase, listBucketFiles, getPublicUrl, STORAGE_BUCKETS } from "@/integrations/supabase/client";
@@ -39,8 +38,8 @@ interface ReelWithUser {
   user: Tables<"profiles">;
 }
 
-// Define a separate type for the database response to avoid circular references
-interface DatabaseReel {
+// Use a separate interface for database query results to avoid circular types
+interface DatabaseReelRecord {
   id: string;
   user_id: string;
   created_at?: string | null;
@@ -156,8 +155,8 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
       console.log("Reels from database:", reelsData);
       
       if (reelsData && reelsData.length > 0) {
-        // Use the DatabaseReel type to explicitly type the data
-        const typedReelsData = reelsData as DatabaseReel[];
+        // Type assertion to our safe database record type
+        const typedReelsData = reelsData as unknown as DatabaseReelRecord[];
         
         const processedReels: ReelWithUser[] = await Promise.all(
           typedReelsData.map(async (reel) => {
@@ -361,7 +360,6 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
   return (
     <AppLayout pageTitle="Reels">
       <div className="flex flex-col h-full">
-        {/* Header with improved styling */}
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-2xl font-bold text-primary hidden md:block">Discover Reels</h1>
           <div className="flex gap-2">
@@ -383,7 +381,6 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
           </div>
         </div>
 
-        {/* Filters with modern styling */}
         <div className="mb-3">
           <div className="flex overflow-x-auto pb-2 no-scrollbar gap-2">
             <div className="flex gap-1.5">
@@ -424,7 +421,6 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
           </div>
         </div>
         
-        {/* Reels container with enhanced visuals */}
         <div className="relative flex-grow bg-gradient-to-br from-purple-50 via-white to-pink-50 rounded-2xl overflow-hidden shadow-lg">
           {loading ? (
             <div className="h-full flex items-center justify-center">
@@ -497,7 +493,6 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
             )}
           </AnimatePresence>
           
-          {/* Improved progress indicators */}
           {reels.length > 1 && (
             <div className="absolute top-2 left-2 right-2 z-10 flex justify-center">
               <div className="flex gap-1 px-3 py-1.5 bg-black/10 backdrop-blur-md rounded-full">
