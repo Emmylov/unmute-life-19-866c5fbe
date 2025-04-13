@@ -55,24 +55,24 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
             user_id: item.user_id,
             created_at: item.created_at,
             video_url: item.video_url,
-            thumbnail_url: item.thumbnail_url,
-            caption: item.caption,
-            audio: item.audio,
-            audio_type: item.audio_type,
-            audio_url: item.audio_url,
-            duration: item.duration,
-            original_audio_volume: item.original_audio_volume,
-            overlay_audio_volume: item.overlay_audio_volume,
-            tags: item.tags,
-            allow_comments: item.allow_comments,
-            allow_duets: item.allow_duets,
-            vibe_tag: item.vibe_tag,
-            mood_vibe: item.mood_vibe,
+            thumbnail_url: item.thumbnail_url || null,
+            caption: item.caption || null,
+            audio: item.audio || null,
+            audio_type: null,
+            audio_url: null,
+            duration: null,
+            original_audio_volume: 1,
+            overlay_audio_volume: 0,
+            tags: [],
+            allow_comments: true,
+            allow_duets: true,
+            vibe_tag: null,
+            mood_vibe: null,
           },
           user: {
             id: item.profiles?.id || '',
             username: item.profiles?.username || '',
-            avatar: item.profiles?.avatar_url || '',
+            avatar: item.profiles?.avatar || '',
             full_name: item.profiles?.full_name || '',
           },
         }));
@@ -118,24 +118,24 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
             user_id: item.user_id,
             created_at: item.created_at,
             video_url: item.video_url,
-            thumbnail_url: item.thumbnail_url,
-            caption: item.caption,
-            audio: item.audio,
-            audio_type: item.audio_type,
-            audio_url: item.audio_url,
-            duration: item.duration,
-            original_audio_volume: item.original_audio_volume,
-            overlay_audio_volume: item.overlay_audio_volume,
-            tags: item.tags,
-            allow_comments: item.allow_comments,
-            allow_duets: item.allow_duets,
-            vibe_tag: item.vibe_tag,
-            mood_vibe: item.mood_vibe,
+            thumbnail_url: item.thumbnail_url || null,
+            caption: item.caption || null,
+            audio: item.audio || null,
+            audio_type: null,
+            audio_url: null,
+            duration: null,
+            original_audio_volume: 1,
+            overlay_audio_volume: 0,
+            tags: [],
+            allow_comments: true,
+            allow_duets: true,
+            vibe_tag: null,
+            mood_vibe: null,
           },
           user: {
             id: item.profiles?.id || '',
             username: item.profiles?.username || '',
-            avatar: item.profiles?.avatar_url || '',
+            avatar: item.profiles?.avatar || '',
             full_name: item.profiles?.full_name || '',
           },
         }));
@@ -166,6 +166,14 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
   const goToPreviousReel = () => {
     if (currentIndex > 0) {
       setCurrentIndex(prevIndex => prevIndex - 1);
+    }
+  };
+
+  const handleSwipe = (direction: string) => {
+    if (direction === "up") {
+      goToNextReel();
+    } else if (direction === "down") {
+      goToPreviousReel();
     }
   };
 
@@ -213,11 +221,14 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
   return (
     <div className="h-screen w-full bg-black" {...handlers} ref={reelContainerRef}>
       <ReelView 
-        reel={reels[currentIndex]} 
+        reelWithUser={reels[currentIndex]} 
         onNext={goToNextReel}
         onPrevious={goToPreviousReel}
-        isLast={currentIndex === reels.length - 1 && !hasMore}
-        isFirst={currentIndex === 0}
+        onSwipe={handleSwipe}
+        hasNext={currentIndex < reels.length - 1 || hasMore}
+        hasPrevious={currentIndex > 0}
+        currentIndex={currentIndex}
+        totalReels={reels.length}
       />
     </div>
   );
