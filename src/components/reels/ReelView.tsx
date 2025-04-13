@@ -1,12 +1,11 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, useAnimation, PanInfo } from "framer-motion";
-import { Heart, Flag } from "lucide-react";
+import { Flag, MessageCircle, Bookmark, Share2, Heart, Eye, Repeat } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
 import EmojiReactions from "./EmojiReactions";
 import ReelVideo from "./controls/ReelVideo";
 import ReelUserInfo from "./controls/ReelUserInfo";
-import ReelActions from "./controls/ReelActions";
 import ReelCaption from "./controls/ReelCaption";
 import ReelAudioInfo from "./controls/ReelAudioInfo";
 import ReelNavigation from "./controls/ReelNavigation";
@@ -23,6 +22,8 @@ import {
   repostReel,
   reportReel
 } from "@/services/reel-service";
+import { FeelBar } from "@/components/reels/FeelBar";
+import ReelUnmuteThread from "@/components/reels/ReelUnmuteThread";
 
 interface ReelWithUser {
   reel: {
@@ -41,6 +42,8 @@ interface ReelWithUser {
     original_audio_volume?: number | null;
     overlay_audio_volume?: number | null;
     tags?: string[] | null;
+    vibe_tag?: string | null;
+    mood_vibe?: string | null;
   };
   user: Tables<"profiles">;
 }
@@ -72,11 +75,29 @@ const ReelView = ({
   const [isMuted, setIsMuted] = useState(false);
   const [commentCount, setCommentCount] = useState(0);
   const [isReporting, setIsReporting] = useState(false);
+  const [isUnmuteThreadOpen, setIsUnmuteThreadOpen] = useState(false);
+  const [selectedEmotion, setSelectedEmotion] = useState<string | null>(null);
   const controls = useAnimation();
   const { reel, user } = reelWithUser;
   const { user: currentUser } = useAuth();
   const isMobile = useIsMobile();
   const isTablet = useIsTablet();
+
+  // Generate gradient based on mood vibe
+  const getGradient = () => {
+    switch(reel.mood_vibe) {
+      case 'Uplifting':
+        return 'from-blue-100 via-indigo-100 to-purple-100';
+      case 'Raw':
+        return 'from-gray-100 via-gray-200 to-gray-100';
+      case 'Funny':
+        return 'from-yellow-100 via-orange-50 to-amber-100';
+      case 'Vulnerable':
+        return 'from-pink-50 via-rose-100 to-red-50';
+      default:
+        return 'from-white/40 via-white/60 to-white/40';
+    }
+  };
 
   useEffect(() => {
     const fetchReelData = async () => {
@@ -100,6 +121,9 @@ const ReelView = ({
     };
     
     fetchReelData();
+    
+    // Reset emotion selection when changing reels
+    setSelectedEmotion(null);
   }, [reel.id, currentUser]);
 
   const togglePlay = () => {
@@ -108,6 +132,29 @@ const ReelView = ({
 
   const toggleMute = () => {
     setIsMuted(!isMuted);
+  };
+
+  const handleEmotionSelect = (emotion: string) => {
+    if (!currentUser) {
+      toast.error("You must be logged in to react to reels");
+      return;
+    }
+    
+    // Toggle emotion if already selected
+    if (selectedEmotion === emotion) {
+      setSelectedEmotion(null);
+      toast("Reaction removed");
+    } else {
+      setSelectedEmotion(emotion);
+      toast.success(`You felt: ${emotion}`);
+      
+      // Show animation if selecting new emotion
+      controls.start({
+        scale: [1, 1.2, 1],
+        opacity: [1, 1, 0],
+        transition: { duration: 0.8 }
+      });
+    }
   };
 
   const handleToggleLike = async () => {
@@ -122,7 +169,6 @@ const ReelView = ({
       
       if (result) {
         toast.success("Reel liked!");
-        
         controls.start({
           scale: [1, 1.2, 1],
           opacity: [1, 1, 0],
@@ -198,7 +244,22 @@ const ReelView = ({
   };
   
   const handleShare = () => {
-    console.log("Reel shared:", reel.id);
+    const shareData = getShareData();
+    
+    try {
+      if (navigator.share) {
+        navigator.share(shareData);
+      } else {
+        // Fallback for browsers that don't support Web Share API
+        navigator.clipboard.writeText(shareData.url);
+        toast.success("Link copied to clipboard!");
+      }
+    } catch (error) {
+      console.error("Error sharing:", error);
+      if ((error as Error).name !== 'AbortError') {
+        toast.error("Failed to share");
+      }
+    }
   };
   
   const getShareData = () => {
@@ -223,88 +284,159 @@ const ReelView = ({
     }
   };
 
+  const openUnmuteThread = () => {
+    setIsUnmuteThreadOpen(true);
+    // Pause video when opening comments
+    setIsPlaying(false);
+  };
+
   return (
     <motion.div 
-      className="relative w-full h-full bg-black overflow-hidden"
+      className="relative w-full h-full overflow-hidden"
       drag="y"
       dragConstraints={{ top: 0, bottom: 0 }}
       dragElastic={0.2}
       onDragEnd={handleDragEnd}
     >
-      <ReelVideo 
-        videoUrl={reel.video_url}
-        thumbnailUrl={reel.thumbnail_url}
-        isPlaying={isPlaying}
-        isMuted={isMuted}
-        currentIndex={currentIndex}
-        onTogglePlay={togglePlay}
-      />
-
-      <motion.div
-        className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30"
-        animate={controls}
-        initial={{ opacity: 0, scale: 1 }}
-      >
-        <Heart className="w-20 h-20 text-primary filter drop-shadow-lg" fill={liked ? "#ec4899" : "none"} />
-      </motion.div>
-
-      <ReelNavigation hasNext={hasNext} hasPrevious={hasPrevious} />
-
-      {/* Glass overlay effect */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/40 pointer-events-none" />
-
-      <div className="absolute inset-0 pointer-events-none">
-        {/* Top section with user info and report button */}
-        <div className="absolute top-0 left-0 right-0 p-4 z-20 flex justify-between items-start">
-          <div className="backdrop-blur-sm bg-black/20 rounded-full px-3 py-2 pointer-events-auto">
-            <ReelUserInfo user={user} />
-          </div>
-          
-          <button 
-            onClick={handleReportReel}
-            disabled={isReporting}
-            className="p-2 rounded-full bg-black/30 backdrop-blur-sm pointer-events-auto hover:bg-black/50 transition-colors"
-          >
-            <Flag className="w-5 h-5 text-white/80 hover:text-white" />
-          </button>
-        </div>
+      {/* Card styling wrapper */}
+      <div className={`absolute inset-x-1 inset-y-2 rounded-2xl overflow-hidden shadow-lg`}>
+        {/* Gradient background based on mood vibe */}
+        <div className={`absolute inset-0 bg-gradient-to-br ${getGradient()} opacity-20`}></div>
         
-        {/* Side actions */}
-        <ReelActions 
-          reelId={reel.id} 
-          liked={liked} 
-          saved={saved}
-          commentCount={commentCount}
-          onLike={handleToggleLike} 
-          onSave={handleToggleSave}
-          onRepost={handleRepostReel}
-          onShare={handleShare}
-          shareData={getShareData()}
+        <ReelVideo 
+          videoUrl={reel.video_url}
+          thumbnailUrl={reel.thumbnail_url}
+          isPlaying={isPlaying}
+          isMuted={isMuted}
+          currentIndex={currentIndex}
+          onTogglePlay={togglePlay}
         />
 
-        {/* Bottom section with caption and audio info */}
-        <div className={`absolute bottom-6 left-4 ${isMobile ? 'right-16' : 'right-24'} pointer-events-auto`}>
-          <div className="backdrop-blur-sm bg-black/20 rounded-xl p-3 space-y-2">
-            <ReelCaption caption={reel.caption} />
+        <motion.div
+          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30"
+          animate={controls}
+          initial={{ opacity: 0, scale: 1 }}
+        >
+          {selectedEmotion ? (
+            <div className="text-5xl filter drop-shadow-lg">
+              {selectedEmotion === 'Relatable' && '💬'}
+              {selectedEmotion === 'Made Me Feel' && '❤️'}
+              {selectedEmotion === 'Shared This' && '🔄'}
+              {selectedEmotion === 'Still Thinking' && '👀'}
+            </div>
+          ) : (
+            <Heart className="w-20 h-20 text-primary filter drop-shadow-lg" fill={liked ? "#ec4899" : "none"} />
+          )}
+        </motion.div>
+
+        <ReelNavigation hasNext={hasNext} hasPrevious={hasPrevious} />
+
+        {/* Glass overlay effect */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/30 pointer-events-none" />
+
+        <div className="absolute inset-0 pointer-events-none">
+          {/* Top section with user info and report button */}
+          <div className="absolute top-0 left-0 right-0 p-4 z-20 flex justify-between items-start">
+            <div className="backdrop-blur-sm bg-black/10 rounded-full px-3 py-1.5 pointer-events-auto flex items-center">
+              <ReelUserInfo user={user} />
+              {reel.vibe_tag && (
+                <span className="ml-2 py-0.5 px-2 bg-primary/20 rounded-full text-xs text-primary font-medium">
+                  {reel.vibe_tag}
+                </span>
+              )}
+            </div>
             
-            <ReelAudioInfo 
-              audio={reel.audio} 
-              audioType={reel.audio_type} 
-              audioUrl={reel.audio_url} 
+            <button 
+              onClick={handleReportReel}
+              disabled={isReporting}
+              className="p-2 rounded-full bg-black/10 backdrop-blur-sm pointer-events-auto hover:bg-black/20 transition-colors"
+            >
+              <Flag className="w-4 h-4 text-white/80 hover:text-white" />
+            </button>
+          </div>
+          
+          {/* Feel Bar instead of traditional likes */}
+          <div className="absolute bottom-32 left-4 right-4 pointer-events-auto">
+            <FeelBar 
+              selectedEmotion={selectedEmotion}
+              onEmotionSelect={handleEmotionSelect}
             />
           </div>
-        </div>
 
-        {/* Bottom left emoji reactions */}
-        <div className={`absolute ${isMobile ? 'bottom-20' : 'bottom-28'} left-4 pointer-events-auto`}>
-          <EmojiReactions reelId={reel.id} />
-        </div>
+          {/* Bottom section with caption and audio info */}
+          <div className={`absolute bottom-16 left-4 ${isMobile ? 'right-16' : 'right-24'} pointer-events-auto`}>
+            <div className="backdrop-blur-sm bg-black/10 rounded-xl p-3 space-y-2">
+              <ReelCaption caption={reel.caption} />
+              
+              <ReelAudioInfo 
+                audio={reel.audio} 
+                audioType={reel.audio_type} 
+                audioUrl={reel.audio_url} 
+              />
+              
+              {reel.tags && reel.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {reel.tags.map((tag, index) => (
+                    <span key={index} className="text-xs text-primary bg-primary/10 rounded-full px-2 py-0.5">
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
 
-        {/* Mute button in slightly different position based on device */}
-        <div className={`absolute ${isMobile ? 'bottom-4 right-4' : 'top-20 left-4'} pointer-events-auto`}>
-          <ReelMuteButton isMuted={isMuted} onToggleMute={toggleMute} />
+          {/* Side actions - simplified */}
+          <div className="absolute bottom-24 right-3 md:right-4 flex flex-col space-y-5 pointer-events-auto z-20">
+            <button 
+              onClick={openUnmuteThread}
+              className="flex flex-col items-center"
+            >
+              <div className="w-10 h-10 rounded-full bg-black/20 backdrop-blur-md hover:bg-black/30 flex items-center justify-center transition-colors">
+                <MessageCircle className="w-5 h-5 text-white" />
+              </div>
+              <span className="text-xs text-white/90 mt-1">
+                {commentCount > 0 ? commentCount : 'Unmute'}
+              </span>
+            </button>
+            
+            <button 
+              onClick={handleRepostReel}
+              className="flex flex-col items-center"
+            >
+              <div className="w-10 h-10 rounded-full bg-black/20 backdrop-blur-md hover:bg-black/30 flex items-center justify-center transition-colors">
+                <Repeat className="w-5 h-5 text-white" />
+              </div>
+              <span className="text-xs text-white/90 mt-1">Share</span>
+            </button>
+            
+            <button 
+              onClick={handleToggleSave}
+              className="flex flex-col items-center"
+            >
+              <div className={`w-10 h-10 rounded-full ${saved ? 'bg-blue-500/50' : 'bg-black/20'} backdrop-blur-md hover:bg-black/30 flex items-center justify-center transition-colors`}>
+                <Bookmark className="w-5 h-5 text-white" fill={saved ? "white" : "none"} />
+              </div>
+              <span className="text-xs text-white/90 mt-1">Save</span>
+            </button>
+          </div>
+
+          {/* Mute button */}
+          <div className="absolute bottom-4 right-4 pointer-events-auto">
+            <ReelMuteButton isMuted={isMuted} onToggleMute={toggleMute} />
+          </div>
         </div>
       </div>
+
+      {/* Unmute Thread Modal */}
+      <ReelUnmuteThread
+        reelId={reel.id}
+        isOpen={isUnmuteThreadOpen}
+        onClose={() => {
+          setIsUnmuteThreadOpen(false);
+          setIsPlaying(true); // Resume video when closing comments
+        }}
+      />
     </motion.div>
   );
 };

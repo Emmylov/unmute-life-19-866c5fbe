@@ -1,5 +1,6 @@
 
 import { supabase } from "./client";
+import { toast } from "sonner";
 
 // Type definitions
 export interface Story {
@@ -30,10 +31,14 @@ export const fetchStoriesWithProfiles = async (): Promise<Story[]> => {
     
     if (storiesError) {
       console.error("Error fetching stories:", storiesError);
+      toast.error("Failed to load stories. Please try again later.");
       throw storiesError;
     }
     
-    if (!storiesData || storiesData.length === 0) return [];
+    if (!storiesData || storiesData.length === 0) {
+      console.log("No stories found");
+      return [];
+    }
     
     console.log("Fetched stories:", storiesData);
     
@@ -48,7 +53,12 @@ export const fetchStoriesWithProfiles = async (): Promise<Story[]> => {
     
     if (profilesError) {
       console.error("Error fetching profiles:", profilesError);
-      return storiesData; // Return stories without profile data
+      toast.error("Failed to load user profiles for stories");
+      // Still return stories without profile data
+      return storiesData.map((story: any) => ({
+        ...story,
+        profiles: undefined
+      }));
     }
     
     // Merge profiles with stories
@@ -63,6 +73,7 @@ export const fetchStoriesWithProfiles = async (): Promise<Story[]> => {
     return storiesWithProfiles;
   } catch (error) {
     console.error("Error in fetchStoriesWithProfiles:", error);
+    toast.error("Something went wrong while loading stories");
     return []; // Return empty array instead of throwing to prevent UI crashes
   }
 };
@@ -80,7 +91,9 @@ export const createStory = async (
     
     // Validate required parameters
     if (!userId || !mediaUrl) {
-      throw new Error("Missing required parameters: userId and mediaUrl must be provided");
+      const errorMsg = "Missing required parameters: userId and mediaUrl must be provided";
+      toast.error(errorMsg);
+      throw new Error(errorMsg);
     }
     
     // Check if the media URL contains identifiable media types
@@ -107,13 +120,16 @@ export const createStory = async (
     
     if (error) {
       console.error("Error creating story:", error);
+      toast.error(`Failed to create story: ${error.message}`);
       throw error;
     }
     
     console.log("Story created successfully with ID:", data.id);
+    toast.success("Your story has been posted!");
     return data.id;
   } catch (error) {
     console.error("Error in createStory:", error);
+    toast.error("Failed to create your story. Please try again.");
     throw error;
   }
 };

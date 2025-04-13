@@ -56,6 +56,70 @@
   animation: countdown-pulse 2s ease-in-out infinite;
 }
 
+/* Emotion reactions animations */
+@keyframes pop-in {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.emotion-pop-in {
+  animation: pop-in 0.3s ease-out forwards;
+}
+
+/* Feel Bar animations */
+@keyframes slide-up {
+  0% {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.feel-bar-slide-up {
+  animation: slide-up 0.4s ease-out forwards;
+}
+
+/* Hide scrollbars but keep functionality */
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}
+
+/* Soft transitions for UI elements */
+.soft-transition {
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Unmute Thread animations */
+@keyframes thread-slide-up {
+  0% {
+    transform: translateY(100%);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.thread-slide-up {
+  animation: thread-slide-up 0.4s ease-out forwards;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   a:nth-of-type(2) .logo {
     animation: logo-spin infinite 20s linear;
@@ -94,4 +158,24 @@
   .mobile-nav-padding {
     padding-bottom: 72px;
   }
+}
+
+/* Rounded corners for videos in reels */
+.reel-rounded-video {
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+/* Glass effect for reels UI elements */
+.glass-card {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Soft shadowing for elevated UI elements */
+.soft-shadow {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08),
+              0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
