@@ -1,8 +1,6 @@
-
 import React, { useState, useEffect } from "react";
 import { motion, useAnimation, PanInfo } from "framer-motion";
 import { Flag, MessageCircle, Bookmark, Share2, Heart, Eye, Repeat } from "lucide-react";
-import { Tables } from "@/integrations/supabase/types";
 import EmojiReactions from "./EmojiReactions";
 import ReelVideo from "./controls/ReelVideo";
 import ReelUserInfo from "./controls/ReelUserInfo";
@@ -24,29 +22,7 @@ import {
 } from "@/services/reel-service";
 import { FeelBar } from "@/components/reels/FeelBar";
 import ReelUnmuteThread from "@/components/reels/ReelUnmuteThread";
-
-interface ReelWithUser {
-  reel: {
-    id: string;
-    user_id: string;
-    created_at: string;
-    video_url: string;
-    thumbnail_url?: string | null;
-    caption?: string | null;
-    audio?: string | null;
-    audio_type?: string | null;
-    audio_url?: string | null;
-    allow_comments?: boolean | null;
-    allow_duets?: boolean | null;
-    duration?: number | null;
-    original_audio_volume?: number | null;
-    overlay_audio_volume?: number | null;
-    tags?: string[] | null;
-    vibe_tag?: string | null;
-    mood_vibe?: string | null;
-  };
-  user: Tables<"profiles">;
-}
+import { ReelWithUser } from "@/types/reels";
 
 interface ReelViewProps {
   reelWithUser: ReelWithUser;
@@ -83,7 +59,6 @@ const ReelView = ({
   const isMobile = useIsMobile();
   const isTablet = useIsTablet();
 
-  // Generate gradient based on mood vibe
   const getGradient = () => {
     switch(reel.mood_vibe) {
       case 'Uplifting':
@@ -104,15 +79,12 @@ const ReelView = ({
       if (!currentUser) return;
       
       try {
-        // Get comment count
         const count = await getCommentCount(reel.id);
         setCommentCount(count || 0);
         
-        // Check if reel is liked
         const isLiked = await checkReelLikeStatus(reel.id, currentUser.id);
         setLiked(isLiked);
         
-        // Check if reel is saved
         const isSaved = await checkReelSaveStatus(reel.id, currentUser.id);
         setSaved(isSaved);
       } catch (error) {
@@ -122,7 +94,6 @@ const ReelView = ({
     
     fetchReelData();
     
-    // Reset emotion selection when changing reels
     setSelectedEmotion(null);
   }, [reel.id, currentUser]);
 
@@ -140,7 +111,6 @@ const ReelView = ({
       return;
     }
     
-    // Toggle emotion if already selected
     if (selectedEmotion === emotion) {
       setSelectedEmotion(null);
       toast("Reaction removed");
@@ -148,7 +118,6 @@ const ReelView = ({
       setSelectedEmotion(emotion);
       toast.success(`You felt: ${emotion}`);
       
-      // Show animation if selecting new emotion
       controls.start({
         scale: [1, 1.2, 1],
         opacity: [1, 1, 0],
@@ -250,7 +219,6 @@ const ReelView = ({
       if (navigator.share) {
         navigator.share(shareData);
       } else {
-        // Fallback for browsers that don't support Web Share API
         navigator.clipboard.writeText(shareData.url);
         toast.success("Link copied to clipboard!");
       }
@@ -286,7 +254,6 @@ const ReelView = ({
 
   const openUnmuteThread = () => {
     setIsUnmuteThreadOpen(true);
-    // Pause video when opening comments
     setIsPlaying(false);
   };
 
@@ -298,9 +265,7 @@ const ReelView = ({
       dragElastic={0.2}
       onDragEnd={handleDragEnd}
     >
-      {/* Card styling wrapper */}
       <div className={`absolute inset-x-1 inset-y-2 rounded-2xl overflow-hidden shadow-lg`}>
-        {/* Gradient background based on mood vibe */}
         <div className={`absolute inset-0 bg-gradient-to-br ${getGradient()} opacity-20`}></div>
         
         <ReelVideo 
@@ -331,11 +296,9 @@ const ReelView = ({
 
         <ReelNavigation hasNext={hasNext} hasPrevious={hasPrevious} />
 
-        {/* Glass overlay effect */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/30 pointer-events-none" />
 
         <div className="absolute inset-0 pointer-events-none">
-          {/* Top section with user info and report button */}
           <div className="absolute top-0 left-0 right-0 p-4 z-20 flex justify-between items-start">
             <div className="backdrop-blur-sm bg-black/10 rounded-full px-3 py-1.5 pointer-events-auto flex items-center">
               <ReelUserInfo user={user} />
@@ -355,7 +318,6 @@ const ReelView = ({
             </button>
           </div>
           
-          {/* Feel Bar instead of traditional likes */}
           <div className="absolute bottom-32 left-4 right-4 pointer-events-auto">
             <FeelBar 
               selectedEmotion={selectedEmotion}
@@ -363,7 +325,6 @@ const ReelView = ({
             />
           </div>
 
-          {/* Bottom section with caption and audio info */}
           <div className={`absolute bottom-16 left-4 ${isMobile ? 'right-16' : 'right-24'} pointer-events-auto`}>
             <div className="backdrop-blur-sm bg-black/10 rounded-xl p-3 space-y-2">
               <ReelCaption caption={reel.caption} />
@@ -386,7 +347,6 @@ const ReelView = ({
             </div>
           </div>
 
-          {/* Side actions - simplified */}
           <div className="absolute bottom-24 right-3 md:right-4 flex flex-col space-y-5 pointer-events-auto z-20">
             <button 
               onClick={openUnmuteThread}
@@ -421,20 +381,18 @@ const ReelView = ({
             </button>
           </div>
 
-          {/* Mute button */}
           <div className="absolute bottom-4 right-4 pointer-events-auto">
             <ReelMuteButton isMuted={isMuted} onToggleMute={toggleMute} />
           </div>
         </div>
       </div>
 
-      {/* Unmute Thread Modal */}
       <ReelUnmuteThread
         reelId={reel.id}
         isOpen={isUnmuteThreadOpen}
         onClose={() => {
           setIsUnmuteThreadOpen(false);
-          setIsPlaying(true); // Resume video when closing comments
+          setIsPlaying(true);
         }}
       />
     </motion.div>

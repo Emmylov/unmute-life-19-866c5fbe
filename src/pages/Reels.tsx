@@ -1,10 +1,8 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase, listBucketFiles, getPublicUrl, STORAGE_BUCKETS } from "@/integrations/supabase/client";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
-import { Tables } from "@/integrations/supabase/types";
 import { toast } from "@/components/ui/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import ReelView from "@/components/reels/ReelView";
@@ -12,42 +10,7 @@ import { Video, Film, LoaderCircle } from "lucide-react";
 import ReelsSkeleton from "@/components/reels/ReelsSkeleton";
 import { useIsMobile, useIsTablet, useIsDesktop } from "@/hooks/use-responsive";
 import { v4 as uuidv4 } from "uuid";
-
-// Define explicit types for reels to prevent TypeScript from infinite type instantiation
-interface ReelContent {
-  id: string;
-  user_id: string;
-  created_at: string;
-  video_url: string;
-  thumbnail_url?: string | null;
-  caption?: string | null;
-  audio?: string | null;
-  audio_type?: string | null;
-  audio_url?: string | null; 
-  duration?: number | null;
-  original_audio_volume?: number | null;
-  overlay_audio_volume?: number | null;
-  tags?: string[] | null;
-  allow_comments?: boolean | null;
-  allow_duets?: boolean | null;
-  vibe_tag?: string | null;
-  mood_vibe?: string | null;
-}
-
-interface ProfileSummary {
-  id: string;
-  username?: string | null;
-  avatar?: string | null;
-  full_name?: string | null;
-}
-
-interface ReelWithUser {
-  reel: ReelContent;
-  user: ProfileSummary;
-}
-
-// Use a simple type for database records to avoid complexity
-type DatabaseReel = Record<string, any>;
+import { ReelContent, ProfileSummary, ReelWithUser, DatabaseReel } from "@/types/reels";
 
 interface ReelsProps {
   initialReelId?: string | null;
@@ -194,7 +157,6 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
               mood_vibe: reel.mood_vibe || "Raw"
             };
             
-            // Type assertion to avoid deep instantiation
             return {
               reel: reelContent,
               user: userData as ProfileSummary || {
@@ -285,7 +247,6 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
             console.error("Error fetching user:", userError);
           }
           
-          // Use type assertion for unknown users to avoid deep type instantiation
           const fallbackUser: ProfileSummary = { 
             id: userId, 
             username: "Unknown User"
@@ -311,7 +272,6 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
     }
   };
 
-  // Handler functions inside component scope
   const handlePrevReel = () => {
     if (currentReelIndex > 0) {
       setCurrentReelIndex(currentReelIndex - 1);
