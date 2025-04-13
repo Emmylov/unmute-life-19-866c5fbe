@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -7,7 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { updateUserProfile, updateUserSettings } from "@/services/settings-service";
+import { updateUserProfile, updateUserSettings, getUserSettings } from "@/services/settings-service";
 
 const Settings = () => {
   const { toast } = useToast();
@@ -77,31 +76,33 @@ const Settings = () => {
 
   const fetchUserSettings = async () => {
     try {
-      const { data, error } = await supabase
-        .from("user_settings")
-        .select("*")
-        .eq("user_id", user?.id)
-        .single();
+      if (!user) return;
+      
+      const data = await getUserSettings(user.id);
 
-      if (error && error.code !== "PGRST116") throw error;
-
-      if (data) {
-        const settings = data.settings || {};
+      if (data && data.settings) {
+        const settings = data.settings as any; // Type assertion to handle dynamic settings
         
-        setNotificationSettings({
-          emailNotifications: settings.emailNotifications ?? true,
-          pushNotifications: settings.pushNotifications ?? true,
-          mentionAlerts: settings.mentionAlerts ?? true,
-          commentAlerts: settings.commentAlerts ?? true,
-          followAlerts: settings.followAlerts ?? true,
-        });
+        // Notification settings
+        if (settings.notifications) {
+          setNotificationSettings({
+            emailNotifications: settings.notifications.emailNotifications ?? true,
+            pushNotifications: settings.notifications.pushNotifications ?? true,
+            mentionAlerts: settings.notifications.mentionAlerts ?? true,
+            commentAlerts: settings.notifications.commentAlerts ?? true,
+            followAlerts: settings.notifications.followAlerts ?? true,
+          });
+        }
         
-        setPrivacySettings({
-          privateAccount: settings.privateAccount ?? false,
-          hideActivityStatus: settings.hideActivityStatus ?? false,
-          blockListManagement: settings.blockListManagement ?? false,
-          twoFactorAuth: settings.twoFactorAuth ?? false,
-        });
+        // Privacy settings
+        if (settings.privacy) {
+          setPrivacySettings({
+            privateAccount: settings.privacy.privateAccount ?? false,
+            hideActivityStatus: settings.privacy.hideActivityStatus ?? false,
+            blockListManagement: settings.privacy.blockListManagement ?? false,
+            twoFactorAuth: settings.privacy.twoFactorAuth ?? false,
+          });
+        }
       }
     } catch (error) {
       console.error("Error fetching user settings:", error);

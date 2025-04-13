@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ReelView from '@/components/reels/ReelView';
@@ -180,7 +179,6 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
   const handlers = useSwipeable({
     onSwipedUp: () => goToNextReel(),
     onSwipedDown: () => goToPreviousReel(),
-    preventDefaultTouchmoveEvent: true,
     trackMouse: false
   });
 

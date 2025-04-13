@@ -41,3 +41,46 @@ export const getUserSettings = async (userId: string) => {
     throw error;
   }
 };
+
+// Add the missing functions for the Settings component
+export const updateUserProfile = async (userId: string, profileData: any) => {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({
+        username: profileData.username,
+        full_name: profileData.full_name,
+        bio: profileData.bio,
+        website: profileData.website,
+        location: profileData.location
+      })
+      .eq('id', userId)
+      .select();
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error("Error updating user profile:", error);
+    throw error;
+  }
+};
+
+export const updateUserSettings = async (userId: string, settingsData: any, type: string = 'general') => {
+  try {
+    // First get current settings
+    const currentSettings = await getUserSettings(userId);
+    const settings = currentSettings?.settings || {};
+    
+    // Update the specific settings section
+    const updatedSettings = {
+      ...settings,
+      [type]: settingsData
+    };
+    
+    // Save updated settings
+    return await saveUserSettings(userId, updatedSettings);
+  } catch (error) {
+    console.error("Error updating user settings:", error);
+    throw error;
+  }
+};
