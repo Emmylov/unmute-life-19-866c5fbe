@@ -135,12 +135,30 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
       console.log("Reels from database:", reelsData);
       
       if (reelsData && reelsData.length > 0) {
-        // Use type assertion to help TypeScript understand the structure
-        const typedReelsData = reelsData as any[];
+        // Use explicit typing to avoid deep type instantiation issues
+        type DatabaseReel = {
+          id: string;
+          user_id: string;
+          created_at?: string | null;
+          video_url: string;
+          thumbnail_url?: string | null;
+          caption?: string | null;
+          tags?: string[] | null;
+          audio_type?: string | null;
+          audio_url?: string | null;
+          audio?: string | null;
+          duration?: number | null;
+          original_audio_volume?: number | null;
+          overlay_audio_volume?: number | null;
+          allow_duets?: boolean | null;
+          allow_comments?: boolean | null;
+          vibe_tag?: string | null;
+          mood_vibe?: string | null;
+        };
         
         // Process each reel with proper typing
         const processedReels: ReelWithUser[] = await Promise.all(
-          typedReelsData.map(async (reel) => {
+          (reelsData as DatabaseReel[]).map(async (reel) => {
             const { data: userData, error: userError } = await supabase
               .from("profiles")
               .select("*")
@@ -189,7 +207,7 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
               tags: reel.tags || [],
               allow_comments: reel.allow_comments !== false,
               allow_duets: reel.allow_duets !== false,
-              vibe_tag: reel.vibe_tag || (userData?.is_activist ? "Activist" : null),
+              vibe_tag: reel.vibe_tag || null,
               mood_vibe: reel.mood_vibe || "Raw" // Default mood if not set
             };
             
