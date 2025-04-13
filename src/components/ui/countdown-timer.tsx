@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/hooks/use-responsive";
 import { Clock } from "lucide-react";
 
 interface CountdownTimerProps {
@@ -93,7 +93,7 @@ function TimeUnit({ value, label }: TimeUnitProps) {
   
   return (
     <div className="flex flex-col items-center">
-      <div className="bg-gradient-to-b from-primary/10 to-primary/20 rounded-lg px-3 py-2 min-w-16 text-center">
+      <div className="bg-gradient-to-b from-primary/10 to-primary/20 rounded-lg px-3 py-2 min-w-16 text-center shadow-sm">
         <span className="text-2xl font-bold text-primary">{displayValue}</span>
       </div>
       <span className="text-xs text-gray-500 mt-1">{label}</span>

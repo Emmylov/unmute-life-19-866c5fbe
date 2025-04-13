@@ -32,5 +32,5 @@ export interface ReelWithUser {
   user: ProfileSummary;
 }
 
-// Use a simple type for database records to avoid complexity
+// Use Record<string, any> instead of a generic DatabaseReel type
 export type DatabaseReel = Record<string, any>;

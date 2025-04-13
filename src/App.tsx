@@ -16,6 +16,10 @@ import VibeCheck from "./pages/VibeCheck";
 import WellnessPlus from "./pages/WellnessPlus";
 import CreateCollab from "./pages/CreateCollab";
 import Notifications from "./pages/Notifications";
+import Communities from "./pages/Communities";
+import Settings from "./pages/Settings";
+import Help from "./pages/Help";
+import Saved from "./pages/Saved";
 import "./App.css";
 
 // Toast provider
@@ -37,6 +41,7 @@ function App() {
             <Route path="/chat" element={<Chat />} />
             <Route path="/chat/:id" element={<ChatWithId />} />
             <Route path="/explore" element={<Explore />} />
+            <Route path="/communities" element={<Communities />} />
             <Route path="/wellness" element={<Wellness />} />
             <Route path="/wellness-plus" element={<WellnessPlus />} />
             <Route path="/onboarding" element={<Onboarding />} />
@@ -45,6 +50,9 @@ function App() {
             <Route path="/reels" element={<ReelsWithParams />} />
             <Route path="/vibe-check" element={<VibeCheck />} />
             <Route path="/notifications" element={<Notifications />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/help" element={<Help />} />
+            <Route path="/saved" element={<Saved />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <Toaster position="top-right" />
