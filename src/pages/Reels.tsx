@@ -37,25 +37,7 @@ interface ReelWithUser {
   user: Tables<"profiles">;
 }
 
-type DatabaseReel = {
-  id: string;
-  user_id: string;
-  created_at?: string | null;
-  video_url: string;
-  thumbnail_url?: string | null;
-  caption?: string | null;
-  tags?: string[] | null;
-  audio_type?: string | null;
-  audio_url?: string | null;
-  audio?: string | null;
-  duration?: number | null;
-  original_audio_volume?: number | null;
-  overlay_audio_volume?: number | null;
-  allow_duets?: boolean | null;
-  allow_comments?: boolean | null;
-  vibe_tag?: string | null;
-  mood_vibe?: string | null;
-};
+type DatabaseReel = Record<string, any>;
 
 interface ReelsProps {
   initialReelId?: string | null;
@@ -72,6 +54,7 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const isMobile = useIsMobile();
   const isTablet = useIsTablet();
+  const isDesktop = useIsDesktop();
 
   useEffect(() => {
     const filterParam = searchParams.get("filter");
@@ -153,7 +136,7 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
       
       if (reelsData && reelsData.length > 0) {
         const processedReels: ReelWithUser[] = await Promise.all(
-          (reelsData as DatabaseReel[]).map(async (reel) => {
+          (reelsData as any[]).map(async (reel) => {
             const { data: userData, error: userError } = await supabase
               .from("profiles")
               .select("*")
@@ -349,9 +332,9 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
   };
 
   const getContainerHeight = () => {
-    if (isMobile) return "h-[calc(100vh-10rem)]";
-    if (isTablet) return "h-[calc(100vh-9rem)]";
-    return "h-[calc(100vh-8rem)]";
+    if (isMobile) return "h-[calc(100vh-9rem)]";
+    if (isTablet) return "h-[calc(100vh-8rem)]";
+    return "h-[calc(100vh-7rem)]";
   };
 
   const emotionFilters = ["Uplifting", "Raw", "Funny", "Vulnerable"];
@@ -359,17 +342,17 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
 
   return (
     <AppLayout pageTitle="Reels">
-      <div className="flex overflow-x-auto pb-2 no-scrollbar gap-2 mb-2">
-        <div className="flex gap-1.5">
+      <div className="flex flex-wrap gap-2 mb-4 px-1">
+        <div className="flex gap-2 flex-wrap">
           {emotionFilters.map(filter => (
             <Button
               key={filter}
               size="sm"
               variant={activeFilter === filter ? "default" : "outline"}
-              className={`rounded-full text-xs px-3 whitespace-nowrap ${
+              className={`rounded-full text-xs px-4 py-2 whitespace-nowrap ${
                 activeFilter === filter 
-                  ? "bg-primary/90 text-white" 
-                  : "bg-white/80 text-primary hover:bg-primary/20"
+                  ? "bg-primary text-white" 
+                  : "bg-white/90 text-primary hover:bg-primary/10"
               }`}
               onClick={() => handleFilterChange(filter)}
             >
@@ -377,17 +360,17 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
             </Button>
           ))}
         </div>
-        <div className="h-6 border-r border-gray-200 mx-1"></div>
-        <div className="flex gap-1.5">
+        <div className="hidden md:block h-6 border-r border-gray-200 mx-2"></div>
+        <div className="flex gap-2 flex-wrap">
           {topicFilters.map(filter => (
             <Button
               key={filter}
               size="sm"
               variant={activeFilter === filter ? "default" : "outline"}
-              className={`rounded-full text-xs px-3 whitespace-nowrap ${
+              className={`rounded-full text-xs px-4 py-2 whitespace-nowrap ${
                 activeFilter === filter 
-                  ? "bg-primary/90 text-white" 
-                  : "bg-white/80 text-primary hover:bg-primary/20"
+                  ? "bg-primary text-white" 
+                  : "bg-white/90 text-primary hover:bg-primary/10"
               }`}
               onClick={() => handleFilterChange(filter)}
             >
@@ -397,11 +380,11 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
         </div>
       </div>
       
-      <div className={`${getContainerHeight()} relative overflow-hidden rounded-xl bg-gradient-to-br from-unmute-purple/5 via-white/95 to-unmute-pink/5`}>
+      <div className={`${getContainerHeight()} relative overflow-hidden rounded-2xl bg-gradient-to-br from-unmute-purple/10 via-white to-unmute-pink/10 shadow-lg border border-white/50`}>
         {loading ? (
           <div className="h-full flex items-center justify-center">
             <div className="glass-card p-8 rounded-2xl flex flex-col items-center">
-              <LoaderCircle className="h-8 w-8 text-primary animate-spin mb-4" />
+              <LoaderCircle className="h-10 w-10 text-primary animate-spin mb-4" />
               <p className="text-gray-700 font-medium">Loading reels...</p>
             </div>
           </div>
@@ -413,7 +396,7 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.4 }}
             >
               <ReelView 
                 reelWithUser={reels[currentReelIndex]}
@@ -428,26 +411,26 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
             </motion.div>
           </AnimatePresence>
         ) : (
-          <div className="h-full flex flex-col items-center justify-center bg-gradient-to-b from-white/50 to-unmute-pink/5 p-8 text-center">
+          <div className="h-full flex flex-col items-center justify-center bg-gradient-to-b from-white/80 to-unmute-pink/10 p-8 text-center">
             <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
+              initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.5 }}
-              className="glass-card bg-white/70 p-8 rounded-2xl max-w-md backdrop-blur-sm shadow-lg"
+              transition={{ duration: 0.6, ease: "easeOut" }}
+              className="glass-card bg-white/80 p-8 md:p-10 rounded-3xl max-w-md backdrop-blur-md shadow-xl"
             >
-              <div className="mb-6 flex justify-center">
-                <div className="p-4 bg-primary/20 rounded-full">
-                  <Film className="h-12 w-12 text-primary" />
+              <div className="mb-8 flex justify-center">
+                <div className="p-6 bg-primary/10 rounded-full">
+                  <Film className="h-14 w-14 text-primary" />
                 </div>
               </div>
-              <h3 className="text-2xl font-bold mb-2 text-gray-800">No reels yet</h3>
-              <p className="mb-6 text-gray-600">Be the first to create an awesome reel and express yourself!</p>
+              <h3 className="text-2xl md:text-3xl font-bold mb-4 text-gray-800">No reels yet</h3>
+              <p className="mb-8 text-gray-600 text-lg">Be the first to create an awesome reel and express yourself!</p>
               <Button 
                 onClick={() => navigate("/create")} 
-                className="px-6 py-3 bg-primary hover:bg-primary/90 transition-all shadow-lg rounded-full font-medium"
+                className="px-8 py-6 bg-primary hover:bg-primary/90 transition-all shadow-lg rounded-full font-medium text-lg"
                 size="lg"
               >
-                <Video className="h-5 w-5 mr-2" />
+                <Video className="h-6 w-6 mr-3" />
                 Create Reel
               </Button>
             </motion.div>
@@ -457,12 +440,12 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
         <AnimatePresence>
           {showBreakReminder && (
             <motion.div
-              initial={{ y: 50, opacity: 0 }}
+              initial={{ y: 60, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 50, opacity: 0 }}
-              className="absolute bottom-20 left-1/2 transform -translate-x-1/2 bg-white/90 backdrop-blur-md px-6 py-4 rounded-xl shadow-lg max-w-xs"
+              exit={{ y: 60, opacity: 0 }}
+              className="absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-white/90 backdrop-blur-lg px-8 py-5 rounded-2xl shadow-xl max-w-xs"
             >
-              <p className="text-gray-700 text-center">
+              <p className="text-gray-700 text-center font-medium">
                 Take a breath. You've seen a lot of emotions. Come back when you're ready to listen again.
               </p>
             </motion.div>
@@ -470,15 +453,15 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
         </AnimatePresence>
         
         {reels.length > 1 && (
-          <div className="absolute top-2 left-2 right-2 z-10 flex justify-center">
-            <div className="flex gap-1">
+          <div className="absolute top-3 left-3 right-3 z-10 flex justify-center">
+            <div className="flex gap-1.5 px-4 py-2 bg-black/20 backdrop-blur-md rounded-full">
               {reels.map((_, index) => (
                 <div
                   key={`progress-${index}`}
-                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                  className={`h-2 rounded-full transition-all duration-300 ${
                     index === currentReelIndex 
-                      ? 'w-8 bg-primary/80' 
-                      : 'w-4 bg-white/40'
+                      ? 'w-10 bg-primary' 
+                      : 'w-5 bg-white/60'
                   }`}
                 />
               ))}

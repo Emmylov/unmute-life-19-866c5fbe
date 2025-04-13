@@ -5,6 +5,7 @@ import ReelActionButton from "./ReelActionButton";
 import { toast } from "sonner";
 import ReelCommentModal from "../ReelCommentModal";
 import { useIsMobile } from "@/hooks/use-responsive";
+import { motion } from "framer-motion";
 
 interface ReelActionsProps {
   reelId: string;
@@ -72,50 +73,83 @@ const ReelActions = ({
   };
 
   // Use different spacing based on screen size
-  const buttonSpacingClass = isMobile ? "space-y-4" : "space-y-6";
+  const buttonSpacingClass = isMobile ? "space-y-5" : "space-y-7";
+  const containerPosition = isMobile ? "right-4" : "right-6";
+
+  const container = {
+    hidden: { opacity: 0, x: 20 },
+    show: {
+      opacity: 1,
+      x: 0,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.3
+      }
+    }
+  };
+  
+  const item = {
+    hidden: { opacity: 0, x: 20 },
+    show: { opacity: 1, x: 0 }
+  };
 
   return (
     <>
-      <div className={`absolute bottom-20 right-3 md:right-4 flex flex-col ${buttonSpacingClass} pointer-events-auto z-20`}>
-        <ReelActionButton 
-          icon={Heart} 
-          label={liked ? "Liked" : "Like"}
-          isActive={liked}
-          activeColor="text-pink-500 fill-pink-500"
-          onClick={onLike}
-          isMobile={isMobile}
-        />
+      <motion.div 
+        className={`absolute bottom-24 ${containerPosition} flex flex-col ${buttonSpacingClass} pointer-events-auto z-20`}
+        variants={container}
+        initial="hidden"
+        animate="show"
+      >
+        <motion.div variants={item}>
+          <ReelActionButton 
+            icon={Heart} 
+            label={liked ? "Liked" : "Like"}
+            isActive={liked}
+            activeColor="text-pink-500 fill-pink-500"
+            onClick={onLike}
+            isMobile={isMobile}
+          />
+        </motion.div>
         
-        <ReelActionButton 
-          icon={MessageCircle} 
-          label={commentCount > 0 ? `${commentCount}` : "Comment"}
-          onClick={handleOpenComments}
-          isMobile={isMobile}
-        />
+        <motion.div variants={item}>
+          <ReelActionButton 
+            icon={MessageCircle} 
+            label={commentCount > 0 ? `${commentCount}` : "Comment"}
+            onClick={handleOpenComments}
+            isMobile={isMobile}
+          />
+        </motion.div>
         
-        <ReelActionButton 
-          icon={Repeat} 
-          label="Repost"
-          onClick={handleRepost}
-          isMobile={isMobile}
-        />
+        <motion.div variants={item}>
+          <ReelActionButton 
+            icon={Repeat} 
+            label="Repost"
+            onClick={handleRepost}
+            isMobile={isMobile}
+          />
+        </motion.div>
         
-        <ReelActionButton 
-          icon={Bookmark} 
-          label={saved ? "Saved" : "Save"}
-          isActive={saved}
-          activeColor="text-blue-400 fill-blue-400"
-          onClick={onSave}
-          isMobile={isMobile}
-        />
+        <motion.div variants={item}>
+          <ReelActionButton 
+            icon={Bookmark} 
+            label={saved ? "Saved" : "Save"}
+            isActive={saved}
+            activeColor="text-blue-400 fill-blue-400"
+            onClick={onSave}
+            isMobile={isMobile}
+          />
+        </motion.div>
         
-        <ReelActionButton 
-          icon={Share2}
-          label="Share"
-          onClick={handleShare}
-          isMobile={isMobile}
-        />
-      </div>
+        <motion.div variants={item}>
+          <ReelActionButton 
+            icon={Share2}
+            label="Share"
+            onClick={handleShare}
+            isMobile={isMobile}
+          />
+        </motion.div>
+      </motion.div>
 
       <ReelCommentModal
         reelId={reelId}
