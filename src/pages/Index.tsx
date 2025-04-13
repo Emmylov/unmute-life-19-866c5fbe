@@ -90,39 +90,69 @@ const Index = () => {
         throw waitlistError;
       }
       
-      console.log("Calling send-welcome-email function with:", values);
+      console.log("Successfully added to waitlist, now sending welcome email");
       
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/send-welcome-email`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${SUPABASE_KEY}`
-        },
-        body: JSON.stringify({
-          name: values.name,
-          email: values.email
-        })
+      toast.success("You're on the list!", {
+        description: "Your spot is reserved for the OG Starter Pack!"
       });
       
-      console.log("Response status:", response.status);
-      
-      if (response.ok) {
-        const responseData = await response.json();
-        console.log("Email sent successfully:", responseData);
-        toast.success("You're on the list!", {
-          description: "Check your email for your OG Starter Pack confirmation."
+      try {
+        console.log("Calling send-welcome-email function with:", values);
+        
+        const emailEndpoint = `${SUPABASE_URL}/functions/v1/send-welcome-email`;
+        console.log("Email endpoint:", emailEndpoint);
+        
+        const response = await fetch(emailEndpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SUPABASE_KEY}`
+          },
+          body: JSON.stringify({
+            name: values.name,
+            email: values.email
+          })
         });
-        form.reset();
-      } else {
-        const errorData = await response.json();
-        console.error("Email sending error:", errorData);
-        toast.success("You're on the list!", {
-          description: "We couldn't send the email, but you're signed up!"
+        
+        console.log("Response status:", response.status);
+        console.log("Response headers:", [...response.headers.entries()]);
+        
+        const responseText = await response.text();
+        console.log("Raw response:", responseText);
+        
+        let responseData;
+        try {
+          responseData = JSON.parse(responseText);
+          console.log("Parsed response data:", responseData);
+        } catch (e) {
+          console.error("Error parsing response:", e);
+        }
+        
+        if (response.ok) {
+          console.log("Email sent successfully");
+          toast.success("Welcome email sent!", {
+            description: "Check your inbox for your OG Starter Pack confirmation."
+          });
+        } else {
+          console.error("Email sending failed with status:", response.status);
+          console.error("Response data:", responseData);
+          toast.error("Couldn't send welcome email", {
+            description: "But don't worry, you're still on the list!"
+          });
+        }
+      } catch (emailError) {
+        console.error("Error sending welcome email:", emailError);
+        toast.error("Couldn't send welcome email", {
+          description: "But don't worry, you're still on the list!"
         });
       }
+      
+      form.reset();
     } catch (error) {
       console.error("Error submitting form:", error);
-      toast.error("Something went wrong. Please try again.");
+      toast.error("Something went wrong", {
+        description: "Please try again or contact support."
+      });
     } finally {
       setSubmitting(false);
     }

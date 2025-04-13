@@ -29,13 +29,18 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     console.log("Processing welcome email request");
     
+    // Check if API key is available
     if (!RESEND_API_KEY) {
       console.error("Missing RESEND_API_KEY environment variable");
       throw new Error("Email service not configured properly");
     }
+    console.log("API key is available");
 
     // Parse the request body
-    const { name, email } = await req.json() as WelcomeEmailRequest;
+    const requestBody = await req.json();
+    console.log("Received request body:", JSON.stringify(requestBody));
+    
+    const { name, email } = requestBody as WelcomeEmailRequest;
     
     console.log(`Sending welcome email to ${name} <${email}>`);
     
@@ -45,6 +50,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Send the email
+    console.log("About to send email with Resend");
     const emailResponse = await resend.emails.send({
       from: "Unmute <hello@unmute.app>", // Update with your verified sender
       to: [email],
@@ -88,7 +94,7 @@ const handler = async (req: Request): Promise<Response> => {
       `,
     });
 
-    console.log("Email sent successfully:", emailResponse);
+    console.log("Email sending response:", JSON.stringify(emailResponse));
 
     // Return success response
     return new Response(JSON.stringify(emailResponse), {
@@ -100,6 +106,11 @@ const handler = async (req: Request): Promise<Response> => {
     });
   } catch (error: any) {
     console.error("Error in send-welcome-email function:", error);
+    console.error("Error details:", error.message);
+    if (error.response) {
+      console.error("Error response:", JSON.stringify(error.response));
+    }
+    
     return new Response(
       JSON.stringify({ error: error.message }),
       {
