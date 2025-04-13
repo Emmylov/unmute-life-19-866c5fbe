@@ -2,7 +2,9 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+// Initialize the Resend client with the API key
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const resend = new Resend(RESEND_API_KEY);
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -16,20 +18,33 @@ interface WelcomeEmailRequest {
 }
 
 const handler = async (req: Request): Promise<Response> => {
+  console.log("Function invoked with method:", req.method);
+  
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
+    console.log("Handling OPTIONS request");
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { name, email }: WelcomeEmailRequest = await req.json();
+    console.log("Processing welcome email request");
+    
+    if (!RESEND_API_KEY) {
+      console.error("Missing RESEND_API_KEY environment variable");
+      throw new Error("Email service not configured properly");
+    }
+
+    // Parse the request body
+    const { name, email } = await req.json() as WelcomeEmailRequest;
+    
+    console.log(`Sending welcome email to ${name} <${email}>`);
     
     if (!name || !email) {
+      console.error("Missing required fields:", { name, email });
       throw new Error("Name and email are required");
     }
 
-    console.log(`Sending welcome email to ${name} <${email}>`);
-
+    // Send the email
     const emailResponse = await resend.emails.send({
       from: "Unmute <hello@unmute.app>", // Update with your verified sender
       to: [email],
@@ -75,6 +90,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Email sent successfully:", emailResponse);
 
+    // Return success response
     return new Response(JSON.stringify(emailResponse), {
       status: 200,
       headers: {

@@ -86,8 +86,11 @@ const Index = () => {
         });
       
       if (waitlistError) {
+        console.error("Error adding to waitlist:", waitlistError);
         throw waitlistError;
       }
+      
+      console.log("Calling send-welcome-email function with:", values);
       
       const response = await fetch(`${SUPABASE_URL}/functions/v1/send-welcome-email`, {
         method: 'POST',
@@ -101,7 +104,11 @@ const Index = () => {
         })
       });
       
+      console.log("Response status:", response.status);
+      
       if (response.ok) {
+        const responseData = await response.json();
+        console.log("Email sent successfully:", responseData);
         toast.success("You're on the list!", {
           description: "Check your email for your OG Starter Pack confirmation."
         });
