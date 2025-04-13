@@ -29,6 +29,7 @@ interface ReelContent {
   tags?: string[] | null;
   allow_comments?: boolean | null;
   allow_duets?: boolean | null;
+  // Add these missing properties
   vibe_tag?: string | null;
   mood_vibe?: string | null;
 }
@@ -49,7 +50,8 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
   const [reelsViewed, setReelsViewed] = useState(0);
   const [showBreakReminder, setShowBreakReminder] = useState(false);
   const navigate = useNavigate();
-  const { toast } = useToast();
+  // Replace useToast with direct toast from sonner
+  // const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const isMobile = useIsMobile();
@@ -141,8 +143,9 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
       console.log("Reels from database:", reelsData);
       
       if (reelsData && reelsData.length > 0) {
-        const processedReels = await Promise.all(
-          reelsData.map(async (reel) => {
+        // Create a type-safe version that resolves the deep instantiation issue
+        const processedReels: ReelWithUser[] = await Promise.all(
+          reelsData.map(async (reel: any) => {
             const { data: userData, error: userError } = await supabase
               .from("profiles")
               .select("*")
@@ -173,15 +176,30 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
               // If URL doesn't start with http, it might be a storage path
               thumbnailUrl = getPublicUrl(STORAGE_BUCKETS.REELS, thumbnailUrl);
             }
+
+            // Create a properly typed ReelContent object
+            const reelContent: ReelContent = {
+              id: reel.id,
+              user_id: reel.user_id,
+              created_at: reel.created_at || new Date().toISOString(),
+              video_url: videoUrl,
+              thumbnail_url: thumbnailUrl,
+              caption: reel.caption,
+              audio: reel.audio,
+              audio_type: reel.audio_type || "original",
+              audio_url: reel.audio_url,
+              duration: reel.duration,
+              original_audio_volume: reel.original_audio_volume || 1,
+              overlay_audio_volume: reel.overlay_audio_volume || 0,
+              tags: reel.tags || [],
+              allow_comments: reel.allow_comments !== false,
+              allow_duets: reel.allow_duets !== false,
+              vibe_tag: reel.vibe_tag || (userData?.is_activist ? "Activist" : null),
+              mood_vibe: reel.mood_vibe || "Raw" // Default mood if not set
+            };
             
             return {
-              reel: {
-                ...reel,
-                video_url: videoUrl,
-                thumbnail_url: thumbnailUrl,
-                vibe_tag: reel.vibe_tag || (userData?.is_activist ? "Activist" : null),
-                mood_vibe: reel.mood_vibe || "Raw" // Default mood if not set
-              } as ReelContent,
+              reel: reelContent,
               user: userData || { 
                 id: reel.user_id, 
                 username: "Unknown User", 
