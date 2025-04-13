@@ -15,6 +15,7 @@ const ReelMuteButton = ({ isMuted, onToggleMute }: ReelMuteButtonProps) => {
       whileTap={{ scale: 0.95 }}
       onClick={onToggleMute}
       className="p-3 rounded-full bg-black/30 backdrop-blur-lg hover:bg-black/40 transition-all duration-200"
+      aria-label={isMuted ? "Unmute video" : "Mute video"}
     >
       {isMuted ? (
         <VolumeX className="h-5 w-5 text-white" />

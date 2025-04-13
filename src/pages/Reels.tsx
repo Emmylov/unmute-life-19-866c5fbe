@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase, listBucketFiles, getPublicUrl, STORAGE_BUCKETS } from "@/integrations/supabase/client";
@@ -12,7 +13,7 @@ import ReelsSkeleton from "@/components/reels/ReelsSkeleton";
 import { useIsMobile, useIsTablet, useIsDesktop } from "@/hooks/use-responsive";
 import { v4 as uuidv4 } from "uuid";
 
-// Define explicit types to avoid deep inference issues
+// Simplified type definitions to avoid deep instantiation issues
 interface ReelContent {
   id: string;
   user_id: string;
@@ -38,26 +39,8 @@ interface ReelWithUser {
   user: Tables<"profiles">;
 }
 
-// Use a separate interface for database query results to avoid circular types
-interface DatabaseReelRecord {
-  id: string;
-  user_id: string;
-  created_at?: string | null;
-  video_url: string;
-  thumbnail_url?: string | null;
-  caption?: string | null;
-  tags?: string[] | null;
-  audio_type?: string | null;
-  audio_url?: string | null;
-  audio?: string | null;
-  duration?: number | null;
-  original_audio_volume?: number | null;
-  overlay_audio_volume?: number | null;
-  allow_duets?: boolean | null;
-  allow_comments?: boolean | null;
-  vibe_tag?: string | null;
-  mood_vibe?: string | null;
-}
+// Simplified type for database query results
+type DatabaseReelRecord = Record<string, any>;
 
 interface ReelsProps {
   initialReelId?: string | null;
@@ -155,11 +138,9 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
       console.log("Reels from database:", reelsData);
       
       if (reelsData && reelsData.length > 0) {
-        // Type assertion to our safe database record type
-        const typedReelsData = reelsData as unknown as DatabaseReelRecord[];
-        
+        // Using type assertion with any to avoid deep instantiation issues
         const processedReels: ReelWithUser[] = await Promise.all(
-          typedReelsData.map(async (reel) => {
+          (reelsData as any[]).map(async (reel) => {
             const { data: userData, error: userError } = await supabase
               .from("profiles")
               .select("*")
