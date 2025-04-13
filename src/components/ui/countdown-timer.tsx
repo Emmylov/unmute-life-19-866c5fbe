@@ -45,12 +45,17 @@ export function CountdownTimer({
     // Initial calculation
     calculateTimeLeft();
     
+    // Don't set up the interval if already complete
+    if (isComplete) {
+      return;
+    }
+    
     // Set up interval
     const timer = setInterval(calculateTimeLeft, 1000);
     
     // Clean up
     return () => clearInterval(timer);
-  }, [targetDate]);
+  }, [targetDate, isComplete]);
   
   if (isComplete) {
     return (

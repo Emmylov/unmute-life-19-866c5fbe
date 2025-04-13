@@ -28,7 +28,11 @@ export const fetchStoriesWithProfiles = async (): Promise<Story[]> => {
       .order('created_at', { ascending: false })
       .limit(10);
     
-    if (storiesError) throw storiesError;
+    if (storiesError) {
+      console.error("Error fetching stories:", storiesError);
+      throw storiesError;
+    }
+    
     if (!storiesData || storiesData.length === 0) return [];
     
     console.log("Fetched stories:", storiesData);
@@ -59,7 +63,7 @@ export const fetchStoriesWithProfiles = async (): Promise<Story[]> => {
     return storiesWithProfiles;
   } catch (error) {
     console.error("Error in fetchStoriesWithProfiles:", error);
-    throw error;
+    return []; // Return empty array instead of throwing to prevent UI crashes
   }
 };
 
@@ -73,6 +77,11 @@ export const createStory = async (
 ): Promise<string> => {
   try {
     console.log("Creating story with: ", { userId, mediaUrl, caption, mood, storagePath });
+    
+    // Validate required parameters
+    if (!userId || !mediaUrl) {
+      throw new Error("Missing required parameters: userId and mediaUrl must be provided");
+    }
     
     // Check if the media URL contains identifiable media types
     const isVideo = mediaUrl.includes("video") || 
@@ -96,7 +105,10 @@ export const createStory = async (
       .select('id')
       .single();
     
-    if (error) throw error;
+    if (error) {
+      console.error("Error creating story:", error);
+      throw error;
+    }
     
     console.log("Story created successfully with ID:", data.id);
     return data.id;

@@ -73,7 +73,7 @@
 /* Fix for the mobile view to prevent content overflow */
 @media (max-width: 640px) {
   .main-content {
-    padding-bottom: 70px; /* Space for mobile navigation */
+    padding-bottom: 80px; /* Increased space for mobile navigation */
   }
 }
 
@@ -88,5 +88,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
+  }
+  
+  /* Fix for mobile navigation to prevent overlapping content */
+  .mobile-nav-padding {
+    padding-bottom: 72px;
   }
 }
