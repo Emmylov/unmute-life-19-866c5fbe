@@ -29,7 +29,6 @@ interface ReelContent {
   tags?: string[] | null;
   allow_comments?: boolean | null;
   allow_duets?: boolean | null;
-  // Add these missing properties
   vibe_tag?: string | null;
   mood_vibe?: string | null;
 }
@@ -131,11 +130,7 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
       
       if (reelsError) {
         console.error("Error fetching reels from database:", reelsError);
-        toast({
-          title: "Error loading reels",
-          description: "Could not fetch reels from database.",
-          variant: "destructive",
-        });
+        toast.error("Could not fetch reels from database.");
         setLoading(false);
         return;
       }
@@ -303,11 +298,7 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
       setReels(processedReels);
     } catch (error) {
       console.error("Error loading reels:", error);
-      toast({
-        title: "Error loading reels",
-        description: "Please try again later",
-        variant: "destructive",
-      });
+      toast.error("Please try again later");
     } finally {
       setLoading(false);
     }
