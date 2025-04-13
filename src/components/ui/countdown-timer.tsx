@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-responsive";
-import { Clock } from "lucide-react";
+import { Clock, Gift, BookOpen, Music, Award } from "lucide-react";
 
 interface CountdownTimerProps {
   targetDate: Date;
@@ -71,7 +71,7 @@ export function CountdownTimer({
         <Clock className="h-6 w-6 mb-2 text-primary animate-pulse" />
       )}
       
-      <div className={`grid ${isMobile ? 'grid-cols-2 gap-2' : 'grid-cols-4 gap-4'}`}>
+      <div className={`grid ${isMobile ? 'grid-cols-2 gap-3' : 'grid-cols-4 gap-6'}`}>
         <TimeUnit value={timeLeft.days} label="Days" />
         <TimeUnit value={timeLeft.hours} label="Hours" />
         {isMobile && <div className="col-span-2" />}
@@ -93,10 +93,10 @@ function TimeUnit({ value, label }: TimeUnitProps) {
   
   return (
     <div className="flex flex-col items-center">
-      <div className="bg-gradient-to-b from-primary/10 to-primary/20 rounded-lg px-3 py-2 min-w-16 text-center shadow-sm">
-        <span className="text-2xl font-bold text-primary">{displayValue}</span>
+      <div className="bg-gradient-to-b from-primary/10 to-primary/30 rounded-xl px-4 py-3 min-w-20 text-center shadow-lg transition-all duration-300 transform hover:scale-105">
+        <span className="text-3xl font-bold text-primary">{displayValue}</span>
       </div>
-      <span className="text-xs text-gray-500 mt-1">{label}</span>
+      <span className="text-sm text-gray-600 mt-2 font-medium">{label}</span>
     </div>
   );
 }
