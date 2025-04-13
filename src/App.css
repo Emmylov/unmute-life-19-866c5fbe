@@ -43,3 +43,24 @@
 .read-the-docs {
   color: #888;
 }
+
+/* Fix for the mobile view to prevent content overflow */
+@media (max-width: 640px) {
+  .main-content {
+    padding-bottom: 70px; /* Space for mobile navigation */
+  }
+}
+
+/* Improve touch targets on mobile */
+@media (max-width: 640px) {
+  button, a {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  button.icon-only, a.icon-only {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}

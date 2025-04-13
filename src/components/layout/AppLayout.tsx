@@ -8,10 +8,7 @@ import {
   Home, 
   Search, 
   Film, 
-  Users, 
-  Bell, 
   User,
-  Heart,
   Smile
 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -33,7 +30,7 @@ const AppLayout = ({ children, pageTitle }: AppLayoutProps) => {
       <div className="flex flex-grow">
         {!isMobile && <Sidebar collapsed={isTablet} />}
         
-        <main className="flex-1">
+        <main className="flex-1 pb-16 md:pb-0">
           <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 md:py-6">
             {children}
           </div>

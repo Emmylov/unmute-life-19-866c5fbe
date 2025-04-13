@@ -64,7 +64,7 @@ export const toggleReelLike = async (reelId: string, userId: string) => {
       if (error) throw error;
       return false;
     } else {
-      // Like - Insert to posts_reels table's ID
+      // Like
       const { error } = await supabase
         .from("reel_likes")
         .insert({ 
@@ -90,7 +90,6 @@ export const checkReelSaveStatus = async (reelId: string, userId: string) => {
       p_user_id: userId
     };
     
-    // Fix: Remove type arguments and use type assertion after the call
     const { data, error } = await supabase.rpc(
       "is_reel_saved", 
       params
@@ -154,7 +153,6 @@ export const checkReelRepostStatus = async (reelId: string, userId: string) => {
       p_user_id: userId
     };
     
-    // Fix: Remove type arguments and use type assertion after the call
     const { data } = await supabase.rpc(
       "is_reel_reposted", 
       params

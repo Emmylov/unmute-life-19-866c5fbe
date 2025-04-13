@@ -9,7 +9,7 @@ const BREAKPOINTS = {
 };
 
 export function useIsMobile() {
-  const [isMobile, setIsMobile] = useState<boolean | undefined>(undefined);
+  const [isMobile, setIsMobile] = useState<boolean>(false);
 
   useEffect(() => {
     const checkSize = () => {
@@ -26,11 +26,11 @@ export function useIsMobile() {
     return () => window.removeEventListener("resize", checkSize);
   }, []);
 
-  return !!isMobile;
+  return isMobile;
 }
 
 export function useIsTablet() {
-  const [isTablet, setIsTablet] = useState<boolean | undefined>(undefined);
+  const [isTablet, setIsTablet] = useState<boolean>(false);
 
   useEffect(() => {
     const checkSize = () => {
@@ -48,11 +48,11 @@ export function useIsTablet() {
     return () => window.removeEventListener("resize", checkSize);
   }, []);
 
-  return !!isTablet;
+  return isTablet;
 }
 
 export function useIsDesktop() {
-  const [isDesktop, setIsDesktop] = useState<boolean | undefined>(undefined);
+  const [isDesktop, setIsDesktop] = useState<boolean>(false);
 
   useEffect(() => {
     const checkSize = () => {
@@ -69,7 +69,7 @@ export function useIsDesktop() {
     return () => window.removeEventListener("resize", checkSize);
   }, []);
 
-  return !!isDesktop;
+  return isDesktop;
 }
 
 export function useScreenSize() {

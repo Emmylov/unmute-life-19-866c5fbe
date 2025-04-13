@@ -76,7 +76,7 @@ const ReelActions = ({
 
   return (
     <>
-      <div className={`absolute bottom-20 right-4 flex flex-col ${buttonSpacingClass} pointer-events-auto z-20`}>
+      <div className={`absolute bottom-20 right-3 md:right-4 flex flex-col ${buttonSpacingClass} pointer-events-auto z-20`}>
         <ReelActionButton 
           icon={Heart} 
           label={liked ? "Liked" : "Like"}
