@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, SUPABASE_URL, SUPABASE_KEY } from "@/integrations/supabase/client";
 import { CountdownTimer } from "@/components/ui/countdown-timer";
 import { Gift, BookOpen, Music, Award, Check, Quote } from "lucide-react";
 import { z } from "zod";
@@ -24,9 +24,8 @@ const Index = () => {
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
 
-  // Set the launch date to April 18, 2025
   const launchDate = new Date("2025-04-18T00:00:00");
-  
+
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
@@ -42,7 +41,6 @@ const Index = () => {
         
         if (session) {
           setIsAuthenticated(true);
-          // Redirect authenticated users directly to home
           navigate('/home');
         } else {
           setIsAuthenticated(false);
@@ -80,7 +78,6 @@ const Index = () => {
     setSubmitting(true);
     
     try {
-      // First store the signup in waitlist table
       const { error: waitlistError } = await supabase
         .from('waitlist')
         .insert({
@@ -92,12 +89,11 @@ const Index = () => {
         throw waitlistError;
       }
       
-      // Send welcome email
-      const response = await fetch(`${supabase.supabaseUrl}/functions/v1/send-welcome-email`, {
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/send-welcome-email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabase.supabaseKey}`
+          'Authorization': `Bearer ${SUPABASE_KEY}`
         },
         body: JSON.stringify({
           name: values.name,
@@ -108,11 +104,9 @@ const Index = () => {
       if (!response.ok) {
         const errorData = await response.json();
         console.error("Email sending error:", errorData);
-        // We'll still show success but log the error
+        toast.success("You're on the list! Check your email for your OG Starter Pack confirmation.");
+        form.reset();
       }
-      
-      toast.success("You're on the list! Check your email for your OG Starter Pack confirmation.");
-      form.reset();
     } catch (error) {
       console.error("Error submitting form:", error);
       toast.error("Something went wrong. Please try again.");
@@ -123,7 +117,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-unmute-purple/10 to-unmute-pink/10">
-      {/* Header & Hero Section */}
       <header className="w-full py-6 px-6 flex justify-between items-center">
         <h1 className="text-2xl md:text-3xl font-bold">
           <span className="unmute-gradient-text">Unmute</span>
@@ -137,13 +130,11 @@ const Index = () => {
       </header>
       
       <main className="flex-grow">
-        {/* Hero Section */}
         <section className="max-w-6xl mx-auto px-6 py-12 md:py-20 text-center">
           <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
             <span className="unmute-gradient-text">Unmute Is Launching Soon!</span>
           </h1>
           
-          {/* Countdown Timer */}
           <div className="max-w-lg mx-auto mb-12">
             <CountdownTimer targetDate={launchDate} className="transform scale-110" />
           </div>
@@ -152,9 +143,7 @@ const Index = () => {
             Join the movement. Be one of the first. Get the OG Starter Pack.
           </p>
           
-          {/* Signup Form */}
           <div className="max-w-md mx-auto bg-white/80 backdrop-blur-sm rounded-xl shadow-lg p-6 mb-16 relative overflow-hidden border border-white/60">
-            {/* Decorative floating elements */}
             <div className="absolute -top-12 -right-12 w-24 h-24 bg-unmute-purple/20 rounded-full blur-xl"></div>
             <div className="absolute -bottom-8 -left-8 w-20 h-20 bg-unmute-pink/20 rounded-full blur-lg"></div>
             
@@ -211,7 +200,6 @@ const Index = () => {
           </div>
         </section>
         
-        {/* Digital Goodies Section */}
         <section className="bg-white/50 py-16">
           <div className="max-w-6xl mx-auto px-6">
             <h2 className="text-2xl md:text-3xl font-bold mb-8 text-center">
@@ -246,7 +234,6 @@ const Index = () => {
           </div>
         </section>
         
-        {/* Wall of Voices */}
         <section className="py-16 bg-gradient-to-b from-white/0 to-unmute-purple/10">
           <div className="max-w-4xl mx-auto px-6 text-center">
             <h2 className="text-2xl md:text-3xl font-bold mb-4">Wall of Voices</h2>
@@ -283,7 +270,6 @@ const Index = () => {
         </section>
       </main>
       
-      {/* Footer */}
       <footer className="bg-white/80 py-8 border-t border-gray-100">
         <div className="max-w-6xl mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-between items-center">
