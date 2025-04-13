@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase, listBucketFiles, getPublicUrl, STORAGE_BUCKETS } from "@/integrations/supabase/client";
@@ -12,6 +13,7 @@ import ReelsSkeleton from "@/components/reels/ReelsSkeleton";
 import { useIsMobile, useIsTablet, useIsDesktop } from "@/hooks/use-responsive";
 import { v4 as uuidv4 } from "uuid";
 
+// Define explicit types to prevent TypeScript from getting into an infinite type instantiation
 interface ReelContent {
   id: string;
   user_id: string;
@@ -37,6 +39,7 @@ interface ReelWithUser {
   user: Tables<"profiles">;
 }
 
+// Simple type for database records to avoid complexity
 type DatabaseReel = Record<string, any>;
 
 interface ReelsProps {
@@ -136,7 +139,7 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
       
       if (reelsData && reelsData.length > 0) {
         const processedReels: ReelWithUser[] = await Promise.all(
-          (reelsData as any[]).map(async (reel) => {
+          (reelsData as DatabaseReel[]).map(async (reel) => {
             const { data: userData, error: userError } = await supabase
               .from("profiles")
               .select("*")
@@ -186,11 +189,7 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
             
             return {
               reel: reelContent,
-              user: userData || { 
-                id: reel.user_id, 
-                username: "Unknown User", 
-                avatar: null 
-              } as Tables<"profiles">
+              user: userData as Tables<"profiles">
             };
           })
         );
@@ -277,7 +276,7 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
           
           return {
             reel: reelContent,
-            user: userData || { 
+            user: userData as Tables<"profiles"> || { 
               id: userId, 
               username: "Unknown User", 
               avatar: null 
@@ -472,5 +471,47 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
     </AppLayout>
   );
 };
+
+// Missing functions from the original file that I'm preserving
+const handlePrevReel = () => {
+  if (currentReelIndex > 0) {
+    setCurrentReelIndex(currentReelIndex - 1);
+  }
+};
+
+const handleNextReel = () => {
+  if (currentReelIndex < reels.length - 1) {
+    setCurrentReelIndex(currentReelIndex + 1);
+  }
+};
+
+const handleReelSwipe = (direction: string) => {
+  if (direction === "up" && currentReelIndex < reels.length - 1) {
+    setCurrentReelIndex(currentReelIndex + 1);
+  } else if (direction === "down" && currentReelIndex > 0) {
+    setCurrentReelIndex(currentReelIndex - 1);
+  }
+};
+
+const handleFilterChange = (filter: string) => {
+  if (activeFilter === filter) {
+    setActiveFilter(null);
+    searchParams.delete('filter');
+    setSearchParams(searchParams);
+  } else {
+    setActiveFilter(filter);
+    searchParams.set('filter', filter);
+    setSearchParams(searchParams);
+  }
+};
+
+const getContainerHeight = () => {
+  if (isMobile) return "h-[calc(100vh-9rem)]";
+  if (isTablet) return "h-[calc(100vh-8rem)]";
+  return "h-[calc(100vh-7rem)]";
+};
+
+const emotionFilters = ["Uplifting", "Raw", "Funny", "Vulnerable"];
+const topicFilters = ["Mental Health", "Faith", "Identity", "Social Justice"];
 
 export default Reels;
