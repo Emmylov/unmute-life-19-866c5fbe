@@ -34,9 +34,16 @@ interface ReelContent {
   mood_vibe?: string | null;
 }
 
+interface ProfileSummary {
+  id: string;
+  username?: string | null;
+  avatar?: string | null;
+  full_name?: string | null;
+}
+
 interface ReelWithUser {
   reel: ReelContent;
-  user: Tables<"profiles">;
+  user: ProfileSummary;
 }
 
 // Use a simple type for database records to avoid complexity
@@ -142,7 +149,7 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
           (reelsData as DatabaseReel[]).map(async (reel) => {
             const { data: userData, error: userError } = await supabase
               .from("profiles")
-              .select("*")
+              .select("id, username, avatar, full_name")
               .eq("id", reel.user_id)
               .maybeSingle();
               
@@ -190,7 +197,10 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
             // Type assertion to avoid deep instantiation
             return {
               reel: reelContent,
-              user: userData as Tables<"profiles">
+              user: userData as ProfileSummary || {
+                id: reel.user_id,
+                username: "Unknown User"
+              }
             };
           })
         );
@@ -267,7 +277,7 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
           
           const { data: userData, error: userError } = await supabase
             .from("profiles")
-            .select("*")
+            .select("id, username, avatar, full_name")
             .eq("id", userId)
             .maybeSingle();
             
@@ -276,15 +286,14 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
           }
           
           // Use type assertion for unknown users to avoid deep type instantiation
-          const fallbackUser = { 
+          const fallbackUser: ProfileSummary = { 
             id: userId, 
-            username: "Unknown User", 
-            avatar: null 
-          } as Tables<"profiles">;
+            username: "Unknown User"
+          };
           
           return {
             reel: reelContent,
-            user: userData ? (userData as Tables<"profiles">) : fallbackUser
+            user: userData ? userData as ProfileSummary : fallbackUser
           };
         })
       );
@@ -302,7 +311,7 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
     }
   };
 
-  // Move these handler functions inside the component
+  // Handler functions inside component scope
   const handlePrevReel = () => {
     if (currentReelIndex > 0) {
       setCurrentReelIndex(currentReelIndex - 1);
