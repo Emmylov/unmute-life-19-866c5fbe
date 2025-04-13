@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase, listBucketFiles, getPublicUrl, STORAGE_BUCKETS } from "@/integrations/supabase/client";
@@ -12,6 +13,7 @@ import ReelsSkeleton from "@/components/reels/ReelsSkeleton";
 import { useIsMobile, useIsTablet, useIsDesktop } from "@/hooks/use-responsive";
 import { v4 as uuidv4 } from "uuid";
 
+// Define explicit types to avoid deep inference issues
 interface ReelContent {
   id: string;
   user_id: string;
@@ -37,6 +39,7 @@ interface ReelWithUser {
   user: Tables<"profiles">;
 }
 
+// Define a separate type for the database response to avoid circular references
 interface DatabaseReel {
   id: string;
   user_id: string;
@@ -152,6 +155,7 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
       console.log("Reels from database:", reelsData);
       
       if (reelsData && reelsData.length > 0) {
+        // Use the DatabaseReel type to explicitly type the data
         const processedReels: ReelWithUser[] = await Promise.all(
           (reelsData as DatabaseReel[]).map(async (reel) => {
             const { data: userData, error: userError } = await supabase
