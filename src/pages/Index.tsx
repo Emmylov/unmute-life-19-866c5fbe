@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -81,14 +80,38 @@ const Index = () => {
     setSubmitting(true);
     
     try {
-      // Here you would typically save the early signup to your database
-      // For now, we'll just show a success message
-      console.log("Early signup:", values);
+      // First store the signup in waitlist table
+      const { error: waitlistError } = await supabase
+        .from('waitlist')
+        .insert({
+          name: values.name,
+          email: values.email
+        });
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      if (waitlistError) {
+        throw waitlistError;
+      }
       
-      toast.success("You're on the list! Check your email for your OG Starter Pack.");
+      // Send welcome email
+      const response = await fetch(`${supabase.supabaseUrl}/functions/v1/send-welcome-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabase.supabaseKey}`
+        },
+        body: JSON.stringify({
+          name: values.name,
+          email: values.email
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Email sending error:", errorData);
+        // We'll still show success but log the error
+      }
+      
+      toast.success("You're on the list! Check your email for your OG Starter Pack confirmation.");
       form.reset();
     } catch (error) {
       console.error("Error submitting form:", error);
