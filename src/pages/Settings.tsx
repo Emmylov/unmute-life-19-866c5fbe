@@ -1,54 +1,96 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Camera, Bell, ShieldAlert, UserCircle, KeyRound, Bug, Globe, Mail } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
+import { Lock, BellRing, Eye, Globe, ShieldCheck, User, Smartphone, CreditCard, Languages } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { getInitials } from "@/lib/utils";
 
 const Settings = () => {
-  const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState("profile");
+  const [user, setUser] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-  const [profile, setProfile] = useState({
+  const [formData, setFormData] = useState({
     username: "",
     full_name: "",
     bio: "",
-    email: user?.email || ""
+    email: "",
+    phone: ""
   });
   
-  const [notifications, setNotifications] = useState({
-    mentions: true,
-    comments: true,
-    followers: true,
-    messages: true,
-    updates: false,
-    newsletter: false
-  });
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        setUser(user);
+        
+        if (user) {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+            
+          if (data && !error) {
+            setProfile(data);
+            setFormData({
+              username: data.username || "",
+              full_name: data.full_name || "",
+              bio: data.bio || "",
+              email: user.email || "",
+              phone: data.phone || ""
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        toast.error("Failed to load user data");
+      }
+    };
+    
+    fetchUserData();
+  }, []);
   
-  const [privacy, setPrivacy] = useState({
-    privateAccount: false,
-    showActivity: true,
-    allowTagging: true,
-    allowComments: true
-  });
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value
+    }));
+  };
   
-  const handleProfileUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  const handleProfileUpdate = async () => {
+    if (!user) return;
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
+      setLoading(true);
+      
+      const updates = {
+        id: user.id,
+        username: formData.username,
+        full_name: formData.full_name,
+        bio: formData.bio,
+        phone: formData.phone,
+        updated_at: new Date().toISOString()
+      };
+      
+      const { error } = await supabase
+        .from('profiles')
+        .upsert(updates);
+        
+      if (error) throw error;
+      
       toast.success("Profile updated successfully");
+      setProfile((prev: any) => ({ ...prev, ...updates }));
     } catch (error) {
       console.error("Error updating profile:", error);
       toast.error("Failed to update profile");
@@ -57,16 +99,22 @@ const Settings = () => {
     }
   };
   
-  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) return;
+  const handleEmailUpdate = async () => {
+    if (!user) return;
     
     try {
       setLoading(true);
-      const file = e.target.files[0];
-      toast.success("Avatar uploaded successfully");
+      
+      const { error } = await supabase.auth.updateUser({ 
+        email: formData.email 
+      });
+      
+      if (error) throw error;
+      
+      toast.success("Verification email sent. Please check your inbox.");
     } catch (error) {
-      console.error("Error uploading avatar:", error);
-      toast.error("Failed to upload avatar");
+      console.error("Error updating email:", error);
+      toast.error("Failed to update email");
     } finally {
       setLoading(false);
     }
@@ -74,426 +122,416 @@ const Settings = () => {
   
   return (
     <AppLayout pageTitle="Settings">
-      <div className="container max-w-5xl mx-auto">
-        <div className="flex flex-col md:flex-row gap-8">
-          <div className="w-full md:w-64 flex-shrink-0">
-            <Card className="sticky top-20">
-              <CardHeader>
-                <CardTitle>Settings</CardTitle>
-                <CardDescription>Manage your account settings</CardDescription>
-              </CardHeader>
-              <CardContent className="p-0">
-                <Tabs defaultValue="account" orientation="vertical" className="w-full">
-                  <TabsList className="flex flex-col h-auto items-stretch bg-transparent border-r p-0 space-y-1">
-                    <TabsTrigger 
-                      value="account" 
-                      className="justify-start data-[state=active]:text-primary data-[state=active]:bg-primary/5 px-3 py-2"
-                    >
-                      <UserCircle className="h-4 w-4 mr-2" />
-                      Account
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="notifications" 
-                      className="justify-start data-[state=active]:text-primary data-[state=active]:bg-primary/5 px-3 py-2"
-                    >
-                      <Bell className="h-4 w-4 mr-2" />
-                      Notifications
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="privacy" 
-                      className="justify-start data-[state=active]:text-primary data-[state=active]:bg-primary/5 px-3 py-2"
-                    >
-                      <ShieldAlert className="h-4 w-4 mr-2" />
-                      Privacy
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="security" 
-                      className="justify-start data-[state=active]:text-primary data-[state=active]:bg-primary/5 px-3 py-2"
-                    >
-                      <KeyRound className="h-4 w-4 mr-2" />
-                      Security
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="support" 
-                      className="justify-start data-[state=active]:text-primary data-[state=active]:bg-primary/5 px-3 py-2"
-                    >
-                      <Bug className="h-4 w-4 mr-2" />
-                      Help & Support
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
-              </CardContent>
-            </Card>
+      <div className="max-w-4xl mx-auto">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold mb-2">Settings</h1>
+          <p className="text-gray-600">
+            Manage your account settings and preferences
+          </p>
+        </div>
+        
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <div className="bg-white rounded-lg shadow-sm p-1 sticky top-16 z-10 mb-6">
+            <TabsList className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <TabsTrigger value="profile" className="data-[state=active]:bg-primary/10">
+                <User className="h-4 w-4 mr-2 hidden sm:inline" />
+                Profile
+              </TabsTrigger>
+              <TabsTrigger value="account" className="data-[state=active]:bg-primary/10">
+                <Lock className="h-4 w-4 mr-2 hidden sm:inline" />
+                Account
+              </TabsTrigger>
+              <TabsTrigger value="notifications" className="data-[state=active]:bg-primary/10">
+                <BellRing className="h-4 w-4 mr-2 hidden sm:inline" />
+                Notifications
+              </TabsTrigger>
+              <TabsTrigger value="privacy" className="data-[state=active]:bg-primary/10">
+                <Eye className="h-4 w-4 mr-2 hidden sm:inline" />
+                Privacy
+              </TabsTrigger>
+            </TabsList>
           </div>
           
-          <div className="flex-1">
-            <Tabs defaultValue="account" className="w-full">
-              <TabsContent value="account" className="space-y-6 mt-0">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Profile</CardTitle>
-                    <CardDescription>
-                      Update your profile information and how others see you
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <form onSubmit={handleProfileUpdate}>
-                      <div className="mb-6 flex flex-col items-center sm:flex-row sm:items-start gap-6">
-                        <Avatar className="w-24 h-24 border-4 border-white shadow relative">
-                          <AvatarImage src={user?.user_metadata?.avatar_url} />
-                          <AvatarFallback className="text-2xl bg-primary/10 text-primary">
-                            {getInitials(user?.user_metadata?.full_name || user?.email || "")}
-                          </AvatarFallback>
-                          
-                          <label 
-                            htmlFor="avatar-upload"
-                            className="absolute -bottom-1 -right-1 bg-primary text-white p-1.5 rounded-full cursor-pointer shadow hover:bg-primary/90 transition-colors"
-                          >
-                            <Camera className="h-4 w-4" />
-                            <span className="sr-only">Upload avatar</span>
-                          </label>
-                          <input 
-                            id="avatar-upload" 
-                            type="file" 
-                            className="hidden" 
-                            accept="image/*"
-                            onChange={handleAvatarChange}
-                          />
-                        </Avatar>
-                        
-                        <div className="space-y-4 flex-1">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <Label htmlFor="username">Username</Label>
-                              <Input 
-                                id="username"
-                                placeholder="your_username"
-                                value={profile.username}
-                                onChange={e => setProfile({...profile, username: e.target.value})}
-                              />
-                            </div>
-                            
-                            <div className="space-y-2">
-                              <Label htmlFor="full_name">Full Name</Label>
-                              <Input 
-                                id="full_name"
-                                placeholder="Your Name"
-                                value={profile.full_name}
-                                onChange={e => setProfile({...profile, full_name: e.target.value})}
-                              />
-                            </div>
-                          </div>
-                          
-                          <div className="space-y-2">
-                            <Label htmlFor="email">Email</Label>
-                            <Input 
-                              id="email"
-                              type="email"
-                              placeholder="your.email@example.com"
-                              value={profile.email}
-                              onChange={e => setProfile({...profile, email: e.target.value})}
-                              disabled
-                            />
-                            <p className="text-xs text-muted-foreground">
-                              To change your email address, please contact support.
-                            </p>
-                          </div>
-                          
-                          <div className="space-y-2">
-                            <Label htmlFor="bio">Bio</Label>
-                            <Input 
-                              id="bio"
-                              placeholder="Tell us a little about yourself"
-                              value={profile.bio}
-                              onChange={e => setProfile({...profile, bio: e.target.value})}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex justify-end">
-                        <Button type="submit" disabled={loading}>
-                          {loading ? "Saving..." : "Save Changes"}
-                        </Button>
-                      </div>
-                    </form>
-                  </CardContent>
-                </Card>
+          {/* Profile Tab */}
+          <TabsContent value="profile" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Profile Information</CardTitle>
+                <CardDescription>
+                  Update your profile information visible to other users
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
+                  <Avatar className="w-20 h-20 border-2 border-white shadow-md">
+                    <AvatarImage src={profile?.avatar_url || ''} />
+                    <AvatarFallback className="bg-gradient-to-br from-primary/90 to-primary/50 text-white text-xl">
+                      {profile?.username?.charAt(0)?.toUpperCase() || profile?.full_name?.charAt(0)?.toUpperCase() || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h3 className="text-lg font-medium">{profile?.full_name || 'Your Name'}</h3>
+                    <p className="text-sm text-gray-500 mb-2">@{profile?.username || 'username'}</p>
+                    <Button size="sm" variant="outline">Change Avatar</Button>
+                  </div>
+                </div>
                 
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Account Preferences</CardTitle>
-                    <CardDescription>
-                      Manage your account settings and preferences
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium text-sm">Language</h4>
-                          <p className="text-sm text-muted-foreground">Select your preferred language</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Globe className="h-4 w-4" />
-                          <span className="text-sm">English (US)</span>
-                        </div>
-                      </div>
-                      
-                      <Separator />
-                      
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium text-sm">Auto-play Videos</h4>
-                          <p className="text-sm text-muted-foreground">Videos will play automatically</p>
-                        </div>
-                        <Switch id="autoplay" defaultChecked />
-                      </div>
-                      
-                      <Separator />
-                      
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium text-sm">Dark Mode</h4>
-                          <p className="text-sm text-muted-foreground">Toggle dark mode on or off</p>
-                        </div>
-                        <Switch id="darkmode" />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              <TabsContent value="notifications" className="mt-0">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Notification Preferences</CardTitle>
-                    <CardDescription>
-                      Manage how and when you receive notifications
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium">New Mentions</h4>
-                          <p className="text-sm text-muted-foreground">When someone mentions you</p>
-                        </div>
-                        <Switch 
-                          checked={notifications.mentions}
-                          onCheckedChange={(checked) => 
-                            setNotifications({...notifications, mentions: checked})
-                          }
-                        />
-                      </div>
-                      
-                      <Separator />
-                      
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium">Comments</h4>
-                          <p className="text-sm text-muted-foreground">When someone comments on your content</p>
-                        </div>
-                        <Switch 
-                          checked={notifications.comments}
-                          onCheckedChange={(checked) => 
-                            setNotifications({...notifications, comments: checked})
-                          }
-                        />
-                      </div>
-                      
-                      <Separator />
-                      
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium">New Followers</h4>
-                          <p className="text-sm text-muted-foreground">When someone follows you</p>
-                        </div>
-                        <Switch 
-                          checked={notifications.followers}
-                          onCheckedChange={(checked) => 
-                            setNotifications({...notifications, followers: checked})
-                          }
-                        />
-                      </div>
-                      
-                      <Separator />
-                      
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium">Direct Messages</h4>
-                          <p className="text-sm text-muted-foreground">When someone sends you a message</p>
-                        </div>
-                        <Switch 
-                          checked={notifications.messages}
-                          onCheckedChange={(checked) => 
-                            setNotifications({...notifications, messages: checked})
-                          }
-                        />
-                      </div>
-                      
-                      <Separator />
-                      
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium">App Updates</h4>
-                          <p className="text-sm text-muted-foreground">About new features and updates</p>
-                        </div>
-                        <Switch 
-                          checked={notifications.updates}
-                          onCheckedChange={(checked) => 
-                            setNotifications({...notifications, updates: checked})
-                          }
-                        />
-                      </div>
-                      
-                      <Separator />
-                      
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium">Newsletter</h4>
-                          <p className="text-sm text-muted-foreground">Receive our weekly newsletter</p>
-                        </div>
-                        <Switch 
-                          checked={notifications.newsletter}
-                          onCheckedChange={(checked) => 
-                            setNotifications({...notifications, newsletter: checked})
-                          }
-                        />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              <TabsContent value="privacy" className="mt-0">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Privacy Settings</CardTitle>
-                    <CardDescription>
-                      Control who can see your content and how your data is used
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium">Private Account</h4>
-                          <p className="text-sm text-muted-foreground">Only approved followers can see your content</p>
-                        </div>
-                        <Switch 
-                          checked={privacy.privateAccount}
-                          onCheckedChange={(checked) => 
-                            setPrivacy({...privacy, privateAccount: checked})
-                          }
-                        />
-                      </div>
-                      
-                      <Separator />
-                      
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium">Activity Status</h4>
-                          <p className="text-sm text-muted-foreground">Let others see when you're active</p>
-                        </div>
-                        <Switch 
-                          checked={privacy.showActivity}
-                          onCheckedChange={(checked) => 
-                            setPrivacy({...privacy, showActivity: checked})
-                          }
-                        />
-                      </div>
-                      
-                      <Separator />
-                      
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium">Allow Tagging</h4>
-                          <p className="text-sm text-muted-foreground">Let others tag you in their content</p>
-                        </div>
-                        <Switch 
-                          checked={privacy.allowTagging}
-                          onCheckedChange={(checked) => 
-                            setPrivacy({...privacy, allowTagging: checked})
-                          }
-                        />
-                      </div>
-                      
-                      <Separator />
-                      
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium">Allow Comments</h4>
-                          <p className="text-sm text-muted-foreground">Let others comment on your content</p>
-                        </div>
-                        <Switch 
-                          checked={privacy.allowComments}
-                          onCheckedChange={(checked) => 
-                            setPrivacy({...privacy, allowComments: checked})
-                          }
-                        />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              <TabsContent value="security" className="mt-0">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Security Settings</CardTitle>
-                    <CardDescription>
-                      Manage your account security settings
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <Button variant="outline" className="w-full justify-start">
-                        <KeyRound className="h-4 w-4 mr-2" />
-                        Change Password
-                      </Button>
-                      
-                      <Button variant="outline" className="w-full justify-start">
-                        <Mail className="h-4 w-4 mr-2" />
-                        Enable Two-Factor Authentication
-                      </Button>
-                      
-                      <Button variant="outline" className="w-full justify-start" variant="destructive">
-                        Deactivate Account
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="full_name">Full Name</Label>
+                    <Input 
+                      id="full_name" 
+                      name="full_name"
+                      value={formData.full_name} 
+                      onChange={handleInputChange}
+                      placeholder="Your full name"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="username">Username</Label>
+                    <Input 
+                      id="username" 
+                      name="username"
+                      value={formData.username} 
+                      onChange={handleInputChange}
+                      placeholder="username" 
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="bio">Bio</Label>
+                  <textarea 
+                    id="bio" 
+                    name="bio"
+                    value={formData.bio || ''}
+                    onChange={handleInputChange}
+                    placeholder="Tell others a little about yourself..." 
+                    className="w-full h-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  />
+                </div>
+                
+                <Button 
+                  onClick={handleProfileUpdate} 
+                  className="w-full md:w-auto" 
+                  disabled={loading}
+                >
+                  {loading ? "Saving..." : "Save Changes"}
+                </Button>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Contact Information</CardTitle>
+                <CardDescription>
+                  Manage how others can contact you
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email Address</Label>
+                    <div className="flex gap-2">
+                      <Input 
+                        id="email" 
+                        name="email"
+                        value={formData.email} 
+                        onChange={handleInputChange}
+                        placeholder="your.email@example.com" 
+                      />
+                      <Button onClick={handleEmailUpdate} disabled={loading} variant="outline">
+                        Update
                       </Button>
                     </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              <TabsContent value="support" className="mt-0">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Help & Support</CardTitle>
-                    <CardDescription>
-                      Get help with your account or report issues
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <Button variant="outline" className="w-full justify-start">
-                        View Help Center
-                      </Button>
-                      
-                      <Button variant="outline" className="w-full justify-start">
-                        Report a Problem
-                      </Button>
-                      
-                      <Button variant="outline" className="w-full justify-start">
-                        Contact Support
-                      </Button>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <Input 
+                      id="phone" 
+                      name="phone"
+                      value={formData.phone} 
+                      onChange={handleInputChange}
+                      placeholder="+1 (555) 123-4567" 
+                    />
+                  </div>
+                </div>
+                
+                <Button onClick={handleProfileUpdate} disabled={loading}>
+                  {loading ? "Saving..." : "Save Changes"}
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          {/* Account Tab */}
+          <TabsContent value="account" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Account Security</CardTitle>
+                <CardDescription>
+                  Manage your account security settings
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h3 className="font-medium">Password</h3>
+                      <p className="text-sm text-gray-500">Last changed 3 months ago</p>
                     </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
-          </div>
-        </div>
+                    <Button variant="outline">Change Password</Button>
+                  </div>
+                  
+                  <Separator />
+                  
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h3 className="font-medium">Two-Factor Authentication</h3>
+                      <p className="text-sm text-gray-500">Add an extra layer of security to your account</p>
+                    </div>
+                    <Switch />
+                  </div>
+                  
+                  <Separator />
+                  
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h3 className="font-medium">Active Sessions</h3>
+                      <p className="text-sm text-gray-500">Manage devices where you're currently logged in</p>
+                    </div>
+                    <Button variant="outline">Manage Sessions</Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Danger Zone</CardTitle>
+                <CardDescription>
+                  Actions that can permanently affect your account
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="bg-red-50 border border-red-100 rounded-md p-4">
+                  <h3 className="text-red-600 font-medium mb-2">Delete Account</h3>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Once deleted, all your data will be permanently removed and cannot be recovered.
+                  </p>
+                  <Button variant="destructive">Delete Account</Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          {/* Notifications Tab */}
+          <TabsContent value="notifications" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Notification Preferences</CardTitle>
+                <CardDescription>
+                  Manage how and when you receive notifications
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <h3 className="font-medium">Push Notifications</h3>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>New Comments</Label>
+                        <p className="text-sm text-gray-500">When someone comments on your post</p>
+                      </div>
+                      <Switch defaultChecked />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>Likes</Label>
+                        <p className="text-sm text-gray-500">When someone likes your content</p>
+                      </div>
+                      <Switch defaultChecked />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>New Followers</Label>
+                        <p className="text-sm text-gray-500">When someone follows you</p>
+                      </div>
+                      <Switch defaultChecked />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>Direct Messages</Label>
+                        <p className="text-sm text-gray-500">When you receive a new message</p>
+                      </div>
+                      <Switch defaultChecked />
+                    </div>
+                  </div>
+                  
+                  <Separator />
+                  
+                  <h3 className="font-medium">Email Notifications</h3>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>Product Updates</Label>
+                        <p className="text-sm text-gray-500">Get notified about new features</p>
+                      </div>
+                      <Switch defaultChecked />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>Account Digests</Label>
+                        <p className="text-sm text-gray-500">Weekly summary of account activity</p>
+                      </div>
+                      <Switch />
+                    </div>
+                  </div>
+                </div>
+                
+                <Button>Save Notification Settings</Button>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Quiet Hours</CardTitle>
+                <CardDescription>
+                  Set times when you don't want to receive notifications
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Enable Quiet Hours</Label>
+                    <p className="text-sm text-gray-500">Pause notifications during specific hours</p>
+                  </div>
+                  <Switch />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>From</Label>
+                    <Input type="time" defaultValue="22:00" />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>To</Label>
+                    <Input type="time" defaultValue="07:00" />
+                  </div>
+                </div>
+                
+                <Button>Save Quiet Hours</Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          {/* Privacy Tab */}
+          <TabsContent value="privacy" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Privacy Settings</CardTitle>
+                <CardDescription>
+                  Control who can see your content and interact with you
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="text-base font-medium">Private Account</Label>
+                      <p className="text-sm text-gray-500">Only approved followers can see your content</p>
+                    </div>
+                    <Switch />
+                  </div>
+                  
+                  <Separator />
+                  
+                  <h3 className="font-medium">Who Can...</h3>
+                  
+                  <div className="space-y-4">
+                    <div className="space-y-1">
+                      <Label>See your content</Label>
+                      <select className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/30">
+                        <option>Everyone</option>
+                        <option>Followers only</option>
+                        <option>No one</option>
+                      </select>
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <Label>Comment on your posts</Label>
+                      <select className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/30">
+                        <option>Everyone</option>
+                        <option>Followers only</option>
+                        <option>No one</option>
+                      </select>
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <Label>Message you</Label>
+                      <select className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/30">
+                        <option>Everyone</option>
+                        <option>Followers only</option>
+                        <option>No one</option>
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <Separator />
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="text-base font-medium">Hide Activity Status</Label>
+                      <p className="text-sm text-gray-500">Hide when you're active on the platform</p>
+                    </div>
+                    <Switch />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="text-base font-medium">Show Content in Explore</Label>
+                      <p className="text-sm text-gray-500">Allow your content to appear in explore feed</p>
+                    </div>
+                    <Switch defaultChecked />
+                  </div>
+                  
+                  <Button>Save Privacy Settings</Button>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Blocked Accounts</CardTitle>
+                <CardDescription>
+                  Manage accounts you've blocked
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8 text-gray-500">
+                  <p>You haven't blocked any accounts yet</p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </AppLayout>
   );
