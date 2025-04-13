@@ -1,5 +1,5 @@
 
-import { Database as OriginalDatabase } from './types';
+import type { Database as OriginalDatabase } from './types';
 
 // Extended Database type that includes missing tables
 export type ExtendedDatabase = OriginalDatabase & {
@@ -110,54 +110,54 @@ export type ExtendedDatabase = OriginalDatabase & {
           user_id: string;
           created_at: string | null;
           video_url: string;
+          thumbnail_url: string | null;
+          caption: string | null;
+          tags: string[] | null;
+          audio_type: string | null;
+          audio_url: string | null;
+          audio: string | null;
+          duration: number | null;
           original_audio_volume: number | null;
           overlay_audio_volume: number | null;
           allow_duets: boolean | null;
           allow_comments: boolean | null;
-          duration: number | null;
-          audio_url: string | null;
-          caption: string | null;
-          tags: string[] | null;
-          audio_type: string | null;
-          thumbnail_url?: string | null;
         };
         Insert: {
           id?: string;
           user_id: string;
           created_at?: string | null;
           video_url: string;
+          thumbnail_url?: string | null;
+          caption?: string | null;
+          tags?: string[] | null;
+          audio_type?: string | null;
+          audio_url?: string | null;
+          audio?: string | null;
+          duration?: number | null;
           original_audio_volume?: number | null;
           overlay_audio_volume?: number | null;
           allow_duets?: boolean | null;
           allow_comments?: boolean | null;
-          duration?: number | null;
-          audio_url?: string | null;
-          caption?: string | null;
-          tags?: string[] | null;
-          audio_type?: string | null;
-          thumbnail_url?: string | null;
         };
         Update: {
           id?: string;
           user_id?: string;
           created_at?: string | null;
           video_url?: string;
+          thumbnail_url?: string | null;
+          caption?: string | null;
+          tags?: string[] | null;
+          audio_type?: string | null;
+          audio_url?: string | null;
+          audio?: string | null;
+          duration?: number | null;
           original_audio_volume?: number | null;
           overlay_audio_volume?: number | null;
           allow_duets?: boolean | null;
           allow_comments?: boolean | null;
-          duration?: number | null;
-          audio_url?: string | null;
-          caption?: string | null;
-          tags?: string[] | null;
-          audio_type?: string | null;
-          thumbnail_url?: string | null;
         };
         Relationships: [];
       };
     };
   };
 };
-
-// Re-export as Database to maintain compatibility
-export type Database = ExtendedDatabase;

@@ -64,10 +64,14 @@ export const toggleReelLike = async (reelId: string, userId: string) => {
       if (error) throw error;
       return false;
     } else {
-      // Like
+      // Like - Insert to posts_reels table's ID
       const { error } = await supabase
         .from("reel_likes")
-        .insert({ reel_id: reelId, user_id: userId });
+        .insert({ 
+          reel_id: reelId, 
+          user_id: userId,
+          created_at: new Date().toISOString()
+        });
         
       if (error) throw error;
       return true;
