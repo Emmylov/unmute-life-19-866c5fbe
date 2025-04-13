@@ -1,6 +1,12 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
+// Define interfaces for better type safety
+interface UserSettings {
+  user_id: string;
+  settings: Record<string, any>;
+}
+
 // User settings
 export const saveUserSettings = async (userId: string, settings: any) => {
   try {
@@ -22,7 +28,7 @@ export const saveUserSettings = async (userId: string, settings: any) => {
   }
 };
 
-export const getUserSettings = async (userId: string) => {
+export const getUserSettings = async (userId: string): Promise<UserSettings> => {
   try {
     // For TypeScript safety, using type assertion
     const { data, error } = await supabase
@@ -35,10 +41,12 @@ export const getUserSettings = async (userId: string) => {
       throw error;
     }
     
+    // If no data is found, return a default object
     return data || { user_id: userId, settings: {} };
   } catch (error) {
     console.error("Error getting user settings:", error);
-    throw error;
+    // Return a default object on error
+    return { user_id: userId, settings: {} };
   }
 };
 
@@ -69,11 +77,11 @@ export const updateUserSettings = async (userId: string, settingsData: any, type
   try {
     // First get current settings
     const currentSettings = await getUserSettings(userId);
-    const settings = currentSettings?.settings || {};
+    // Now we can safely access settings because getUserSettings always returns an object with settings
     
     // Update the specific settings section
     const updatedSettings = {
-      ...settings,
+      ...currentSettings.settings,
       [type]: settingsData
     };
     

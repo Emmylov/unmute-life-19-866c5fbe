@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -78,29 +79,29 @@ const Settings = () => {
     try {
       if (!user) return;
       
-      const data = await getUserSettings(user.id);
+      const userSettings = await getUserSettings(user.id);
 
-      if (data && data.settings) {
-        const settings = data.settings as any; // Type assertion to handle dynamic settings
+      if (userSettings?.settings) {
+        // Safe to access settings now since getUserSettings always returns an object with settings
         
         // Notification settings
-        if (settings.notifications) {
+        if (userSettings.settings.notifications) {
           setNotificationSettings({
-            emailNotifications: settings.notifications.emailNotifications ?? true,
-            pushNotifications: settings.notifications.pushNotifications ?? true,
-            mentionAlerts: settings.notifications.mentionAlerts ?? true,
-            commentAlerts: settings.notifications.commentAlerts ?? true,
-            followAlerts: settings.notifications.followAlerts ?? true,
+            emailNotifications: userSettings.settings.notifications.emailNotifications ?? true,
+            pushNotifications: userSettings.settings.notifications.pushNotifications ?? true,
+            mentionAlerts: userSettings.settings.notifications.mentionAlerts ?? true,
+            commentAlerts: userSettings.settings.notifications.commentAlerts ?? true,
+            followAlerts: userSettings.settings.notifications.followAlerts ?? true,
           });
         }
         
         // Privacy settings
-        if (settings.privacy) {
+        if (userSettings.settings.privacy) {
           setPrivacySettings({
-            privateAccount: settings.privacy.privateAccount ?? false,
-            hideActivityStatus: settings.privacy.hideActivityStatus ?? false,
-            blockListManagement: settings.privacy.blockListManagement ?? false,
-            twoFactorAuth: settings.privacy.twoFactorAuth ?? false,
+            privateAccount: userSettings.settings.privacy.privateAccount ?? false,
+            hideActivityStatus: userSettings.settings.privacy.hideActivityStatus ?? false,
+            blockListManagement: userSettings.settings.privacy.blockListManagement ?? false,
+            twoFactorAuth: userSettings.settings.privacy.twoFactorAuth ?? false,
           });
         }
       }
