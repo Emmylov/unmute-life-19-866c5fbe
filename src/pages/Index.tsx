@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -15,17 +14,22 @@ const Index = () => {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session) {
-        setIsAuthenticated(true);
-        // Redirect authenticated users directly to home
-        navigate('/home');
-      } else {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session) {
+          setIsAuthenticated(true);
+          // Redirect authenticated users directly to home
+          navigate('/home');
+        } else {
+          setIsAuthenticated(false);
+        }
+      } catch (error) {
+        console.error("Error checking authentication:", error);
         setIsAuthenticated(false);
+      } finally {
+        setLoading(false);
       }
-      
-      setLoading(false);
     };
 
     checkAuth();
@@ -47,7 +51,7 @@ const Index = () => {
       <div className="mb-10 w-full max-w-md">
         <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg p-6">
           <h2 className="text-xl font-semibold text-center mb-4">Official Launch Countdown</h2>
-          <CountdownTimer targetDate={launchDate} />
+          <CountdownTimer targetDate={launchDate} className="countdown-pulse" />
         </div>
       </div>
 
