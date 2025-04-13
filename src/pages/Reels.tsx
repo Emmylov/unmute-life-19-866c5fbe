@@ -8,12 +8,12 @@ import { Tables } from "@/integrations/supabase/types";
 import { toast } from "@/components/ui/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import ReelView from "@/components/reels/ReelView";
-import { Video, Film, LoaderCircle, Plus, Search } from "lucide-react";
+import { Video, Film, LoaderCircle } from "lucide-react";
 import ReelsSkeleton from "@/components/reels/ReelsSkeleton";
 import { useIsMobile, useIsTablet, useIsDesktop } from "@/hooks/use-responsive";
 import { v4 as uuidv4 } from "uuid";
 
-// Simplified type definitions to avoid deep instantiation issues
+// Define explicit types to avoid deep inference issues
 interface ReelContent {
   id: string;
   user_id: string;
@@ -39,8 +39,26 @@ interface ReelWithUser {
   user: Tables<"profiles">;
 }
 
-// Simplified type for database query results
-type DatabaseReelRecord = Record<string, any>;
+// Define a separate type for the database response to avoid circular references
+interface DatabaseReel {
+  id: string;
+  user_id: string;
+  created_at?: string | null;
+  video_url: string;
+  thumbnail_url?: string | null;
+  caption?: string | null;
+  tags?: string[] | null;
+  audio_type?: string | null;
+  audio_url?: string | null;
+  audio?: string | null;
+  duration?: number | null;
+  original_audio_volume?: number | null;
+  overlay_audio_volume?: number | null;
+  allow_duets?: boolean | null;
+  allow_comments?: boolean | null;
+  vibe_tag?: string | null;
+  mood_vibe?: string | null;
+}
 
 interface ReelsProps {
   initialReelId?: string | null;
@@ -57,7 +75,6 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const isMobile = useIsMobile();
   const isTablet = useIsTablet();
-  const isDesktop = useIsDesktop();
 
   useEffect(() => {
     const filterParam = searchParams.get("filter");
@@ -138,9 +155,9 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
       console.log("Reels from database:", reelsData);
       
       if (reelsData && reelsData.length > 0) {
-        // Using type assertion with any to avoid deep instantiation issues
+        // Use the DatabaseReel type to explicitly type the data
         const processedReels: ReelWithUser[] = await Promise.all(
-          (reelsData as any[]).map(async (reel) => {
+          (reelsData as DatabaseReel[]).map(async (reel) => {
             const { data: userData, error: userError } = await supabase
               .from("profiles")
               .select("*")
@@ -335,162 +352,143 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
     }
   };
 
+  const getContainerHeight = () => {
+    if (isMobile) return "h-[calc(100vh-10rem)]";
+    if (isTablet) return "h-[calc(100vh-9rem)]";
+    return "h-[calc(100vh-8rem)]";
+  };
+
   const emotionFilters = ["Uplifting", "Raw", "Funny", "Vulnerable"];
   const topicFilters = ["Mental Health", "Faith", "Identity", "Social Justice"];
 
   return (
     <AppLayout pageTitle="Reels">
-      <div className="flex flex-col h-full">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold text-primary hidden md:block">Discover Reels</h1>
-          <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              size="icon"
-              className="rounded-full bg-white shadow-sm"
-              onClick={() => navigate("/explore")}
-            >
-              <Search className="h-4 w-4 text-gray-600" />
-            </Button>
-            <Button 
-              onClick={() => navigate("/create")} 
+      <div className="flex overflow-x-auto pb-2 no-scrollbar gap-2 mb-2">
+        <div className="flex gap-1.5">
+          {emotionFilters.map(filter => (
+            <Button
+              key={filter}
               size="sm"
-              className="gap-1 rounded-full bg-gradient-to-r from-pink-500 to-purple-500 shadow-md text-white hover:opacity-90"
+              variant={activeFilter === filter ? "default" : "outline"}
+              className={`rounded-full text-xs px-3 whitespace-nowrap ${
+                activeFilter === filter 
+                  ? "bg-primary/90 text-white" 
+                  : "bg-white/80 text-primary hover:bg-primary/20"
+              }`}
+              onClick={() => handleFilterChange(filter)}
             >
-              <Plus className="h-4 w-4" /> Create
+              {filter}
             </Button>
-          </div>
+          ))}
         </div>
-
-        <div className="mb-3">
-          <div className="flex overflow-x-auto pb-2 no-scrollbar gap-2">
-            <div className="flex gap-1.5">
-              {emotionFilters.map(filter => (
-                <Button
-                  key={filter}
-                  size="sm"
-                  variant={activeFilter === filter ? "default" : "outline"}
-                  className={`rounded-full text-xs px-3 whitespace-nowrap ${
-                    activeFilter === filter 
-                      ? "bg-gradient-to-r from-pink-500 to-purple-500 text-white border-0" 
-                      : "bg-white shadow-sm border-gray-200 text-gray-700 hover:bg-gray-50"
-                  }`}
-                  onClick={() => handleFilterChange(filter)}
-                >
-                  {filter}
-                </Button>
-              ))}
-            </div>
-            <div className="h-6 border-r border-gray-200 mx-1"></div>
-            <div className="flex gap-1.5">
-              {topicFilters.map(filter => (
-                <Button
-                  key={filter}
-                  size="sm"
-                  variant={activeFilter === filter ? "default" : "outline"}
-                  className={`rounded-full text-xs px-3 whitespace-nowrap ${
-                    activeFilter === filter 
-                      ? "bg-gradient-to-r from-pink-500 to-purple-500 text-white border-0" 
-                      : "bg-white shadow-sm border-gray-200 text-gray-700 hover:bg-gray-50"
-                  }`}
-                  onClick={() => handleFilterChange(filter)}
-                >
-                  {filter}
-                </Button>
-              ))}
+        <div className="h-6 border-r border-gray-200 mx-1"></div>
+        <div className="flex gap-1.5">
+          {topicFilters.map(filter => (
+            <Button
+              key={filter}
+              size="sm"
+              variant={activeFilter === filter ? "default" : "outline"}
+              className={`rounded-full text-xs px-3 whitespace-nowrap ${
+                activeFilter === filter 
+                  ? "bg-primary/90 text-white" 
+                  : "bg-white/80 text-primary hover:bg-primary/20"
+              }`}
+              onClick={() => handleFilterChange(filter)}
+            >
+              {filter}
+            </Button>
+          ))}
+        </div>
+      </div>
+      
+      <div className={`${getContainerHeight()} relative overflow-hidden rounded-xl bg-gradient-to-br from-unmute-purple/5 via-white/95 to-unmute-pink/5`}>
+        {loading ? (
+          <div className="h-full flex items-center justify-center">
+            <div className="glass-card p-8 rounded-2xl flex flex-col items-center">
+              <LoaderCircle className="h-8 w-8 text-primary animate-spin mb-4" />
+              <p className="text-gray-700 font-medium">Loading reels...</p>
             </div>
           </div>
-        </div>
-        
-        <div className="relative flex-grow bg-gradient-to-br from-purple-50 via-white to-pink-50 rounded-2xl overflow-hidden shadow-lg">
-          {loading ? (
-            <div className="h-full flex items-center justify-center">
-              <div className="glass-card p-8 rounded-2xl flex flex-col items-center backdrop-blur-md bg-white/70">
-                <LoaderCircle className="h-8 w-8 text-primary animate-spin mb-4" />
-                <p className="text-gray-700 font-medium">Loading reels...</p>
-              </div>
-            </div>
-          ) : reels.length > 0 ? (
-            <AnimatePresence mode="wait">
-              <motion.div 
-                key={`reel-${currentReelIndex}`}
-                className="h-full w-full relative"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                <ReelView 
-                  reelWithUser={reels[currentReelIndex]}
-                  onNext={handleNextReel}
-                  onPrevious={handlePrevReel}
-                  onSwipe={handleReelSwipe}
-                  hasNext={currentReelIndex < reels.length - 1}
-                  hasPrevious={currentReelIndex > 0}
-                  currentIndex={currentReelIndex}
-                  totalReels={reels.length}
-                />
-              </motion.div>
-            </AnimatePresence>
-          ) : (
-            <div className="h-full flex flex-col items-center justify-center p-8 text-center">
-              <motion.div
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.5 }}
-                className="bg-white/90 p-8 rounded-2xl max-w-md backdrop-blur-sm shadow-xl"
-              >
-                <div className="mb-6 flex justify-center">
-                  <div className="p-4 bg-gradient-to-br from-pink-100 to-purple-100 rounded-full">
-                    <Film className="h-12 w-12 text-primary" />
-                  </div>
-                </div>
-                <h3 className="text-2xl font-bold mb-2 text-gray-800">No reels yet</h3>
-                <p className="mb-6 text-gray-600">Be the first to create an awesome reel and express yourself!</p>
-                <Button 
-                  onClick={() => navigate("/create")} 
-                  className="px-6 py-6 bg-gradient-to-r from-pink-500 to-purple-500 hover:opacity-90 transition-all shadow-lg rounded-full font-medium"
-                  size="lg"
-                >
-                  <Video className="h-5 w-5 mr-2" />
-                  Create Reel
-                </Button>
-              </motion.div>
-            </div>
-          )}
-          
-          <AnimatePresence>
-            {showBreakReminder && (
-              <motion.div
-                initial={{ y: 50, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: 50, opacity: 0 }}
-                className="absolute bottom-20 left-1/2 transform -translate-x-1/2 bg-white/90 backdrop-blur-md px-6 py-4 rounded-xl shadow-lg max-w-xs"
-              >
-                <p className="text-gray-700 text-center">
-                  Take a breath. You've seen a lot of emotions. Come back when you're ready to listen again.
-                </p>
-              </motion.div>
-            )}
+        ) : reels.length > 0 ? (
+          <AnimatePresence mode="wait">
+            <motion.div 
+              key={`reel-${currentReelIndex}`}
+              className="h-full w-full relative"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <ReelView 
+                reelWithUser={reels[currentReelIndex]}
+                onNext={handleNextReel}
+                onPrevious={handlePrevReel}
+                onSwipe={handleReelSwipe}
+                hasNext={currentReelIndex < reels.length - 1}
+                hasPrevious={currentReelIndex > 0}
+                currentIndex={currentReelIndex}
+                totalReels={reels.length}
+              />
+            </motion.div>
           </AnimatePresence>
-          
-          {reels.length > 1 && (
-            <div className="absolute top-2 left-2 right-2 z-10 flex justify-center">
-              <div className="flex gap-1 px-3 py-1.5 bg-black/10 backdrop-blur-md rounded-full">
-                {reels.map((_, index) => (
-                  <div
-                    key={`progress-${index}`}
-                    className={`h-1 rounded-full transition-all duration-300 ${
-                      index === currentReelIndex 
-                        ? 'w-6 bg-white' 
-                        : 'w-2 bg-white/40'
-                    }`}
-                  />
-                ))}
+        ) : (
+          <div className="h-full flex flex-col items-center justify-center bg-gradient-to-b from-white/50 to-unmute-pink/5 p-8 text-center">
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.5 }}
+              className="glass-card bg-white/70 p-8 rounded-2xl max-w-md backdrop-blur-sm shadow-lg"
+            >
+              <div className="mb-6 flex justify-center">
+                <div className="p-4 bg-primary/20 rounded-full">
+                  <Film className="h-12 w-12 text-primary" />
+                </div>
               </div>
-            </div>
+              <h3 className="text-2xl font-bold mb-2 text-gray-800">No reels yet</h3>
+              <p className="mb-6 text-gray-600">Be the first to create an awesome reel and express yourself!</p>
+              <Button 
+                onClick={() => navigate("/create")} 
+                className="px-6 py-3 bg-primary hover:bg-primary/90 transition-all shadow-lg rounded-full font-medium"
+                size="lg"
+              >
+                <Video className="h-5 w-5 mr-2" />
+                Create Reel
+              </Button>
+            </motion.div>
+          </div>
+        )}
+        
+        <AnimatePresence>
+          {showBreakReminder && (
+            <motion.div
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 50, opacity: 0 }}
+              className="absolute bottom-20 left-1/2 transform -translate-x-1/2 bg-white/90 backdrop-blur-md px-6 py-4 rounded-xl shadow-lg max-w-xs"
+            >
+              <p className="text-gray-700 text-center">
+                Take a breath. You've seen a lot of emotions. Come back when you're ready to listen again.
+              </p>
+            </motion.div>
           )}
-        </div>
+        </AnimatePresence>
+        
+        {reels.length > 1 && (
+          <div className="absolute top-2 left-2 right-2 z-10 flex justify-center">
+            <div className="flex gap-1">
+              {reels.map((_, index) => (
+                <div
+                  key={`progress-${index}`}
+                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                    index === currentReelIndex 
+                      ? 'w-8 bg-primary/80' 
+                      : 'w-4 bg-white/40'
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </AppLayout>
   );

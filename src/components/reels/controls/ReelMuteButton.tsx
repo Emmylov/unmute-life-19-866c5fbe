@@ -1,7 +1,6 @@
 
 import React from "react";
-import { Volume, VolumeX } from "lucide-react";
-import { motion } from "framer-motion";
+import { Volume2, VolumeX } from "lucide-react";
 
 interface ReelMuteButtonProps {
   isMuted: boolean;
@@ -10,19 +9,18 @@ interface ReelMuteButtonProps {
 
 const ReelMuteButton = ({ isMuted, onToggleMute }: ReelMuteButtonProps) => {
   return (
-    <motion.button
-      whileHover={{ scale: 1.1 }}
-      whileTap={{ scale: 0.95 }}
+    <button 
+      className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center pointer-events-auto focus:outline-none focus:ring-2 focus:ring-white/50"
       onClick={onToggleMute}
-      className="p-3 rounded-full bg-black/30 backdrop-blur-lg hover:bg-black/40 transition-all duration-200"
       aria-label={isMuted ? "Unmute video" : "Mute video"}
+      title={isMuted ? "Unmute" : "Mute"}
     >
       {isMuted ? (
-        <VolumeX className="h-5 w-5 text-white" />
+        <VolumeX className="w-4 h-4 text-white" />
       ) : (
-        <Volume className="h-5 w-5 text-white" />
+        <Volume2 className="w-4 h-4 text-white" />
       )}
-    </motion.button>
+    </button>
   );
 };
 
