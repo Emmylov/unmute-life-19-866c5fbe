@@ -87,13 +87,13 @@ const ReelView = ({
   const getGradient = () => {
     switch(reel.mood_vibe) {
       case 'Uplifting':
-        return 'from-blue-100 via-indigo-100 to-purple-100';
+        return 'from-blue-50 via-indigo-50 to-purple-50';
       case 'Raw':
-        return 'from-gray-100 via-gray-200 to-gray-100';
+        return 'from-gray-50 via-neutral-50 to-gray-50';
       case 'Funny':
-        return 'from-yellow-100 via-orange-50 to-amber-100';
+        return 'from-amber-50 via-yellow-50 to-orange-50';
       case 'Vulnerable':
-        return 'from-pink-50 via-rose-100 to-red-50';
+        return 'from-pink-50 via-rose-50 to-red-50';
       default:
         return 'from-white/40 via-white/60 to-white/40';
     }
@@ -298,8 +298,8 @@ const ReelView = ({
       dragElastic={0.2}
       onDragEnd={handleDragEnd}
     >
-      {/* Card styling wrapper */}
-      <div className={`absolute inset-x-1 inset-y-2 rounded-2xl overflow-hidden shadow-lg`}>
+      {/* Main card with rounded corners and shadow */}
+      <div className="absolute inset-x-1 inset-y-2 rounded-2xl overflow-hidden shadow-xl">
         {/* Gradient background based on mood vibe */}
         <div className={`absolute inset-0 bg-gradient-to-br ${getGradient()} opacity-20`}></div>
         
@@ -312,35 +312,37 @@ const ReelView = ({
           onTogglePlay={togglePlay}
         />
 
+        {/* Heart animation when liking */}
         <motion.div
           className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30"
           animate={controls}
           initial={{ opacity: 0, scale: 1 }}
         >
           {selectedEmotion ? (
-            <div className="text-5xl filter drop-shadow-lg">
+            <div className="text-6xl filter drop-shadow-lg">
               {selectedEmotion === 'Relatable' && '💬'}
               {selectedEmotion === 'Made Me Feel' && '❤️'}
               {selectedEmotion === 'Shared This' && '🔄'}
               {selectedEmotion === 'Still Thinking' && '👀'}
             </div>
           ) : (
-            <Heart className="w-20 h-20 text-primary filter drop-shadow-lg" fill={liked ? "#ec4899" : "none"} />
+            <Heart className="w-24 h-24 text-pink-500 filter drop-shadow-lg" fill={liked ? "#ec4899" : "none"} />
           )}
         </motion.div>
 
+        {/* Navigation for next/previous */}
         <ReelNavigation hasNext={hasNext} hasPrevious={hasPrevious} />
 
-        {/* Glass overlay effect */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/30 pointer-events-none" />
+        {/* Modern overlay gradient */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30 pointer-events-none" />
 
         <div className="absolute inset-0 pointer-events-none">
-          {/* Top section with user info and report button */}
+          {/* Top section with user info and report button - enhanced design */}
           <div className="absolute top-0 left-0 right-0 p-4 z-20 flex justify-between items-start">
-            <div className="backdrop-blur-sm bg-black/10 rounded-full px-3 py-1.5 pointer-events-auto flex items-center">
+            <div className="backdrop-blur-md bg-black/20 rounded-full px-3 py-2 pointer-events-auto flex items-center">
               <ReelUserInfo user={user} />
               {reel.vibe_tag && (
-                <span className="ml-2 py-0.5 px-2 bg-primary/20 rounded-full text-xs text-primary font-medium">
+                <span className="ml-2 py-0.5 px-2 bg-white/20 rounded-full text-xs text-white font-medium">
                   {reel.vibe_tag}
                 </span>
               )}
@@ -349,13 +351,13 @@ const ReelView = ({
             <button 
               onClick={handleReportReel}
               disabled={isReporting}
-              className="p-2 rounded-full bg-black/10 backdrop-blur-sm pointer-events-auto hover:bg-black/20 transition-colors"
+              className="p-2 rounded-full bg-black/20 backdrop-blur-md pointer-events-auto hover:bg-black/30 transition-colors"
             >
               <Flag className="w-4 h-4 text-white/80 hover:text-white" />
             </button>
           </div>
           
-          {/* Feel Bar instead of traditional likes */}
+          {/* Feel Bar instead of traditional likes - modern design */}
           <div className="absolute bottom-32 left-4 right-4 pointer-events-auto">
             <FeelBar 
               selectedEmotion={selectedEmotion}
@@ -363,9 +365,9 @@ const ReelView = ({
             />
           </div>
 
-          {/* Bottom section with caption and audio info */}
+          {/* Bottom section with caption and audio info - improved UI */}
           <div className={`absolute bottom-16 left-4 ${isMobile ? 'right-16' : 'right-24'} pointer-events-auto`}>
-            <div className="backdrop-blur-sm bg-black/10 rounded-xl p-3 space-y-2">
+            <div className="backdrop-blur-lg bg-black/30 rounded-xl p-4 space-y-2">
               <ReelCaption caption={reel.caption} />
               
               <ReelAudioInfo 
@@ -375,9 +377,9 @@ const ReelView = ({
               />
               
               {reel.tags && reel.tags.length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-1">
+                <div className="flex flex-wrap gap-1.5 mt-1">
                   {reel.tags.map((tag, index) => (
-                    <span key={index} className="text-xs text-primary bg-primary/10 rounded-full px-2 py-0.5">
+                    <span key={index} className="text-xs text-white bg-white/20 rounded-full px-2 py-0.5">
                       #{tag}
                     </span>
                   ))}
@@ -386,42 +388,45 @@ const ReelView = ({
             </div>
           </div>
 
-          {/* Side actions - simplified */}
+          {/* Side actions - modern redesign */}
           <div className="absolute bottom-24 right-3 md:right-4 flex flex-col space-y-5 pointer-events-auto z-20">
+            {/* Comment button */}
             <button 
               onClick={openUnmuteThread}
               className="flex flex-col items-center"
             >
-              <div className="w-10 h-10 rounded-full bg-black/20 backdrop-blur-md hover:bg-black/30 flex items-center justify-center transition-colors">
+              <div className="w-12 h-12 rounded-full bg-black/30 backdrop-blur-lg hover:bg-black/40 flex items-center justify-center transition-colors">
                 <MessageCircle className="w-5 h-5 text-white" />
               </div>
-              <span className="text-xs text-white/90 mt-1">
-                {commentCount > 0 ? commentCount : 'Unmute'}
+              <span className="text-xs text-white/90 mt-1.5 font-medium">
+                {commentCount > 0 ? commentCount : 'Comment'}
               </span>
             </button>
             
+            {/* Share button */}
             <button 
               onClick={handleRepostReel}
               className="flex flex-col items-center"
             >
-              <div className="w-10 h-10 rounded-full bg-black/20 backdrop-blur-md hover:bg-black/30 flex items-center justify-center transition-colors">
+              <div className="w-12 h-12 rounded-full bg-black/30 backdrop-blur-lg hover:bg-black/40 flex items-center justify-center transition-colors">
                 <Repeat className="w-5 h-5 text-white" />
               </div>
-              <span className="text-xs text-white/90 mt-1">Share</span>
+              <span className="text-xs text-white/90 mt-1.5 font-medium">Share</span>
             </button>
             
+            {/* Save button */}
             <button 
               onClick={handleToggleSave}
               className="flex flex-col items-center"
             >
-              <div className={`w-10 h-10 rounded-full ${saved ? 'bg-blue-500/50' : 'bg-black/20'} backdrop-blur-md hover:bg-black/30 flex items-center justify-center transition-colors`}>
+              <div className={`w-12 h-12 rounded-full ${saved ? 'bg-blue-500/50' : 'bg-black/30'} backdrop-blur-lg hover:bg-black/40 flex items-center justify-center transition-colors`}>
                 <Bookmark className="w-5 h-5 text-white" fill={saved ? "white" : "none"} />
               </div>
-              <span className="text-xs text-white/90 mt-1">Save</span>
+              <span className="text-xs text-white/90 mt-1.5 font-medium">{saved ? 'Saved' : 'Save'}</span>
             </button>
           </div>
 
-          {/* Mute button */}
+          {/* Mute button - improved */}
           <div className="absolute bottom-4 right-4 pointer-events-auto">
             <ReelMuteButton isMuted={isMuted} onToggleMute={toggleMute} />
           </div>
