@@ -1,6 +1,4 @@
 
-import { Tables } from "@/integrations/supabase/types";
-
 // Define explicit types for reels to prevent TypeScript from infinite type instantiation
 export interface ReelContent {
   id: string;

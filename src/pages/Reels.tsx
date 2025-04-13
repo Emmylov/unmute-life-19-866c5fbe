@@ -10,7 +10,7 @@ import { Video, Film, LoaderCircle } from "lucide-react";
 import ReelsSkeleton from "@/components/reels/ReelsSkeleton";
 import { useIsMobile, useIsTablet, useIsDesktop } from "@/hooks/use-responsive";
 import { v4 as uuidv4 } from "uuid";
-import { ReelContent, ProfileSummary, ReelWithUser, DatabaseReel } from "@/types/reels";
+import { ReelContent, ProfileSummary, ReelWithUser } from "@/types/reels";
 
 interface ReelsProps {
   initialReelId?: string | null;
@@ -108,8 +108,8 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
       console.log("Reels from database:", reelsData);
       
       if (reelsData && reelsData.length > 0) {
-        const processedReels: ReelWithUser[] = await Promise.all(
-          (reelsData as DatabaseReel[]).map(async (reel) => {
+        const processedReels = await Promise.all(
+          reelsData.map(async (reel: any) => {
             const { data: userData, error: userError } = await supabase
               .from("profiles")
               .select("id, username, avatar, full_name")
@@ -157,12 +157,14 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
               mood_vibe: reel.mood_vibe || "Raw"
             };
             
+            const userProfile: ProfileSummary = userData || {
+              id: reel.user_id,
+              username: "Unknown User"
+            };
+            
             return {
               reel: reelContent,
-              user: userData as ProfileSummary || {
-                id: reel.user_id,
-                username: "Unknown User"
-              }
+              user: userProfile
             };
           })
         );

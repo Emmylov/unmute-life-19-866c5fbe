@@ -4,14 +4,13 @@ import { Link } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { getInitials } from "@/lib/utils";
-import { Tables } from "@/integrations/supabase/types";
-import { supabase } from "@/integrations/supabase/client";
 import { toggleFollowUser, checkIsFollowing } from "@/integrations/supabase/profile-functions";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { ProfileSummary } from "@/types/reels";
 
 interface ReelUserInfoProps {
-  user: Tables<"profiles">;
+  user: ProfileSummary;
 }
 
 const ReelUserInfo = ({ user }: ReelUserInfoProps) => {
