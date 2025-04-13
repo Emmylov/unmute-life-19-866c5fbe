@@ -1,12 +1,17 @@
+
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { CountdownTimer } from "@/components/ui/countdown-timer";
 
 const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+
+  // Set the launch date to April 18, 2025
+  const launchDate = new Date("2025-04-18T00:00:00");
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -29,7 +34,7 @@ const Index = () => {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-unmute-purple/30 to-unmute-pink/30 p-6">
       {/* Logo and name */}
-      <div className="text-center mb-12">
+      <div className="text-center mb-8">
         <h1 className="text-5xl md:text-7xl font-bold mb-4">
           <span className="unmute-gradient-text">Unmute</span>
         </h1>
@@ -38,8 +43,16 @@ const Index = () => {
         </p>
       </div>
 
+      {/* Countdown Timer */}
+      <div className="mb-10 w-full max-w-md">
+        <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg p-6">
+          <h2 className="text-xl font-semibold text-center mb-4">Official Launch Countdown</h2>
+          <CountdownTimer targetDate={launchDate} />
+        </div>
+      </div>
+
       {/* Decorative elements */}
-      <div className="relative w-full max-w-md h-64 mb-12">
+      <div className="relative w-full max-w-md h-64 mb-8">
         {/* Background bubbles */}
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-unmute-purple/30 rounded-full blur-3xl" />
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/4 -translate-y-1/3 w-32 h-32 bg-unmute-pink/20 rounded-full blur-2xl" />
