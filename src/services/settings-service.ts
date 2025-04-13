@@ -41,8 +41,20 @@ export const getUserSettings = async (userId: string): Promise<UserSettings> => 
       throw error;
     }
     
-    // If no data is found, return a default object
-    return data || { user_id: userId, settings: {} };
+    // Fix: Convert data to unknown first, then check if it matches UserSettings structure
+    // before casting it to UserSettings type to avoid TypeScript errors
+    const settings = data as unknown;
+    
+    // Check if the returned data has the expected structure
+    if (settings && 
+        typeof settings === 'object' && 
+        'user_id' in settings && 
+        'settings' in settings) {
+      return settings as UserSettings;
+    }
+    
+    // Return a default object on error
+    return { user_id: userId, settings: {} };
   } catch (error) {
     console.error("Error getting user settings:", error);
     // Return a default object on error
