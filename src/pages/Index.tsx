@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -101,11 +101,17 @@ const Index = () => {
         })
       });
       
-      if (!response.ok) {
+      if (response.ok) {
+        toast.success("You're on the list!", {
+          description: "Check your email for your OG Starter Pack confirmation."
+        });
+        form.reset();
+      } else {
         const errorData = await response.json();
         console.error("Email sending error:", errorData);
-        toast.success("You're on the list! Check your email for your OG Starter Pack confirmation.");
-        form.reset();
+        toast.success("You're on the list!", {
+          description: "We couldn't send the email, but you're signed up!"
+        });
       }
     } catch (error) {
       console.error("Error submitting form:", error);
