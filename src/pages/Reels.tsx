@@ -4,7 +4,7 @@ import { supabase, listBucketFiles, getPublicUrl, STORAGE_BUCKETS } from "@/inte
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Tables } from "@/integrations/supabase/types";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import ReelView from "@/components/reels/ReelView";
 import { Video, Film, LoaderCircle } from "lucide-react";
@@ -37,6 +37,26 @@ interface ReelWithUser {
   user: Tables<"profiles">;
 }
 
+interface DatabaseReel {
+  id: string;
+  user_id: string;
+  created_at?: string | null;
+  video_url: string;
+  thumbnail_url?: string | null;
+  caption?: string | null;
+  tags?: string[] | null;
+  audio_type?: string | null;
+  audio_url?: string | null;
+  audio?: string | null;
+  duration?: number | null;
+  original_audio_volume?: number | null;
+  overlay_audio_volume?: number | null;
+  allow_duets?: boolean | null;
+  allow_comments?: boolean | null;
+  vibe_tag?: string | null;
+  mood_vibe?: string | null;
+}
+
 interface ReelsProps {
   initialReelId?: string | null;
 }
@@ -53,7 +73,6 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
   const isMobile = useIsMobile();
   const isTablet = useIsTablet();
 
-  // Get filter value from URL if present
   useEffect(() => {
     const filterParam = searchParams.get("filter");
     if (filterParam) {
@@ -66,7 +85,6 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
   }, [activeFilter]);
 
   useEffect(() => {
-    // If initialReelId is provided, find and set the corresponding reel
     if (initialReelId && reels.length > 0) {
       const reelIndex = reels.findIndex(item => item.reel.id === initialReelId);
       if (reelIndex !== -1) {
@@ -75,12 +93,10 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
     }
   }, [initialReelId, reels]);
 
-  // Update URL when current reel changes
   useEffect(() => {
     if (reels.length > 0) {
       const currentReel = reels[currentReelIndex];
       if (currentReel) {
-        // Preserve filter if it exists
         if (activeFilter) {
           setSearchParams({ reel: currentReel.reel.id, filter: activeFilter });
         } else {
@@ -90,14 +106,12 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
     }
   }, [currentReelIndex, reels, setSearchParams, activeFilter]);
 
-  // Count views and show break reminder
   useEffect(() => {
     const newCount = reelsViewed + 1;
     setReelsViewed(newCount);
     
     if (newCount % 10 === 0 && newCount > 0) {
       setShowBreakReminder(true);
-      // Hide after 5 seconds
       const timer = setTimeout(() => {
         setShowBreakReminder(false);
       }, 5000);
@@ -114,7 +128,6 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
         .select("*")
         .order("created_at", { ascending: false });
       
-      // Apply filters if active
       if (activeFilter) {
         if (['Uplifting', 'Raw', 'Funny', 'Vulnerable'].includes(activeFilter)) {
           query = query.eq('mood_vibe', activeFilter);
@@ -127,7 +140,11 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
       
       if (reelsError) {
         console.error("Error fetching reels from database:", reelsError);
-        toast.error("Could not fetch reels from database.");
+        toast({
+          title: "Error",
+          description: "Could not fetch reels from database.",
+          variant: "destructive"
+        });
         setLoading(false);
         return;
       }
@@ -135,28 +152,6 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
       console.log("Reels from database:", reelsData);
       
       if (reelsData && reelsData.length > 0) {
-        // Use explicit typing to avoid deep type instantiation issues
-        type DatabaseReel = {
-          id: string;
-          user_id: string;
-          created_at?: string | null;
-          video_url: string;
-          thumbnail_url?: string | null;
-          caption?: string | null;
-          tags?: string[] | null;
-          audio_type?: string | null;
-          audio_url?: string | null;
-          audio?: string | null;
-          duration?: number | null;
-          original_audio_volume?: number | null;
-          overlay_audio_volume?: number | null;
-          allow_duets?: boolean | null;
-          allow_comments?: boolean | null;
-          vibe_tag?: string | null;
-          mood_vibe?: string | null;
-        };
-        
-        // Process each reel with proper typing
         const processedReels: ReelWithUser[] = await Promise.all(
           (reelsData as DatabaseReel[]).map(async (reel) => {
             const { data: userData, error: userError } = await supabase
@@ -169,28 +164,23 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
               console.error("Error fetching user:", userError);
             }
             
-            // Ensure video_url is properly formed and valid
             let videoUrl = reel.video_url;
             console.log("Original video URL:", videoUrl);
             
             if (!videoUrl) {
               console.error("Missing video URL for reel:", reel.id);
-              videoUrl = ""; // Set to empty string to trigger error handling in ReelVideo
+              videoUrl = "";
             } else if (!videoUrl.startsWith('http') && !videoUrl.startsWith('blob:')) {
-              // If URL doesn't start with http or blob, it might be a storage path
               console.log("Converting relative path to full URL:", videoUrl);
               videoUrl = getPublicUrl(STORAGE_BUCKETS.REELS, videoUrl);
               console.log("Converted to public URL:", videoUrl);
             }
             
-            // Ensure thumbnail_url is properly formed
             let thumbnailUrl = reel.thumbnail_url;
             if (thumbnailUrl && !thumbnailUrl.startsWith('http') && !thumbnailUrl.startsWith('blob:')) {
-              // If URL doesn't start with http, it might be a storage path
               thumbnailUrl = getPublicUrl(STORAGE_BUCKETS.REELS, thumbnailUrl);
             }
 
-            // Create a properly typed ReelContent object
             const reelContent: ReelContent = {
               id: reel.id,
               user_id: reel.user_id,
@@ -208,7 +198,7 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
               allow_comments: reel.allow_comments !== false,
               allow_duets: reel.allow_duets !== false,
               vibe_tag: reel.vibe_tag || null,
-              mood_vibe: reel.mood_vibe || "Raw" // Default mood if not set
+              mood_vibe: reel.mood_vibe || "Raw"
             };
             
             return {
@@ -289,7 +279,7 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
             allow_comments: true,
             allow_duets: true,
             vibe_tag: null,
-            mood_vibe: "Raw" // Default mood
+            mood_vibe: "Raw"
           };
           
           const { data: userData, error: userError } = await supabase
@@ -316,7 +306,11 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
       setReels(processedReels);
     } catch (error) {
       console.error("Error loading reels:", error);
-      toast.error("Please try again later");
+      toast({
+        title: "Error",
+        description: "Please try again later",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
@@ -341,7 +335,7 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
       setCurrentReelIndex(currentReelIndex - 1);
     }
   };
-  
+
   const handleFilterChange = (filter: string) => {
     if (activeFilter === filter) {
       setActiveFilter(null);
@@ -354,7 +348,6 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
     }
   };
 
-  // Determine the height based on device
   const getContainerHeight = () => {
     if (isMobile) return "h-[calc(100vh-10rem)]";
     if (isTablet) return "h-[calc(100vh-9rem)]";
@@ -366,7 +359,6 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
 
   return (
     <AppLayout pageTitle="Reels">
-      {/* Filter options */}
       <div className="flex overflow-x-auto pb-2 no-scrollbar gap-2 mb-2">
         <div className="flex gap-1.5">
           {emotionFilters.map(filter => (
@@ -462,7 +454,6 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
           </div>
         )}
         
-        {/* Break reminder */}
         <AnimatePresence>
           {showBreakReminder && (
             <motion.div
@@ -478,7 +469,6 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
           )}
         </AnimatePresence>
         
-        {/* Progress indicator for reels */}
         {reels.length > 1 && (
           <div className="absolute top-2 left-2 right-2 z-10 flex justify-center">
             <div className="flex gap-1">
