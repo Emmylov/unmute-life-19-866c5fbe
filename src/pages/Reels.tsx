@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase, listBucketFiles, getPublicUrl, STORAGE_BUCKETS } from "@/integrations/supabase/client";
@@ -49,8 +48,6 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
   const [reelsViewed, setReelsViewed] = useState(0);
   const [showBreakReminder, setShowBreakReminder] = useState(false);
   const navigate = useNavigate();
-  // Replace useToast with direct toast from sonner
-  // const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const isMobile = useIsMobile();
@@ -138,9 +135,12 @@ const Reels = ({ initialReelId }: ReelsProps = {}) => {
       console.log("Reels from database:", reelsData);
       
       if (reelsData && reelsData.length > 0) {
-        // Create a type-safe version that resolves the deep instantiation issue
+        // Use type assertion to help TypeScript understand the structure
+        const typedReelsData = reelsData as any[];
+        
+        // Process each reel with proper typing
         const processedReels: ReelWithUser[] = await Promise.all(
-          reelsData.map(async (reel: any) => {
+          typedReelsData.map(async (reel) => {
             const { data: userData, error: userError } = await supabase
               .from("profiles")
               .select("*")
