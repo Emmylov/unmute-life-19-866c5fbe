@@ -11,6 +11,13 @@ import { v4 as uuidv4 } from "uuid";
 
 interface ProfileSetupStepProps {
   onNext: () => void;
+  onUpdateData?: (data: any) => void;
+  data?: {
+    username?: string;
+    fullName?: string;
+    bio?: string;
+    avatar?: string | null;
+  };
 }
 
 const themeColors = [
@@ -22,11 +29,11 @@ const themeColors = [
   { name: "Green", value: "bg-green-500" },
 ];
 
-const ProfileSetupStep = ({ onNext }: ProfileSetupStepProps) => {
-  const [username, setUsername] = useState("");
-  const [bio, setBio] = useState("");
+const ProfileSetupStep = ({ onNext, onUpdateData, data = {} }: ProfileSetupStepProps) => {
+  const [username, setUsername] = useState(data?.username || "");
+  const [bio, setBio] = useState(data?.bio || "");
   const [selectedColor, setSelectedColor] = useState(themeColors[0].value);
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [previewImage, setPreviewImage] = useState<string | null>(data?.avatar || null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -123,6 +130,15 @@ const ProfileSetupStep = ({ onNext }: ProfileSetupStepProps) => {
         title: "Profile updated!",
         description: "Your profile has been set up successfully.",
       });
+      
+      // Update onboarding data if the function is provided
+      if (onUpdateData) {
+        onUpdateData({
+          username,
+          bio,
+          avatar: avatarUrl
+        });
+      }
       
       onNext();
     } catch (error: any) {
