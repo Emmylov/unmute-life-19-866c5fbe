@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { Search, BookOpen, Settings, Lock, FileText, Video, MessageCircle, Flag, Ban, UserRound, Tool, Newspaper, Medal, Gift, Bot, Bug } from "lucide-react";
+import { Search, BookOpen, Settings, Lock, FileText, Video, MessageCircle, Flag, Ban, UserRound, Wrench, Newspaper, Medal, Gift, Bot, Bug } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -154,7 +154,7 @@ const Help = () => {
               Report an Issue
             </Button>
             <Button variant="outline" className="flex-1">
-              <Tool className="mr-2 h-4 w-4" />
+              <Wrench className="mr-2 h-4 w-4" />
               Technical Support
             </Button>
           </CardContent>
