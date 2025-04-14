@@ -1,14 +1,37 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Volume2, VolumeX } from "lucide-react";
 
 interface WelcomeStepProps {
   onNext: () => void;
 }
 
 const WelcomeStep = ({ onNext }: WelcomeStepProps) => {
+  const [isMuted, setIsMuted] = useState(true);
+
+  const toggleSound = () => {
+    setIsMuted(!isMuted);
+    // Add sound handling logic here
+  };
+
   return (
     <div className="flex flex-col items-center justify-center flex-grow text-center p-6">
+      <div className="absolute top-4 right-4">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleSound}
+          className="rounded-full"
+        >
+          {isMuted ? (
+            <VolumeX className="h-5 w-5 text-gray-500" />
+          ) : (
+            <Volume2 className="h-5 w-5 text-unmute-purple" />
+          )}
+        </Button>
+      </div>
+
       <h1 className="text-4xl font-bold mb-4">
         <span className="wave-animation">
           {"Welcome to ".split("").map((char, i) => (
@@ -19,30 +42,20 @@ const WelcomeStep = ({ onNext }: WelcomeStepProps) => {
         </span>
         <span className="unmute-gradient-text">Unmute!</span>
       </h1>
-      
-      {/* Sound wave animation */}
-      <div className="flex items-end space-x-1 h-12 my-8">
-        {[3, 5, 7, 4, 6, 8, 5, 3, 7, 4, 6, 3].map((height, index) => (
-          <div 
-            key={index}
-            className="w-2 bg-gradient-to-t from-unmute-purple to-unmute-pink rounded-full animate-wave"
-            style={{ 
-              height: `${height * 4}px`, 
-              animationDelay: `${index * 0.1}s` 
-            }}
-          />
-        ))}
-      </div>
-      
-      <p className="text-lg text-gray-600 mb-8">
-        Your space to speak up, connect, and create change.
+
+      <p className="text-xl text-gray-600 mb-8">
+        The internet is loud. This is your quiet, powerful space to be real.
       </p>
-      
-      <Button 
-        onClick={onNext} 
-        className="unmute-primary-button"
-      >
-        Next
+
+      <div className="w-full max-w-md aspect-video rounded-xl overflow-hidden bg-gray-100 mb-8">
+        {/* Add your founder video component here */}
+        <div className="w-full h-full flex items-center justify-center text-gray-400">
+          Founder's Welcome Video
+        </div>
+      </div>
+
+      <Button onClick={onNext} className="unmute-primary-button">
+        Begin My Journey
       </Button>
     </div>
   );

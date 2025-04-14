@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -12,6 +11,8 @@ import AccountCreationStep from "@/components/onboarding/AccountCreationStep";
 import InterestsStep from "@/components/onboarding/InterestsStep";
 import ProfileSetupStep from "@/components/onboarding/ProfileSetupStep";
 import FinalWelcomeStep from "@/components/onboarding/FinalWelcomeStep";
+import WhyDidYouComeStep from "@/components/onboarding/WhyDidYouComeStep";
+import MoodCheckStep from "@/components/onboarding/MoodCheckStep";
 import { supabase } from "@/integrations/supabase/client";
 import { trackAnalyticEvent } from "@/services/analytics-service";
 import { updateOnboardingStep, saveOnboardingData } from "@/services/user-settings-service";
@@ -176,9 +177,9 @@ const Onboarding = () => {
       case 0:
         return <WelcomeStep onNext={handleNext} />;
       case 1:
-        return <AboutStep onNext={handleNext} />;
+        return <WhyDidYouComeStep onNext={handleNext} />;
       case 2:
-        return <HowItWorksStep onNext={handleNext} />;
+        return <MoodCheckStep onNext={handleNext} />;
       case 3:
         return (
           <SignUpPromptStep
