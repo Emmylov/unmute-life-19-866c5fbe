@@ -17,6 +17,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { trackAnalyticEvent } from "@/services/analytics-service";
 import { updateOnboardingStep, saveOnboardingData } from "@/services/user-settings-service";
 import { useAuth } from "@/contexts/AuthContext";
+import ExpressionStyleStep from "@/components/onboarding/ExpressionStyleStep";
+import CategorizedInterestsStep from "@/components/onboarding/CategorizedInterestsStep";
 
 const TOTAL_STEPS = 8;
 
@@ -181,31 +183,35 @@ const Onboarding = () => {
       case 2:
         return <MoodCheckStep onNext={handleNext} />;
       case 3:
+        return <ExpressionStyleStep onNext={handleNext} />;
+      case 4:
+        return <CategorizedInterestsStep onNext={handleNext} />;
+      case 5:
         return (
           <SignUpPromptStep
             onCreateAccount={handleCreateAccount}
             onContinueAnyway={handleContinueAnyway}
           />
         );
-      case 4:
+      case 6:
         return (
           <AccountCreationStep 
             onNext={handleNext} 
           />
         );
-      case 5:
+      case 7:
         return (
           <InterestsStep 
             onNext={handleNext} 
           />
         );
-      case 6:
+      case 8:
         return (
           <ProfileSetupStep 
             onNext={handleNext}
           />
         );
-      case 7:
+      case 9:
         return <FinalWelcomeStep onComplete={handleComplete} />;
       default:
         return null;
