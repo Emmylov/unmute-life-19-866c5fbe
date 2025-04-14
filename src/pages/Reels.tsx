@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ReelView from '@/components/reels/ReelView';
@@ -37,8 +38,11 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
   const fetchReels = async () => {
     try {
       setLoading(true);
+      console.log('Fetching reels...');
+      
+      // Use posts_reels table which contains the actual reels content
       const { data, error } = await supabase
-        .from('reels')
+        .from('posts_reels')
         .select('*, profiles:user_id(*)')
         .order('created_at', { ascending: false })
         .limit(10);
@@ -47,7 +51,9 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
         throw error;
       }
 
-      if (data) {
+      console.log('Reels data:', data);
+
+      if (data && data.length > 0) {
         const formattedReels: ReelWithUser[] = data.map(item => ({
           reel: {
             id: item.id,
@@ -57,16 +63,16 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
             thumbnail_url: item.thumbnail_url || null,
             caption: item.caption || null,
             audio: item.audio || null,
-            audio_type: null,
-            audio_url: null,
-            duration: null,
-            original_audio_volume: 1,
-            overlay_audio_volume: 0,
-            tags: [],
-            allow_comments: true,
-            allow_duets: true,
-            vibe_tag: null,
-            mood_vibe: null,
+            audio_type: item.audio_type || null,
+            audio_url: item.audio_url || null,
+            duration: item.duration || null,
+            original_audio_volume: item.original_audio_volume || 1,
+            overlay_audio_volume: item.overlay_audio_volume || 0,
+            tags: item.tags || [],
+            allow_comments: item.allow_comments !== false,
+            allow_duets: item.allow_duets !== false,
+            vibe_tag: item.vibe_tag || null,
+            mood_vibe: item.mood_vibe || null,
           },
           user: {
             id: item.profiles?.id || '',
@@ -78,9 +84,11 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
 
         setReels(formattedReels);
         setHasMore(data.length === 10);
+        console.log('Formatted reels:', formattedReels);
       } else {
         setReels([]);
         setHasMore(false);
+        console.log('No reels found');
       }
     } catch (err) {
       console.error('Error fetching reels:', err);
