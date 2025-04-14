@@ -40,21 +40,50 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
       setLoading(true);
       console.log('Fetching reels...');
       
-      // Use posts_reels table which contains the actual reels content
-      const { data, error } = await supabase
+      // Use a join between posts_reels and profiles tables for better relation handling
+      const { data: reelsData, error: reelsError } = await supabase
         .from('posts_reels')
-        .select('*, profiles:user_id(*)')
+        .select(`
+          id, user_id, created_at, video_url, thumbnail_url, caption, 
+          audio, audio_type, audio_url, duration, original_audio_volume, 
+          overlay_audio_volume, tags, allow_comments, allow_duets
+        `)
         .order('created_at', { ascending: false })
         .limit(10);
 
-      if (error) {
-        throw error;
+      if (reelsError) {
+        throw reelsError;
       }
 
-      console.log('Reels data:', data);
+      if (!reelsData || reelsData.length === 0) {
+        setReels([]);
+        setHasMore(false);
+        console.log('No reels found');
+        setLoading(false);
+        return;
+      }
 
-      if (data && data.length > 0) {
-        const formattedReels: ReelWithUser[] = data.map(item => ({
+      // Get profile information for each reel
+      const userIds = reelsData.map(reel => reel.user_id);
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, username, avatar, full_name')
+        .in('id', userIds);
+
+      if (profilesError) {
+        throw profilesError;
+      }
+
+      // Map profiles to reels
+      const formattedReels: ReelWithUser[] = reelsData.map(item => {
+        const userProfile = profilesData?.find(profile => profile.id === item.user_id) || {
+          id: item.user_id,
+          username: 'unknown',
+          avatar: null,
+          full_name: 'Unknown User'
+        };
+
+        return {
           reel: {
             id: item.id,
             user_id: item.user_id,
@@ -71,25 +100,21 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
             tags: item.tags || [],
             allow_comments: item.allow_comments !== false,
             allow_duets: item.allow_duets !== false,
-            vibe_tag: item.vibe_tag || null,
-            mood_vibe: item.mood_vibe || null,
+            vibe_tag: null, // Added default values for these fields
+            mood_vibe: null, // Added default values for these fields
           },
           user: {
-            id: item.profiles?.id || '',
-            username: item.profiles?.username || '',
-            avatar: item.profiles?.avatar || '',
-            full_name: item.profiles?.full_name || '',
+            id: userProfile.id,
+            username: userProfile.username || '',
+            avatar: userProfile.avatar || '',
+            full_name: userProfile.full_name || '',
           },
-        }));
+        };
+      });
 
-        setReels(formattedReels);
-        setHasMore(data.length === 10);
-        console.log('Formatted reels:', formattedReels);
-      } else {
-        setReels([]);
-        setHasMore(false);
-        console.log('No reels found');
-      }
+      setReels(formattedReels);
+      setHasMore(formattedReels.length === 10);
+      console.log('Formatted reels:', formattedReels);
     } catch (err) {
       console.error('Error fetching reels:', err);
       setError('Failed to load reels');
@@ -109,17 +134,45 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
     try {
       const lastCreatedAt = reels[reels.length - 1].reel.created_at;
       
-      const { data, error } = await supabase
-        .from('reels')
-        .select('*, profiles:user_id(*)')
+      // Use the same improved query strategy for loading more reels
+      const { data: reelsData, error: reelsError } = await supabase
+        .from('posts_reels')
+        .select(`
+          id, user_id, created_at, video_url, thumbnail_url, caption, 
+          audio, audio_type, audio_url, duration, original_audio_volume, 
+          overlay_audio_volume, tags, allow_comments, allow_duets
+        `)
         .lt('created_at', lastCreatedAt)
         .order('created_at', { ascending: false })
         .limit(10);
       
-      if (error) throw error;
+      if (reelsError) throw reelsError;
       
-      if (data && data.length > 0) {
-        const formattedReels: ReelWithUser[] = data.map(item => ({
+      if (!reelsData || reelsData.length === 0) {
+        setHasMore(false);
+        return;
+      }
+
+      // Get profile information for each reel
+      const userIds = reelsData.map(reel => reel.user_id);
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, username, avatar, full_name')
+        .in('id', userIds);
+
+      if (profilesError) {
+        throw profilesError;
+      }
+
+      const formattedReels: ReelWithUser[] = reelsData.map(item => {
+        const userProfile = profilesData?.find(profile => profile.id === item.user_id) || {
+          id: item.user_id,
+          username: 'unknown',
+          avatar: null,
+          full_name: 'Unknown User'
+        };
+
+        return {
           reel: {
             id: item.id,
             user_id: item.user_id,
@@ -128,30 +181,28 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
             thumbnail_url: item.thumbnail_url || null,
             caption: item.caption || null,
             audio: item.audio || null,
-            audio_type: null,
-            audio_url: null,
-            duration: null,
-            original_audio_volume: 1,
-            overlay_audio_volume: 0,
-            tags: [],
-            allow_comments: true,
-            allow_duets: true,
+            audio_type: item.audio_type || null,
+            audio_url: item.audio_url || null,
+            duration: item.duration || null,
+            original_audio_volume: item.original_audio_volume || 1,
+            overlay_audio_volume: item.overlay_audio_volume || 0,
+            tags: item.tags || [],
+            allow_comments: item.allow_comments !== false,
+            allow_duets: item.allow_duets !== false,
             vibe_tag: null,
             mood_vibe: null,
           },
           user: {
-            id: item.profiles?.id || '',
-            username: item.profiles?.username || '',
-            avatar: item.profiles?.avatar || '',
-            full_name: item.profiles?.full_name || '',
+            id: userProfile.id,
+            username: userProfile.username || '',
+            avatar: userProfile.avatar || '',
+            full_name: userProfile.full_name || '',
           },
-        }));
-        
-        setReels(prevReels => [...prevReels, ...formattedReels]);
-        setHasMore(data.length === 10);
-      } else {
-        setHasMore(false);
-      }
+        };
+      });
+      
+      setReels(prevReels => [...prevReels, ...formattedReels]);
+      setHasMore(formattedReels.length === 10);
     } catch (err) {
       console.error('Error loading more reels:', err);
       toast({

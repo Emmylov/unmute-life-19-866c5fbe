@@ -69,10 +69,11 @@ const ReelVideo = ({
       console.log("Loading new video URL:", videoUrl);
       
       if (videoUrl && videoUrl.trim() !== "") {
+        videoRef.current.load(); // Make sure to load the new video source
         videoRef.current.play().catch(error => {
           console.error("Error auto-playing video:", error);
           setLoadError(true);
-          setErrorMessage("The video couldn't be played. It may be in an unsupported format or the file might be corrupted.");
+          setErrorMessage("The video couldn't be played automatically. Try clicking on the video to play.");
         });
       } else {
         console.error("Empty or invalid video URL provided");
@@ -144,7 +145,7 @@ const ReelVideo = ({
           exit={{ opacity: 0 }}
           className="absolute inset-0 flex items-center justify-center bg-black/30"
         >
-          <Play className="w-16 h-16 text-white opacity-80" />
+          <Play className="w-16 h-16 text-white opacity-80" fill="white" />
         </motion.div>
       )}
     </>
