@@ -19,6 +19,9 @@ import { updateOnboardingStep, saveOnboardingData } from "@/services/user-settin
 import { useAuth } from "@/contexts/AuthContext";
 import ExpressionStyleStep from "@/components/onboarding/ExpressionStyleStep";
 import CategorizedInterestsStep from "@/components/onboarding/CategorizedInterestsStep";
+import RecommendedCommunitiesStep from "@/components/onboarding/RecommendedCommunitiesStep";
+import WellnessSetupStep from "@/components/onboarding/WellnessSetupStep";
+import UnmuteRitualStep from "@/components/onboarding/UnmuteRitualStep";
 
 const TOTAL_STEPS = 8;
 
@@ -187,24 +190,11 @@ const Onboarding = () => {
       case 4:
         return <CategorizedInterestsStep onNext={handleNext} />;
       case 5:
-        return (
-          <SignUpPromptStep
-            onCreateAccount={handleCreateAccount}
-            onContinueAnyway={handleContinueAnyway}
-          />
-        );
+        return <RecommendedCommunitiesStep onNext={handleNext} />;
       case 6:
-        return (
-          <AccountCreationStep 
-            onNext={handleNext} 
-          />
-        );
+        return <WellnessSetupStep onNext={handleNext} />;
       case 7:
-        return (
-          <InterestsStep 
-            onNext={handleNext} 
-          />
-        );
+        return <UnmuteRitualStep onNext={handleNext} />;
       case 8:
         return (
           <ProfileSetupStep 
