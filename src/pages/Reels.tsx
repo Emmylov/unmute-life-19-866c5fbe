@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useSwipeable } from 'react-swipeable';
 import { ReelWithUser } from '@/types/reels';
+import { useScreenSize } from '@/hooks/use-responsive';
 
 interface ReelsProps {
   initialReelId?: string | null;
@@ -21,6 +22,7 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
   const reelContainerRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isMobile } = useScreenSize();
 
   useEffect(() => {
     fetchReels();
@@ -235,10 +237,51 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
     }
   };
 
+  // Enhanced keyboard navigation support for desktop
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowUp' || e.key === 'k') {
+        goToPreviousReel();
+      } else if (e.key === 'ArrowDown' || e.key === 'j') {
+        goToNextReel();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [currentIndex, reels.length]);
+
+  // Enhanced wheel event for desktop scrolling
+  useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      // Debounce wheel events to prevent too many rapid changes
+      if (e.deltaY > 50) {
+        goToNextReel();
+      } else if (e.deltaY < -50) {
+        goToPreviousReel();
+      }
+    };
+
+    const currentRef = reelContainerRef.current;
+    if (currentRef) {
+      currentRef.addEventListener('wheel', handleWheel, { passive: false });
+    }
+    
+    return () => {
+      if (currentRef) {
+        currentRef.removeEventListener('wheel', handleWheel);
+      }
+    };
+  }, [currentIndex, reels.length]);
+
   const handlers = useSwipeable({
     onSwipedUp: () => goToNextReel(),
     onSwipedDown: () => goToPreviousReel(),
-    trackMouse: false
+    trackMouse: false,
+    trackTouch: isMobile
   });
 
   if (loading && reels.length === 0) {
@@ -276,7 +319,14 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
   }
 
   return (
-    <div className="h-screen w-full bg-black" {...handlers} ref={reelContainerRef}>
+    <div 
+      className="h-screen w-full bg-black overflow-hidden" 
+      {...(isMobile ? handlers : {})} 
+      ref={reelContainerRef}
+    >
+      <div className="hidden md:block absolute top-4 left-1/2 transform -translate-x-1/2 bg-black/40 text-white px-4 py-2 rounded-full z-10 backdrop-blur-sm">
+        <p className="text-sm">Use ↑↓ arrow keys or mouse wheel to navigate</p>
+      </div>
       <ReelView 
         reelWithUser={reels[currentIndex]} 
         onNext={goToNextReel}

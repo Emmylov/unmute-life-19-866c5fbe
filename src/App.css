@@ -1,4 +1,3 @@
-
 /* Reset default padding that might be causing spacing issues */
 #root {
   max-width: 100%;
@@ -118,6 +117,17 @@
 
 .thread-slide-up {
   animation: thread-slide-up 0.4s ease-out forwards;
+}
+
+/* Prevent default scroll behavior for reels container */
+.reels-container {
+  overscroll-behavior: none;
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.reels-container::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
 }
 
 @media (prefers-reduced-motion: no-preference) {
