@@ -22,8 +22,11 @@ import CategorizedInterestsStep from "@/components/onboarding/CategorizedInteres
 import RecommendedCommunitiesStep from "@/components/onboarding/RecommendedCommunitiesStep";
 import WellnessSetupStep from "@/components/onboarding/WellnessSetupStep";
 import UnmuteRitualStep from "@/components/onboarding/UnmuteRitualStep";
+import FirstUnmuteStep from "@/components/onboarding/FirstUnmuteStep";
+import WelcomeFeedStep from "@/components/onboarding/WelcomeFeedStep";
+import CustomizeExperienceStep from "@/components/onboarding/CustomizeExperienceStep";
 
-const TOTAL_STEPS = 8;
+const TOTAL_STEPS = 12;
 
 const Onboarding = () => {
   const [currentStep, setCurrentStep] = useState(0);
@@ -202,7 +205,11 @@ const Onboarding = () => {
           />
         );
       case 9:
-        return <FinalWelcomeStep onComplete={handleComplete} />;
+        return <FirstUnmuteStep onNext={handleNext} />;
+      case 10:
+        return <WelcomeFeedStep onNext={handleNext} />;
+      case 11:
+        return <CustomizeExperienceStep onNext={handleComplete} />;
       default:
         return null;
     }
