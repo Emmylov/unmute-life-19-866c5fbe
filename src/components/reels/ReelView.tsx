@@ -239,7 +239,7 @@ const ReelView = ({
       dragElastic={0.2}
       onDragEnd={handleDragEnd}
     >
-      <div className={`absolute inset-x-1 inset-y-2 rounded-2xl overflow-hidden shadow-lg`}>
+      <div className="absolute inset-4 rounded-2xl overflow-hidden shadow-xl">
         <div className={`absolute inset-0 bg-gradient-to-br ${getGradient()} opacity-20`}></div>
         
         <ReelVideo 
@@ -259,29 +259,37 @@ const ReelView = ({
 
         <ReelNavigation hasNext={hasNext} hasPrevious={hasPrevious} />
 
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/30 pointer-events-none" />
+        {/* Subtle gradient overlays for better text readability */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/40 pointer-events-none" />
 
-        {/* User controls and info */}
-        <ReelControls 
-          reelWithUser={reelWithUser}
-          selectedEmotion={selectedEmotion}
-          onEmotionSelect={handleEmotionSelect}
-          openUnmuteThread={openUnmuteThread}
-        />
+        {/* User controls with improved spacing */}
+        <div className="absolute inset-x-5 top-5">
+          <ReelControls 
+            reelWithUser={reelWithUser}
+            selectedEmotion={selectedEmotion}
+            onEmotionSelect={handleEmotionSelect}
+            openUnmuteThread={openUnmuteThread}
+          />
+        </div>
 
-        {/* Reel content (caption, audio, tags) */}
-        <ReelContent reel={reel} />
+        {/* Reel content with better spacing and backdrop */}
+        <div className="absolute inset-x-5 bottom-24">
+          <ReelContent reel={reel} />
+        </div>
 
-        {/* Side actions (comment, repost, save) */}
-        <ReelSideActions 
-          commentCount={commentCount}
-          saved={saved}
-          onOpenUnmuteThread={openUnmuteThread}
-          onRepost={handleRepostReel}
-          onToggleSave={handleToggleSave}
-        />
+        {/* Side actions with improved positioning */}
+        <div className="absolute right-5 bottom-32">
+          <ReelSideActions 
+            commentCount={commentCount}
+            saved={saved}
+            onOpenUnmuteThread={openUnmuteThread}
+            onRepost={handleRepostReel}
+            onToggleSave={handleToggleSave}
+          />
+        </div>
 
-        <div className="absolute bottom-4 right-4 pointer-events-auto">
+        {/* Mute button with better positioning */}
+        <div className="absolute bottom-6 right-5">
           <ReelMuteButton isMuted={isMuted} onToggleMute={toggleMute} />
         </div>
       </div>

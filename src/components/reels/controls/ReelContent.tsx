@@ -13,8 +13,9 @@ const ReelContent: React.FC<ReelContentProps> = ({ reel }) => {
   const isMobile = useIsMobile();
   
   return (
-    <div className={`absolute bottom-16 left-4 ${isMobile ? 'right-16' : 'right-24'} pointer-events-auto`}>
-      <div className="backdrop-blur-sm bg-black/10 rounded-xl p-3 space-y-2">
+    <div className="space-y-3">
+      {/* Caption with improved backdrop */}
+      <div className="backdrop-blur-md bg-black/20 rounded-xl p-4 shadow-lg">
         <ReelCaption caption={reel.caption} />
         
         <ReelAudioInfo 
@@ -24,9 +25,12 @@ const ReelContent: React.FC<ReelContentProps> = ({ reel }) => {
         />
         
         {reel.tags && reel.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-1">
+          <div className="flex flex-wrap gap-2 mt-3">
             {reel.tags.map((tag, index) => (
-              <span key={index} className="text-xs text-primary bg-primary/10 rounded-full px-2 py-0.5">
+              <span 
+                key={index} 
+                className="text-xs font-medium text-white/90 bg-white/10 rounded-full px-3 py-1 backdrop-blur-sm"
+              >
                 #{tag}
               </span>
             ))}

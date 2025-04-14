@@ -320,13 +320,17 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
 
   return (
     <div 
-      className="h-screen w-full bg-black overflow-hidden" 
+      className="h-screen w-full bg-black overflow-hidden reels-container" 
       {...(isMobile ? handlers : {})} 
       ref={reelContainerRef}
     >
-      <div className="hidden md:block absolute top-4 left-1/2 transform -translate-x-1/2 bg-black/40 text-white px-4 py-2 rounded-full z-10 backdrop-blur-sm">
-        <p className="text-sm">Use ↑↓ arrow keys or mouse wheel to navigate</p>
+      {/* Improved desktop navigation hint */}
+      <div className="hidden md:block absolute top-6 left-1/2 transform -translate-x-1/2 bg-black/30 text-white/90 px-6 py-2.5 rounded-full z-10 backdrop-blur-md transition-opacity duration-300 hover:opacity-0">
+        <p className="text-sm font-medium flex items-center gap-2">
+          <span>↑</span> Use arrow keys or scroll to navigate <span>↓</span>
+        </p>
       </div>
+      
       <ReelView 
         reelWithUser={reels[currentIndex]} 
         onNext={goToNextReel}
