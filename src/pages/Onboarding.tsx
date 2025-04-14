@@ -5,25 +5,49 @@ import { toast } from "sonner";
 import OnboardingLayout from "@/components/onboarding/OnboardingLayout";
 import OnboardingProgress from "@/components/onboarding/OnboardingProgress";
 import WelcomeStep from "@/components/onboarding/WelcomeStep";
-import AboutStep from "@/components/onboarding/AboutStep";
-import HowItWorksStep from "@/components/onboarding/HowItWorksStep";
-import SignUpPromptStep from "@/components/onboarding/SignUpPromptStep";
-import AccountCreationStep from "@/components/onboarding/AccountCreationStep";
+import WhyDidYouComeStep from "@/components/onboarding/WhyDidYouComeStep";
+import FeelingStep from "@/components/onboarding/FeelingStep";
+import ExpressionStyleStep from "@/components/onboarding/ExpressionStyleStep";
 import InterestsStep from "@/components/onboarding/InterestsStep";
+import CommunityRecommendationsStep from "@/components/onboarding/CommunityRecommendationsStep";
 import ProfileSetupStep from "@/components/onboarding/ProfileSetupStep";
-import FinalWelcomeStep from "@/components/onboarding/FinalWelcomeStep";
+import WellnessSpaceStep from "@/components/onboarding/WellnessSpaceStep";
+import UnmuteRitualStep from "@/components/onboarding/UnmuteRitualStep";
+import FirstUnmuteStep from "@/components/onboarding/FirstUnmuteStep";
+import FeedWelcomeStep from "@/components/onboarding/FeedWelcomeStep";
+import CustomizeExperienceStep from "@/components/onboarding/CustomizeExperienceStep";
 import { supabase } from "@/integrations/supabase/client";
 import { trackAnalyticEvent } from "@/services/analytics-service";
 import { updateOnboardingStep, saveOnboardingData } from "@/services/user-settings-service";
 import { useAuth } from "@/contexts/AuthContext";
 
-const TOTAL_STEPS = 8;
+const TOTAL_STEPS = 12;
 
 const Onboarding = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [onboardingData, setOnboardingData] = useState<any>({});
+  const [onboardingData, setOnboardingData] = useState<any>({
+    whyCame: [],
+    feeling: "",
+    expressionStyle: "",
+    interests: [],
+    communities: [],
+    username: "",
+    fullName: "",
+    bio: "",
+    avatar: null,
+    wellnessAreas: [],
+    ritualReflection: "",
+    firstUnmute: null,
+    customizationPrefs: {
+      showEmotionalContent: true,
+      showAnonymousPosts: true,
+      limitIntenseTopics: false,
+      soundOnByDefault: true,
+      emailUpdates: false
+    }
+  });
   const navigate = useNavigate();
   const { user, profile, refreshProfile } = useAuth();
   
@@ -34,11 +58,11 @@ const Onboarding = () => {
         
         if (profile) {
           setOnboardingData({
+            ...onboardingData,
             username: profile.username,
-            full_name: profile.full_name,
+            fullName: profile.full_name,
             bio: profile.bio,
             avatar: profile.avatar,
-            is_activist: profile.is_activist,
             interests: profile.interests || [],
           });
           
@@ -47,13 +71,14 @@ const Onboarding = () => {
             return;
           }
           
-          // If the user is logged in but not onboarded, start from account creation step
-          if (currentStep < 4) {
-            setCurrentStep(4);
+          // If the user is logged in but not onboarded, start from profile setup step
+          // This is now step 7 in our new flow
+          if (currentStep < 6) {
+            setCurrentStep(6);
             
             // Update onboarding step in database
             try {
-              await updateOnboardingStep(user.id, 'account-creation');
+              await updateOnboardingStep(user.id, 'profile-setup');
             } catch (error) {
               console.error("Error updating onboarding step:", error);
             }
@@ -84,13 +109,18 @@ const Onboarding = () => {
         try {
           let stepName = "";
           switch (nextStep) {
-            case 1: stepName = "about"; break;
-            case 2: stepName = "how-it-works"; break;
-            case 3: stepName = "signup-prompt"; break;
-            case 4: stepName = "account-creation"; break;
-            case 5: stepName = "interests"; break;
+            case 0: stepName = "welcome"; break;
+            case 1: stepName = "why-came"; break;
+            case 2: stepName = "feeling"; break;
+            case 3: stepName = "expression-style"; break;
+            case 4: stepName = "interests"; break;
+            case 5: stepName = "community-recommendations"; break;
             case 6: stepName = "profile-setup"; break;
-            case 7: stepName = "final-welcome"; break;
+            case 7: stepName = "wellness-space"; break;
+            case 8: stepName = "unmute-ritual"; break;
+            case 9: stepName = "first-unmute"; break;
+            case 10: stepName = "feed-welcome"; break;
+            case 11: stepName = "customize-experience"; break;
             default: stepName = "welcome"; break;
           }
           
@@ -100,14 +130,6 @@ const Onboarding = () => {
         }
       }
     }
-  };
-  
-  const handleCreateAccount = () => {
-    setCurrentStep(4);
-  };
-  
-  const handleContinueAnyway = () => {
-    navigate("/home");
   };
   
   const handleUpdateOnboardingData = (data: any) => {
@@ -159,13 +181,21 @@ const Onboarding = () => {
       case 3:
         return "bg-gradient-to-br from-unmute-teal/20 to-unmute-coral/20";
       case 4:
-        return "bg-white";
-      case 5:
         return "bg-gradient-to-br from-blue-500/20 to-unmute-purple/20";
-      case 6:
+      case 5:
         return "bg-gradient-to-br from-unmute-purple/20 to-green-500/20";
-      case 7:
+      case 6:
         return "bg-gradient-to-br from-unmute-pink/20 to-unmute-purple/20";
+      case 7:
+        return "bg-gradient-to-br from-unmute-teal/20 to-unmute-pink/20";
+      case 8:
+        return "bg-gradient-to-br from-purple-500/20 to-blue-500/20";
+      case 9:
+        return "bg-gradient-to-br from-unmute-coral/20 to-unmute-teal/20";
+      case 10:
+        return "bg-gradient-to-br from-green-500/20 to-unmute-purple/20";
+      case 11:
+        return "bg-gradient-to-br from-unmute-purple/20 to-unmute-coral/20";
       default:
         return "bg-gradient-to-br from-unmute-purple/20 to-unmute-teal/20";
     }
@@ -176,36 +206,75 @@ const Onboarding = () => {
       case 0:
         return <WelcomeStep onNext={handleNext} />;
       case 1:
-        return <AboutStep onNext={handleNext} />;
+        return <WhyDidYouComeStep 
+          onNext={handleNext} 
+          onUpdateData={handleUpdateOnboardingData} 
+          data={onboardingData.whyCame}
+        />;
       case 2:
-        return <HowItWorksStep onNext={handleNext} />;
+        return <FeelingStep 
+          onNext={handleNext} 
+          onUpdateData={handleUpdateOnboardingData} 
+          data={onboardingData.feeling}
+        />;
       case 3:
-        return (
-          <SignUpPromptStep
-            onCreateAccount={handleCreateAccount}
-            onContinueAnyway={handleContinueAnyway}
-          />
-        );
+        return <ExpressionStyleStep 
+          onNext={handleNext} 
+          onUpdateData={handleUpdateOnboardingData} 
+          data={onboardingData.expressionStyle}
+        />;
       case 4:
-        return (
-          <AccountCreationStep 
-            onNext={handleNext} 
-          />
-        );
+        return <InterestsStep 
+          onNext={handleNext} 
+          onUpdateData={handleUpdateOnboardingData}
+          data={onboardingData.interests}
+        />;
       case 5:
-        return (
-          <InterestsStep 
-            onNext={handleNext} 
-          />
-        );
+        return <CommunityRecommendationsStep 
+          onNext={handleNext} 
+          onUpdateData={handleUpdateOnboardingData}
+          interests={onboardingData.interests}
+          data={onboardingData.communities}
+        />;
       case 6:
-        return (
-          <ProfileSetupStep 
-            onNext={handleNext}
-          />
-        );
+        return <ProfileSetupStep 
+          onNext={handleNext} 
+          onUpdateData={handleUpdateOnboardingData}
+          data={{
+            username: onboardingData.username,
+            fullName: onboardingData.fullName,
+            bio: onboardingData.bio,
+            avatar: onboardingData.avatar
+          }}
+        />;
       case 7:
-        return <FinalWelcomeStep onComplete={handleComplete} />;
+        return <WellnessSpaceStep 
+          onNext={handleNext} 
+          onUpdateData={handleUpdateOnboardingData}
+          data={onboardingData.wellnessAreas}
+        />;
+      case 8:
+        return <UnmuteRitualStep 
+          onNext={handleNext} 
+          onUpdateData={handleUpdateOnboardingData}
+          data={onboardingData.ritualReflection}
+        />;
+      case 9:
+        return <FirstUnmuteStep 
+          onNext={handleNext} 
+          onUpdateData={handleUpdateOnboardingData}
+          data={onboardingData.firstUnmute}
+        />;
+      case 10:
+        return <FeedWelcomeStep 
+          onNext={handleNext}
+        />;
+      case 11:
+        return <CustomizeExperienceStep 
+          onComplete={handleComplete} 
+          onUpdateData={handleUpdateOnboardingData}
+          data={onboardingData.customizationPrefs}
+        />;
       default:
         return null;
     }
