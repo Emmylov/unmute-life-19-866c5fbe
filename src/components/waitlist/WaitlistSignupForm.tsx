@@ -2,12 +2,13 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { supabase, SUPABASE_URL, SUPABASE_KEY } from "@/integrations/supabase/client";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 const signupSchema = z.object({
   name: z.string().min(2, "Name is required"),
@@ -35,6 +36,21 @@ const WaitlistSignupForm = ({ className }: WaitlistSignupFormProps) => {
     setSubmitting(true);
     
     try {
+      // First check if email is already in waitlist to prevent duplicates
+      const { data: existingEntries } = await supabase
+        .from('waitlist')
+        .select('*')
+        .eq('email', values.email);
+      
+      if (existingEntries && existingEntries.length > 0) {
+        toast.info("You're already on our list!", {
+          description: "We have your information and will contact you soon."
+        });
+        form.reset();
+        return;
+      }
+      
+      // Add to waitlist
       const { error: waitlistError } = await supabase
         .from('waitlist')
         .insert({
@@ -54,10 +70,7 @@ const WaitlistSignupForm = ({ className }: WaitlistSignupFormProps) => {
       });
       
       try {
-        console.log("Calling send-welcome-email function with:", values);
-        
         const emailEndpoint = `${SUPABASE_URL}/functions/v1/send-welcome-email`;
-        console.log("Email endpoint:", emailEndpoint);
         
         const response = await fetch(emailEndpoint, {
           method: 'POST',
@@ -71,36 +84,22 @@ const WaitlistSignupForm = ({ className }: WaitlistSignupFormProps) => {
           })
         });
         
-        console.log("Response status:", response.status);
-        
-        const responseText = await response.text();
-        console.log("Raw response:", responseText);
-        
-        let responseData;
-        try {
-          responseData = JSON.parse(responseText);
-          console.log("Parsed response data:", responseData);
-        } catch (e) {
-          console.error("Error parsing response:", e);
-        }
-        
         if (response.ok) {
           console.log("Email sent successfully");
           toast.success("Welcome email sent!", {
             description: "Check your inbox for your OG Starter Pack confirmation."
           });
         } else {
+          const errorText = await response.text();
           console.error("Email sending failed with status:", response.status);
-          console.error("Response data:", responseData);
-          toast.error("Couldn't send welcome email", {
-            description: "But don't worry, you're still on the list!"
-          });
+          console.error("Response data:", errorText);
+          
+          // Don't show error to user, just log it
+          console.error("Couldn't send welcome email, but user is still on waitlist");
         }
       } catch (emailError) {
         console.error("Error sending welcome email:", emailError);
-        toast.error("Couldn't send welcome email", {
-          description: "But don't worry, you're still on the list!"
-        });
+        // Don't show error to user for email issues
       }
       
       form.reset();
@@ -136,6 +135,7 @@ const WaitlistSignupForm = ({ className }: WaitlistSignupFormProps) => {
                     aria-label="Your name"
                   />
                 </FormControl>
+                <FormMessage />
               </FormItem>
             )}
           />
@@ -154,6 +154,7 @@ const WaitlistSignupForm = ({ className }: WaitlistSignupFormProps) => {
                     aria-label="Your email"
                   />
                 </FormControl>
+                <FormMessage />
               </FormItem>
             )}
           />
@@ -164,7 +165,12 @@ const WaitlistSignupForm = ({ className }: WaitlistSignupFormProps) => {
             disabled={submitting}
             aria-label="Join waitlist"
           >
-            {submitting ? "Adding you..." : "Unmute Me"}
+            {submitting ? (
+              <div className="flex items-center justify-center gap-2">
+                <LoadingSpinner size="small" color="white" />
+                <span>Adding you...</span>
+              </div>
+            ) : "Unmute Me"}
           </Button>
         </form>
       </Form>

@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 interface AccountCreationStepProps {
   onNext: () => void;
@@ -18,12 +19,42 @@ const AccountCreationStep = ({ onNext }: AccountCreationStepProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"signup" | "signin">("signup");
-  const { toast } = useToast();
+  const { toast: shadcnToast } = useToast();
   const navigate = useNavigate();
+  
+  const validateForm = () => {
+    setError(null);
+    
+    if (!email) {
+      setError("Email is required");
+      return false;
+    }
+    
+    if (!email.includes('@') || !email.includes('.')) {
+      setError("Please enter a valid email address");
+      return false;
+    }
+    
+    if (!password) {
+      setError("Password is required");
+      return false;
+    }
+    
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters long");
+      return false;
+    }
+    
+    return true;
+  };
   
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) return;
+    
     setLoading(true);
     
     try {
@@ -34,18 +65,17 @@ const AccountCreationStep = ({ onNext }: AccountCreationStepProps) => {
       
       if (error) throw error;
       
-      toast({
-        title: "Account created!",
-        description: "Welcome to Unmute. Let's continue with your onboarding.",
+      toast.success("Account created!", {
+        description: "Welcome to Unmute. Let's continue with your onboarding."
       });
       
       onNext();
     } catch (error: any) {
-      toast({
-        title: "Error creating account",
-        description: error.message || "Something went wrong",
-        variant: "destructive",
+      console.error("Signup error:", error);
+      toast.error("Error creating account", {
+        description: error.message || "Something went wrong"
       });
+      setError(error.message || "Failed to create account");
     } finally {
       setLoading(false);
     }
@@ -53,6 +83,9 @@ const AccountCreationStep = ({ onNext }: AccountCreationStepProps) => {
   
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) return;
+    
     setLoading(true);
     
     try {
@@ -63,19 +96,18 @@ const AccountCreationStep = ({ onNext }: AccountCreationStepProps) => {
       
       if (error) throw error;
       
-      toast({
-        title: "Welcome back!",
-        description: "Successfully signed in",
+      toast.success("Welcome back!", {
+        description: "Successfully signed in"
       });
       
       // Redirect existing users directly to home
       navigate("/home");
     } catch (error: any) {
-      toast({
-        title: "Sign in failed",
-        description: error.message || "Invalid credentials",
-        variant: "destructive",
+      console.error("Signin error:", error);
+      toast.error("Sign in failed", {
+        description: error.message || "Invalid credentials"
       });
+      setError(error.message || "Failed to sign in");
     } finally {
       setLoading(false);
     }
@@ -85,6 +117,12 @@ const AccountCreationStep = ({ onNext }: AccountCreationStepProps) => {
     <div className="flex flex-col flex-grow p-6">
       <h2 className="text-3xl font-bold mb-2 text-center">Join Unmute</h2>
       <p className="text-center text-gray-600 mb-6">Let your voice be heard</p>
+      
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6 text-sm">
+          {error}
+        </div>
+      )}
       
       <div className="flex justify-center space-x-4 mb-8">
         <button className="flex items-center justify-center bg-[#4285F4] text-white rounded-full h-12 w-12">

@@ -1,40 +1,24 @@
-
-import React, { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import React from "react";
+import { Link } from "react-router-dom";
 import { CountdownTimer } from "@/components/ui/countdown-timer";
 import WaitlistSignupForm from "@/components/waitlist/WaitlistSignupForm";
 import StarterPackSection from "@/components/waitlist/StarterPackSection";
 import TestimonialSection from "@/components/waitlist/TestimonialSection";
+import useAuthGuard from "@/hooks/use-auth-guard";
 
 const Index = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
-
+  const { isLoading } = useAuthGuard({ 
+    redirectIfAuthenticated: true, 
+    authenticatedRedirectTo: "/home" 
+  });
+  
   const launchDate = new Date("2025-04-18T00:00:00");
   
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (session) {
-          setIsAuthenticated(true);
-          navigate('/home');
-        } else {
-          setIsAuthenticated(false);
-        }
-      } catch (error) {
-        console.error("Error checking authentication:", error);
-        setIsAuthenticated(false);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkAuth();
-  }, [navigate]);
+  if (isLoading) {
+    return <div className="min-h-screen flex items-center justify-center">
+      <div className="animate-spin h-12 w-12 border-4 border-unmute-purple rounded-full border-t-transparent"></div>
+    </div>
+  }
   
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-unmute-purple/10 to-unmute-pink/10">
