@@ -9,6 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { supabase, SUPABASE_URL, SUPABASE_KEY } from "@/integrations/supabase/client";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { handleApiError, safeAsync } from "@/utils/error-handler";
 
 const signupSchema = z.object({
   name: z.string().min(2, "Name is required"),
@@ -37,10 +38,14 @@ const WaitlistSignupForm = ({ className }: WaitlistSignupFormProps) => {
     
     try {
       // First check if email is already in waitlist to prevent duplicates
-      const { data: existingEntries } = await supabase
+      const { data: existingEntries, error: fetchError } = await supabase
         .from('waitlist')
         .select('*')
         .eq('email', values.email);
+      
+      if (fetchError) {
+        throw fetchError;
+      }
       
       if (existingEntries && existingEntries.length > 0) {
         toast.info("You're already on our list!", {
@@ -59,7 +64,6 @@ const WaitlistSignupForm = ({ className }: WaitlistSignupFormProps) => {
         });
       
       if (waitlistError) {
-        console.error("Error adding to waitlist:", waitlistError);
         throw waitlistError;
       }
       
@@ -69,7 +73,8 @@ const WaitlistSignupForm = ({ className }: WaitlistSignupFormProps) => {
         description: "Your spot is reserved for the OG Starter Pack!"
       });
       
-      try {
+      // Send welcome email using the safer async approach
+      const { error: emailError } = await safeAsync(async () => {
         const emailEndpoint = `${SUPABASE_URL}/functions/v1/send-welcome-email`;
         
         const response = await fetch(emailEndpoint, {
@@ -84,30 +89,23 @@ const WaitlistSignupForm = ({ className }: WaitlistSignupFormProps) => {
           })
         });
         
-        if (response.ok) {
-          console.log("Email sent successfully");
-          toast.success("Welcome email sent!", {
-            description: "Check your inbox for your OG Starter Pack confirmation."
-          });
-        } else {
+        if (!response.ok) {
           const errorText = await response.text();
-          console.error("Email sending failed with status:", response.status);
-          console.error("Response data:", errorText);
-          
-          // Don't show error to user, just log it
-          console.error("Couldn't send welcome email, but user is still on waitlist");
+          throw new Error(`Email sending failed: ${errorText}`);
         }
-      } catch (emailError) {
-        console.error("Error sending welcome email:", emailError);
-        // Don't show error to user for email issues
+        
+        return response.json();
+      });
+      
+      if (!emailError) {
+        toast.success("Welcome email sent!", {
+          description: "Check your inbox for your OG Starter Pack confirmation."
+        });
       }
       
       form.reset();
     } catch (error) {
-      console.error("Error submitting form:", error);
-      toast.error("Something went wrong", {
-        description: "Please try again or contact support."
-      });
+      handleApiError(error, "Failed to join waitlist");
     } finally {
       setSubmitting(false);
     }

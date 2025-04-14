@@ -27,19 +27,23 @@ export const LoadingSpinner = ({
   };
   
   const spinner = (
-    <div className="flex flex-col items-center justify-center">
+    <div className="flex flex-col items-center justify-center" aria-live="polite">
       <div 
         className={`${sizeClasses[size]} ${colorClasses[color]} animate-spin rounded-full`} 
         role="status"
-        aria-label="Loading"
+        aria-label={text || "Loading"}
       />
-      {text && <p className="mt-2 text-sm text-gray-500">{text}</p>}
+      {text && (
+        <p className="mt-2 text-sm text-gray-500">
+          {text}
+        </p>
+      )}
     </div>
   );
   
   if (fullPage) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center bg-white/80 backdrop-blur-sm z-50">
+      <div className="fixed inset-0 flex items-center justify-center bg-white/80 backdrop-blur-sm z-50" role="alert" aria-busy="true">
         {spinner}
       </div>
     );

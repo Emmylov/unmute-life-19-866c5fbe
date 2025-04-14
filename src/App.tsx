@@ -21,6 +21,7 @@ import Settings from "./pages/Settings";
 import Help from "./pages/Help";
 import Saved from "./pages/Saved";
 import "./App.css";
+import ProtectedLayout from "./components/auth/ProtectedLayout";
 
 // Toast provider
 import { Toaster } from "sonner";
@@ -48,25 +49,90 @@ function App() {
         <AuthProvider>
           <div className="w-full">
             <Routes>
+              {/* Public Routes */}
               <Route path="/" element={<Index />} />
-              <Route path="/home" element={<Home />} />
               <Route path="/auth" element={<Auth />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/chat" element={<Chat />} />
-              <Route path="/chat/:id" element={<ChatWithId />} />
-              <Route path="/explore" element={<Explore />} />
-              <Route path="/communities" element={<Communities />} />
-              <Route path="/wellness" element={<Wellness />} />
-              <Route path="/wellness-plus" element={<WellnessPlus />} />
               <Route path="/onboarding" element={<Onboarding />} />
-              <Route path="/create" element={<ContentCreator />} />
-              <Route path="/create-collab" element={<CreateCollab />} />
-              <Route path="/reels" element={<ReelsWithParams />} />
-              <Route path="/vibe-check" element={<VibeCheck />} />
-              <Route path="/notifications" element={<Notifications />} />
-              <Route path="/settings" element={<Settings />} />
               <Route path="/help" element={<Help />} />
-              <Route path="/saved" element={<Saved />} />
+              
+              {/* Protected Routes */}
+              <Route path="/home" element={
+                <ProtectedLayout>
+                  <Home />
+                </ProtectedLayout>
+              } />
+              <Route path="/profile" element={
+                <ProtectedLayout>
+                  <Profile />
+                </ProtectedLayout>
+              } />
+              <Route path="/chat" element={
+                <ProtectedLayout>
+                  <Chat />
+                </ProtectedLayout>
+              } />
+              <Route path="/chat/:id" element={
+                <ProtectedLayout>
+                  <ChatWithId />
+                </ProtectedLayout>
+              } />
+              <Route path="/explore" element={
+                <ProtectedLayout>
+                  <Explore />
+                </ProtectedLayout>
+              } />
+              <Route path="/communities" element={
+                <ProtectedLayout>
+                  <Communities />
+                </ProtectedLayout>
+              } />
+              <Route path="/wellness" element={
+                <ProtectedLayout>
+                  <Wellness />
+                </ProtectedLayout>
+              } />
+              <Route path="/wellness-plus" element={
+                <ProtectedLayout>
+                  <WellnessPlus />
+                </ProtectedLayout>
+              } />
+              <Route path="/create" element={
+                <ProtectedLayout>
+                  <ContentCreator />
+                </ProtectedLayout>
+              } />
+              <Route path="/create-collab" element={
+                <ProtectedLayout>
+                  <CreateCollab />
+                </ProtectedLayout>
+              } />
+              <Route path="/reels" element={
+                <ProtectedLayout>
+                  <ReelsWithParams />
+                </ProtectedLayout>
+              } />
+              <Route path="/vibe-check" element={
+                <ProtectedLayout>
+                  <VibeCheck />
+                </ProtectedLayout>
+              } />
+              <Route path="/notifications" element={
+                <ProtectedLayout>
+                  <Notifications />
+                </ProtectedLayout>
+              } />
+              <Route path="/settings" element={
+                <ProtectedLayout>
+                  <Settings />
+                </ProtectedLayout>
+              } />
+              <Route path="/saved" element={
+                <ProtectedLayout>
+                  <Saved />
+                </ProtectedLayout>
+              } />
+              
+              {/* 404 Route */}
               <Route path="*" element={<NotFound />} />
             </Routes>
             <Toaster position="top-right" />
