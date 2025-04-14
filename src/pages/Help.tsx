@@ -1,179 +1,161 @@
 
-import React from "react";
+import React, { useState } from "react";
+import { Search, BookOpen, Settings, Lock, FileText, Video, MessageCircle, Flag, Ban, UserRound, Tool, Newspaper, Medal, Gift, Bot, Bug } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MessageCircleQuestion, Search, Mail, BookOpen, Video, HelpCircle, ExternalLink } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const Help = () => {
-  const faqItems = [
-    {
-      question: "How do I create an account?",
-      answer: "To create an account, click on the 'Sign In' button in the top right corner and then select 'Create Account'. You can sign up using your email address or by connecting your Google account."
-    },
-    {
-      question: "How do I post a reel?",
-      answer: "To post a reel, click on the 'Create' button in the navigation bar, then select 'Reel'. You can upload a video from your device, add captions, music, and effects before posting."
-    },
-    {
-      question: "What are the community guidelines?",
-      answer: "Our community guidelines are designed to keep Unmute safe and supportive. We do not allow hate speech, bullying, harassment, violent content, or any form of discrimination. Always be respectful and considerate of others."
-    },
-    {
-      question: "How do I report inappropriate content?",
-      answer: "To report inappropriate content, click on the three dots (more options) next to the post, comment, or profile and select 'Report'. Choose the appropriate reason for reporting and submit."
-    },
-    {
-      question: "How can I control who sees my content?",
-      answer: "You can control your privacy settings by going to Settings > Privacy. From there, you can make your account private, control who can comment on your posts, and manage other privacy preferences."
-    },
-    {
-      question: "Can I delete my account?",
-      answer: "Yes, you can delete your account by going to Settings > Security > Deactivate Account. Please note that this action is permanent and cannot be undone once completed."
-    },
-    {
-      question: "What is a Vibe Check?",
-      answer: "Vibe Check is a feature that helps you express and track your mood and emotional wellbeing. You can access it through the Vibe Check tab in the navigation bar. It's a safe space to reflect on how you're feeling."
-    },
-    {
-      question: "How does the Wellness feature work?",
-      answer: "The Wellness feature provides resources and support for mental health and wellbeing. You can access guided meditations, journaling prompts, and connect with mental health professionals through the Wellness tab."
-    }
-  ];
+  const [searchQuery, setSearchQuery] = useState("");
 
   const helpCategories = [
     {
       title: "Getting Started",
       icon: <BookOpen className="h-5 w-5" />,
-      description: "Learn the basics of using Unmute"
-    },
-    {
-      title: "Account Settings",
-      icon: <HelpCircle className="h-5 w-5" />,
-      description: "Manage your profile and preferences"
+      description: "Learn the basics of using Unmute",
+      articles: [
+        { title: "Creating your account", link: "#" },
+        { title: "Setting up your profile", link: "#" },
+        { title: "Finding and following friends", link: "#" },
+        { title: "Your first post", link: "#" }
+      ]
     },
     {
       title: "Privacy & Safety",
-      icon: <MessageCircleQuestion className="h-5 w-5" />,
-      description: "Stay safe while using Unmute"
+      icon: <Lock className="h-5 w-5" />,
+      description: "Stay safe while using Unmute",
+      articles: [
+        { title: "Privacy settings guide", link: "#" },
+        { title: "Blocking and reporting", link: "#" },
+        { title: "Content moderation", link: "#" },
+        { title: "Data protection", link: "#" }
+      ]
     },
     {
-      title: "Creating Content",
+      title: "Content Creation",
       icon: <Video className="h-5 w-5" />,
-      description: "Tips for making great posts and reels"
+      description: "Tips for making great content",
+      articles: [
+        { title: "Creating reels", link: "#" },
+        { title: "Using audio and music", link: "#" },
+        { title: "Editing tools guide", link: "#" },
+        { title: "Content guidelines", link: "#" }
+      ]
+    },
+    {
+      title: "Wellness Features",
+      icon: <MessageCircle className="h-5 w-5" />,
+      description: "Mental health and wellbeing tools",
+      articles: [
+        { title: "Using Wellness+", link: "#" },
+        { title: "Daily check-ins", link: "#" },
+        { title: "Support circles", link: "#" },
+        { title: "Mental health resources", link: "#" }
+      ]
     }
   ];
 
   return (
-    <AppLayout pageTitle="Help & Support">
-      <div className="max-w-5xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Help & Support</h1>
-          <p className="text-gray-600">
-            Find answers to common questions or contact our support team
+    <AppLayout pageTitle="Help Center">
+      <div className="max-w-6xl mx-auto">
+        {/* Hero Section */}
+        <div className="mb-8 text-center">
+          <h1 className="text-4xl font-bold mb-4">How can we help you?</h1>
+          <p className="text-gray-600 mb-6">
+            Search our help center or browse categories below
           </p>
+          <div className="relative max-w-xl mx-auto">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+            <Input 
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search for help articles..."
+              className="pl-10 py-6 text-lg rounded-xl"
+            />
+          </div>
         </div>
-        
-        {/* Search bar */}
-        <div className="relative mb-8">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-          <Input 
-            type="text"
-            placeholder="Search for help with..."
-            className="pl-10 bg-white border border-gray-200 focus-visible:ring-unmute-purple/30 rounded-lg w-full h-12 text-lg"
-          />
-        </div>
-        
-        {/* Help categories */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-          {helpCategories.map((category, index) => (
-            <Card key={index} className="hover:shadow-md transition-shadow cursor-pointer">
-              <CardContent className="p-6 flex flex-col items-center text-center">
-                <div className="p-3 rounded-full bg-unmute-purple/10 mb-4 text-unmute-purple">
-                  {category.icon}
+
+        {/* Quick Links */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+          {helpCategories.map((category) => (
+            <Card key={category.title} className="hover:shadow-md transition-shadow">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    {category.icon}
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">{category.title}</CardTitle>
+                    <CardDescription>{category.description}</CardDescription>
+                  </div>
                 </div>
-                <h3 className="font-medium mb-2">{category.title}</h3>
-                <p className="text-gray-500 text-sm">{category.description}</p>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2">
+                  {category.articles.map((article) => (
+                    <li key={article.title}>
+                      <a href={article.link} className="text-sm text-gray-600 hover:text-primary">
+                        {article.title}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
               </CardContent>
             </Card>
           ))}
         </div>
-        
-        {/* FAQ Section */}
-        <Card className="mb-10">
+
+        {/* Featured Articles */}
+        <Card className="mb-8">
           <CardHeader>
-            <CardTitle className="text-xl">Frequently Asked Questions</CardTitle>
-            <CardDescription>Quick answers to common questions</CardDescription>
+            <CardTitle>Featured Articles</CardTitle>
+            <CardDescription>Most popular help articles and guides</CardDescription>
           </CardHeader>
           <CardContent>
-            <Accordion type="single" collapsible className="w-full">
-              {faqItems.map((item, index) => (
-                <AccordionItem key={index} value={`item-${index}`}>
-                  <AccordionTrigger className="text-left font-medium">
-                    {item.question}
-                  </AccordionTrigger>
-                  <AccordionContent className="text-gray-600">
-                    {item.answer}
-                  </AccordionContent>
-                </AccordionItem>
+            <div className="grid gap-4">
+              {[
+                { icon: <Medal className="h-4 w-4" />, title: "Getting Started with Unmute", badge: "Popular" },
+                { icon: <Gift className="h-4 w-4" />, title: "Wellness+ Features Guide", badge: "New" },
+                { icon: <Bot className="h-4 w-4" />, title: "Understanding Content Guidelines", badge: "Essential" },
+                { icon: <Bug className="h-4 w-4" />, title: "Reporting Technical Issues", badge: "Support" }
+              ].map((article) => (
+                <div key={article.title} className="flex items-center justify-between p-4 rounded-lg border">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-gray-100">
+                      {article.icon}
+                    </div>
+                    <span className="font-medium">{article.title}</span>
+                  </div>
+                  <Badge variant="secondary">{article.badge}</Badge>
+                </div>
               ))}
-            </Accordion>
+            </div>
           </CardContent>
         </Card>
-        
+
         {/* Contact Support */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Mail className="h-5 w-5 text-unmute-purple" />
-                Email Support
-              </CardTitle>
-              <CardDescription>Get help from our support team</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="mb-4 text-sm text-gray-600">
-                Our support team typically responds within 24 hours on weekdays.
-              </p>
-              <Button className="w-full">Contact Support</Button>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BookOpen className="h-5 w-5 text-unmute-purple" />
-                Help Center
-              </CardTitle>
-              <CardDescription>Browse detailed guides and resources</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="mb-4 text-sm text-gray-600">
-                Find in-depth guides, tutorials, and troubleshooting tips in our Help Center.
-              </p>
-              <Button variant="outline" className="w-full flex items-center gap-2">
-                Visit Help Center
-                <ExternalLink className="h-4 w-4" />
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-        
-        {/* Community Support */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-xl">Community Support</CardTitle>
-            <CardDescription>Connect with other users and find solutions</CardDescription>
+            <CardTitle>Still need help?</CardTitle>
+            <CardDescription>Get in touch with our support team</CardDescription>
           </CardHeader>
-          <CardContent>
-            <p className="mb-4 text-gray-600">
-              Join our community forums to connect with other Unmute users, share tips, and find solutions to common issues. Our community moderators are also there to help.
-            </p>
-            <Button variant="outline" className="flex items-center gap-2">
-              Join Community Forums
-              <ExternalLink className="h-4 w-4" />
+          <CardContent className="flex gap-4">
+            <Button variant="outline" className="flex-1">
+              <MessageCircle className="mr-2 h-4 w-4" />
+              Contact Support
+            </Button>
+            <Button variant="outline" className="flex-1">
+              <Flag className="mr-2 h-4 w-4" />
+              Report an Issue
+            </Button>
+            <Button variant="outline" className="flex-1">
+              <Tool className="mr-2 h-4 w-4" />
+              Technical Support
             </Button>
           </CardContent>
         </Card>

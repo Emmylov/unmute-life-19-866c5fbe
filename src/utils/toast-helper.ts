@@ -1,5 +1,4 @@
-
-import { toast, type Toast as SonnerToast } from "sonner";
+import { toast, type ToastT } from "sonner";
 
 type ToastType = "success" | "error" | "warning" | "info";
 
