@@ -37,22 +37,31 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("API key is available");
 
     // Parse the request body
-    const requestBody = await req.json();
+    const requestBody = await req.json().catch(e => {
+      console.error("Error parsing request body:", e);
+      throw new Error("Invalid request body format");
+    });
+    
     console.log("Received request body:", JSON.stringify(requestBody));
     
     const { name, email } = requestBody as WelcomeEmailRequest;
-    
-    console.log(`Sending welcome email to ${name} <${email}>`);
     
     if (!name || !email) {
       console.error("Missing required fields:", { name, email });
       throw new Error("Name and email are required");
     }
 
+    if (!email.includes('@') || email.length < 5) {
+      console.error("Invalid email format:", email);
+      throw new Error("Valid email is required");
+    }
+
+    console.log(`Sending welcome email to ${name} <${email}>`);
+    
     // Send the email
     console.log("About to send email with Resend");
     const emailResponse = await resend.emails.send({
-      from: "Unmute <hello@unmute.app>", // Update with your verified sender
+      from: "Unmute <hello@unmute.app>", 
       to: [email],
       subject: "Welcome to Unmute! 💜",
       html: `
@@ -92,12 +101,19 @@ const handler = async (req: Request): Promise<Response> => {
           </div>
         </div>
       `,
+    }).catch(error => {
+      console.error("Error in sending email:", error);
+      throw new Error(`Failed to send email: ${error.message}`);
     });
 
     console.log("Email sending response:", JSON.stringify(emailResponse));
 
     // Return success response
-    return new Response(JSON.stringify(emailResponse), {
+    return new Response(JSON.stringify({ 
+      success: true,
+      message: "Welcome email sent successfully", 
+      data: emailResponse 
+    }), {
       status: 200,
       headers: {
         "Content-Type": "application/json",
@@ -112,7 +128,11 @@ const handler = async (req: Request): Promise<Response> => {
     }
     
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        success: false,
+        error: error.message || "An unknown error occurred",
+        details: error.response || null
+      }),
       {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },

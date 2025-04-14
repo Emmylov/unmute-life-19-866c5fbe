@@ -1,39 +1,19 @@
+
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
-import { supabase, SUPABASE_URL, SUPABASE_KEY } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 import { CountdownTimer } from "@/components/ui/countdown-timer";
-import { Gift, BookOpen, Music, Award, Check, Quote } from "lucide-react";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { toast } from "sonner";
-
-const signupSchema = z.object({
-  name: z.string().min(2, "Name is required"),
-  email: z.string().email("Please enter a valid email")
-});
-
-type SignupFormValues = z.infer<typeof signupSchema>;
+import WaitlistSignupForm from "@/components/waitlist/WaitlistSignupForm";
+import StarterPackSection from "@/components/waitlist/StarterPackSection";
+import TestimonialSection from "@/components/waitlist/TestimonialSection";
 
 const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
 
   const launchDate = new Date("2025-04-18T00:00:00");
-
-  const form = useForm<SignupFormValues>({
-    resolver: zodResolver(signupSchema),
-    defaultValues: {
-      name: "",
-      email: ""
-    }
-  });
-
+  
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -56,108 +36,6 @@ const Index = () => {
     checkAuth();
   }, [navigate]);
   
-  const testimonials = [
-    "Unmute helped me reclaim my peace.",
-    "Finally a safe space on social media.",
-    "Unmute gives me control over my digital life.",
-    "A platform that prioritizes my wellbeing.",
-    "The community here is supportive and uplifting."
-  ];
-  
-  const [currentQuote, setCurrentQuote] = useState(0);
-  
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentQuote((prev) => (prev + 1) % testimonials.length);
-    }, 5000);
-    
-    return () => clearInterval(interval);
-  }, [testimonials.length]);
-  
-  const onSubmit = async (values: SignupFormValues) => {
-    setSubmitting(true);
-    
-    try {
-      const { error: waitlistError } = await supabase
-        .from('waitlist')
-        .insert({
-          name: values.name,
-          email: values.email
-        });
-      
-      if (waitlistError) {
-        console.error("Error adding to waitlist:", waitlistError);
-        throw waitlistError;
-      }
-      
-      console.log("Successfully added to waitlist, now sending welcome email");
-      
-      toast.success("You're on the list!", {
-        description: "Your spot is reserved for the OG Starter Pack!"
-      });
-      
-      try {
-        console.log("Calling send-welcome-email function with:", values);
-        
-        const emailEndpoint = `${SUPABASE_URL}/functions/v1/send-welcome-email`;
-        console.log("Email endpoint:", emailEndpoint);
-        
-        const response = await fetch(emailEndpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${SUPABASE_KEY}`
-          },
-          body: JSON.stringify({
-            name: values.name,
-            email: values.email
-          })
-        });
-        
-        console.log("Response status:", response.status);
-        console.log("Response headers:", [...response.headers.entries()]);
-        
-        const responseText = await response.text();
-        console.log("Raw response:", responseText);
-        
-        let responseData;
-        try {
-          responseData = JSON.parse(responseText);
-          console.log("Parsed response data:", responseData);
-        } catch (e) {
-          console.error("Error parsing response:", e);
-        }
-        
-        if (response.ok) {
-          console.log("Email sent successfully");
-          toast.success("Welcome email sent!", {
-            description: "Check your inbox for your OG Starter Pack confirmation."
-          });
-        } else {
-          console.error("Email sending failed with status:", response.status);
-          console.error("Response data:", responseData);
-          toast.error("Couldn't send welcome email", {
-            description: "But don't worry, you're still on the list!"
-          });
-        }
-      } catch (emailError) {
-        console.error("Error sending welcome email:", emailError);
-        toast.error("Couldn't send welcome email", {
-          description: "But don't worry, you're still on the list!"
-        });
-      }
-      
-      form.reset();
-    } catch (error) {
-      console.error("Error submitting form:", error);
-      toast.error("Something went wrong", {
-        description: "Please try again or contact support."
-      });
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-unmute-purple/10 to-unmute-pink/10">
       <header className="w-full py-6 px-6 flex justify-between items-center">
@@ -186,129 +64,14 @@ const Index = () => {
             Join the movement. Be one of the first. Get the OG Starter Pack.
           </p>
           
-          <div className="max-w-md mx-auto bg-white/80 backdrop-blur-sm rounded-xl shadow-lg p-6 mb-16 relative overflow-hidden border border-white/60">
-            <div className="absolute -top-12 -right-12 w-24 h-24 bg-unmute-purple/20 rounded-full blur-xl"></div>
-            <div className="absolute -bottom-8 -left-8 w-20 h-20 bg-unmute-pink/20 rounded-full blur-lg"></div>
-            
-            <h3 className="text-xl font-bold mb-4">Reserve Your Spot</h3>
-            
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <Input 
-                          placeholder="Your name" 
-                          {...field}
-                          className="h-12 text-base"
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <Input 
-                          placeholder="Your email" 
-                          type="email" 
-                          {...field}
-                          className="h-12 text-base" 
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-                
-                <Button 
-                  type="submit" 
-                  className="unmute-primary-button w-full h-12 text-lg font-medium"
-                  disabled={submitting}
-                >
-                  {submitting ? "Adding you..." : "Unmute Me"}
-                </Button>
-              </form>
-            </Form>
-            
-            <div className="mt-4 text-sm text-gray-500">
-              We'll send you early access information closer to launch.
-            </div>
-          </div>
+          <WaitlistSignupForm className="max-w-md mx-auto mb-16" />
         </section>
         
-        <section className="bg-white/50 py-16">
-          <div className="max-w-6xl mx-auto px-6">
-            <h2 className="text-2xl md:text-3xl font-bold mb-8 text-center">
-              OG Starter Pack Goodies
-            </h2>
-            
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
-              <GoodieCard 
-                icon={<Gift className="h-8 w-8 text-unmute-purple" />}
-                title="Custom Wallpaper"
-                description="Exclusive phone & desktop designs"
-              />
-              
-              <GoodieCard 
-                icon={<BookOpen className="h-8 w-8 text-unmute-pink" />}
-                title="Digital Guidebook"
-                description="Wellness tips & platform secrets"
-              />
-              
-              <GoodieCard 
-                icon={<Music className="h-8 w-8 text-unmute-blue" />}
-                title="Focus Playlist"
-                description="Curated tracks for mindfulness"
-              />
-              
-              <GoodieCard 
-                icon={<Award className="h-8 w-8 text-unmute-lavender" />}
-                title="OG Badge"
-                description="Lifetime profile verification"
-              />
-            </div>
-          </div>
-        </section>
+        <StarterPackSection />
         
         <section className="py-16 bg-gradient-to-b from-white/0 to-unmute-purple/10">
           <div className="max-w-4xl mx-auto px-6 text-center">
-            <h2 className="text-2xl md:text-3xl font-bold mb-4">Wall of Voices</h2>
-            
-            <div className="flex items-center justify-center mb-6">
-              <div className="h-1 w-16 bg-gradient-to-r from-unmute-purple to-unmute-pink rounded-full"></div>
-            </div>
-            
-            <p className="text-lg md:text-xl mb-12">
-              Everyone who signs up before launch gets featured on our OG wall &<br className="hidden md:block" /> gets a special in-app badge.
-            </p>
-            
-            <div className="bg-white/80 backdrop-blur-sm rounded-xl p-8 shadow-lg max-w-2xl mx-auto">
-              <div className="flex justify-center mb-4">
-                <Quote className="h-10 w-10 text-unmute-purple opacity-30" />
-              </div>
-              
-              <p className="text-xl italic text-gray-700 min-h-[80px]">
-                {testimonials[currentQuote]}
-              </p>
-              
-              <div className="mt-8 flex justify-center space-x-2">
-                {testimonials.map((_, index) => (
-                  <button 
-                    key={index} 
-                    className={`h-2 w-2 rounded-full ${index === currentQuote ? 'bg-unmute-purple' : 'bg-gray-300'}`}
-                    onClick={() => setCurrentQuote(index)}
-                    aria-label={`Testimonial ${index + 1}`}
-                  />
-                ))}
-              </div>
-            </div>
+            <TestimonialSection />
           </div>
         </section>
       </main>
@@ -331,24 +94,6 @@ const Index = () => {
           </div>
         </div>
       </footer>
-    </div>
-  );
-};
-
-interface GoodieCardProps {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-}
-
-const GoodieCard = ({ icon, title, description }: GoodieCardProps) => {
-  return (
-    <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 text-center shadow-md transition-all duration-300 hover:shadow-lg hover:translate-y-[-4px] border border-white/60">
-      <div className="flex justify-center mb-4">
-        {icon}
-      </div>
-      <h3 className="font-bold mb-2">{title}</h3>
-      <p className="text-sm text-gray-600">{description}</p>
     </div>
   );
 };
