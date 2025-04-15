@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, MessageCircle, Mic, Video, Smile, PencilLine, Send } from 'lucide-react';
@@ -126,14 +127,15 @@ const ReelUnmuteThread: React.FC<ReelUnmuteThreadProps> = ({ reelId, isOpen, onC
         throw new Error("Failed to add comment");
       }
 
-      // Add the new comment to our list
+      // Add the new comment to our list - fix the type issues here
       const newCommentObj: Comment = {
         id: commentData.id,
         user_id: commentData.user_id,
         content: commentData.content,
         created_at: commentData.created_at,
-        username: commentData.profiles?.username || user.name || 'Anonymous',
-        avatar: commentData.profiles?.avatar || user.avatar,
+        // Use optional chaining and provide fallbacks for all properties
+        username: commentData.profiles?.username || user?.email?.split('@')[0] || 'Anonymous',
+        avatar: commentData.profiles?.avatar || undefined,
         type: commentType
       };
 

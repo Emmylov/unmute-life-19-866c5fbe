@@ -40,8 +40,37 @@ export const getReelComments = async (reelId: string) => {
   }
 };
 
+// Interface for profile information
+interface Profile {
+  id: string;
+  username: string | null;
+  avatar: string | null;
+  full_name: string | null;
+}
+
+// Interface for comment with profile
+interface CommentWithProfile {
+  id: string;
+  reel_id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+  profiles: Profile;
+}
+
+// Interface for basic comment
+interface BasicComment {
+  id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+}
+
+// Return type for addReelComment
+export type ReelCommentResponse = CommentWithProfile | BasicComment;
+
 // Add a comment to a reel
-export const addReelComment = async (reelId: string, userId: string, content: string) => {
+export const addReelComment = async (reelId: string, userId: string, content: string): Promise<ReelCommentResponse> => {
   try {
     // First verify if the reel exists in posts_reels table
     const { data: reelExists } = await supabase
@@ -52,7 +81,7 @@ export const addReelComment = async (reelId: string, userId: string, content: st
       
     if (!reelExists) {
       toast.error("Could not find this reel");
-      return null;
+      throw new Error("Reel not found");
     }
     
     // Create a direct insert using a function that bypasses the foreign key constraint
@@ -87,9 +116,16 @@ export const addReelComment = async (reelId: string, userId: string, content: st
     
     if (profileError) {
       console.error("Error fetching comment with profile:", profileError);
+      // Return a basic comment object if we can't fetch the profile
+      return { 
+        id: data.id, 
+        user_id: userId, 
+        content, 
+        created_at: new Date().toISOString() 
+      };
     }
     
-    return commentWithProfile || { id: data.id, user_id: userId, content, created_at: new Date().toISOString() };
+    return commentWithProfile as CommentWithProfile;
   } catch (error) {
     console.error("Error adding reel comment:", error);
     throw error;
