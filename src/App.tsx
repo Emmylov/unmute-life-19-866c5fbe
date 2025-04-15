@@ -1,3 +1,4 @@
+
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, useParams, useSearchParams } from "react-router-dom";
 import Auth from "./pages/Auth";
@@ -92,7 +93,7 @@ function App() {
                     <Wellness />
                   </ProtectedLayout>
                 } />
-                <Route path="/wellness-plus" element={
+                <Route path="/wellness/plus" element={
                   <ProtectedLayout>
                     <WellnessPlus />
                   </ProtectedLayout>

@@ -1,73 +1,64 @@
 
 import React, { useState } from 'react';
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Mic, MicOff, Send, ThumbsUp } from 'lucide-react';
+import { Shield, Info } from 'lucide-react';
 
 interface ShareFormProps {
   onSubmit: (message: string) => void;
 }
 
-const ShareForm = ({ onSubmit }: ShareFormProps) => {
-  const [message, setMessage] = useState("");
-  const [isRecording, setIsRecording] = useState(false);
+const ShareForm: React.FC<ShareFormProps> = ({ onSubmit }) => {
+  const [message, setMessage] = useState('');
 
   const handleSubmit = () => {
-    if (message.trim().length === 0) return;
-    onSubmit(message);
-    setMessage("");
+    if (message.trim()) {
+      onSubmit(message);
+      setMessage('');
+    }
   };
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h3 className="text-sm font-medium mb-2">How are you feeling?</h3>
-        <Textarea 
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          placeholder="Share your thoughts, feelings, or concerns anonymously..."
-          className="min-h-[150px]"
-        />
-      </div>
-      
-      <div className="flex items-center justify-between">
-        <div className="flex items-center">
-          <Badge variant="outline" className="mr-3">Anonymous</Badge>
-          <div className="text-xs text-muted-foreground">
-            Your identity is completely private
-          </div>
+    <div className="space-y-6">
+      <div className="bg-[#F1F0FB] border border-[#D6BCFA]/30 rounded-lg p-4 flex items-start gap-3">
+        <Info className="h-5 w-5 text-[#9b87f5] mt-0.5" />
+        <div>
+          <h3 className="font-medium text-sm mb-1">Safe Space Guidelines</h3>
+          <ul className="text-sm space-y-1">
+            <li>• Your identity remains anonymous</li>
+            <li>• Focus on your feelings and experiences</li>
+            <li>• Be respectful and supportive of others</li>
+            <li>• In crisis? Call 800-273-8255 for immediate help</li>
+          </ul>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setIsRecording(!isRecording)}
-          className={isRecording ? "text-red-500" : ""}
-        >
-          {isRecording ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
-        </Button>
       </div>
       
-      <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-        <h3 className="text-sm font-medium mb-2 flex items-center">
-          <ThumbsUp className="h-4 w-4 mr-2 text-[#9b87f5]" />
-          Guidelines for sharing
-        </h3>
-        <ul className="text-xs text-muted-foreground space-y-1">
-          <li>• Be honest about your feelings, this is a safe space</li>
-          <li>• Don't include names or specific identifying details</li>
-          <li>• If you're in immediate danger, please contact emergency services</li>
-          <li>• Support others with kindness and empathy</li>
-        </ul>
-      </div>
-      
-      <Button 
-        onClick={handleSubmit}
-        className="w-full bg-[#9b87f5] hover:bg-[#7E69AB]"
-        disabled={message.trim().length === 0}
-      >
-        Share Anonymously
-      </Button>
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-center gap-2 text-[#9b87f5]">
+            <Shield className="h-5 w-5" />
+            <span className="text-sm font-medium">Anonymous Message</span>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Textarea
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="What's on your mind? Share your thoughts safely here..."
+            className="resize-none h-40"
+          />
+        </CardContent>
+        <CardFooter className="justify-end">
+          <Button 
+            onClick={handleSubmit}
+            className="bg-[#9b87f5] hover:bg-[#7E69AB]"
+            disabled={message.trim() === ''}
+          >
+            Share Anonymously
+          </Button>
+        </CardFooter>
+      </Card>
     </div>
   );
 };

@@ -1,55 +1,50 @@
 
 import React from 'react';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Clock, Play } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { JournalEntry } from './types';
+import { formatDistanceToNow } from 'date-fns';
 
 interface JournalEntryListProps {
   entries: JournalEntry[];
   onSelectEntry: (entry: JournalEntry) => void;
 }
 
-export const formatDate = (date: Date): string => {
-  return new Intl.DateTimeFormat('en-US', { 
-    month: 'short', 
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  }).format(date);
-};
-
-const JournalEntryList = ({ entries, onSelectEntry }: JournalEntryListProps) => {
+const JournalEntryList: React.FC<JournalEntryListProps> = ({ entries, onSelectEntry }) => {
   return (
-    <Card className="mt-6">
+    <Card>
       <CardHeader>
-        <CardTitle>Previous Entries</CardTitle>
-        <CardDescription>
-          Your audio journal history
-        </CardDescription>
+        <CardTitle>Your Journal</CardTitle>
       </CardHeader>
       <CardContent>
-        <ul className="divide-y">
-          {entries.map(entry => (
-            <li 
-              key={entry.id} 
-              className="py-3 cursor-pointer hover:bg-gray-50 px-2 rounded"
-              onClick={() => onSelectEntry(entry)}
-            >
-              <div className="flex justify-between items-center">
-                <div>
-                  <div className="font-medium">{formatDate(entry.date)}</div>
-                  <div className="text-sm text-muted-foreground flex items-center gap-1">
-                    <Clock className="h-3 w-3" /> {entry.duration}
+        {entries.length === 0 ? (
+          <p className="text-center text-muted-foreground py-8">
+            No journal entries yet. Start by recording your thoughts.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {entries.map((entry) => (
+              <div 
+                key={entry.id}
+                className="flex items-center p-3 rounded-lg border hover:bg-gray-50 cursor-pointer transition-colors"
+                onClick={() => onSelectEntry(entry)}
+              >
+                <div className="flex-1">
+                  <p className="font-medium text-sm truncate">
+                    {entry.transcription.substring(0, 50)}
+                    {entry.transcription.length > 50 ? '...' : ''}
+                  </p>
+                  <div className="flex items-center text-xs text-muted-foreground mt-1">
+                    <span>
+                      {formatDistanceToNow(entry.date, { addSuffix: true })}
+                    </span>
+                    <span className="mx-1">•</span>
+                    <span>{entry.duration}</span>
                   </div>
                 </div>
-                <Button variant="ghost" size="icon">
-                  <Play className="h-4 w-4" />
-                </Button>
               </div>
-            </li>
-          ))}
-        </ul>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
