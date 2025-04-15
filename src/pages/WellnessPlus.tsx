@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, Heart, BookOpen, Headphones, MessageCircle, Users, Calendar } from 'lucide-react';
+import { ChevronLeft, Heart, BookOpen, Headphones, MessageCircle, Users, Calendar, Dumbbell } from 'lucide-react';
 import { useIsMobile, useIsTablet } from "@/hooks/use-responsive";
 import AppLayout from '@/components/layout/AppLayout';
 import DailyCheckIn from '@/components/wellness-plus/DailyCheckIn';
@@ -12,6 +12,7 @@ import AudioJournal from '@/components/wellness-plus/AudioJournal';
 import ResourceLibrary from '@/components/wellness-plus/ResourceLibrary';
 import SupportCircles from '@/components/wellness-plus/SupportCircles';
 import AnonymousSupport from '@/components/wellness-plus/AnonymousSupport';
+import PhysicalWellnessHub from '@/components/wellness-plus/physical-wellness/PhysicalWellnessHub';
 
 const WellnessPlus = () => {
   const isMobile = useIsMobile();
@@ -79,6 +80,10 @@ const WellnessPlus = () => {
               <MessageCircle className="h-4 w-4" />
               Let It Out
             </TabsTrigger>
+            <TabsTrigger value="physical-wellness" className="flex gap-2">
+              <Dumbbell className="h-4 w-4" />
+              Physical Wellness
+            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="daily-check-in">
@@ -99,6 +104,10 @@ const WellnessPlus = () => {
           
           <TabsContent value="let-it-out">
             <AnonymousSupport />
+          </TabsContent>
+          
+          <TabsContent value="physical-wellness">
+            <PhysicalWellnessHub />
           </TabsContent>
         </Tabs>
 
