@@ -1,17 +1,17 @@
 
 import React, { ReactNode } from "react";
-import { motion } from "framer-motion"; // Import motion from framer-motion
-import { Link, useLocation } from "react-router-dom"; // Import Link from react-router-dom
+import Navbar from "@/components/layout/Navbar";
+import Sidebar from "@/components/layout/Sidebar";
+import { useIsMobile, useIsTablet } from "@/hooks/use-responsive";
+import { useLocation, Link } from "react-router-dom";
 import { 
   Home, 
   Search, 
   Film, 
-  Smile, 
-  User 
-} from "lucide-react"; // Import required icons from lucide-react
-import Navbar from "@/components/layout/Navbar";
-import Sidebar from "@/components/layout/Sidebar";
-import { useIsMobile, useIsTablet, useIsDesktop } from "@/hooks/use-responsive";
+  User,
+  Smile
+} from "lucide-react";
+import { motion } from "framer-motion";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -21,7 +21,6 @@ interface AppLayoutProps {
 const AppLayout = ({ children, pageTitle }: AppLayoutProps) => {
   const isMobile = useIsMobile();
   const isTablet = useIsTablet();
-  const isDesktop = useIsDesktop();
   const location = useLocation();
   
   return (
@@ -29,24 +28,15 @@ const AppLayout = ({ children, pageTitle }: AppLayoutProps) => {
       <Navbar pageTitle={pageTitle} />
       
       <div className="flex flex-grow">
-        {/* Conditional sidebar rendering */}
         {!isMobile && <Sidebar collapsed={isTablet} />}
         
-        <main className={`
-          flex-1 
-          pb-16 
-          md:pb-0 
-          max-h-[calc(100vh-3.5rem)] 
-          overflow-y-auto 
-          ${isMobile ? 'w-full px-4' : 'w-[calc(100%-16rem)]'}
-        `}>
+        <main className="flex-1 pb-16 md:pb-0 max-h-[calc(100vh-3.5rem)] overflow-y-auto">
           <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 md:py-6">
             {children}
           </div>
         </main>
       </div>
       
-      {/* Mobile navigation */}
       {isMobile && <MobileNavigation currentPath={location.pathname} />}
     </div>
   );
