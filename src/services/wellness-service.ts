@@ -101,11 +101,12 @@ export const savePhysicalWellnessPreferences = async (userId: string, preference
 
 export const getPhysicalWellnessPreferences = async (userId: string): Promise<PhysicalWellnessPreference | null> => {
   try {
-    const { data, error } = await supabase
-      .from('user_physical_wellness')
+    // Use type assertion to fix TypeScript errors with the table name
+    const { data, error } = await (supabase
+      .from('user_physical_wellness' as any)
       .select('preferences')
       .eq('user_id', userId)
-      .single();
+      .single());
     
     if (error) {
       if (error.code === 'PGRST116') {
