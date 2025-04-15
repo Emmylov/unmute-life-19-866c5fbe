@@ -1,9 +1,17 @@
 
 import React, { ReactNode } from "react";
+import { motion } from "framer-motion"; // Import motion from framer-motion
+import { Link, useLocation } from "react-router-dom"; // Import Link from react-router-dom
+import { 
+  Home, 
+  Search, 
+  Film, 
+  Smile, 
+  User 
+} from "lucide-react"; // Import required icons from lucide-react
 import Navbar from "@/components/layout/Navbar";
 import Sidebar from "@/components/layout/Sidebar";
 import { useIsMobile, useIsTablet, useIsDesktop } from "@/hooks/use-responsive";
-import { useLocation } from "react-router-dom";
 
 interface AppLayoutProps {
   children: ReactNode;
