@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, MessageCircle, Mic, Video, Smile, PencilLine, Send } from 'lucide-react';
@@ -7,7 +6,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/AuthContext';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from "@/integrations/supabase/client";
+import { addReelComment } from '@/services/comment-service';
 
 interface ReelUnmuteThreadProps {
   reelId: string;
@@ -75,7 +75,7 @@ const ReelUnmuteThread: React.FC<ReelUnmuteThreadProps> = ({ reelId, isOpen, onC
       if (error) throw error;
 
       // Transform data to match our Comment interface
-      const formattedComments: Comment[] = commentsData.map((comment: any) => ({
+      const formattedComments: Comment[] = (commentsData || []).map((comment: any) => ({
         id: comment.id,
         user_id: comment.user_id,
         content: comment.content,
@@ -119,28 +119,21 @@ const ReelUnmuteThread: React.FC<ReelUnmuteThreadProps> = ({ reelId, isOpen, onC
         commentContent = `video:${newComment}`;
       }
 
-      // Insert the comment
-      const { data, error } = await supabase
-        .from('reel_comments')
-        .insert({
-          reel_id: reelId,
-          user_id: user.id,
-          content: commentContent,
-          created_at: new Date().toISOString()
-        })
-        .select('*, profiles:user_id(username, avatar)')
-        .single();
-
-      if (error) throw error;
+      // Use our updated service to add the comment
+      const commentData = await addReelComment(reelId, user.id, commentContent);
+      
+      if (!commentData) {
+        throw new Error("Failed to add comment");
+      }
 
       // Add the new comment to our list
       const newCommentObj: Comment = {
-        id: data.id,
-        user_id: data.user_id,
-        content: data.content,
-        created_at: data.created_at,
-        username: data.profiles?.username || 'Anonymous',
-        avatar: data.profiles?.avatar,
+        id: commentData.id,
+        user_id: commentData.user_id,
+        content: commentData.content,
+        created_at: commentData.created_at,
+        username: commentData.profiles?.username || user.name || 'Anonymous',
+        avatar: commentData.profiles?.avatar || user.avatar,
         type: commentType
       };
 

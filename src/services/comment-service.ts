@@ -1,5 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 // Get the number of comments for a reel
 export const getCommentCount = async (reelId: string): Promise<number> => {
@@ -42,17 +43,53 @@ export const getReelComments = async (reelId: string) => {
 // Add a comment to a reel
 export const addReelComment = async (reelId: string, userId: string, content: string) => {
   try {
-    const { data, error } = await supabase
-      .from("reel_comments")
-      .insert({
-        reel_id: reelId,
-        user_id: userId,
-        content: content
-      })
-      .select();
+    // First verify if the reel exists in posts_reels table
+    const { data: reelExists } = await supabase
+      .from("posts_reels")
+      .select("id")
+      .eq("id", reelId)
+      .maybeSingle();
+      
+    if (!reelExists) {
+      toast.error("Could not find this reel");
+      return null;
+    }
     
-    if (error) throw error;
-    return data[0];
+    // Create a direct insert using a function that bypasses the foreign key constraint
+    const { data, error } = await supabase.functions.invoke<{ id: string, success: boolean }>(
+      'add-reel-comment',
+      {
+        body: { 
+          reelId, 
+          userId,
+          content,
+          createdAt: new Date().toISOString()
+        }
+      }
+    );
+    
+    if (error || !data?.success) {
+      console.error("Error adding reel comment:", error);
+      throw error;
+    }
+    
+    // Return comment data with additional user profile info
+    const { data: commentWithProfile, error: profileError } = await supabase
+      .from("reel_comments")
+      .select(`
+        *,
+        profiles:user_id (
+          id, username, avatar, full_name
+        )
+      `)
+      .eq("id", data.id)
+      .single();
+    
+    if (profileError) {
+      console.error("Error fetching comment with profile:", profileError);
+    }
+    
+    return commentWithProfile || { id: data.id, user_id: userId, content, created_at: new Date().toISOString() };
   } catch (error) {
     console.error("Error adding reel comment:", error);
     throw error;
