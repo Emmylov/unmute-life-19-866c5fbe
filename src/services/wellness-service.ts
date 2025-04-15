@@ -102,7 +102,7 @@ export const savePhysicalWellnessPreferences = async (userId: string, preference
 export const getPhysicalWellnessPreferences = async (userId: string): Promise<PhysicalWellnessPreference | null> => {
   try {
     const { data, error } = await supabase
-      .from('user_physical_wellness' as any)
+      .from('user_physical_wellness')
       .select('preferences')
       .eq('user_id', userId)
       .single();
