@@ -2,17 +2,10 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Heart, CalendarCheck, Dumbbell, Utensils, Video, BookText, Users, ScrollText } from 'lucide-react';
-import { PhysicalWellnessPreference } from './types';
+import { PhysicalWellnessPreference, WellnessSection } from './types';
 
 interface SectionCardProps {
-  section: {
-    id: string;
-    title: string;
-    description: string;
-    icon: string;
-    color: string;
-    forIdentities: string[] | 'all';
-  };
+  section: WellnessSection;
   preferences: PhysicalWellnessPreference | null;
 }
 
@@ -68,7 +61,7 @@ const SectionCard: React.FC<SectionCardProps> = ({ section, preferences }) => {
           </CardDescription>
           
           {/* Label for identity-specific content */}
-          {Array.isArray(section.forIdentities) && section.forIdentities !== 'all' && (
+          {section.forIdentities !== 'all' && Array.isArray(section.forIdentities) && (
             <div className="mt-3">
               <span className="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-700">
                 Personalized content

@@ -115,7 +115,13 @@ export const getPhysicalWellnessPreferences = async (userId: string): Promise<Ph
       throw error;
     }
     
-    return data?.preferences || null;
+    // If we successfully get data, return the preferences
+    if (data && data.preferences) {
+      return data.preferences as PhysicalWellnessPreference;
+    }
+    
+    // Return null if we don't have preferences
+    return null;
   } catch (error) {
     console.error("Error getting physical wellness preferences:", error);
     throw error;

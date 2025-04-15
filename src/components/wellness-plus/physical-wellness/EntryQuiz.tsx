@@ -4,7 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { GenderMale, GenderFemale, HelpCircle, CircleQuestion } from "lucide-react";
+import { Male, Female, HelpCircle, CircleHelp } from "lucide-react";
 import { GenderIdentity, PhysicalWellnessPreference } from './types';
 import { updateUserSetting } from "@/services/user-settings-service";
 import { useAuth } from "@/contexts/AuthContext";
@@ -83,7 +83,7 @@ const EntryQuiz: React.FC<EntryQuizProps> = ({ onComplete }) => {
                 htmlFor="male"
               >
                 <RadioGroupItem value="male" id="male" />
-                <GenderMale className="h-5 w-5 text-blue-500" />
+                <Male className="h-5 w-5 text-blue-500" />
                 <div>I'm a boy / male</div>
               </label>
               
@@ -92,7 +92,7 @@ const EntryQuiz: React.FC<EntryQuizProps> = ({ onComplete }) => {
                 htmlFor="female"
               >
                 <RadioGroupItem value="female" id="female" />
-                <GenderFemale className="h-5 w-5 text-pink-500" />
+                <Female className="h-5 w-5 text-pink-500" />
                 <div>I'm a girl / female</div>
               </label>
               
@@ -112,7 +112,7 @@ const EntryQuiz: React.FC<EntryQuizProps> = ({ onComplete }) => {
                 htmlFor="unsure"
               >
                 <RadioGroupItem value="unsure" id="unsure" />
-                <CircleQuestion className="h-5 w-5 text-amber-500" />
+                <CircleHelp className="h-5 w-5 text-amber-500" />
                 <div>I'm not sure right now</div>
               </label>
               

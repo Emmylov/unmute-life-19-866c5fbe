@@ -11,10 +11,10 @@ import { useToast } from "@/hooks/use-toast";
 import { getUserSetting, updateUserSetting } from "@/services/user-settings-service";
 import EntryQuiz from './EntryQuiz';
 import SectionCard from './SectionCard';
-import { PhysicalWellnessPreference } from './types';
+import { PhysicalWellnessPreference, WellnessSection } from './types';
 
 // Dummy data for sections
-const wellnessSections = [
+const wellnessSections: WellnessSection[] = [
   {
     id: 'body-image',
     title: 'Body Image & Confidence',

@@ -14,7 +14,7 @@ export interface WellnessSection {
   description: string;
   icon: string;
   color: string;
-  forIdentities: GenderIdentity[] | 'all';
+  forIdentities: 'all' | GenderIdentity[];
 }
 
 export interface WellnessContent {
@@ -24,7 +24,7 @@ export interface WellnessContent {
   description: string;
   type: 'article' | 'video' | 'audio' | 'journal' | 'discussion' | 'tracker';
   thumbnail?: string;
-  forIdentities: GenderIdentity[] | 'all';
+  forIdentities: 'all' | GenderIdentity[];
   tags: string[];
   isPotentiallyTriggering?: boolean;
 }
