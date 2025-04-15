@@ -115,8 +115,8 @@ export const getPhysicalWellnessPreferences = async (userId: string): Promise<Ph
       throw error;
     }
     
-    // If we successfully get data, return the preferences
-    if (data && data.preferences) {
+    // If we successfully get data, safely access and return the preferences
+    if (data && 'preferences' in data) {
       return data.preferences as PhysicalWellnessPreference;
     }
     
