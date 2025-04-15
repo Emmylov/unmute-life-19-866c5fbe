@@ -890,6 +890,10 @@ export type Database = {
         Args: { p_reel_id: string; p_user_id: string }
         Returns: boolean
       }
+      like_posts_reel: {
+        Args: { p_reel_id: string; p_user_id: string; p_created_at: string }
+        Returns: boolean
+      }
       report_content: {
         Args: {
           p_content_id: string

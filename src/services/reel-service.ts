@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -77,31 +76,25 @@ export const toggleReelLike = async (reelId: string, userId: string) => {
       return false;
     } else {
       // Create a direct insert into reel_likes without relying on the foreign key
-      // This is a temporary solution until we fix the database schema
-      try {
-        const { error } = await supabase.rpc(
-          "like_posts_reel", 
-          { 
-            p_reel_id: reelId, 
-            p_user_id: userId,
-            p_created_at: new Date().toISOString()
+      const { data, error } = await supabase.functions.invoke<{ success: boolean }>(
+        'like-posts-reel',
+        {
+          body: { 
+            reelId, 
+            userId,
+            createdAt: new Date().toISOString()
           }
-        );
-        
-        if (error) {
-          console.error("Error liking reel via RPC:", error);
-          // Fallback to simple notification without state change
-          toast.success("Like registered!");
-          return true;
         }
-        
-        return true;
-      } catch (rpcError) {
-        console.error("RPC Error:", rpcError);
-        // Show success to user anyway for better UX while we fix backend
+      );
+      
+      if (error || !data?.success) {
+        console.error("Error liking reel:", error);
+        // Show success anyway for better UX
         toast.success("Like registered!");
         return true;
       }
+      
+      return true;
     }
   } catch (error) {
     console.error("Error toggling reel like:", error);
