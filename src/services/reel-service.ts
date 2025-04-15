@@ -45,6 +45,18 @@ export const checkReelLikeStatus = async (reelId: string, userId: string) => {
 // Toggle like on a reel
 export const toggleReelLike = async (reelId: string, userId: string) => {
   try {
+    // First verify if the reel exists in posts_reels table
+    const { data: reelExists } = await supabase
+      .from("posts_reels")
+      .select("id")
+      .eq("id", reelId)
+      .maybeSingle();
+      
+    if (!reelExists) {
+      toast.error("Could not find this reel");
+      return false;
+    }
+    
     // Check if already liked
     const { data: existingLike } = await supabase
       .from("reel_likes")
@@ -106,6 +118,18 @@ export const checkReelSaveStatus = async (reelId: string, userId: string) => {
 // Toggle save on a reel
 export const toggleReelSave = async (reelId: string, userId: string) => {
   try {
+    // Check if reel exists in posts_reels
+    const { data: reelExists } = await supabase
+      .from("posts_reels")
+      .select("id")
+      .eq("id", reelId)
+      .maybeSingle();
+      
+    if (!reelExists) {
+      toast.error("Could not find this reel");
+      return false;
+    }
+    
     // Check if already saved
     const isSaved = await checkReelSaveStatus(reelId, userId);
     
@@ -168,6 +192,18 @@ export const checkReelRepostStatus = async (reelId: string, userId: string) => {
 // Repost a reel
 export const repostReel = async (reelId: string, userId: string, originalUserId: string) => {
   try {
+    // Check if reel exists in posts_reels
+    const { data: reelExists } = await supabase
+      .from("posts_reels")
+      .select("id")
+      .eq("id", reelId)
+      .maybeSingle();
+      
+    if (!reelExists) {
+      toast.error("Could not find this reel");
+      return false;
+    }
+    
     // Check if already reposted
     const isReposted = await checkReelRepostStatus(reelId, userId);
     
@@ -200,6 +236,18 @@ export const repostReel = async (reelId: string, userId: string, originalUserId:
 // Report a reel
 export const reportReel = async (reelId: string, userId: string, reason: string = "inappropriate content") => {
   try {
+    // Check if reel exists in posts_reels
+    const { data: reelExists } = await supabase
+      .from("posts_reels")
+      .select("id")
+      .eq("id", reelId)
+      .maybeSingle();
+      
+    if (!reelExists) {
+      toast.error("Could not find this reel");
+      return false;
+    }
+    
     const params: ReportContentParams = {
       p_content_id: reelId,
       p_user_id: userId,

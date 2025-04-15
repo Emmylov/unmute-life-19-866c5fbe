@@ -28,7 +28,12 @@ const ReelEmotionDisplay: React.FC<ReelEmotionDisplayProps> = ({
           {selectedEmotion === 'Still Thinking' && '👀'}
         </div>
       ) : (
-        <Heart className="w-32 h-32 text-primary filter drop-shadow-xl" fill={liked ? "#ec4899" : "none"} />
+        <Heart 
+          className="w-32 h-32 text-pink-500 filter drop-shadow-xl" 
+          fill={liked ? "#ec4899" : "none"} 
+          stroke={liked ? "#ec4899" : "white"}
+          strokeWidth={1.5} 
+        />
       )}
     </motion.div>
   );
