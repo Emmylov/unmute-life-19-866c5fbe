@@ -18,40 +18,40 @@ export const FeelBar: React.FC<FeelBarProps> = ({ selectedEmotion, onEmotionSele
 
   return (
     <motion.div 
-      className="backdrop-blur-sm bg-black/10 rounded-xl p-2 shadow-lg"
+      className="backdrop-blur-md bg-black/30 rounded-xl p-3 shadow-lg"
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3 }}
     >
-      <p className="text-xs text-white/70 text-center mb-2">How did this make you feel?</p>
-      <div className="flex justify-between">
+      <p className="text-xs text-white/90 text-center mb-2 font-medium">How did this make you feel?</p>
+      <div className="flex justify-between space-x-2">
         {emotions.map(emotion => (
-          <button
+          <motion.button
             key={emotion.id}
             onClick={() => onEmotionSelect(emotion.id)}
-            className={`flex flex-col items-center group px-2 py-1 rounded-lg transition-colors ${
+            className={`flex flex-col items-center group px-2.5 py-1.5 rounded-lg transition-colors ${
               selectedEmotion === emotion.id 
-                ? 'bg-primary/30' 
-                : 'hover:bg-white/10'
+                ? 'bg-primary/40' 
+                : 'hover:bg-white/20'
             }`}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
-            <motion.span 
-              className="text-xl md:text-2xl"
-              whileHover={{ scale: 1.2 }}
-              whileTap={{ scale: 0.95 }}
-            >
+            <span className="text-lg md:text-xl">
               {emotion.emoji}
-            </motion.span>
+            </span>
             <span className={`text-[10px] md:text-xs mt-1 ${
               selectedEmotion === emotion.id 
                 ? 'text-white' 
-                : 'text-white/70 group-hover:text-white'
+                : 'text-white/80 group-hover:text-white'
             }`}>
               {emotion.label}
             </span>
-          </button>
+          </motion.button>
         ))}
       </div>
     </motion.div>
   );
 };
+
+export default FeelBar;

@@ -21,6 +21,7 @@ import {
   repostReel
 } from "@/services/reel-service";
 import { ReelWithUser } from "@/types/reels";
+import ReelActions from "./controls/ReelActions";
 
 interface ReelViewProps {
   reelWithUser: ReelWithUser;
@@ -89,6 +90,8 @@ const ReelView = ({
     
     fetchReelData();
     
+    // Reset state when reel changes
+    setIsPlaying(true);
     setSelectedEmotion(null);
   }, [reel.id, currentUser]);
 
@@ -231,6 +234,12 @@ const ReelView = ({
     setIsPlaying(false);
   };
 
+  const handleDoubleTap = () => {
+    if (!liked) {
+      handleToggleLike();
+    }
+  };
+
   return (
     <motion.div 
       className="relative w-full h-full overflow-hidden"
@@ -249,6 +258,7 @@ const ReelView = ({
           isMuted={isMuted}
           currentIndex={currentIndex}
           onTogglePlay={togglePlay}
+          onDoubleTap={handleDoubleTap}
         />
 
         <ReelEmotionDisplay
@@ -273,20 +283,22 @@ const ReelView = ({
         </div>
 
         {/* Reel content with better spacing and backdrop */}
-        <div className="absolute inset-x-5 bottom-24">
+        <div className="absolute inset-x-5 bottom-32">
           <ReelContent reel={reel} />
         </div>
 
-        {/* Side actions with improved positioning */}
-        <div className="absolute right-5 bottom-32">
-          <ReelSideActions 
-            commentCount={commentCount}
-            saved={saved}
-            onOpenUnmuteThread={openUnmuteThread}
-            onRepost={handleRepostReel}
-            onToggleSave={handleToggleSave}
-          />
-        </div>
+        {/* Full-featured Actions sidebar */}
+        <ReelActions 
+          reelId={reel.id}
+          liked={liked}
+          saved={saved}
+          commentCount={commentCount}
+          onLike={handleToggleLike}
+          onSave={handleToggleSave}
+          onRepost={handleRepostReel}
+          onShare={handleShare}
+          shareData={getShareData()}
+        />
 
         {/* Mute button with better positioning */}
         <div className="absolute bottom-6 right-5">

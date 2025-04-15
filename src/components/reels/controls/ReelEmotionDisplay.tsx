@@ -21,14 +21,14 @@ const ReelEmotionDisplay: React.FC<ReelEmotionDisplayProps> = ({
       initial={{ opacity: 0, scale: 1 }}
     >
       {selectedEmotion ? (
-        <div className="text-5xl filter drop-shadow-lg">
+        <div className="text-7xl filter drop-shadow-xl">
           {selectedEmotion === 'Relatable' && '💬'}
           {selectedEmotion === 'Made Me Feel' && '❤️'}
           {selectedEmotion === 'Shared This' && '🔄'}
           {selectedEmotion === 'Still Thinking' && '👀'}
         </div>
       ) : (
-        <Heart className="w-20 h-20 text-primary filter drop-shadow-lg" fill={liked ? "#ec4899" : "none"} />
+        <Heart className="w-32 h-32 text-primary filter drop-shadow-xl" fill={liked ? "#ec4899" : "none"} />
       )}
     </motion.div>
   );

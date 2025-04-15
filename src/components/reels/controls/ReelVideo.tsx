@@ -10,6 +10,7 @@ interface ReelVideoProps {
   isMuted: boolean;
   currentIndex: number;
   onTogglePlay: () => void;
+  onDoubleTap?: () => void;
 }
 
 const SUPPORTED_VIDEO_FORMATS = [
@@ -25,12 +26,15 @@ const ReelVideo = ({
   isPlaying,
   isMuted,
   currentIndex,
-  onTogglePlay
+  onTogglePlay,
+  onDoubleTap
 }: ReelVideoProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [loadError, setLoadError] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [tapCount, setTapCount] = useState(0);
+  const [lastTap, setLastTap] = useState(0);
 
   useEffect(() => {
     if (videoRef.current) {
@@ -94,9 +98,35 @@ const ReelVideo = ({
     setIsLoading(false);
   };
 
+  const handleTap = () => {
+    const now = Date.now();
+    const DOUBLE_TAP_DELAY = 300; // ms
+    
+    if (now - lastTap < DOUBLE_TAP_DELAY) {
+      // Double tap detected
+      if (onDoubleTap) {
+        onDoubleTap();
+      }
+      setTapCount(0);
+    } else {
+      // First tap or too slow
+      setTimeout(() => {
+        if (tapCount === 1) {
+          // Single tap confirmed
+          onTogglePlay();
+        }
+        setTapCount(0);
+      }, DOUBLE_TAP_DELAY);
+      
+      setTapCount(1);
+    }
+    
+    setLastTap(now);
+  };
+
   return (
     <>
-      <div className="absolute inset-0 flex items-center justify-center">
+      <div className="absolute inset-0 flex items-center justify-center" onClick={handleTap}>
         {!loadError ? (
           <video 
             ref={videoRef}
@@ -104,7 +134,6 @@ const ReelVideo = ({
             className="w-full h-full object-cover"
             playsInline
             loop
-            onClick={onTogglePlay}
             poster={thumbnailUrl || undefined}
             onError={handleVideoError}
             onLoadedData={handleLoadedData}
