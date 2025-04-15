@@ -1,10 +1,9 @@
-
 import React, { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Male, Female, HelpCircle, CircleHelp } from "lucide-react";
+import { Users, Heart, HelpCircle } from "lucide-react";
 import { GenderIdentity, PhysicalWellnessPreference } from './types';
 import { updateUserSetting } from "@/services/user-settings-service";
 import { useAuth } from "@/contexts/AuthContext";
@@ -32,19 +31,16 @@ const EntryQuiz: React.FC<EntryQuizProps> = ({ onComplete }) => {
     setIsSubmitting(true);
     
     try {
-      // Save user preference
       const preferences: PhysicalWellnessPreference = {
         genderIdentity,
         softMode: false,
         hideTriggering: false,
       };
       
-      // If user is logged in, save to their settings
       if (user) {
         await updateUserSetting(user.id, "physicalWellnessPreferences", preferences);
       }
       
-      // Complete the quiz
       onComplete(preferences);
       
       toast({
@@ -83,7 +79,7 @@ const EntryQuiz: React.FC<EntryQuizProps> = ({ onComplete }) => {
                 htmlFor="male"
               >
                 <RadioGroupItem value="male" id="male" />
-                <Male className="h-5 w-5 text-blue-500" />
+                <Users className="h-5 w-5 text-blue-500" />
                 <div>I'm a boy / male</div>
               </label>
               
@@ -92,7 +88,7 @@ const EntryQuiz: React.FC<EntryQuizProps> = ({ onComplete }) => {
                 htmlFor="female"
               >
                 <RadioGroupItem value="female" id="female" />
-                <Female className="h-5 w-5 text-pink-500" />
+                <Heart className="h-5 w-5 text-pink-500" />
                 <div>I'm a girl / female</div>
               </label>
               
@@ -112,7 +108,7 @@ const EntryQuiz: React.FC<EntryQuizProps> = ({ onComplete }) => {
                 htmlFor="unsure"
               >
                 <RadioGroupItem value="unsure" id="unsure" />
-                <CircleHelp className="h-5 w-5 text-amber-500" />
+                <HelpCircle className="h-5 w-5 text-amber-500" />
                 <div>I'm not sure right now</div>
               </label>
               
