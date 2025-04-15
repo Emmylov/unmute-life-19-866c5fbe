@@ -1,11 +1,13 @@
 
 import { useState, useEffect } from "react";
 
-// Breakpoint values in pixels
+// More precise breakpoint values in pixels
 const BREAKPOINTS = {
-  mobile: 640,  // sm
-  tablet: 1024, // md-lg
-  desktop: 1280 // xl
+  mobile: 640,   // Small mobile devices
+  mobileMedium: 768,  // Medium mobile devices
+  tablet: 1024,  // Tablets
+  desktop: 1280, // Desktops
+  largeDesktop: 1536  // Large desktops
 };
 
 export function useIsMobile() {
@@ -13,7 +15,7 @@ export function useIsMobile() {
 
   useEffect(() => {
     const checkSize = () => {
-      setIsMobile(window.innerWidth < BREAKPOINTS.mobile);
+      setIsMobile(window.innerWidth < BREAKPOINTS.mobileMedium);
     };
     
     // Initial check
@@ -35,7 +37,7 @@ export function useIsTablet() {
   useEffect(() => {
     const checkSize = () => {
       const width = window.innerWidth;
-      setIsTablet(width >= BREAKPOINTS.mobile && width < BREAKPOINTS.desktop);
+      setIsTablet(width >= BREAKPOINTS.mobileMedium && width < BREAKPOINTS.desktop);
     };
     
     // Initial check
@@ -77,5 +79,10 @@ export function useScreenSize() {
   const isTablet = useIsTablet();
   const isDesktop = useIsDesktop();
   
-  return { isMobile, isTablet, isDesktop };
+  return { 
+    isMobile, 
+    isTablet, 
+    isDesktop,
+    screenWidth: typeof window !== 'undefined' ? window.innerWidth : 0 
+  };
 }
