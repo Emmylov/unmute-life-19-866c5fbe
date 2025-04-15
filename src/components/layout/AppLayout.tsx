@@ -30,7 +30,7 @@ const AppLayout = ({ children, pageTitle }: AppLayoutProps) => {
       <div className="flex flex-grow">
         {!isMobile && <Sidebar collapsed={isTablet} />}
         
-        <main className="flex-1 pb-16 md:pb-0 max-h-[calc(100vh-3.5rem)] overflow-y-auto">
+        <main className="flex-1 pb-16 md:pb-0">
           <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 md:py-6">
             {children}
           </div>
