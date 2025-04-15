@@ -127,15 +127,23 @@ const ReelUnmuteThread: React.FC<ReelUnmuteThreadProps> = ({ reelId, isOpen, onC
         throw new Error("Failed to add comment");
       }
 
-      // Add the new comment to our list - fix the type issues here
+      // Determine username and avatar based on whether profiles exists in the response
+      const username = 'profiles' in commentData 
+        ? commentData.profiles?.username 
+        : user?.email?.split('@')[0] || 'Anonymous';
+      
+      const avatar = 'profiles' in commentData 
+        ? commentData.profiles?.avatar 
+        : undefined;
+
+      // Add the new comment to our list with the correct typing
       const newCommentObj: Comment = {
         id: commentData.id,
         user_id: commentData.user_id,
         content: commentData.content,
         created_at: commentData.created_at,
-        // Use optional chaining and provide fallbacks for all properties
-        username: commentData.profiles?.username || user?.email?.split('@')[0] || 'Anonymous',
-        avatar: commentData.profiles?.avatar || undefined,
+        username,
+        avatar,
         type: commentType
       };
 
