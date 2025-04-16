@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "@/components/layout/AppLayout";
@@ -9,6 +8,7 @@ import StoryFeed from "@/components/stories/StoryFeed";
 import JournalingPrompt from "@/components/vibe-check/JournalingPrompt";
 import CreatePost from "@/components/home/CreatePost";
 import HomeRightSidebar from "@/components/home/HomeRightSidebar";
+import HomeGreeting from "@/components/home/HomeGreeting";
 import PostCard from "@/components/home/PostCard";
 import FilterBar from "@/components/home/FilterBar";
 import { Card, CardContent } from "@/components/ui/card";
@@ -120,6 +120,10 @@ const Home = () => {
     <AppLayout>
       <motion.div className="grid grid-cols-1 lg:grid-cols-3 gap-4" initial="hidden" animate="visible" variants={staggerItems}>
         <div className="lg:col-span-2 space-y-4">
+          <motion.div variants={fadeIn}>
+            <HomeGreeting username={profile?.full_name || profile?.username} />
+          </motion.div>
+          
           <motion.div variants={fadeIn} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
             <JournalingPrompt />
           </motion.div>
