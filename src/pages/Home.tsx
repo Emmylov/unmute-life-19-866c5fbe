@@ -12,8 +12,8 @@ import StoryFeed from "@/components/stories/StoryFeed";
 import JournalingPrompt from "@/components/vibe-check/JournalingPrompt";
 import CreatePost from "@/components/home/CreatePost";
 import HomeRightSidebar from "@/components/home/HomeRightSidebar";
+import PostCard from "@/components/home/PostCard";
 
-// Animation variants
 const fadeIn = {
   hidden: { opacity: 0, y: 10 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
@@ -39,7 +39,6 @@ const Home = () => {
   const [activeTab, setActiveTab] = useState("for-you");
   const [loadingPosts, setLoadingPosts] = useState(false);
 
-  // Check if user is logged in and fetch posts
   useEffect(() => {
     async function getUser() {
       try {
@@ -47,7 +46,6 @@ const Home = () => {
         if (user) {
           setUser(user);
           
-          // Fetch profile data
           const { data, error } = await supabase
             .from('profiles')
             .select('*')
@@ -119,14 +117,8 @@ const Home = () => {
 
   return (
     <AppLayout>
-      <motion.div 
-        className="grid grid-cols-1 lg:grid-cols-3 gap-4" 
-        initial="hidden" 
-        animate="visible"
-        variants={staggerItems}
-      >
+      <motion.div className="grid grid-cols-1 lg:grid-cols-3 gap-4" initial="hidden" animate="visible" variants={staggerItems}>
         <div className="lg:col-span-2 space-y-4">
-          {/* Daily Journaling Prompt */}
           <motion.div 
             variants={fadeIn}
             className="bg-white rounded-xl p-4 shadow-sm border border-gray-100"
@@ -134,12 +126,10 @@ const Home = () => {
             <JournalingPrompt />
           </motion.div>
           
-          {/* Create Post */}
           <motion.div variants={fadeIn}>
             <CreatePost profile={profile} onPostCreated={fetchPosts} />
           </motion.div>
           
-          {/* Stories Feed */}
           <motion.div 
             className="bg-white rounded-xl p-3 shadow-sm border border-gray-100"
             initial={{ opacity: 0, y: -10 }}
@@ -149,7 +139,6 @@ const Home = () => {
             <StoryFeed profile={profile} />
           </motion.div>
           
-          {/* Filter Bar */}
           <motion.div
             className="bg-white rounded-xl p-3 shadow-sm flex items-center space-x-2 overflow-x-auto scrollbar-hide border border-gray-100"
             initial={{ opacity: 0 }}
@@ -220,7 +209,6 @@ const Home = () => {
             </Button>
           </motion.div>
           
-          {/* Posts or Empty State */}
           {loadingPosts ? (
             <div className="space-y-4">
               {[1, 2].map((i) => (
@@ -245,9 +233,7 @@ const Home = () => {
           ) : posts.length > 0 ? (
             <div className="space-y-4">
               {posts.map((post) => (
-                <Card key={post.id} className="overflow-hidden border-none shadow-md hover:shadow-lg transition-shadow duration-300">
-                  {/* Post content here */}
-                </Card>
+                <PostCard key={post.id} post={post} />
               ))}
             </div>
           ) : (
