@@ -37,7 +37,7 @@ const AppLayout = ({ children, pageTitle }: AppLayoutProps) => {
       {/* Don't show the navbar on the reels page for more immersive experience */}
       {!isReelsPage && <Navbar pageTitle={pageTitle} />}
       
-      <div className={`flex flex-grow ${isReelsPage ? 'pt-0' : 'pt-16'}`}>
+      <div className={`flex flex-grow ${isReelsPage ? '' : 'pt-16'}`}>
         {!isMobile && <Sidebar collapsed={isTablet} />}
         
         <main className={`flex-1 ${showMobileNav ? 'pb-16' : 'pb-0'}`}>
