@@ -1,23 +1,17 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "@/components/layout/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { 
-  Mic, Music, Sparkles, 
-  Image as ImageIcon, Smile, Globe, 
-  BookOpen, Pencil, UserPlus, Filter, HeartHandshake,
-  PlusCircle, FileText, Users
-} from "lucide-react";
+import { Music, Sparkles, Filter, Users, PlusCircle, FileText } from "lucide-react";
 import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import StoryFeed from "@/components/stories/StoryFeed";
 import JournalingPrompt from "@/components/vibe-check/JournalingPrompt";
+import CreatePost from "@/components/home/CreatePost";
+import HomeRightSidebar from "@/components/home/HomeRightSidebar";
 
 // Animation variants
 const fadeIn = {
@@ -35,52 +29,15 @@ const staggerItems = {
   }
 };
 
-// Motivational quotes
-const motivationalQuotes = [
-  "Ready to unmute your world today?",
-  "Your voice matters - let it be heard!",
-  "Every story shared creates connection.",
-  "Express yourself freely today.",
-  "What's your unmuted story?",
-  "Today is a perfect day to share your voice.",
-  "Be authentically you today!",
-  "Your perspective is worth sharing.",
-  "Create ripples with your unique voice.",
-  "Speak your truth, someone needs to hear it."
-];
-
 const Home = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
-  const [userGreeting, setUserGreeting] = useState("");
   const [posts, setPosts] = useState<any[]>([]);
-  const [newPostText, setNewPostText] = useState("");
   const [activeTab, setActiveTab] = useState("for-you");
   const [loadingPosts, setLoadingPosts] = useState(false);
-  const [motivationalQuote, setMotivationalQuote] = useState("");
-
-  // Generate a personalized greeting
-  useEffect(() => {
-    const hours = new Date().getHours();
-    let greeting = "";
-    
-    if (hours < 12) {
-      greeting = "Good morning";
-    } else if (hours < 17) {
-      greeting = "Good afternoon";
-    } else {
-      greeting = "Good evening";
-    }
-    
-    setUserGreeting(greeting);
-    
-    // Set a random motivational quote
-    const randomIndex = Math.floor(Math.random() * motivationalQuotes.length);
-    setMotivationalQuote(motivationalQuotes[randomIndex]);
-  }, []);
 
   // Check if user is logged in and fetch posts
   useEffect(() => {
@@ -101,7 +58,6 @@ const Home = () => {
             setProfile(data);
           }
         } else {
-          // Not logged in, redirect to landing page
           navigate("/");
         }
       } catch (error) {
@@ -110,88 +66,31 @@ const Home = () => {
         setLoading(false);
       }
     }
-
-    async function fetchPosts() {
-      setLoadingPosts(true);
-      try {
-        // Fetch posts from the "posts" table
-        const { data, error } = await supabase
-          .from('posts')
-          .select(`
-            *,
-            profiles:user_id(username, avatar, full_name)
-          `)
-          .order('created_at', { ascending: false });
-          
-        if (error) {
-          throw error;
-        }
-        
-        if (data) {
-          setPosts(data);
-        }
-      } catch (error) {
-        console.error("Error fetching posts:", error);
-      } finally {
-        setLoadingPosts(false);
-      }
-    }
     
     getUser();
     fetchPosts();
   }, [navigate]);
 
-  // Handle creating a new post
-  const handleCreatePost = async () => {
-    if (!newPostText.trim()) {
-      toast({
-        title: "Empty post",
-        description: "Please add some content to your post",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const fetchPosts = async () => {
     setLoadingPosts(true);
-    
     try {
-      // Create post record
-      const { error } = await supabase.from('posts').insert({
-        user_id: user.id,
-        content: newPostText,
-      });
-      
-      if (error) throw error;
-      
-      // Reset form
-      setNewPostText("");
-      
-      // Show success toast
-      toast({
-        title: "Post created!",
-        description: "Your post has been published successfully",
-      });
-
-      // Refresh posts
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('posts')
         .select(`
           *,
           profiles:user_id(username, avatar, full_name)
         `)
         .order('created_at', { ascending: false });
+        
+      if (error) {
+        throw error;
+      }
       
       if (data) {
         setPosts(data);
       }
-      
     } catch (error) {
-      console.error("Error creating post:", error);
-      toast({
-        title: "Error",
-        description: "Failed to create post. Please try again.",
-        variant: "destructive",
-      });
+      console.error("Error fetching posts:", error);
     } finally {
       setLoadingPosts(false);
     }
@@ -227,38 +126,6 @@ const Home = () => {
         variants={staggerItems}
       >
         <div className="lg:col-span-2 space-y-4">
-          {/* Welcome Banner */}
-          <motion.div 
-            className="bg-dream-mist rounded-xl p-4 hidden md:block border border-white/40 shadow-sm"
-            variants={fadeIn}
-          >
-            <div className="flex justify-between items-center">
-              <div className="space-y-1">
-                <h2 className="text-xl font-medium">
-                  {userGreeting}, {profile?.username || profile?.full_name || "there"}! 👋
-                </h2>
-                <p className="text-gray-600">{motivationalQuote}</p>
-              </div>
-              <div className="flex gap-2">
-                <Button 
-                  className="bg-cosmic-crush hover:bg-cosmic-crush/90 text-white border-none shadow-md"
-                  onClick={() => navigate('/create')}
-                >
-                  <Mic className="h-4 w-4 mr-2" />
-                  Record a Reel
-                </Button>
-                <Button 
-                  variant="outline"
-                  className="border-primary/30 text-primary hover:bg-primary/10"
-                  onClick={() => navigate('/vibe-check')}
-                >
-                  <Smile className="h-4 w-4 mr-2" />
-                  Vibe Check
-                </Button>
-              </div>
-            </div>
-          </motion.div>
-          
           {/* Daily Journaling Prompt */}
           <motion.div 
             variants={fadeIn}
@@ -268,74 +135,8 @@ const Home = () => {
           </motion.div>
           
           {/* Create Post */}
-          <motion.div 
-            variants={fadeIn} 
-            className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100"
-          >
-            <div className="p-4">
-              <div className="flex gap-3">
-                <Avatar className="h-10 w-10 ring-2 ring-white">
-                  <AvatarImage src={profile?.avatar || ''} />
-                  <AvatarFallback className="bg-primary text-white">
-                    {profile?.username?.[0]?.toUpperCase() || profile?.full_name?.[0]?.toUpperCase() || "U"}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <Input
-                    placeholder="What's on your mind?"
-                    className="bg-gray-50/80 border-none focus-visible:ring-primary/30 rounded-full"
-                    value={newPostText}
-                    onChange={(e) => setNewPostText(e.target.value)}
-                  />
-                </div>
-              </div>
-              
-              <div className="flex items-center justify-between mt-3 border-t pt-3">
-                <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="text-gray-600 flex items-center gap-1 hover:bg-gray-50 hover:text-primary shrink-0"
-                  >
-                    <ImageIcon className="h-4 w-4" />
-                    <span>Photo</span>
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="text-gray-600 flex items-center gap-1 hover:bg-gray-50 hover:text-primary shrink-0"
-                  >
-                    <Smile className="h-4 w-4" />
-                    <span>Mood</span>
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="text-gray-600 flex items-center gap-1 hover:bg-gray-50 hover:text-primary shrink-0"
-                    onClick={() => navigate('/create-collab')}
-                  >
-                    <Users className="h-4 w-4" />
-                    <span>Collab</span>
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="text-gray-600 flex items-center gap-1 hover:bg-gray-50 hover:text-primary shrink-0"
-                  >
-                    <Globe className="h-4 w-4" />
-                    <span>Public</span>
-                  </Button>
-                </div>
-                <Button
-                  className="bg-primary hover:bg-primary/90 text-white rounded-full shadow-sm hover:shadow"
-                  size="sm"
-                  onClick={handleCreatePost}
-                  disabled={loadingPosts}
-                >
-                  {loadingPosts ? 'Posting...' : 'Post'}
-                </Button>
-              </div>
-            </div>
+          <motion.div variants={fadeIn}>
+            <CreatePost profile={profile} onPostCreated={fetchPosts} />
           </motion.div>
           
           {/* Stories Feed */}
@@ -472,135 +273,9 @@ const Home = () => {
           )}
         </div>
         
-        <div className="hidden lg:flex lg:flex-col space-y-4">
-          <WelcomeCard profile={profile} />
-          <SuggestedUsers />
-          <TrendingTopics />
-          {/* Add Vibe Check Card */}
-          <motion.div
-            className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl p-4 shadow-sm border border-white/40"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4, delay: 0.3 }}
-          >
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 rounded-full bg-primary/10">
-                <Smile className="h-5 w-5 text-primary" />
-              </div>
-              <h3 className="font-semibold text-lg">Daily Vibe Check</h3>
-            </div>
-            <p className="text-sm text-gray-600 mb-3">
-              Take a moment to reflect on how you're feeling today. Track your mood, energy, and peace.
-            </p>
-            <Button 
-              className="w-full bg-dream-mist hover:bg-dream-mist/90 text-primary font-medium"
-              onClick={() => navigate("/vibe-check")}
-            >
-              Check Your Vibe
-            </Button>
-          </motion.div>
-          
-          {/* Unmute Collabs Card */}
-          <motion.div
-            className="bg-gradient-to-br from-pink-50 to-orange-50 rounded-xl p-4 shadow-sm border border-white/40"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4, delay: 0.4 }}
-          >
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 rounded-full bg-cosmic-crush/10">
-                <Users className="h-5 w-5 text-cosmic-crush" />
-              </div>
-              <h3 className="font-semibold text-lg">Unmute Collabs</h3>
-            </div>
-            <p className="text-sm text-gray-600 mb-3">
-              Create content together with friends, artists, or advocates. Share your combined voices!
-            </p>
-            <Button 
-              className="w-full bg-cosmic-crush/20 hover:bg-cosmic-crush/30 text-cosmic-crush font-medium"
-              onClick={() => navigate("/create-collab")}
-            >
-              Start a Collab
-            </Button>
-          </motion.div>
-        </div>
+        <HomeRightSidebar profile={profile} />
       </motion.div>
     </AppLayout>
-  );
-};
-
-const WelcomeCard = ({ profile }: { profile: any }) => {
-  const navigate = useNavigate();
-  
-  return (
-    <motion.div
-      className="bg-dream-mist rounded-xl p-4 shadow-sm border border-white/40"
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.4 }}
-    >
-      <h3 className="font-semibold text-lg mb-2">Welcome to Unmute!</h3>
-      <p className="text-sm text-gray-600 mb-3">
-        This is your feed. Discover voices that matter to you.
-      </p>
-      <div className="flex space-x-2">
-        <Button 
-          size="sm" 
-          variant="outline" 
-          className="rounded-full text-primary border-primary/20"
-          onClick={() => navigate("/explore")}
-        >
-          <Sparkles className="h-4 w-4 mr-1" />
-          Explore
-        </Button>
-        <Button 
-          size="sm" 
-          className="bg-cosmic-crush hover:bg-cosmic-crush/90 rounded-full text-white"
-          onClick={() => navigate("/profile")}
-        >
-          Complete Profile
-        </Button>
-      </div>
-    </motion.div>
-  );
-};
-
-const SuggestedUsers = () => {
-  return (
-    <Card className="mb-4 shadow-sm border-none overflow-hidden rounded-xl">
-      <CardContent className="p-4">
-        <h3 className="text-lg font-semibold mb-3">Suggested for you</h3>
-        
-        <div className="empty-state bg-dream-mist py-5 px-4 rounded-lg">
-          <div className="flex justify-center mb-2">
-            <UserPlus className="h-8 w-8 text-primary/40" />
-          </div>
-          <p className="text-center text-sm text-gray-500">
-            We're looking for people you might like to follow
-          </p>
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
-
-const TrendingTopics = () => {
-  return (
-    <Card className="shadow-sm border-none overflow-hidden rounded-xl">
-      <CardContent className="p-4">
-        <h3 className="text-lg font-semibold mb-3">Trending Topics</h3>
-        <div className="flex flex-wrap gap-2">
-          {["#climateaction", "#mentalhealth", "#techtrends", "#creativity", "#musiclife"].map((topic) => (
-            <div 
-              key={topic} 
-              className="bg-dream-mist px-3 py-1.5 rounded-full text-xs font-medium text-primary/80 cursor-pointer hover:bg-primary/10 transition-colors"
-            >
-              {topic}
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
   );
 };
 
