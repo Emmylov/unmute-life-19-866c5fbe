@@ -53,7 +53,6 @@ const MobileNavigation = ({ currentPath }: MobileNavigationProps) => {
       animate={{ y: 0 }}
       transition={{ duration: 0.3, ease: "easeOut" }}
       className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-2 py-1 flex items-center justify-around z-50 shadow-lg"
-      aria-label="Mobile navigation"
     >
       <NavLink 
         icon={<Home className="h-5 w-5" />} 
@@ -101,8 +100,6 @@ const NavLink = ({ icon, label, to, isActive = false }: NavLinkProps) => {
     <Link
       to={to}
       className="relative flex flex-col items-center py-1.5"
-      aria-label={label}
-      aria-current={isActive ? "page" : undefined}
     >
       <motion.div
         whileHover={{ scale: 1.1 }}

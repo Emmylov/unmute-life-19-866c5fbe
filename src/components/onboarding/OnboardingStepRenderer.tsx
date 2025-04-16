@@ -12,7 +12,6 @@ import ProfileSetupStep from "./ProfileSetupStep";
 import FirstUnmuteStep from "./FirstUnmuteStep";
 import WelcomeFeedStep from "./WelcomeFeedStep";
 import CustomizeExperienceStep from "./CustomizeExperienceStep";
-import FinalWelcomeStep from "./FinalWelcomeStep";
 
 interface OnboardingStepRendererProps {
   currentStep: number;
@@ -49,9 +48,7 @@ export const OnboardingStepRenderer: React.FC<OnboardingStepRendererProps> = ({
     case 10:
       return <WelcomeFeedStep onNext={onNext} />;
     case 11:
-      return <CustomizeExperienceStep onNext={onNext} />;
-    case 12:
-      return <FinalWelcomeStep onComplete={onComplete} />;
+      return <CustomizeExperienceStep onNext={onComplete} />;
     default:
       return null;
   }

@@ -2,162 +2,97 @@
 import { supabase } from "@/integrations/supabase/client";
 import { PhysicalWellnessPreference } from "@/components/wellness-plus/physical-wellness/types";
 
-// Interface for wellness goals
-export interface WellnessGoal {
-  id?: string;
-  user_id: string;
-  title: string;
-  description?: string;
-  target_date?: string;
-  category?: string;
-  status?: 'not_started' | 'in_progress' | 'completed';
-  created_at?: string;
-}
-
-// Interface for wellness activities
-export interface WellnessActivity {
-  id?: string;
-  user_id: string;
-  activity_type: string;
-  duration_minutes?: number;
-  notes?: string;
-  mood_before?: string;
-  mood_after?: string;
-  created_at?: string;
-}
-
-// Interface for journal entries
-export interface JournalEntry {
-  id?: string;
-  user_id: string;
-  activity_date?: string;
-  sleep_hours?: number;
-  water_intake?: number;
-  exercise_minutes?: number;
-  mood?: string;
-  nutrition_rating?: number;
-  notes?: string;
-  created_at?: string;
-}
-
-// Mock data for wellness goals
-const mockWellnessGoals: WellnessGoal[] = [
-  {
-    id: '1',
-    user_id: 'user123',
-    title: 'Meditate daily',
-    description: 'Practice mindfulness for 10 minutes each morning',
-    category: 'mental',
-    status: 'in_progress',
-    created_at: new Date().toISOString()
-  },
-  {
-    id: '2',
-    user_id: 'user123',
-    title: 'Exercise 3 times a week',
-    description: 'Complete 30 minutes of moderate exercise',
-    category: 'physical',
-    status: 'not_started',
-    created_at: new Date().toISOString()
-  }
-];
-
-// Mock data for wellness activities
-const mockWellnessActivities: WellnessActivity[] = [
-  {
-    id: '1',
-    user_id: 'user123',
-    activity_type: 'meditation',
-    duration_minutes: 15,
-    mood_before: 'anxious',
-    mood_after: 'calm',
-    created_at: new Date().toISOString()
-  },
-  {
-    id: '2',
-    user_id: 'user123',
-    activity_type: 'journaling',
-    duration_minutes: 20,
-    notes: 'Reflected on today\'s achievements',
-    created_at: new Date().toISOString()
-  }
-];
-
-// Wellness tracking functions - using mock implementation for now
-export const saveWellnessGoal = async (userId: string, goalData: Partial<WellnessGoal>): Promise<WellnessGoal | null> => {
+// Wellness tracking - moved to dedicated service
+export const saveWellnessGoal = async (userId: string, goalData: any) => {
   try {
-    // Mock implementation for now - would connect to Supabase later
-    const newGoal: WellnessGoal = {
-      id: Math.random().toString(36).substr(2, 9),
-      user_id: userId,
-      title: goalData.title || 'Untitled Goal',
-      description: goalData.description,
-      target_date: goalData.target_date,
-      category: goalData.category,
-      status: goalData.status || 'not_started',
-      created_at: new Date().toISOString()
-    };
+    // For TypeScript safety, we're using type assertion here
+    // In a real-world scenario, you should define proper interfaces
+    const { data, error } = await supabase
+      .from('wellness_goals' as any)
+      .insert({
+        user_id: userId,
+        ...goalData
+      })
+      .select()
+      .single();
     
-    console.log("Saved wellness goal:", newGoal);
-    return newGoal;
+    if (error) throw error;
+    return data;
   } catch (error) {
     console.error("Error saving wellness goal:", error);
     throw error;
   }
 };
 
-export const getWellnessGoals = async (userId: string): Promise<WellnessGoal[]> => {
+export const getWellnessGoals = async (userId: string) => {
   try {
-    // Mock implementation for now - would connect to Supabase later
-    return mockWellnessGoals.filter(goal => goal.user_id === userId);
+    // For TypeScript safety, we're using type assertion here
+    const { data, error } = await supabase
+      .from('wellness_goals' as any)
+      .select('*')
+      .eq('user_id', userId);
+    
+    if (error) throw error;
+    return data;
   } catch (error) {
     console.error("Error getting wellness goals:", error);
     throw error;
   }
 };
 
-export const saveWellnessActivity = async (userId: string, activityData: Partial<WellnessActivity>): Promise<WellnessActivity | null> => {
+export const saveWellnessActivity = async (userId: string, activityData: any) => {
   try {
-    // Mock implementation for now - would connect to Supabase later
-    const newActivity: WellnessActivity = {
-      id: Math.random().toString(36).substr(2, 9),
-      user_id: userId,
-      activity_type: activityData.activity_type || 'general',
-      duration_minutes: activityData.duration_minutes,
-      notes: activityData.notes,
-      mood_before: activityData.mood_before,
-      mood_after: activityData.mood_after,
-      created_at: new Date().toISOString()
-    };
+    // For TypeScript safety, we're using type assertion here
+    const { data, error } = await supabase
+      .from('wellness_activities' as any)
+      .insert({
+        user_id: userId,
+        ...activityData
+      })
+      .select()
+      .single();
     
-    console.log("Saved wellness activity:", newActivity);
-    return newActivity;
+    if (error) throw error;
+    return data;
   } catch (error) {
     console.error("Error saving wellness activity:", error);
     throw error;
   }
 };
 
-export const getWellnessActivities = async (userId: string): Promise<WellnessActivity[]> => {
+export const getWellnessActivities = async (userId: string) => {
   try {
-    // Mock implementation for now - would connect to Supabase later
-    return mockWellnessActivities.filter(activity => activity.user_id === userId);
+    // For TypeScript safety, we're using type assertion here
+    const { data, error } = await supabase
+      .from('wellness_activities' as any)
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data;
   } catch (error) {
     console.error("Error getting wellness activities:", error);
     throw error;
   }
 };
 
-// Mock user physical wellness preferences
-let mockPhysicalWellnessPreferences: Record<string, PhysicalWellnessPreference> = {};
-
 // Physical wellness functions
 export const savePhysicalWellnessPreferences = async (userId: string, preferences: PhysicalWellnessPreference) => {
   try {
-    // Store in our mock database
-    mockPhysicalWellnessPreferences[userId] = preferences;
-    console.log("Saved physical wellness preferences:", preferences);
-    return { preferences };
+    const { data, error } = await supabase
+      .from('user_physical_wellness' as any)
+      .upsert({
+        user_id: userId,
+        preferences,
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'user_id'
+      })
+      .select();
+    
+    if (error) throw error;
+    return data;
   } catch (error) {
     console.error("Error saving physical wellness preferences:", error);
     throw error;
@@ -166,44 +101,62 @@ export const savePhysicalWellnessPreferences = async (userId: string, preference
 
 export const getPhysicalWellnessPreferences = async (userId: string): Promise<PhysicalWellnessPreference | null> => {
   try {
-    // Get from our mock database
-    return mockPhysicalWellnessPreferences[userId] || null;
+    const { data, error } = await supabase
+      .from('user_physical_wellness' as any)
+      .select('preferences')
+      .eq('user_id', userId)
+      .single();
+    
+    if (error) {
+      if (error.code === 'PGRST116') {
+        // No data found
+        return null;
+      }
+      throw error;
+    }
+    
+    // If we successfully get data, safely access and return the preferences
+    if (data && 'preferences' in data) {
+      return data.preferences as PhysicalWellnessPreference;
+    }
+    
+    // Return null if we don't have preferences
+    return null;
   } catch (error) {
     console.error("Error getting physical wellness preferences:", error);
     throw error;
   }
 };
 
-// Mock journal entries
-const mockJournalEntries: JournalEntry[] = [];
-
-export const saveJournalEntry = async (userId: string, entry: Partial<JournalEntry>) => {
+export const saveJournalEntry = async (userId: string, entry: any) => {
   try {
-    const newEntry: JournalEntry = {
-      id: Math.random().toString(36).substr(2, 9),
-      user_id: userId,
-      activity_date: entry.activity_date || new Date().toISOString(),
-      sleep_hours: entry.sleep_hours,
-      water_intake: entry.water_intake,
-      exercise_minutes: entry.exercise_minutes,
-      mood: entry.mood,
-      nutrition_rating: entry.nutrition_rating,
-      notes: entry.notes,
-      created_at: new Date().toISOString()
-    };
+    const { data, error } = await supabase
+      .from('physical_wellness_journal' as any)
+      .insert({
+        user_id: userId,
+        ...entry,
+        created_at: new Date().toISOString()
+      })
+      .select();
     
-    mockJournalEntries.push(newEntry);
-    console.log("Saved journal entry:", newEntry);
-    return [newEntry];
+    if (error) throw error;
+    return data;
   } catch (error) {
     console.error("Error saving journal entry:", error);
     throw error;
   }
 };
 
-export const getJournalEntries = async (userId: string): Promise<JournalEntry[]> => {
+export const getJournalEntries = async (userId: string) => {
   try {
-    return mockJournalEntries.filter(entry => entry.user_id === userId);
+    const { data, error } = await supabase
+      .from('physical_wellness_journal' as any)
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data;
   } catch (error) {
     console.error("Error getting journal entries:", error);
     throw error;
