@@ -1,11 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "@/components/layout/AppLayout";
-import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Music, Sparkles, Filter, Users, PlusCircle, FileText } from "lucide-react";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import StoryFeed from "@/components/stories/StoryFeed";
@@ -13,6 +9,7 @@ import JournalingPrompt from "@/components/vibe-check/JournalingPrompt";
 import CreatePost from "@/components/home/CreatePost";
 import HomeRightSidebar from "@/components/home/HomeRightSidebar";
 import PostCard from "@/components/home/PostCard";
+import FilterBar from "@/components/home/FilterBar";
 
 const fadeIn = {
   hidden: { opacity: 0, y: 10 },
@@ -119,10 +116,7 @@ const Home = () => {
     <AppLayout>
       <motion.div className="grid grid-cols-1 lg:grid-cols-3 gap-4" initial="hidden" animate="visible" variants={staggerItems}>
         <div className="lg:col-span-2 space-y-4">
-          <motion.div 
-            variants={fadeIn}
-            className="bg-white rounded-xl p-4 shadow-sm border border-gray-100"
-          >
+          <motion.div variants={fadeIn} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
             <JournalingPrompt />
           </motion.div>
           
@@ -130,83 +124,12 @@ const Home = () => {
             <CreatePost profile={profile} onPostCreated={fetchPosts} />
           </motion.div>
           
-          <motion.div 
-            className="bg-white rounded-xl p-3 shadow-sm border border-gray-100"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
+          <motion.div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
             <StoryFeed profile={profile} />
           </motion.div>
           
-          <motion.div
-            className="bg-white rounded-xl p-3 shadow-sm flex items-center space-x-2 overflow-x-auto scrollbar-hide border border-gray-100"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3, delay: 0.2 }}
-          >
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="bg-gray-100/80 p-1">
-                <TabsTrigger 
-                  value="for-you" 
-                  className={`${
-                    activeTab === 'for-you' 
-                      ? 'bg-white text-primary shadow-sm' 
-                      : 'bg-transparent text-gray-600'
-                  } border-none px-4 py-1.5 rounded-full`}
-                >
-                  For You
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="following" 
-                  className={`${
-                    activeTab === 'following' 
-                      ? 'bg-white text-primary shadow-sm' 
-                      : 'bg-transparent text-gray-600'
-                  } border-none px-4 py-1.5 rounded-full`}
-                >
-                  Following
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="music" 
-                  className={`${
-                    activeTab === 'music' 
-                      ? 'bg-white text-primary shadow-sm' 
-                      : 'bg-transparent text-gray-600'
-                  } border-none px-4 py-1.5 rounded-full`}
-                >
-                  <Music className="h-3.5 w-3.5 mr-1" />
-                  Music
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="trending" 
-                  className={`${
-                    activeTab === 'trending' 
-                      ? 'bg-white text-primary shadow-sm' 
-                      : 'bg-transparent text-gray-600'
-                  } border-none px-4 py-1.5 rounded-full`}
-                >
-                  <Sparkles className="h-3.5 w-3.5 mr-1" />
-                  Trending
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="collabs" 
-                  className={`${
-                    activeTab === 'collabs' 
-                      ? 'bg-white text-primary shadow-sm' 
-                      : 'bg-transparent text-gray-600'
-                  } border-none px-4 py-1.5 rounded-full`}
-                >
-                  <Users className="h-3.5 w-3.5 mr-1" />
-                  Collabs
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-            
-            <Button variant="ghost" size="sm" className="shrink-0">
-              <Filter className="h-4 w-4 mr-1" />
-              Filter
-            </Button>
+          <motion.div variants={fadeIn}>
+            <FilterBar activeTab={activeTab} onTabChange={setActiveTab} />
           </motion.div>
           
           {loadingPosts ? (
