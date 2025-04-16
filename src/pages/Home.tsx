@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "@/components/layout/AppLayout";
@@ -10,6 +11,9 @@ import CreatePost from "@/components/home/CreatePost";
 import HomeRightSidebar from "@/components/home/HomeRightSidebar";
 import PostCard from "@/components/home/PostCard";
 import FilterBar from "@/components/home/FilterBar";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { FileText, PlusCircle } from "lucide-react";
 
 const fadeIn = {
   hidden: { opacity: 0, y: 10 },
