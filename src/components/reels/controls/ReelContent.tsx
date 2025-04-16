@@ -34,14 +34,14 @@ const ReelContent: React.FC<ReelContentProps> = ({ reel }) => {
   
   return (
     <motion.div 
-      className="space-y-2" // Reduced space
+      className="space-y-1" 
       variants={containerVariants}
       initial="hidden"
       animate="visible"
     >
-      {/* Caption with reduced backdrop */}
+      {/* Caption with minimal backdrop */}
       <motion.div 
-        className="backdrop-blur-md bg-black/10 rounded-lg p-2 shadow-sm" // Reduced opacity, padding, and shadow
+        className="backdrop-blur-sm bg-black/5 rounded-lg p-1.5 max-w-[95%] w-auto inline-block" 
         variants={itemVariants}
       >
         <ReelCaption caption={reel.caption} />
@@ -54,7 +54,7 @@ const ReelContent: React.FC<ReelContentProps> = ({ reel }) => {
         
         {reel.tags && reel.tags.length > 0 && (
           <motion.div 
-            className="flex flex-wrap gap-1 mt-2" // Reduced margin and gap
+            className="flex flex-wrap gap-1 mt-1"
             variants={itemVariants}
             initial="hidden"
             animate="visible"

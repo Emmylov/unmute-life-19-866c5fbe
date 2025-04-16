@@ -221,15 +221,15 @@ const Home = () => {
   return (
     <AppLayout>
       <motion.div 
-        className="grid grid-cols-1 lg:grid-cols-3 gap-6" 
+        className="grid grid-cols-1 lg:grid-cols-3 gap-4" 
         initial="hidden" 
         animate="visible"
         variants={staggerItems}
       >
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-4">
           {/* Welcome Banner */}
           <motion.div 
-            className="bg-dream-mist rounded-xl p-5 hidden md:block border border-white/40 shadow-sm"
+            className="bg-dream-mist rounded-xl p-4 hidden md:block border border-white/40 shadow-sm"
             variants={fadeIn}
           >
             <div className="flex justify-between items-center">
@@ -262,7 +262,7 @@ const Home = () => {
           {/* Daily Journaling Prompt */}
           <motion.div 
             variants={fadeIn}
-            className="bg-white rounded-xl p-6 shadow-sm border border-gray-100"
+            className="bg-white rounded-xl p-4 shadow-sm border border-gray-100"
           >
             <JournalingPrompt />
           </motion.div>
@@ -290,7 +290,7 @@ const Home = () => {
                 </div>
               </div>
               
-              <div className="flex items-center justify-between mt-4 border-t pt-3">
+              <div className="flex items-center justify-between mt-3 border-t pt-3">
                 <div className="flex gap-2 overflow-x-auto scrollbar-hide">
                   <Button 
                     variant="ghost" 
@@ -340,7 +340,7 @@ const Home = () => {
           
           {/* Stories Feed */}
           <motion.div 
-            className="bg-white rounded-xl p-4 shadow-sm border border-gray-100"
+            className="bg-white rounded-xl p-3 shadow-sm border border-gray-100"
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
@@ -472,24 +472,24 @@ const Home = () => {
           )}
         </div>
         
-        <div className="hidden lg:flex lg:flex-col space-y-6">
+        <div className="hidden lg:flex lg:flex-col space-y-4">
           <WelcomeCard profile={profile} />
           <SuggestedUsers />
           <TrendingTopics />
           {/* Add Vibe Check Card */}
           <motion.div
-            className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl p-6 shadow-sm border border-white/40"
+            className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl p-4 shadow-sm border border-white/40"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.4, delay: 0.3 }}
           >
-            <div className="flex items-center gap-3 mb-3">
+            <div className="flex items-center gap-3 mb-2">
               <div className="p-2 rounded-full bg-primary/10">
                 <Smile className="h-5 w-5 text-primary" />
               </div>
               <h3 className="font-semibold text-lg">Daily Vibe Check</h3>
             </div>
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="text-sm text-gray-600 mb-3">
               Take a moment to reflect on how you're feeling today. Track your mood, energy, and peace.
             </p>
             <Button 
@@ -502,18 +502,18 @@ const Home = () => {
           
           {/* Unmute Collabs Card */}
           <motion.div
-            className="bg-gradient-to-br from-pink-50 to-orange-50 rounded-xl p-6 shadow-sm border border-white/40"
+            className="bg-gradient-to-br from-pink-50 to-orange-50 rounded-xl p-4 shadow-sm border border-white/40"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.4, delay: 0.4 }}
           >
-            <div className="flex items-center gap-3 mb-3">
+            <div className="flex items-center gap-3 mb-2">
               <div className="p-2 rounded-full bg-cosmic-crush/10">
                 <Users className="h-5 w-5 text-cosmic-crush" />
               </div>
               <h3 className="font-semibold text-lg">Unmute Collabs</h3>
             </div>
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="text-sm text-gray-600 mb-3">
               Create content together with friends, artists, or advocates. Share your combined voices!
             </p>
             <Button 
@@ -534,13 +534,13 @@ const WelcomeCard = ({ profile }: { profile: any }) => {
   
   return (
     <motion.div
-      className="bg-dream-mist rounded-xl p-6 shadow-sm border border-white/40"
+      className="bg-dream-mist rounded-xl p-4 shadow-sm border border-white/40"
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.4 }}
     >
       <h3 className="font-semibold text-lg mb-2">Welcome to Unmute!</h3>
-      <p className="text-sm text-gray-600 mb-4">
+      <p className="text-sm text-gray-600 mb-3">
         This is your feed. Discover voices that matter to you.
       </p>
       <div className="flex space-x-2">
@@ -567,12 +567,12 @@ const WelcomeCard = ({ profile }: { profile: any }) => {
 
 const SuggestedUsers = () => {
   return (
-    <Card className="mb-6 shadow-sm border-none overflow-hidden rounded-xl">
-      <CardContent className="p-6">
-        <h3 className="text-lg font-semibold mb-4">Suggested for you</h3>
+    <Card className="mb-4 shadow-sm border-none overflow-hidden rounded-xl">
+      <CardContent className="p-4">
+        <h3 className="text-lg font-semibold mb-3">Suggested for you</h3>
         
-        <div className="empty-state bg-dream-mist py-6 px-4 rounded-lg">
-          <div className="flex justify-center mb-3">
+        <div className="empty-state bg-dream-mist py-5 px-4 rounded-lg">
+          <div className="flex justify-center mb-2">
             <UserPlus className="h-8 w-8 text-primary/40" />
           </div>
           <p className="text-center text-sm text-gray-500">
@@ -587,8 +587,8 @@ const SuggestedUsers = () => {
 const TrendingTopics = () => {
   return (
     <Card className="shadow-sm border-none overflow-hidden rounded-xl">
-      <CardContent className="p-6">
-        <h3 className="text-lg font-semibold mb-4">Trending Topics</h3>
+      <CardContent className="p-4">
+        <h3 className="text-lg font-semibold mb-3">Trending Topics</h3>
         <div className="flex flex-wrap gap-2">
           {["#climateaction", "#mentalhealth", "#techtrends", "#creativity", "#musiclife"].map((topic) => (
             <div 
