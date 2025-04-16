@@ -1,4 +1,3 @@
-
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, useParams, useSearchParams } from "react-router-dom";
 import Auth from "./pages/Auth";
@@ -23,6 +22,7 @@ import Saved from "./pages/Saved";
 import "./App.css";
 import ProtectedLayout from "./components/auth/ProtectedLayout";
 import ErrorBoundary from "./components/ui/error-boundary";
+import Games from "./pages/Games";
 
 // Toast provider
 import { Toaster } from "sonner";
@@ -131,6 +131,11 @@ function App() {
                 <Route path="/saved" element={
                   <ProtectedLayout>
                     <Saved />
+                  </ProtectedLayout>
+                } />
+                <Route path="/games" element={
+                  <ProtectedLayout>
+                    <Games />
                   </ProtectedLayout>
                 } />
                 

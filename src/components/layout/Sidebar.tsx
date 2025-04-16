@@ -1,4 +1,3 @@
-
 import React from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -14,7 +13,8 @@ import {
   BadgeHelp,
   LogOut,
   PlusCircle,
-  Heart
+  Heart,
+  Gamepad2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -116,6 +116,13 @@ const Sidebar = ({ collapsed = false }: SidebarProps) => {
             icon={<Bookmark className="h-5 w-5" />} 
             label="Saved"
             isActive={location.pathname === '/saved'}
+            collapsed={collapsed}
+          />
+          <SidebarLink 
+            to="/games" 
+            icon={<Gamepad2 className="h-5 w-5" />} 
+            label="Games"
+            isActive={location.pathname === '/games'}
             collapsed={collapsed}
           />
         </motion.nav>
