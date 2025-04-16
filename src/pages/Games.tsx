@@ -21,13 +21,37 @@ const Games = () => {
       description: "Unscramble words to boost your mood",
       icon: "📝",
       difficulty: "Medium",
-      comingSoon: true
+      comingSoon: false
     },
     {
       id: "bubble-pop",
       title: "Bubble Pop",
       description: "Pop bubbles with positive affirmations",
       icon: "🫧",
+      difficulty: "Easy",
+      comingSoon: false
+    },
+    {
+      id: "puzzle",
+      title: "Mood Puzzle",
+      description: "Solve puzzles with mood-boosting imagery",
+      icon: "🧩",
+      difficulty: "Medium",
+      comingSoon: true
+    },
+    {
+      id: "trivia",
+      title: "Wellness Trivia",
+      description: "Test your knowledge on mental wellness",
+      icon: "🧠",
+      difficulty: "Hard",
+      comingSoon: true
+    },
+    {
+      id: "coloring",
+      title: "Mindful Coloring",
+      description: "Relax with digital coloring pages",
+      icon: "🎨",
       difficulty: "Easy",
       comingSoon: true
     }

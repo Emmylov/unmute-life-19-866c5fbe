@@ -7,6 +7,7 @@ import { shuffle } from '@/lib/utils';
 interface MemoryGridProps {
   onMatch: () => void;
   onMove: () => void;
+  onGameComplete: () => void;
 }
 
 const CARD_PAIRS = [
@@ -20,14 +21,22 @@ const CARD_PAIRS = [
   { id: 8, emoji: "🎮", matched: false },
 ];
 
-const MemoryGrid = ({ onMatch, onMove }: MemoryGridProps) => {
+const MemoryGrid = ({ onMatch, onMove, onGameComplete }: MemoryGridProps) => {
   const [cards, setCards] = useState<any[]>([]);
   const [flippedCards, setFlippedCards] = useState<number[]>([]);
   const [disableFlip, setDisableFlip] = useState(false);
+  const [matchedPairs, setMatchedPairs] = useState(0);
 
   useEffect(() => {
     initializeGame();
   }, []);
+  
+  useEffect(() => {
+    // Check if all pairs are matched
+    if (matchedPairs === CARD_PAIRS.length && matchedPairs > 0) {
+      onGameComplete();
+    }
+  }, [matchedPairs, onGameComplete]);
 
   const initializeGame = () => {
     const duplicatedCards = [...CARD_PAIRS, ...CARD_PAIRS].map((card, index) => ({
@@ -36,6 +45,8 @@ const MemoryGrid = ({ onMatch, onMove }: MemoryGridProps) => {
       matched: false,
     }));
     setCards(shuffle(duplicatedCards));
+    setFlippedCards([]);
+    setMatchedPairs(0);
   };
 
   const handleCardClick = (index: number) => {
@@ -56,6 +67,7 @@ const MemoryGrid = ({ onMatch, onMove }: MemoryGridProps) => {
             : card
         ));
         onMatch();
+        setMatchedPairs(prev => prev + 1);
         setFlippedCards([]);
         setDisableFlip(false);
       } else {
