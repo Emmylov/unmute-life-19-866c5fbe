@@ -33,7 +33,7 @@ const ReelActionButton: React.FC<ReelActionButtonProps> = ({
       transition: {
         duration: 0.5,
         repeat: 0,
-        repeatType: "reverse"
+        repeatType: "reverse" as const  // Fix: TypeScript needs this to be a literal type
       }
     }
   } : {};
