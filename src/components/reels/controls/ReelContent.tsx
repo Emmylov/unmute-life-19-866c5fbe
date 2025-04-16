@@ -41,7 +41,7 @@ const ReelContent: React.FC<ReelContentProps> = ({ reel }) => {
     >
       {/* Caption with minimal backdrop */}
       <motion.div 
-        className="backdrop-blur-sm bg-black/5 rounded-lg p-1.5 max-w-[95%] w-auto inline-block" 
+        className="backdrop-blur-sm bg-black/5 rounded-lg p-1 max-w-[80%] w-auto inline-block" 
         variants={itemVariants}
       >
         <ReelCaption caption={reel.caption} />
@@ -63,7 +63,7 @@ const ReelContent: React.FC<ReelContentProps> = ({ reel }) => {
               <motion.span 
                 key={index}
                 variants={itemVariants}
-                className="text-xs font-medium text-white/80 bg-white/5 rounded-full px-2 py-0.5 backdrop-blur-sm hover:bg-white/10 transition-colors cursor-pointer"
+                className="text-xs font-medium text-white/80 bg-white/5 rounded-full px-1.5 py-0.5 backdrop-blur-sm hover:bg-white/10 transition-colors cursor-pointer"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >

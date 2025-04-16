@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link } from "react-router-dom";
 import { CountdownTimer } from "@/components/ui/countdown-timer";
@@ -22,7 +23,7 @@ const Index = () => {
   
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-unmute-purple/10 to-unmute-pink/10">
-      <header className="w-full py-6 px-6 flex justify-between items-center">
+      <header className="w-full py-4 px-6 flex justify-between items-center">
         <h1 className="text-2xl md:text-3xl font-bold">
           <span className="unmute-gradient-text">Unmute</span>
         </h1>
@@ -34,33 +35,33 @@ const Index = () => {
         </div>
       </header>
       
-      <main className="flex-grow">
-        <section className="max-w-6xl mx-auto px-6 py-12 md:py-20 text-center">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
+      <main className="flex-grow flex flex-col">
+        <section className="max-w-6xl mx-auto px-6 py-8 md:py-12 text-center">
+          <h1 className="text-4xl md:text-6xl font-bold mb-4 leading-tight">
             <span className="unmute-gradient-text">Unmute Is Launching Soon!</span>
           </h1>
           
-          <div className="max-w-lg mx-auto mb-12">
+          <div className="max-w-lg mx-auto mb-8">
             <CountdownTimer targetDate={launchDate} className="transform scale-110" />
           </div>
           
-          <p className="text-xl md:text-2xl text-gray-700 mb-8 max-w-2xl mx-auto">
+          <p className="text-xl md:text-2xl text-gray-700 mb-6 max-w-2xl mx-auto">
             Join the movement. Be one of the first. Get the OG Starter Pack.
           </p>
           
-          <WaitlistSignupForm className="max-w-md mx-auto mb-16" />
+          <WaitlistSignupForm className="max-w-md mx-auto mb-12" />
         </section>
         
         <StarterPackSection />
         
-        <section className="py-16 bg-gradient-to-b from-white/0 to-unmute-purple/10">
+        <section className="py-12 bg-gradient-to-b from-white/0 to-unmute-purple/10">
           <div className="max-w-4xl mx-auto px-6 text-center">
             <TestimonialSection />
           </div>
         </section>
       </main>
       
-      <footer className="bg-white/80 py-8 border-t border-gray-100">
+      <footer className="bg-white/80 py-6 border-t border-gray-100">
         <div className="max-w-6xl mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="mb-4 md:mb-0">

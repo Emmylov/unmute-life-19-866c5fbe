@@ -41,7 +41,7 @@ const AppLayout = ({ children, pageTitle }: AppLayoutProps) => {
         {!isMobile && <Sidebar collapsed={isTablet} />}
         
         <main className={`flex-1 ${showMobileNav ? 'pb-16' : 'pb-0'}`}>
-          <div className={`${isReelsPage ? 'p-0 max-w-none' : 'max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 md:py-6'}`}>
+          <div className={`${isReelsPage ? 'p-0 max-w-none' : 'max-w-7xl mx-auto px-3 sm:px-4 md:px-5 lg:px-6 py-2 md:py-3'}`}>
             {children}
           </div>
         </main>
