@@ -7,13 +7,14 @@ import { getInitials } from "@/lib/utils";
 import { toggleFollowUser, checkIsFollowing } from "@/integrations/supabase/profile-functions";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { ProfileSummary } from "@/types/reels";
+import { ProfileSummary, ReelContent } from "@/types/reels";
 
 interface ReelUserInfoProps {
   user: ProfileSummary;
+  reel: ReelContent; // Adding the missing prop to the interface
 }
 
-const ReelUserInfo = ({ user }: ReelUserInfoProps) => {
+const ReelUserInfo = ({ user, reel }: ReelUserInfoProps) => {
   const [isFollowing, setIsFollowing] = useState(false);
   const { user: currentUser } = useAuth();
 
