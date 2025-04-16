@@ -1,13 +1,12 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, useAnimation, PanInfo } from "framer-motion";
-import { Share2, Heart } from "lucide-react";
 import ReelVideo from "./controls/ReelVideo";
 import ReelMuteButton from "./controls/ReelMuteButton";
 import ReelNavigation from "./controls/ReelNavigation";
 import ReelControls from "./controls/ReelControls";
 import ReelContent from "./controls/ReelContent";
-import ReelSideActions from "./controls/ReelSideActions";
+import ReelActions from "./controls/ReelActions";
 import ReelEmotionDisplay from "./controls/ReelEmotionDisplay";
 import ReelUnmuteThread from "@/components/reels/ReelUnmuteThread";
 import { toast } from "sonner";
@@ -21,7 +20,6 @@ import {
   repostReel
 } from "@/services/reel-service";
 import { ReelWithUser } from "@/types/reels";
-import ReelActions from "./controls/ReelActions";
 
 interface ReelViewProps {
   reelWithUser: ReelWithUser;
@@ -226,6 +224,10 @@ const ReelView = ({
       onSwipe("up");
     } else if (info.offset.y > threshold && hasPrevious) {
       onSwipe("down");
+    } else if (info.offset.x < -threshold && hasNext) {
+      onSwipe("left");
+    } else if (info.offset.x > threshold && hasPrevious) {
+      onSwipe("right");
     }
   };
 
@@ -248,7 +250,7 @@ const ReelView = ({
       dragElastic={0.2}
       onDragEnd={handleDragEnd}
     >
-      <div className="absolute inset-4 rounded-2xl overflow-hidden shadow-xl">
+      <div className="absolute inset-0 rounded-2xl overflow-hidden shadow-xl">
         <div className={`absolute inset-0 bg-gradient-to-br ${getGradient()} opacity-20`}></div>
         
         <ReelVideo 
@@ -267,7 +269,10 @@ const ReelView = ({
           controls={controls}
         />
 
-        <ReelNavigation hasNext={hasNext} hasPrevious={hasPrevious} />
+        <ReelNavigation 
+          hasNext={hasNext} 
+          hasPrevious={hasPrevious} 
+        />
 
         {/* Subtle gradient overlays for better text readability */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/40 pointer-events-none" />

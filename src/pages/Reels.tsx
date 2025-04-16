@@ -19,10 +19,21 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState<boolean>(true);
+  const [viewMode, setViewMode] = useState<'vertical' | 'horizontal'>('vertical');
   const reelContainerRef = useRef<HTMLDivElement>(null);
+  const horizontalScrollRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { isMobile } = useScreenSize();
+  const { isMobile, isTablet, isDesktop } = useScreenSize();
+
+  useEffect(() => {
+    // Set view mode based on screen size
+    if (isDesktop) {
+      setViewMode('horizontal');
+    } else {
+      setViewMode('vertical');
+    }
+  }, [isDesktop]);
 
   useEffect(() => {
     fetchReels();
@@ -102,8 +113,8 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
             tags: item.tags || [],
             allow_comments: item.allow_comments !== false,
             allow_duets: item.allow_duets !== false,
-            vibe_tag: null, // Added default values for these fields
-            mood_vibe: null, // Added default values for these fields
+            vibe_tag: null,
+            mood_vibe: null,
           },
           user: {
             id: userProfile.id,
@@ -218,6 +229,12 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
   const goToNextReel = () => {
     if (currentIndex < reels.length - 1) {
       setCurrentIndex(prevIndex => prevIndex + 1);
+      
+      // If in horizontal mode, scroll to the next reel
+      if (viewMode === 'horizontal' && horizontalScrollRef.current) {
+        const scrollTo = (currentIndex + 1) * horizontalScrollRef.current.clientWidth;
+        horizontalScrollRef.current.scrollTo({ left: scrollTo, behavior: 'smooth' });
+      }
     } else if (hasMore) {
       loadMoreReels();
     }
@@ -226,13 +243,19 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
   const goToPreviousReel = () => {
     if (currentIndex > 0) {
       setCurrentIndex(prevIndex => prevIndex - 1);
+      
+      // If in horizontal mode, scroll to the previous reel
+      if (viewMode === 'horizontal' && horizontalScrollRef.current) {
+        const scrollTo = (currentIndex - 1) * horizontalScrollRef.current.clientWidth;
+        horizontalScrollRef.current.scrollTo({ left: scrollTo, behavior: 'smooth' });
+      }
     }
   };
 
   const handleSwipe = (direction: string) => {
-    if (direction === "up") {
+    if (direction === "up" || direction === "left") {
       goToNextReel();
-    } else if (direction === "down") {
+    } else if (direction === "down" || direction === "right") {
       goToPreviousReel();
     }
   };
@@ -240,9 +263,9 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
   // Enhanced keyboard navigation support for desktop
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowUp' || e.key === 'k') {
+      if (e.key === 'ArrowUp' || e.key === 'k' || e.key === 'ArrowLeft') {
         goToPreviousReel();
-      } else if (e.key === 'ArrowDown' || e.key === 'j') {
+      } else if (e.key === 'ArrowDown' || e.key === 'j' || e.key === 'ArrowRight') {
         goToNextReel();
       }
     };
@@ -253,36 +276,68 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
     };
   }, [currentIndex, reels.length]);
 
-  // Enhanced wheel event for desktop scrolling
+  // Enhanced scroll snap for horizontal layout
   useEffect(() => {
-    const handleWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      // Debounce wheel events to prevent too many rapid changes
-      if (e.deltaY > 50) {
-        goToNextReel();
-      } else if (e.deltaY < -50) {
-        goToPreviousReel();
-      }
-    };
-
-    const currentRef = reelContainerRef.current;
-    if (currentRef) {
-      currentRef.addEventListener('wheel', handleWheel, { passive: false });
+    if (viewMode === 'horizontal' && horizontalScrollRef.current) {
+      const handleScroll = () => {
+        if (horizontalScrollRef.current) {
+          const scrollPos = horizontalScrollRef.current.scrollLeft;
+          const reelWidth = horizontalScrollRef.current.clientWidth;
+          const newIndex = Math.round(scrollPos / reelWidth);
+          
+          if (newIndex !== currentIndex && newIndex >= 0 && newIndex < reels.length) {
+            setCurrentIndex(newIndex);
+          }
+        }
+      };
+      
+      const scrollContainer = horizontalScrollRef.current;
+      scrollContainer.addEventListener('scrollend', handleScroll);
+      
+      return () => {
+        scrollContainer.removeEventListener('scrollend', handleScroll);
+      };
     }
-    
-    return () => {
+  }, [viewMode, horizontalScrollRef.current, reels.length, currentIndex]);
+
+  // Enhanced wheel event for vertical scrolling
+  useEffect(() => {
+    if (viewMode === 'vertical') {
+      const handleWheel = (e: WheelEvent) => {
+        e.preventDefault();
+        // Debounce wheel events to prevent too many rapid changes
+        if (e.deltaY > 50) {
+          goToNextReel();
+        } else if (e.deltaY < -50) {
+          goToPreviousReel();
+        }
+      };
+
+      const currentRef = reelContainerRef.current;
       if (currentRef) {
-        currentRef.removeEventListener('wheel', handleWheel);
+        currentRef.addEventListener('wheel', handleWheel, { passive: false });
       }
-    };
-  }, [currentIndex, reels.length]);
+      
+      return () => {
+        if (currentRef) {
+          currentRef.removeEventListener('wheel', handleWheel);
+        }
+      };
+    }
+  }, [viewMode, currentIndex, reels.length]);
 
   const handlers = useSwipeable({
-    onSwipedUp: () => goToNextReel(),
-    onSwipedDown: () => goToPreviousReel(),
+    onSwipedUp: () => viewMode === 'vertical' && goToNextReel(),
+    onSwipedDown: () => viewMode === 'vertical' && goToPreviousReel(),
+    onSwipedLeft: () => viewMode === 'horizontal' && goToNextReel(),
+    onSwipedRight: () => viewMode === 'horizontal' && goToPreviousReel(),
     trackMouse: false,
-    trackTouch: isMobile
+    trackTouch: true
   });
+
+  const handleReelClick = (index: number) => {
+    setCurrentIndex(index);
+  };
 
   if (loading && reels.length === 0) {
     return <ReelsSkeleton />;
@@ -321,26 +376,74 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
   return (
     <div 
       className="h-screen w-full bg-black overflow-hidden reels-container" 
-      {...(isMobile ? handlers : {})} 
+      {...(viewMode === 'vertical' ? handlers : {})} 
       ref={reelContainerRef}
     >
-      {/* Improved desktop navigation hint */}
+      {/* Navigation hint */}
       <div className="hidden md:block absolute top-6 left-1/2 transform -translate-x-1/2 bg-black/30 text-white/90 px-6 py-2.5 rounded-full z-10 backdrop-blur-md transition-opacity duration-300 hover:opacity-0">
         <p className="text-sm font-medium flex items-center gap-2">
-          <span>↑</span> Use arrow keys or scroll to navigate <span>↓</span>
+          {viewMode === 'vertical' 
+            ? <span>↑ Use arrow keys or scroll to navigate ↓</span>
+            : <span>← Use arrow keys or scroll to navigate →</span>
+          }
         </p>
       </div>
+
+      {/* Toggle view mode button (only show on desktop) */}
+      {isDesktop && (
+        <button
+          onClick={() => setViewMode(prev => prev === 'vertical' ? 'horizontal' : 'vertical')}
+          className="absolute top-6 right-6 z-10 bg-black/30 text-white/90 p-2.5 rounded-full backdrop-blur-md hover:bg-black/50 transition-colors"
+        >
+          {viewMode === 'vertical' ? 'Switch to Grid View' : 'Switch to Full View'}
+        </button>
+      )}
       
-      <ReelView 
-        reelWithUser={reels[currentIndex]} 
-        onNext={goToNextReel}
-        onPrevious={goToPreviousReel}
-        onSwipe={handleSwipe}
-        hasNext={currentIndex < reels.length - 1 || hasMore}
-        hasPrevious={currentIndex > 0}
-        currentIndex={currentIndex}
-        totalReels={reels.length}
-      />
+      {/* Vertical scrolling view (traditional TikTok style) */}
+      {viewMode === 'vertical' ? (
+        <ReelView 
+          reelWithUser={reels[currentIndex]} 
+          onNext={goToNextReel}
+          onPrevious={goToPreviousReel}
+          onSwipe={handleSwipe}
+          hasNext={currentIndex < reels.length - 1 || hasMore}
+          hasPrevious={currentIndex > 0}
+          currentIndex={currentIndex}
+          totalReels={reels.length}
+        />
+      ) : (
+        /* Horizontal scrolling view for desktop/tablet */
+        <div 
+          ref={horizontalScrollRef}
+          className="flex w-full h-full overflow-x-auto snap-x snap-mandatory scrollbar-hide"
+          {...handlers}
+        >
+          {reels.map((reel, index) => (
+            <div 
+              key={reel.reel.id}
+              className={`min-w-full h-full flex-shrink-0 snap-center ${
+                index === currentIndex ? 'opacity-100' : 'opacity-80'
+              }`}
+              onClick={() => handleReelClick(index)}
+            >
+              <div className="w-full h-full max-w-2xl mx-auto flex items-center justify-center p-4">
+                <div className="w-full h-[calc(100vh-80px)] max-h-[calc(100vh-80px)] aspect-[9/16] relative rounded-2xl overflow-hidden shadow-2xl">
+                  <ReelView 
+                    reelWithUser={reel} 
+                    onNext={goToNextReel}
+                    onPrevious={goToPreviousReel}
+                    onSwipe={handleSwipe}
+                    hasNext={index < reels.length - 1 || hasMore}
+                    hasPrevious={index > 0}
+                    currentIndex={index}
+                    totalReels={reels.length}
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

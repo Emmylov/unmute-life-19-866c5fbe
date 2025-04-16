@@ -1,7 +1,7 @@
 
 import React, { useRef, useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Play, AlertCircle } from "lucide-react";
+import { Play, AlertCircle, HeartIcon } from "lucide-react";
 
 interface ReelVideoProps {
   videoUrl: string;
@@ -12,13 +12,6 @@ interface ReelVideoProps {
   onTogglePlay: () => void;
   onDoubleTap?: () => void;
 }
-
-const SUPPORTED_VIDEO_FORMATS = [
-  'video/mp4',
-  'video/webm',
-  'video/ogg',
-  'video/quicktime', // .mov files
-];
 
 const ReelVideo = ({ 
   videoUrl, 
@@ -33,13 +26,28 @@ const ReelVideo = ({
   const [loadError, setLoadError] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [tapCount, setTapCount] = useState(0);
-  const [lastTap, setLastTap] = useState(0);
+  const [showHeart, setShowHeart] = useState<boolean>(false);
+  const [lastTapTime, setLastTapTime] = useState<number>(0);
+  const [tapPosition, setTapPosition] = useState<{x: number, y: number}>({x: 0, y: 0});
+  
+  // Animation variants for the heart animation
+  const heartVariants = {
+    hidden: { opacity: 0, scale: 0 },
+    visible: { 
+      opacity: 1, 
+      scale: [0, 1.2, 1],
+      transition: { duration: 0.5 } 
+    },
+    exit: { 
+      opacity: 0,
+      scale: 0.8,
+      transition: { duration: 0.3 } 
+    }
+  };
 
   useEffect(() => {
     if (videoRef.current) {
       if (isPlaying && !loadError) {
-        console.log("Attempting to play video:", videoUrl);
         videoRef.current.play().catch(error => {
           console.error("Error playing video:", error);
           setLoadError(true);
@@ -69,23 +77,24 @@ const ReelVideo = ({
     if (videoRef.current) {
       videoRef.current.currentTime = 0;
       
-      // Log the video URL for debugging
-      console.log("Loading new video URL:", videoUrl);
-      
       if (videoUrl && videoUrl.trim() !== "") {
         videoRef.current.load(); // Make sure to load the new video source
-        videoRef.current.play().catch(error => {
-          console.error("Error auto-playing video:", error);
-          setLoadError(true);
-          setErrorMessage("The video couldn't be played automatically. Try clicking on the video to play.");
-        });
+        
+        // Only try to autoplay if the component wants to play
+        if (isPlaying) {
+          videoRef.current.play().catch(error => {
+            console.error("Error auto-playing video:", error);
+            setLoadError(true);
+            setErrorMessage("The video couldn't be played automatically. Try clicking on the video to play.");
+          });
+        }
       } else {
         console.error("Empty or invalid video URL provided");
         setLoadError(true);
         setErrorMessage("No valid video source was provided.");
       }
     }
-  }, [currentIndex, videoUrl]);
+  }, [currentIndex, videoUrl, isPlaying]);
 
   const handleVideoError = () => {
     console.error("Video failed to load:", videoUrl);
@@ -98,35 +107,51 @@ const ReelVideo = ({
     setIsLoading(false);
   };
 
-  const handleTap = () => {
+  const handleTap = (e: React.MouseEvent | React.TouchEvent) => {
     const now = Date.now();
     const DOUBLE_TAP_DELAY = 300; // ms
     
-    if (now - lastTap < DOUBLE_TAP_DELAY) {
+    // Get tap position for the heart animation
+    let x, y;
+    if ('touches' in e) {
+      // Touch event
+      const touch = e.touches[0] || e.changedTouches[0];
+      x = touch.clientX;
+      y = touch.clientY;
+    } else {
+      // Mouse event
+      x = e.clientX;
+      y = e.clientY;
+    }
+    
+    setTapPosition({ x, y });
+    
+    if (now - lastTapTime < DOUBLE_TAP_DELAY) {
       // Double tap detected
       if (onDoubleTap) {
         onDoubleTap();
+        setShowHeart(true);
+        setTimeout(() => setShowHeart(false), 1000);
       }
-      setTapCount(0);
     } else {
-      // First tap or too slow
+      // Single tap
       setTimeout(() => {
-        if (tapCount === 1) {
-          // Single tap confirmed
+        if (now === lastTapTime) {
           onTogglePlay();
         }
-        setTapCount(0);
       }, DOUBLE_TAP_DELAY);
-      
-      setTapCount(1);
     }
     
-    setLastTap(now);
+    setLastTapTime(now);
   };
 
   return (
     <>
-      <div className="absolute inset-0 flex items-center justify-center" onClick={handleTap}>
+      <div 
+        className="absolute inset-0 flex items-center justify-center" 
+        onClick={handleTap}
+        onTouchStart={handleTap}
+      >
         {!loadError ? (
           <video 
             ref={videoRef}
@@ -158,6 +183,7 @@ const ReelVideo = ({
         )}
       </div>
 
+      {/* Loading indicator */}
       {isLoading && !loadError && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/50">
           <div className="animate-pulse flex flex-col items-center">
@@ -167,6 +193,7 @@ const ReelVideo = ({
         </div>
       )}
 
+      {/* Play/Pause indicator */}
       {!isPlaying && !loadError && !isLoading && (
         <motion.div 
           initial={{ opacity: 0 }}
@@ -175,6 +202,25 @@ const ReelVideo = ({
           className="absolute inset-0 flex items-center justify-center bg-black/30"
         >
           <Play className="w-16 h-16 text-white opacity-80" fill="white" />
+        </motion.div>
+      )}
+
+      {/* Double tap heart animation */}
+      {showHeart && (
+        <motion.div
+          className="absolute pointer-events-none"
+          style={{ 
+            left: tapPosition.x,
+            top: tapPosition.y,
+            translateX: "-50%",
+            translateY: "-50%"
+          }}
+          variants={heartVariants}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+        >
+          <HeartIcon className="w-24 h-24 text-white fill-red-500" />
         </motion.div>
       )}
     </>

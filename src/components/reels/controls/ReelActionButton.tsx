@@ -1,16 +1,17 @@
 
 import React from "react";
 import { LucideIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 
 interface ReelActionButtonProps {
   icon: LucideIcon;
   label: string;
-  onClick: () => void;
+  onClick?: () => void;
   isActive?: boolean;
   activeColor?: string;
   isMobile?: boolean;
+  badge?: number;
+  showAnimation?: boolean;
 }
 
 const ReelActionButton: React.FC<ReelActionButtonProps> = ({
@@ -18,39 +19,49 @@ const ReelActionButton: React.FC<ReelActionButtonProps> = ({
   label,
   onClick,
   isActive = false,
-  activeColor = "text-primary",
-  isMobile = false
+  activeColor = "text-primary fill-primary",
+  isMobile = false,
+  badge,
+  showAnimation = false
 }) => {
-  // Adjust size and styling based on screen size
+  const buttonSize = isMobile ? "w-11 h-11" : "w-12 h-12";
   const iconSize = isMobile ? "w-5 h-5" : "w-6 h-6";
-  const buttonSize = isMobile ? "w-11 h-11" : "w-14 h-14";
-  const labelSize = isMobile ? "text-xs" : "text-sm";
   
+  const pulseAnimation = showAnimation ? {
+    animate: {
+      scale: [1, 1.2, 1],
+      transition: {
+        duration: 0.5,
+        repeat: 0,
+        repeatType: "reverse"
+      }
+    }
+  } : {};
+
   return (
     <div className="flex flex-col items-center">
       <motion.button
-        type="button"
         onClick={onClick}
-        className={cn(
-          `${buttonSize} rounded-full bg-black/40 backdrop-blur-md hover:bg-black/60 flex items-center justify-center transition-all`,
+        className={`${buttonSize} rounded-full bg-black/20 backdrop-blur-md flex items-center justify-center transition-colors ${
           isActive ? activeColor : "text-white"
-        )}
-        aria-label={label}
+        } hover:bg-black/40`}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
+        {...pulseAnimation}
       >
         <Icon className={iconSize} fill={isActive ? "currentColor" : "none"} />
+        
+        {/* Badge for comment counts */}
+        {badge && badge > 0 && (
+          <span className="absolute -top-1 -right-1 bg-primary text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+            {badge > 99 ? "99+" : badge}
+          </span>
+        )}
       </motion.button>
-      {label && (
-        <motion.span 
-          className={`${labelSize} text-white font-medium bg-black/30 backdrop-blur-sm px-2 py-0.5 rounded-full mt-1`}
-          initial={{ opacity: 0, y: -5 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          {label}
-        </motion.span>
-      )}
+      
+      <span className={`text-xs mt-1 ${isActive ? "text-white font-medium" : "text-white/80"}`}>
+        {label}
+      </span>
     </div>
   );
 };

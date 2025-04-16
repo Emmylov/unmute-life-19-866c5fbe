@@ -1,37 +1,43 @@
 
 import React from "react";
-import { motion } from "framer-motion";
 import { ChevronUp, ChevronDown } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface ReelNavigationProps {
   hasNext: boolean;
   hasPrevious: boolean;
 }
 
-const ReelNavigation = ({ hasNext, hasPrevious }: ReelNavigationProps) => {
+const ReelNavigation: React.FC<ReelNavigationProps> = ({ hasNext, hasPrevious }) => {
   return (
     <>
-      {hasNext && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 0.7 }}
-          className="absolute bottom-6 left-1/2 transform -translate-x-1/2 text-white"
-          whileHover={{ y: -4, opacity: 1 }}
-          title="Next reel"
+      {/* Previous reel indicator */}
+      {hasPrevious && (
+        <motion.div 
+          className="absolute top-3 inset-x-0 flex justify-center pointer-events-none"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 0.6, y: 0 }}
+          transition={{ duration: 0.3, delay: 1 }}
         >
-          <ChevronUp className="w-6 h-6 animate-bounce" />
+          <div className="bg-black/30 backdrop-blur-sm rounded-full p-1 px-3 flex items-center gap-1">
+            <ChevronUp className="h-4 w-4 text-white" />
+            <span className="text-xs text-white">Swipe up</span>
+          </div>
         </motion.div>
       )}
-      
-      {hasPrevious && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 0.7 }}
-          className="absolute top-6 left-1/2 transform -translate-x-1/2 text-white"
-          whileHover={{ y: 4, opacity: 1 }}
-          title="Previous reel"
+
+      {/* Next reel indicator */}
+      {hasNext && (
+        <motion.div 
+          className="absolute bottom-12 inset-x-0 flex justify-center pointer-events-none"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 0.6, y: 0 }}
+          transition={{ duration: 0.3, delay: 1 }}
         >
-          <ChevronDown className="w-6 h-6 animate-bounce" />
+          <div className="bg-black/30 backdrop-blur-sm rounded-full p-1 px-3 flex items-center gap-1">
+            <ChevronDown className="h-4 w-4 text-white" />
+            <span className="text-xs text-white">Swipe down</span>
+          </div>
         </motion.div>
       )}
     </>

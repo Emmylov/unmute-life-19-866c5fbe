@@ -76,6 +76,7 @@ const ReelActions = ({
   const buttonSpacingClass = isMobile ? "space-y-5" : "space-y-7";
   const containerPosition = isMobile ? "right-4" : "right-6";
 
+  // Animation variants
   const container = {
     hidden: { opacity: 0, x: 20 },
     show: {
@@ -101,7 +102,13 @@ const ReelActions = ({
         initial="hidden"
         animate="show"
       >
-        <motion.div variants={item}>
+        {/* Like button with improved animation */}
+        <motion.div 
+          variants={item}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          className="relative"
+        >
           <ReelActionButton 
             icon={Heart} 
             label={liked ? "Liked" : "Like"}
@@ -109,19 +116,31 @@ const ReelActions = ({
             activeColor="text-pink-500 fill-pink-500"
             onClick={onLike}
             isMobile={isMobile}
+            showAnimation={liked}
           />
         </motion.div>
         
-        <motion.div variants={item}>
+        {/* Comment button */}
+        <motion.div 
+          variants={item}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+        >
           <ReelActionButton 
             icon={MessageCircle} 
             label={commentCount > 0 ? `${commentCount}` : "Comment"}
             onClick={handleOpenComments}
             isMobile={isMobile}
+            badge={commentCount > 0 ? commentCount : undefined}
           />
         </motion.div>
         
-        <motion.div variants={item}>
+        {/* Repost button */}
+        <motion.div 
+          variants={item}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+        >
           <ReelActionButton 
             icon={Repeat} 
             label="Repost"
@@ -130,7 +149,12 @@ const ReelActions = ({
           />
         </motion.div>
         
-        <motion.div variants={item}>
+        {/* Save button */}
+        <motion.div 
+          variants={item}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+        >
           <ReelActionButton 
             icon={Bookmark} 
             label={saved ? "Saved" : "Save"}
@@ -141,7 +165,12 @@ const ReelActions = ({
           />
         </motion.div>
         
-        <motion.div variants={item}>
+        {/* Share button */}
+        <motion.div 
+          variants={item}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+        >
           <ReelActionButton 
             icon={Share2}
             label="Share"
@@ -151,6 +180,7 @@ const ReelActions = ({
         </motion.div>
       </motion.div>
 
+      {/* Comment modal */}
       <ReelCommentModal
         reelId={reelId}
         isOpen={isCommentModalOpen}

@@ -1,5 +1,5 @@
 
-import React, { ReactNode } from "react";
+import React, { ReactNode, useEffect } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Sidebar from "@/components/layout/Sidebar";
 import { useIsMobile, useIsTablet } from "@/hooks/use-responsive";
@@ -23,21 +23,31 @@ const AppLayout = ({ children, pageTitle }: AppLayoutProps) => {
   const isTablet = useIsTablet();
   const location = useLocation();
   
+  // Hide mobile navigation on Reels page on mobile to give more space
+  const isReelsPage = location.pathname === '/reels';
+  const showMobileNav = isMobile && !isReelsPage;
+  
+  // For better UX, we want the page to scroll to top when navigating
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+  
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col w-full">
-      <Navbar pageTitle={pageTitle} />
+      {/* Don't show the navbar on the reels page for more immersive experience */}
+      {!isReelsPage && <Navbar pageTitle={pageTitle} />}
       
-      <div className="flex flex-grow">
+      <div className={`flex flex-grow ${isReelsPage ? 'pt-0' : 'pt-16'}`}>
         {!isMobile && <Sidebar collapsed={isTablet} />}
         
-        <main className="flex-1 pb-16 md:pb-0">
-          <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 md:py-6">
+        <main className={`flex-1 ${showMobileNav ? 'pb-16' : 'pb-0'}`}>
+          <div className={`${isReelsPage ? 'p-0 max-w-none' : 'max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 md:py-6'}`}>
             {children}
           </div>
         </main>
       </div>
       
-      {isMobile && <MobileNavigation currentPath={location.pathname} />}
+      {showMobileNav && <MobileNavigation currentPath={location.pathname} />}
     </div>
   );
 };
