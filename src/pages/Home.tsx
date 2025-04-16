@@ -118,22 +118,27 @@ const Home = () => {
 
   return (
     <AppLayout>
-      <motion.div className="grid grid-cols-1 lg:grid-cols-3 gap-4" initial="hidden" animate="visible" variants={staggerItems}>
+      <motion.div 
+        className="grid grid-cols-1 lg:grid-cols-3 gap-4" 
+        initial="hidden" 
+        animate="visible" 
+        variants={staggerItems}
+      >
         <div className="lg:col-span-2 space-y-4">
           <motion.div variants={fadeIn}>
             <HomeGreeting username={profile?.full_name || profile?.username} />
           </motion.div>
           
-          <motion.div variants={fadeIn} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-            <JournalingPrompt />
+          <motion.div variants={fadeIn}>
+            <StoryFeed profile={profile} />
           </motion.div>
           
           <motion.div variants={fadeIn}>
             <CreatePost profile={profile} onPostCreated={fetchPosts} />
           </motion.div>
           
-          <motion.div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
-            <StoryFeed profile={profile} />
+          <motion.div variants={fadeIn} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+            <JournalingPrompt />
           </motion.div>
           
           <motion.div variants={fadeIn}>
