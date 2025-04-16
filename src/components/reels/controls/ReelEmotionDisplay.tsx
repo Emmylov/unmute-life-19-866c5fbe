@@ -22,6 +22,14 @@ const ReelEmotionDisplay: React.FC<ReelEmotionDisplayProps> = ({
     >
       {selectedEmotion ? (
         <div className="text-7xl filter drop-shadow-xl">
+          {selectedEmotion === 'Love' && '❤️'}
+          {selectedEmotion === 'Laugh' && '😂'}
+          {selectedEmotion === 'Wow' && '😲'}
+          {selectedEmotion === 'Sad' && '😢'}
+          {selectedEmotion === 'Angry' && '😡'}
+          {selectedEmotion === 'Fire' && '🔥'}
+          {selectedEmotion === 'Clap' && '👏'}
+          {selectedEmotion === 'Mind Blown' && '🤯'}
           {selectedEmotion === 'Relatable' && '💬'}
           {selectedEmotion === 'Made Me Feel' && '❤️'}
           {selectedEmotion === 'Shared This' && '🔄'}

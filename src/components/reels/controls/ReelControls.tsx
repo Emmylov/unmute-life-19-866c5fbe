@@ -1,13 +1,13 @@
 
-import React, { useState } from "react";
-import { Flag } from "lucide-react";
+import React from "react";
+import { useIsMobile } from "@/hooks/use-responsive";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { MessageCircle } from "lucide-react";
 import { motion } from "framer-motion";
-import { toast } from "sonner";
-import { useAuth } from "@/contexts/AuthContext";
-import ReelUserInfo from "./ReelUserInfo";
-import { FeelBar } from "@/components/reels/FeelBar";
-import { reportReel } from "@/services/reel-service";
 import { ReelWithUser } from "@/types/reels";
+import { useNavigate } from "react-router-dom";
+import ReelUserInfo from "./ReelUserInfo";
 
 interface ReelControlsProps {
   reelWithUser: ReelWithUser;
@@ -16,64 +16,56 @@ interface ReelControlsProps {
   openUnmuteThread: () => void;
 }
 
-const ReelControls: React.FC<ReelControlsProps> = ({
+const ReelControls: React.FC<ReelControlsProps> = ({ 
   reelWithUser,
   selectedEmotion,
   onEmotionSelect,
   openUnmuteThread
 }) => {
-  const [isReporting, setIsReporting] = useState(false);
-  const { user: currentUser } = useAuth();
   const { reel, user } = reelWithUser;
-
-  const handleReportReel = async () => {
-    if (!currentUser) {
-      toast.error("You must be logged in to report content");
-      return;
-    }
-    
-    if (isReporting) return;
-    
-    setIsReporting(true);
-    
-    try {
-      await reportReel(reel.id, currentUser.id);
-      toast.success("Reel reported. Thank you for helping keep our platform safe.");
-    } catch (error) {
-      console.error("Error reporting reel:", error);
-      toast.error("Failed to report the reel");
-    } finally {
-      setIsReporting(false);
-    }
+  const isMobile = useIsMobile();
+  const navigate = useNavigate();
+  
+  const handleViewProfile = () => {
+    navigate(`/profile/${user.username}`);
   };
 
   return (
-    <div className="absolute inset-0 pointer-events-none">
-      <div className="absolute top-0 left-0 right-0 p-4 z-20 flex justify-between items-start">
-        <div className="backdrop-blur-sm bg-black/10 rounded-full px-3 py-1.5 pointer-events-auto flex items-center">
-          <ReelUserInfo user={user} />
-          {reel.vibe_tag && (
-            <span className="ml-2 py-0.5 px-2 bg-primary/20 rounded-full text-xs text-primary font-medium">
-              {reel.vibe_tag}
-            </span>
-          )}
-        </div>
-        
-        <button 
-          onClick={handleReportReel}
-          disabled={isReporting}
-          className="p-2 rounded-full bg-black/10 backdrop-blur-sm pointer-events-auto hover:bg-black/20 transition-colors"
+    <div className="flex justify-between items-start">
+      {/* User info section */}
+      <motion.div
+        className="flex items-center gap-3"
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        <Button
+          variant="ghost"
+          size="icon"
+          className="rounded-full p-0 h-auto w-auto"
+          onClick={handleViewProfile}
         >
-          <Flag className="w-4 h-4 text-white/80 hover:text-white" />
-        </button>
-      </div>
-      
-      <div className="absolute bottom-32 left-4 right-4 pointer-events-auto">
-        <FeelBar 
-          selectedEmotion={selectedEmotion}
-          onEmotionSelect={onEmotionSelect}
-        />
-      </div>
+          <Avatar className={`${isMobile ? 'h-8 w-8' : 'h-10 w-10'} border-2 border-white`}>
+            <AvatarImage src={user.avatar} alt={user.username} />
+            <AvatarFallback>{user.username.substring(0, 2).toUpperCase()}</AvatarFallback>
+          </Avatar>
+        </Button>
+        <ReelUserInfo user={user} reel={reel} />
+      </motion.div>
+
+      {/* Unmute Thread button for direct comments */}
+      <motion.button
+        onClick={openUnmuteThread}
+        className="bg-white/20 backdrop-blur-md rounded-full px-3 py-1.5 text-white text-sm font-medium flex items-center gap-1.5"
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.2 }}
+      >
+        <MessageCircle className="w-4 h-4" />
+        <span>Unmute</span>
+      </motion.button>
     </div>
   );
 };

@@ -1,11 +1,13 @@
 
 import React, { useState } from "react";
-import { Heart, MessageCircle, Repeat, Bookmark, Share2 } from "lucide-react";
+import { MessageCircle, Repeat, Bookmark, Share2 } from "lucide-react";
+import { motion } from "framer-motion";
 import ReelActionButton from "./ReelActionButton";
+import ReelMoreActionsMenu from "./ReelMoreActionsMenu";
+import ReelReactionPicker from "./ReelReactionPicker";
 import { toast } from "sonner";
 import ReelCommentModal from "../ReelCommentModal";
 import { useIsMobile } from "@/hooks/use-responsive";
-import { motion } from "framer-motion";
 
 interface ReelActionsProps {
   reelId: string;
@@ -21,6 +23,8 @@ interface ReelActionsProps {
     text: string;
     url: string;
   };
+  selectedEmotion: string | null;
+  onEmotionSelect: (emotion: string) => void;
 }
 
 const ReelActions = ({ 
@@ -32,7 +36,9 @@ const ReelActions = ({
   onSave,
   onRepost,
   onShare,
-  shareData
+  shareData,
+  selectedEmotion,
+  onEmotionSelect
 }: ReelActionsProps) => {
   const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
   const isMobile = useIsMobile();
@@ -73,8 +79,8 @@ const ReelActions = ({
   };
 
   // Use different spacing based on screen size
-  const buttonSpacingClass = isMobile ? "space-y-5" : "space-y-7";
-  const containerPosition = isMobile ? "right-4" : "right-6";
+  const buttonSpacingClass = isMobile ? "space-y-4" : "space-y-6";
+  const containerPosition = isMobile ? "right-3" : "right-5";
 
   // Animation variants
   const container = {
@@ -102,21 +108,16 @@ const ReelActions = ({
         initial="hidden"
         animate="show"
       >
-        {/* Like button with improved animation */}
+        {/* Enhanced Reaction Picker */}
         <motion.div 
           variants={item}
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
-          className="relative"
         >
-          <ReelActionButton 
-            icon={Heart} 
-            label={liked ? "Liked" : "Like"}
-            isActive={liked}
-            activeColor="text-pink-500 fill-pink-500"
-            onClick={onLike}
-            isMobile={isMobile}
-            showAnimation={liked}
+          <ReelReactionPicker
+            onSelectReaction={onEmotionSelect}
+            selectedReaction={selectedEmotion}
+            liked={liked}
           />
         </motion.div>
         
@@ -132,20 +133,6 @@ const ReelActions = ({
             onClick={handleOpenComments}
             isMobile={isMobile}
             badge={commentCount > 0 ? commentCount : undefined}
-          />
-        </motion.div>
-        
-        {/* Repost button */}
-        <motion.div 
-          variants={item}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-        >
-          <ReelActionButton 
-            icon={Repeat} 
-            label="Repost"
-            onClick={handleRepost}
-            isMobile={isMobile}
           />
         </motion.div>
         
@@ -165,18 +152,23 @@ const ReelActions = ({
           />
         </motion.div>
         
-        {/* Share button */}
-        <motion.div 
+        {/* "More" dropdown menu for additional actions */}
+        <motion.div
           variants={item}
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
+          className="flex flex-col items-center"
         >
-          <ReelActionButton 
-            icon={Share2}
-            label="Share"
-            onClick={handleShare}
-            isMobile={isMobile}
+          <ReelMoreActionsMenu 
+            onCopyLink={() => {
+              if (shareData) {
+                navigator.clipboard.writeText(shareData.url);
+                toast.success("Link copied to clipboard!");
+              }
+            }}
+            onSendTo={handleShare}
           />
+          <span className="text-xs mt-1 text-white/80">More</span>
         </motion.div>
       </motion.div>
 

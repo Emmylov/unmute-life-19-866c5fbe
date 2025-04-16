@@ -112,7 +112,7 @@ const ReelView = ({
       toast("Reaction removed");
     } else {
       setSelectedEmotion(emotion);
-      toast.success(`You felt: ${emotion}`);
+      toast.success(`You reacted: ${emotion}`);
       
       controls.start({
         scale: [1, 1.2, 1],
@@ -292,7 +292,7 @@ const ReelView = ({
           <ReelContent reel={reel} />
         </div>
 
-        {/* Full-featured Actions sidebar */}
+        {/* Full-featured Actions sidebar with new components */}
         <ReelActions 
           reelId={reel.id}
           liked={liked}
@@ -303,6 +303,8 @@ const ReelView = ({
           onRepost={handleRepostReel}
           onShare={handleShare}
           shareData={getShareData()}
+          selectedEmotion={selectedEmotion}
+          onEmotionSelect={handleEmotionSelect}
         />
 
         {/* Mute button with better positioning */}
