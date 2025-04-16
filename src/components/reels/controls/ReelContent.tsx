@@ -34,14 +34,14 @@ const ReelContent: React.FC<ReelContentProps> = ({ reel }) => {
   
   return (
     <motion.div 
-      className="space-y-3"
+      className="space-y-2" // Reduced space
       variants={containerVariants}
       initial="hidden"
       animate="visible"
     >
-      {/* Caption with improved backdrop */}
+      {/* Caption with reduced backdrop */}
       <motion.div 
-        className="backdrop-blur-md bg-black/20 rounded-xl p-4 shadow-lg"
+        className="backdrop-blur-md bg-black/10 rounded-lg p-2 shadow-sm" // Reduced opacity, padding, and shadow
         variants={itemVariants}
       >
         <ReelCaption caption={reel.caption} />
@@ -54,7 +54,7 @@ const ReelContent: React.FC<ReelContentProps> = ({ reel }) => {
         
         {reel.tags && reel.tags.length > 0 && (
           <motion.div 
-            className="flex flex-wrap gap-2 mt-3"
+            className="flex flex-wrap gap-1 mt-2" // Reduced margin and gap
             variants={itemVariants}
             initial="hidden"
             animate="visible"
@@ -63,7 +63,7 @@ const ReelContent: React.FC<ReelContentProps> = ({ reel }) => {
               <motion.span 
                 key={index}
                 variants={itemVariants}
-                className="text-xs font-medium text-white/90 bg-white/10 rounded-full px-3 py-1 backdrop-blur-sm hover:bg-white/20 transition-colors cursor-pointer"
+                className="text-xs font-medium text-white/80 bg-white/5 rounded-full px-2 py-0.5 backdrop-blur-sm hover:bg-white/10 transition-colors cursor-pointer"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
