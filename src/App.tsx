@@ -23,6 +23,7 @@ import "./App.css";
 import ProtectedLayout from "./components/auth/ProtectedLayout";
 import ErrorBoundary from "./components/ui/error-boundary";
 import Games from "./pages/Games";
+import MemoryMatch from "./pages/MemoryMatch";
 
 // Toast provider
 import { Toaster } from "sonner";
@@ -136,6 +137,11 @@ function App() {
                 <Route path="/games" element={
                   <ProtectedLayout>
                     <Games />
+                  </ProtectedLayout>
+                } />
+                <Route path="/games/memory" element={
+                  <ProtectedLayout>
+                    <MemoryMatch />
                   </ProtectedLayout>
                 } />
                 
