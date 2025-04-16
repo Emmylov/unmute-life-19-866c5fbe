@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { QuestionMarkCircle } from 'lucide-react';
+import { HelpCircle } from 'lucide-react';
 
 interface MemoryCardProps {
   card: {
@@ -31,7 +31,7 @@ const MemoryCard = ({ card, isFlipped, onClick }: MemoryCardProps) => {
         <div className={`absolute w-full h-full backface-hidden ${
           isFlipped ? 'opacity-0' : 'opacity-100'
         } bg-white rounded-xl border-2 border-primary/20 flex items-center justify-center shadow-md`}>
-          <QuestionMarkCircle className="w-8 h-8 text-primary/40" />
+          <HelpCircle className="w-8 h-8 text-primary/40" />
         </div>
         
         {/* Back of card */}
