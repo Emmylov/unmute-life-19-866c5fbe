@@ -96,16 +96,15 @@ const LaunchBanner = () => {
           
         if (data) {
           const currentSettings = typeof data.settings === 'object' ? data.settings : {};
+          const typedSettings = currentSettings as Record<string, any>;
           
           await supabase
             .from('user_settings')
             .update({
               settings: {
-                ...currentSettings,
+                ...typedSettings,
                 launch: {
-                  ...(currentSettings && typeof currentSettings === 'object' && 
-                      currentSettings.launch && typeof currentSettings.launch === 'object' 
-                      ? currentSettings.launch : {}),
+                  ...(typedSettings && typedSettings.launch ? typedSettings.launch : {}),
                   hideBanner: true
                 }
               }

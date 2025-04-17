@@ -105,15 +105,16 @@ export const useRewards = () => {
         .single();
       
       const currentSettings = settings?.settings || {};
+      const typedSettings = currentSettings as Record<string, any>;
       
       await supabase
         .from('user_settings')
         .upsert({
           user_id: user.id,
           settings: {
-            ...currentSettings,
+            ...typedSettings,
             launch: { 
-              ...((currentSettings as any).launch || {}),
+              ...(typedSettings.launch || {}),
               seenRewards: true 
             }
           }

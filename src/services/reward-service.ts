@@ -1,40 +1,36 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
-export interface Reward {
-  id: string;
-  name: string;
-  description: string;
-  image_url?: string;
-  created_at: string;
-}
-
+// Interface for UserReward objects
 export interface UserReward {
   id: string;
   user_id: string;
   reward_id: string;
   claimed_at: string;
-  created_at: string;
 }
 
-// Check if user is eligible for early adopter rewards
+// Check if a user qualifies as an early adopter
 export const checkEarlyAdopterStatus = async (userId: string): Promise<boolean> => {
   try {
-    // Get user profile to check join date
+    // Get user's join date from profile
     const { data: profile } = await supabase
       .from('profiles')
       .select('created_at')
       .eq('id', userId)
       .single();
     
-    if (!profile) return false;
+    if (!profile || !profile.created_at) {
+      return false;
+    }
     
+    // Define launch period - first 7 days from launch date
     const launchDate = new Date("2025-04-18T00:00:00");
     const launchEndDate = new Date(launchDate);
-    launchEndDate.setDate(launchEndDate.getDate() + 7); // 7-day launch window
+    launchEndDate.setDate(launchEndDate.getDate() + 7);
     
     const userJoinDate = new Date(profile.created_at);
     
+    // User is an early adopter if they joined within the launch period
     return userJoinDate >= launchDate && userJoinDate <= launchEndDate;
   } catch (error) {
     console.error("Error checking early adopter status:", error);
@@ -42,17 +38,17 @@ export const checkEarlyAdopterStatus = async (userId: string): Promise<boolean> 
   }
 };
 
-// Get all rewards available to a user
+// Get all rewards claimed by a user
 export const getUserRewards = async (userId: string): Promise<UserReward[]> => {
   try {
-    // Using type casting to handle the table not in the auto-generated types
-    const { data, error } = await supabase
-      .from('user_rewards' as any)
-      .select('*')
-      .eq('user_id', userId);
-      
-    if (error) throw error;
-    return (data as unknown as UserReward[]) || [];
+    // This assumes you have created a user_rewards table in your database
+    const { data, error } = await supabase.rpc('get_user_rewards', { p_user_id: userId });
+    
+    if (error) {
+      throw error;
+    }
+    
+    return data || [];
   } catch (error) {
     console.error("Error fetching user rewards:", error);
     return [];
@@ -62,36 +58,19 @@ export const getUserRewards = async (userId: string): Promise<UserReward[]> => {
 // Claim a reward for a user
 export const claimReward = async (userId: string, rewardId: string): Promise<boolean> => {
   try {
-    const { error } = await supabase
-      .from('user_rewards' as any)
-      .insert({
-        user_id: userId,
-        reward_id: rewardId,
-        claimed_at: new Date().toISOString()
-      });
-      
-    if (error) throw error;
+    // Insert a new record into the user_rewards table
+    const { data, error } = await supabase.rpc('claim_user_reward', {
+      p_user_id: userId,
+      p_reward_id: rewardId
+    });
+    
+    if (error) {
+      throw error;
+    }
+    
     return true;
   } catch (error) {
     console.error("Error claiming reward:", error);
-    return false;
-  }
-};
-
-// Check if user has claimed a specific reward
-export const hasClaimedReward = async (userId: string, rewardId: string): Promise<boolean> => {
-  try {
-    const { data, error } = await supabase
-      .from('user_rewards' as any)
-      .select('*')
-      .eq('user_id', userId)
-      .eq('reward_id', rewardId)
-      .single();
-      
-    if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "No rows returned" error
-    return !!data;
-  } catch (error) {
-    console.error("Error checking reward claim:", error);
     return false;
   }
 };

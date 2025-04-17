@@ -1,16 +1,19 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import LaunchBanner from '@/components/home/LaunchBanner';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { PostFeed, StoriesBar, SuggestedUsers } from '@/components/home/DummyComponents';
+import PostFeed from '@/components/feed/PostFeed';
+import StoriesBar from '@/components/stories/StoriesBar';
+import SuggestedUsers from '@/components/feed/SuggestedUsers';
 import DailyReward from '@/components/rewards/DailyReward';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { useState, useEffect } from 'react';
+import EarlyAdopterRewards from '@/components/launch/EarlyAdopterRewards';
 import { supabase } from '@/integrations/supabase/client';
+import HomeHeader from '@/components/home/HomeHeader';
 
 const Home = () => {
   const { user, profile } = useAuth();
@@ -59,6 +62,8 @@ const Home = () => {
         <div className="flex flex-col md:flex-row gap-6">
           <div className="flex-1 space-y-6">
             <StoriesBar />
+            
+            <HomeHeader />
             
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold">Your Feed</h2>
@@ -118,6 +123,11 @@ const Home = () => {
                 </Link>
               </div>
             )}
+            
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Launch Week</h3>
+              <EarlyAdopterRewards />
+            </div>
             
             <SuggestedUsers />
             
