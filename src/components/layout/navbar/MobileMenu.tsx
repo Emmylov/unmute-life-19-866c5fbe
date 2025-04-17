@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Menu, LogOut, PlusCircle } from "lucide-react";
@@ -41,8 +40,13 @@ const MobileMenu = ({
   return (
     <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-6 w-6 text-gray-500">
-          <Menu className="h-4 w-4" />
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="relative flex items-center justify-center p-0 h-8 w-8 hover:bg-gray-100 rounded-full"
+        >
+          <Menu className="h-5 w-5 text-gray-600" />
+          <span className="sr-only">Open menu</span>
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="p-0 w-[280px] sm:w-[350px]">
