@@ -1,9 +1,9 @@
-
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MusicPlayer, { Track } from './MusicPlayer';
 import { motion } from 'framer-motion';
 import { Music, Headphones, TrendingUp, Clock, Heart } from 'lucide-react';
+import { formatTime } from '@/utils/format-utils';
 
 // Sample data - in a real app, this would come from an API
 const sampleTracks: Track[] = [

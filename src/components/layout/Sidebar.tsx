@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   Sheet,
@@ -8,8 +9,6 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet"
 import { Separator } from "@/components/ui/separator"
-import { ModeToggle } from "@/components/layout/ModeToggle"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
 import { useLocation } from 'react-router-dom';
@@ -27,8 +26,21 @@ import {
   PlusCircle,
   LucideIcon,
   Gamepad2,
-  Music
+  Music,
+  Moon,
+  Sun
 } from "lucide-react";
+
+// Add a simple ModeToggle component since it's missing
+const ModeToggle = () => {
+  return (
+    <button className="flex items-center gap-2 p-2 rounded-md hover:bg-secondary transition-colors">
+      <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+      <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+      <span>Toggle Theme</span>
+    </button>
+  );
+};
 
 interface NavItemProps {
   name: string;
