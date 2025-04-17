@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { format, differenceInHours } from 'date-fns';
@@ -8,6 +7,7 @@ import { Gift, Star, Calendar, Clock, Check } from 'lucide-react';
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import SuccessConfetti from "@/components/content-creator/SuccessConfetti";
+import DailyRewardSound from './DailyRewardSound';
 
 interface DailyRewardProps {
   onClose?: () => void;
@@ -29,6 +29,7 @@ const DailyReward = ({ onClose }: DailyRewardProps) => {
   const [showConfetti, setShowConfetti] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState<string | null>(null);
   const [streak, setStreak] = useState(0);
+  const [playSound, setPlaySound] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -43,7 +44,6 @@ const DailyReward = ({ onClose }: DailyRewardProps) => {
 
     try {
       setLoading(true);
-      // Get user settings to check last reward claim
       const { data: userSettings } = await supabase
         .from('user_settings')
         .select('settings')
@@ -60,11 +60,9 @@ const DailyReward = ({ onClose }: DailyRewardProps) => {
       
       setStreak(currentStreak);
 
-      // Check if a day has passed since last claim
       if (!lastClaimed || differenceInHours(now, lastClaimed) >= 20) {
         setIsClaimable(true);
       } else {
-        // Calculate time until next reward
         const nextReward = new Date(lastClaimed);
         nextReward.setHours(nextReward.getHours() + 24);
         const hoursRemaining = Math.max(0, differenceInHours(nextReward, now));
@@ -87,14 +85,12 @@ const DailyReward = ({ onClose }: DailyRewardProps) => {
       setLoading(true);
       const now = new Date();
       
-      // Get current user settings
       const { data: currentSettings } = await supabase
         .from('user_settings')
         .select('settings, id')
         .eq('user_id', user.id)
         .maybeSingle();
         
-      // Prepare new settings object
       const currentSettingsData = currentSettings?.settings as UserSettings['settings'] || {};
       const rewardsData = currentSettingsData?.rewards || {};
       
@@ -109,37 +105,30 @@ const DailyReward = ({ onClose }: DailyRewardProps) => {
       };
       
       if (currentSettings?.id) {
-        // Update existing settings
         await supabase
           .from('user_settings')
           .update({ settings: updatedSettings })
           .eq('id', currentSettings.id);
       } else {
-        // Create new settings
         await supabase
           .from('user_settings')
           .insert({ user_id: user.id, settings: updatedSettings });
       }
       
-      // Update local state
       setStreak(updatedSettings.rewards.streak);
       setIsClaimable(false);
       setShowConfetti(true);
       
-      // Show reward based on streak
       let rewardMessage = "You received a daily reward!";
       let rewardPoints = 10;
       
       if (updatedSettings.rewards.streak % 7 === 0) {
-        // Weekly bonus
         rewardMessage = "🎉 Weekly streak bonus! +50 points!";
         rewardPoints = 50;
       } else if (updatedSettings.rewards.streak % 30 === 0) {
-        // Monthly bonus
         rewardMessage = "🏆 Monthly streak achieved! +200 points!";
         rewardPoints = 200;
       } else if (updatedSettings.rewards.streak === 100) {
-        // Special milestone
         rewardMessage = "🌟 100 DAY STREAK! Amazing dedication! +500 points!";
         rewardPoints = 500;
       }
@@ -155,13 +144,13 @@ const DailyReward = ({ onClose }: DailyRewardProps) => {
         if (onClose) onClose();
       }, 3000);
       
-      // Set time for next reward
       const nextReward = new Date();
       nextReward.setHours(nextReward.getHours() + 24);
       const hoursRemaining = Math.max(0, differenceInHours(nextReward, now));
       const minutesRemaining = Math.max(0, Math.floor((differenceInHours(nextReward, now) - hoursRemaining) * 60));
       setTimeRemaining(`${hoursRemaining}h ${minutesRemaining}m`);
       
+      setPlaySound(true);
     } catch (error) {
       console.error("Error claiming reward:", error);
       toast({
@@ -181,6 +170,11 @@ const DailyReward = ({ onClose }: DailyRewardProps) => {
       animate={{ scale: 1, opacity: 1 }}
       transition={{ duration: 0.3 }}
     >
+      <DailyRewardSound 
+        play={playSound} 
+        onEnd={() => setPlaySound(false)} 
+      />
+      
       <div className="text-center mb-6">
         <div className="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
           <Gift className="w-8 h-8 text-primary" />
@@ -232,7 +226,6 @@ const DailyReward = ({ onClose }: DailyRewardProps) => {
 
       {showConfetti && <SuccessConfetti />}
       
-      {/* Tips to maintain streak */}
       <div className="mt-6 text-center text-sm text-gray-500">
         <p>💡 Tip: Log in every day to maintain your streak and unlock special rewards!</p>
       </div>
