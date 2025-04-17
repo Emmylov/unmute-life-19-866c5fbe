@@ -40,8 +40,8 @@ const AppLayout = ({ children, pageTitle }: AppLayoutProps) => {
       <div className={`flex flex-grow ${isReelsPage ? '' : ''}`}>
         {!isMobile && <Sidebar />}
         
-        <main className={`flex-1 ${showMobileNav ? 'pb-16' : 'pb-0'} ${!isMobile ? 'mt-2' : 'mt-0'}`}>
-          <div className={`${isReelsPage ? 'p-0 max-w-none' : 'max-w-7xl mx-auto px-3 sm:px-4 md:px-5 lg:px-6 py-1'}`}>
+        <main className={`flex-1 ${showMobileNav ? 'pb-14' : 'pb-0'} ${!isMobile ? 'mt-1' : 'mt-0'}`}>
+          <div className={`${isReelsPage ? 'p-0 max-w-none' : 'max-w-7xl mx-auto px-2 sm:px-3 md:px-4 lg:px-5 py-1'}`}>
             {children}
           </div>
         </main>
@@ -62,34 +62,34 @@ const MobileNavigation = ({ currentPath }: MobileNavigationProps) => {
       initial={{ y: 100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.3, ease: "easeOut" }}
-      className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-2 py-1 flex items-center justify-around z-50 shadow-lg"
+      className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-2 py-0.5 flex items-center justify-around z-50 shadow-lg"
     >
       <NavLink 
-        icon={<Home className="h-5 w-5" />} 
+        icon={<Home className="h-4 w-4" />} 
         label="Home" 
         to="/home" 
         isActive={currentPath === '/home'} 
       />
       <NavLink 
-        icon={<Search className="h-5 w-5" />} 
+        icon={<Search className="h-4 w-4" />} 
         label="Explore" 
         to="/explore" 
         isActive={currentPath === '/explore'} 
       />
       <NavLink 
-        icon={<Film className="h-5 w-5" />} 
+        icon={<Film className="h-4 w-4" />} 
         label="Reels" 
         to="/reels" 
         isActive={currentPath === '/reels'} 
       />
       <NavLink 
-        icon={<Smile className="h-5 w-5" />} 
+        icon={<Smile className="h-4 w-4" />} 
         label="Vibe" 
         to="/vibe-check" 
         isActive={currentPath === '/vibe-check'} 
       />
       <NavLink 
-        icon={<User className="h-5 w-5" />} 
+        icon={<User className="h-4 w-4" />} 
         label="Profile" 
         to="/profile" 
         isActive={currentPath === '/profile'} 
