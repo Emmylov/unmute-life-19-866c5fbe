@@ -1,5 +1,4 @@
-
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { BrowserRouter as Router, Routes, Route, useParams, useSearchParams } from "react-router-dom";
 import Auth from "./pages/Auth";
 import Home from "./pages/Home";
@@ -27,20 +26,18 @@ import Games from "./pages/Games";
 import MemoryMatch from "./pages/games/MemoryMatch";
 import WordScramble from "./pages/games/WordScramble";
 import BubblePop from "./pages/games/BubblePop";
-
-// Toast provider
 import { Toaster } from "sonner";
-
-// Auth provider
 import { AuthProvider } from "./contexts/AuthContext";
+import { useAuth } from "./contexts/AuthContext";
+import { supabase } from "./integrations/supabase/client";
+import { differenceInHours } from "date-fns";
+import DailyRewardModal from "./components/rewards/DailyRewardModal";
 
-// Helper component to handle chat with ID
 function ChatWithId() {
   const { id } = useParams();
   return <Chat chatId={id} />;
 }
 
-// Helper component to handle reels with query parameters
 function ReelsWithParams() {
   const [searchParams] = useSearchParams();
   const reelId = searchParams.get('reel');
@@ -48,6 +45,40 @@ function ReelsWithParams() {
 }
 
 function App() {
+  const [showRewardModal, setShowRewardModal] = useState(false);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      checkDailyRewardStatus();
+    }
+  }, [user]);
+
+  const checkDailyRewardStatus = async () => {
+    if (!user) return;
+
+    try {
+      const { data: userSettings } = await supabase
+        .from('user_settings')
+        .select('settings')
+        .eq('user_id', user.id)
+        .single();
+
+      const now = new Date();
+      const lastClaimed = userSettings?.settings?.rewards?.lastClaimed 
+        ? new Date(userSettings.settings.rewards.lastClaimed)
+        : null;
+      
+      if (!lastClaimed || (differenceInHours(now, lastClaimed) >= 24 && !sessionStorage.getItem('rewardCheckDone'))) {
+        setTimeout(() => setShowRewardModal(true), 2000);
+      }
+
+      sessionStorage.setItem('rewardCheckDone', 'true');
+    } catch (error) {
+      console.error("Error checking reward status:", error);
+    }
+  };
+
   return (
     <React.StrictMode>
       <Router>
@@ -55,13 +86,11 @@ function App() {
           <ErrorBoundary>
             <div className="w-full">
               <Routes>
-                {/* Public Routes */}
                 <Route path="/" element={<Index />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/onboarding" element={<Onboarding />} />
                 <Route path="/help" element={<Help />} />
                 
-                {/* Protected Routes */}
                 <Route path="/home" element={
                   <ProtectedLayout>
                     <Home />
@@ -158,10 +187,10 @@ function App() {
                   </ProtectedLayout>
                 } />
                 
-                {/* 404 Route */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
               <Toaster position="top-right" />
+              <DailyRewardModal open={showRewardModal} onOpenChange={setShowRewardModal} />
             </div>
           </ErrorBoundary>
         </AuthProvider>
