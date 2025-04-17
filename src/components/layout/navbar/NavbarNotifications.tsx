@@ -8,9 +8,9 @@ const NavbarNotifications = () => {
     <Button 
       variant="ghost" 
       size="icon" 
-      className="relative text-gray-500 h-7 w-7"
+      className="relative text-gray-500 h-6 w-6"
     >
-      <Bell className="h-3.5 w-3.5" />
+      <Bell className="h-3 w-3" />
       <span className="absolute top-0 right-0 h-1.5 w-1.5 rounded-full bg-unmute-pink"></span>
     </Button>
   );

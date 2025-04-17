@@ -1,7 +1,6 @@
-
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, PlusCircle, LogOut } from "lucide-react";
+import { Menu, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -41,8 +40,8 @@ const MobileMenu = ({
   return (
     <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="mr-0.5 h-7 w-7">
-          <Menu className="h-3.5 w-3.5" />
+        <Button variant="ghost" size="icon" className="h-6 w-6 text-gray-500">
+          <Menu className="h-4 w-4" />
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="p-0 w-[280px] sm:w-[350px]">

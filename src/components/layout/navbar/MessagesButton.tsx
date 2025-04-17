@@ -16,12 +16,12 @@ const MessagesButton = ({ unreadMessages }: MessagesButtonProps) => {
     <Button 
       variant="ghost" 
       size="icon" 
-      className={`relative text-gray-500 hover:text-unmute-purple transition-colors h-7 w-7 ${location.pathname.includes('/chat') ? 'bg-unmute-purple/10 text-unmute-purple' : ''}`}
+      className={`relative text-gray-500 hover:text-unmute-purple transition-colors h-6 w-6 ${location.pathname.includes('/chat') ? 'bg-unmute-purple/10 text-unmute-purple' : ''}`}
       onClick={() => navigate('/chat')}
     >
-      <MessageSquare className="h-3.5 w-3.5" />
+      <MessageSquare className="h-3 w-3" />
       {unreadMessages > 0 && (
-        <span className="absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full bg-unmute-pink text-white text-xs flex items-center justify-center font-medium">
+        <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-unmute-pink text-white text-[10px] flex items-center justify-center font-medium">
           {unreadMessages > 9 ? '9+' : unreadMessages}
         </span>
       )}

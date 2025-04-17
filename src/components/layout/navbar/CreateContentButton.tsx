@@ -15,15 +15,15 @@ const CreateContentButton = () => {
       <Button 
         variant="ghost" 
         size="icon" 
-        className={`relative text-unmute-purple hover:text-unmute-purple/80 transition-colors h-7 w-7 ${location.pathname === '/create' ? 'bg-unmute-purple/10' : ''}`}
+        className={`relative text-unmute-purple hover:text-unmute-purple/80 transition-colors h-6 w-6 ${location.pathname === '/create' ? 'bg-unmute-purple/10' : ''}`}
         onClick={() => navigate('/create')}
       >
-        <PlusCircle className="h-3.5 w-3.5" />
+        <PlusCircle className="h-3 w-3" />
         <span className="sr-only">Create</span>
       </Button>
       
       <Button 
-        className={`hidden sm:flex items-center gap-1 unmute-primary-button px-2 py-0.5 h-7 text-xs`}
+        className={`hidden sm:flex items-center gap-1 unmute-primary-button px-2 py-0.5 h-6 text-xs`}
         onClick={() => navigate('/create')}
       >
         <Video className="h-3 w-3" />
