@@ -6,22 +6,24 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const checkAndSetupUserRewards = async () => {
   try {
-    // Instead of checking information_schema, let's try to fetch data from the rewards table
-    // If it doesn't exist, it will fail gracefully
-    const { error: rewardsError } = await supabase
+    // Check for rewards table using a safer approach (check if we can select from it)
+    const { count: rewardsCount, error: rewardsError } = await supabase
       .from('rewards')
-      .select('id')
-      .limit(1);
+      .select('*', { count: 'exact', head: true })
+      .limit(0);
     
-    const { error: userRewardsError } = await supabase
+    const rewardsExist = !rewardsError;
+    
+    // Check for user_rewards table using a safer approach
+    const { count: userRewardsCount, error: userRewardsError } = await supabase
       .from('user_rewards')
-      .select('id')
-      .limit(1);
+      .select('*', { count: 'exact', head: true })
+      .limit(0);
     
-    // Check if any of the tables don't exist by looking at the error code
-    const tablesMissing = 
-      (rewardsError && rewardsError.code === "42P01") || 
-      (userRewardsError && userRewardsError.code === "42P01");
+    const userRewardsExist = !userRewardsError;
+    
+    // Check if any of the tables don't exist
+    const tablesMissing = !rewardsExist || !userRewardsExist;
     
     if (tablesMissing) {
       console.warn('Rewards system tables do not exist. Rewards functionality will be limited.');

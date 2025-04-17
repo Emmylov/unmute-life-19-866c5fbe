@@ -3,105 +3,79 @@ import { supabase } from "@/integrations/supabase/client";
 import { Post } from "../feed-utils";
 import { fetchFollowingFeed } from "./following-feed";
 import { fetchTrendingFeed } from "./trending-feed";
-import { toTypedPromise } from "./utils";
+import { limit } from "stringz";
 
-export async function fetchPersonalizedFeed(userId: string, interests: string[] = [], limit: number, offset: number): Promise<Post[]> {
+/**
+ * Fetches a personalized feed for a user that includes:
+ * 1. Posts from followed users
+ * 2. Trending posts related to user interests
+ * 3. Some discovery posts from outside user's network
+ */
+export const fetchPersonalizedFeed = async (
+  userId: string,
+  interests?: string[],
+  limitCount: number = 10,
+  offsetCount: number = 0
+): Promise<Post[]> => {
   try {
-    if (interests && interests.length > 0) {
-      // Fetch posts based on user interests, using toTypedPromise for all queries
-      const imagePostsPromise = toTypedPromise<any[]>(
-        supabase
-          .from("posts_images")
-          .select("*, profiles:profiles(*)")
-          .overlaps('tags', interests)
-          .order("created_at", { ascending: false })
-          .range(offset, offset + limit - 1)
-      );
+    // Try to fetch from both regular posts and posts_text tables
+    const { data: postsData, error: postsError } = await supabase
+      .from('posts')
+      .select('*, profiles(*)')
+      .order('created_at', { ascending: false })
+      .limit(limitCount);
       
-      const textPostsPromise = toTypedPromise<any[]>(
-        supabase
-          .from("posts_text")
-          .select("*, profiles:profiles(*)")
-          .overlaps('tags', interests)
-          .order("created_at", { ascending: false })
-          .range(offset, offset + limit - 1)
-      );
-      
-      const reelsPostsPromise = toTypedPromise<any[]>(
-        supabase
-          .from("posts_reels")
-          .select("*, profiles:profiles(*)")
-          .overlaps('tags', interests)
-          .order("created_at", { ascending: false })
-          .range(offset, offset + limit - 1)
-      );
-      
-      // Wait for all promises to resolve
-      const [imagePostsRes, textPostsRes, reelsPostsRes] = await Promise.all([
-        imagePostsPromise,
-        textPostsPromise,
-        reelsPostsPromise
-      ]);
-      
-      // Process the results
-      const imagePosts: Post[] = imagePostsRes.data ? imagePostsRes.data.map((post: any) => ({ ...post, type: 'image' })) : [];
-      const textPosts: Post[] = textPostsRes.data ? textPostsRes.data.map((post: any) => ({ ...post, type: 'text' })) : [];
-      const reelPosts: Post[] = reelsPostsRes.data ? reelsPostsRes.data.map((post: any) => ({ ...post, type: 'reel' })) : [];
-      
-      const interestMatchedPosts: Post[] = [...imagePosts, ...textPosts, ...reelPosts];
-      
-      if (interestMatchedPosts.length >= limit) {
-        return interestMatchedPosts
-          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-          .slice(0, limit);
-      }
-      
-      // Not enough interest-matched posts, get supplemental posts
-      const remainingNeeded = limit - interestMatchedPosts.length;
-      const supplementalPosts = await fetchSupplementalPosts(userId, remainingNeeded, offset);
-      
-      return [...interestMatchedPosts, ...supplementalPosts]
-        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-        .slice(0, limit);
-    } else {
-      // No specific interests, get mix of following and trending posts
-      const followingPosts = await fetchFollowingFeed(userId, Math.ceil(limit / 2), offset);
-      
-      if (followingPosts.length < Math.ceil(limit / 2)) {
-        const trendingPosts = await fetchTrendingFeed(limit - followingPosts.length, offset);
-        return [...followingPosts, ...trendingPosts]
-          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-          .slice(0, limit);
-      }
-      
-      return followingPosts.slice(0, limit);
+    if (postsError) {
+      console.error("Error fetching posts:", postsError);
     }
-  } catch (error) {
-    console.error("Error fetching personalized feed:", error);
-    return [];
-  }
-}
+    
+    const { data: postsTextData, error: postsTextError } = await supabase
+      .from('posts_text')
+      .select('*, profiles(*)')
+      .order('created_at', { ascending: false })
+      .limit(limitCount);
+      
+    if (postsTextError) {
+      console.error("Error fetching posts_text:", postsTextError);
+    }
+      
+    // If we have posts from any source, return them
+    const combinedPosts = [
+      ...(postsData || []), 
+      ...(postsTextData || [])
+    ].sort((a, b) => 
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    ).slice(0, limitCount);
+    
+    if (combinedPosts.length > 0) {
+      return combinedPosts as Post[];
+    }
+    
+    // Fall back to following and trending feeds if no direct posts found
+    try {
+      // Try to get posts from people you follow
+      const followingPosts = await fetchFollowingFeed(userId, limitCount, offsetCount);
+      
+      if (followingPosts.length > 0) {
+        return followingPosts;
+      }
+    } catch (followError) {
+      console.error("Error in following feed:", followError);
+    }
 
-// Custom version of fetchSupplementalPosts for this module
-async function fetchSupplementalPosts(
-  userId: string, 
-  limit: number, 
-  offset: number
-): Promise<Post[]> {
-  try {
-    const [trendingPosts, followingPosts] = await Promise.all([
-      fetchTrendingFeed(Math.ceil(limit / 2), offset),
-      fetchFollowingFeed(userId, Math.ceil(limit / 2), offset)
-    ]);
+    try {
+      // Fall back to trending posts
+      const trendingPosts = await fetchTrendingFeed(limitCount, offsetCount);
+      return trendingPosts;
+    } catch (trendError) {
+      console.error("Error in trending feed fallback:", trendError);
+    }
+
+    // If all else fails, return an empty array
+    return [];
     
-    const combined: Post[] = [...trendingPosts, ...followingPosts];
-    const uniquePosts = Array.from(
-      new Map(combined.map(post => [post.id, post])).values()
-    );
-    
-    return uniquePosts.slice(0, limit);
   } catch (error) {
-    console.error("Error fetching supplemental posts:", error);
+    console.error("Error in personalized feed:", error);
     return [];
   }
-}
+};

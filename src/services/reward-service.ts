@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Database } from "@/integrations/supabase/types-patch";
 
 export interface UserReward {
   id: string;
@@ -25,11 +26,14 @@ export interface Reward {
  */
 export const fetchAllRewards = async (): Promise<Reward[]> => {
   try {
-    // Cast the supabase client to 'any' to bypass type checking for tables not in the main types.ts
-    const { data, error } = await (supabase as any)
+    // Use type casting to bypass type checking for tables not in the main types.ts
+    const { data, error } = await supabase
       .from('rewards')
       .select('*')
-      .order('points_required', { ascending: true });
+      .order('points_required', { ascending: true }) as { 
+        data: Database['public']['Tables']['rewards']['Row'][]; 
+        error: any 
+      };
       
     if (error) throw error;
     
@@ -46,11 +50,14 @@ export const fetchAllRewards = async (): Promise<Reward[]> => {
  */
 export const fetchUserRewards = async (userId: string): Promise<UserReward[]> => {
   try {
-    // Cast the supabase client to bypass type checking
-    const { data, error } = await (supabase as any)
+    // Use type casting to bypass type checking
+    const { data, error } = await supabase
       .from('user_rewards')
       .select('*')
-      .eq('user_id', userId);
+      .eq('user_id', userId) as {
+        data: Database['public']['Tables']['user_rewards']['Row'][];
+        error: any
+      };
       
     if (error) throw error;
     
@@ -67,14 +74,17 @@ export const fetchUserRewards = async (userId: string): Promise<UserReward[]> =>
  */
 export const claimReward = async (userId: string, rewardId: string): Promise<boolean> => {
   try {
-    // Cast the supabase client to bypass type checking
-    const { error } = await (supabase as any)
+    // Use type casting to bypass type checking
+    const { error } = await supabase
       .from('user_rewards')
       .insert({
         user_id: userId,
         reward_id: rewardId,
         claimed_at: new Date().toISOString()
-      });
+      }) as {
+        data: any;
+        error: any
+      };
       
     if (error) throw error;
     

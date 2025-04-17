@@ -16,10 +16,12 @@ interface PostCardProps {
     username?: string;
     avatar?: string;
     date?: string;
-    content: string;
+    content?: string;
+    body?: string; // For posts_text
     likes?: number;
     comments?: number;
     mood?: string;
+    emoji_mood?: string; // For posts_text
     created_at: string;
     image_url?: string;
     image_urls?: string[];
@@ -37,6 +39,8 @@ const PostCard = ({ post }: PostCardProps) => {
   const authorAvatar = post.avatar || post.profiles?.avatar || '';
   const authorUsername = post.username || post.profiles?.username || "user";
   const postDate = post.date || formatDistanceToNow(new Date(post.created_at), { addSuffix: true });
+  const postContent = post.content || post.body || '';
+  const moodEmoji = post.mood || post.emoji_mood || '';
   const imageUrl = post.image_url || (post.image_urls && post.image_urls.length > 0 ? post.image_urls[0] : undefined);
   
   const [commentCount, setCommentCount] = useState(post.comments || 0);
@@ -74,7 +78,7 @@ const PostCard = ({ post }: PostCardProps) => {
     if (navigator.share) {
       navigator.share({
         title: `Post by ${authorName}`,
-        text: post.content.substring(0, 50) + '...',
+        text: postContent.substring(0, 50) + '...',
         url: window.location.href,
       }).then(() => {
         toast.success("Shared successfully");
@@ -107,13 +111,20 @@ const PostCard = ({ post }: PostCardProps) => {
           </Avatar>
           <div className="flex-1">
             <h4 className="font-semibold text-sm">{authorName}</h4>
-            <p className="text-xs text-gray-500">{postDate}</p>
+            <div className="flex items-center">
+              <p className="text-xs text-gray-500">{postDate}</p>
+              {moodEmoji && (
+                <span className="ml-2 text-sm" title="User's mood">
+                  {moodEmoji}
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Post Content */}
         <div className="mb-4">
-          <p className="text-gray-800 whitespace-pre-wrap">{post.content}</p>
+          <p className="text-gray-800 whitespace-pre-wrap">{postContent}</p>
           {imageUrl && (
             <img 
               src={imageUrl} 

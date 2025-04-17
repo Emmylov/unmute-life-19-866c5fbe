@@ -1,183 +1,94 @@
 
-import type { Database as OriginalDatabase } from './types';
+// This file contains temporary type patches to handle tables that
+// may not have been properly typed in the supabase TypeScript definitions
 
-// Extended Database type that includes missing tables
-export type ExtendedDatabase = OriginalDatabase & {
+// Explicitly define types for tables that might be missing in the auto-generated types
+export type Database = {
   public: {
-    Tables: OriginalDatabase['public']['Tables'] & {
-      posts_text: {
+    Tables: {
+      rewards: {
         Row: {
           id: string;
-          user_id: string;
-          created_at: string | null;
-          title: string | null;
-          body: string;
-          tags: string[] | null;
-          emoji_mood: string | null;
-          visibility: string | null;
-        };
-        Insert: {
-          id?: string;
-          user_id: string;
-          created_at?: string | null;
-          title?: string | null;
-          body: string;
-          tags?: string[] | null;
-          emoji_mood?: string | null;
-          visibility?: string | null;
-        };
-        Update: {
-          id?: string;
-          user_id?: string;
-          created_at?: string | null;
-          title?: string | null;
-          body?: string;
-          tags?: string[] | null;
-          emoji_mood?: string | null;
-          visibility?: string | null;
-        };
-        Relationships: [];
-      };
-      posts_images: {
-        Row: {
-          id: string;
-          user_id: string;
-          created_at: string | null;
-          image_urls: string[];
-          caption: string | null;
-          tags: string[] | null;
-          storage_path?: string;
-          visibility?: string;
-          layout?: string;
-        };
-        Insert: {
-          id?: string;
-          user_id: string;
-          created_at?: string | null;
-          image_urls: string[];
-          caption?: string | null;
-          tags?: string[] | null;
-          storage_path?: string;
-          visibility?: string;
-          layout?: string;
-        };
-        Update: {
-          id?: string;
-          user_id?: string;
-          created_at?: string | null;
-          image_urls?: string[];
-          caption?: string | null;
-          tags?: string[] | null;
-          storage_path?: string;
-          visibility?: string;
-          layout?: string;
-        };
-        Relationships: [];
-      };
-      posts_memes: {
-        Row: {
-          id: string;
-          user_id: string;
-          created_at: string | null;
-          image_url: string;
-          top_text: string | null;
-          bottom_text: string | null;
-          category: string | null;
-        };
-        Insert: {
-          id?: string;
-          user_id: string;
-          created_at?: string | null;
-          image_url: string;
-          top_text?: string | null;
-          bottom_text?: string | null;
-          category?: string | null;
-        };
-        Update: {
-          id?: string;
-          user_id?: string;
-          created_at?: string | null;
+          name: string;
+          description: string;
+          points_required: number;
           image_url?: string;
-          top_text?: string | null;
-          bottom_text?: string | null;
-          category?: string | null;
-        };
-        Relationships: [];
-      };
-      posts_reels: {
-        Row: {
-          id: string;
-          user_id: string;
-          created_at: string | null;
-          video_url: string;
-          thumbnail_url: string | null;
-          caption: string | null;
-          tags: string[] | null;
-          audio_type: string | null;
-          audio_url: string | null;
-          audio: string | null;
-          duration: number | null;
-          original_audio_volume: number | null;
-          overlay_audio_volume: number | null;
-          allow_duets: boolean | null;
-          allow_comments: boolean | null;
+          reward_type: string;
+          created_at: string;
         };
         Insert: {
           id?: string;
-          user_id: string;
-          created_at?: string | null;
-          video_url: string;
-          thumbnail_url?: string | null;
-          caption?: string | null;
-          tags?: string[] | null;
-          audio_type?: string | null;
-          audio_url?: string | null;
-          audio?: string | null;
-          duration?: number | null;
-          original_audio_volume?: number | null;
-          overlay_audio_volume?: number | null;
-          allow_duets?: boolean | null;
-          allow_comments?: boolean | null;
+          name: string;
+          description: string;
+          points_required?: number;
+          image_url?: string;
+          reward_type: string;
+          created_at?: string;
         };
         Update: {
           id?: string;
-          user_id?: string;
-          created_at?: string | null;
-          video_url?: string;
-          thumbnail_url?: string | null;
-          caption?: string | null;
-          tags?: string[] | null;
-          audio_type?: string | null;
-          audio_url?: string | null;
-          audio?: string | null;
-          duration?: number | null;
-          original_audio_volume?: number | null;
-          overlay_audio_volume?: number | null;
-          allow_duets?: boolean | null;
-          allow_comments?: boolean | null;
+          name?: string;
+          description?: string;
+          points_required?: number;
+          image_url?: string;
+          reward_type?: string;
+          created_at?: string;
         };
-        Relationships: [];
       };
-      reel_likes: {
+      user_rewards: {
         Row: {
           id: string;
           user_id: string;
-          reel_id: string;
+          reward_id: string;
+          claimed_at: string | null;
           created_at: string;
         };
         Insert: {
           id?: string;
           user_id: string;
-          reel_id: string;
+          reward_id: string;
+          claimed_at?: string | null;
           created_at?: string;
         };
         Update: {
           id?: string;
           user_id?: string;
-          reel_id?: string;
+          reward_id?: string;
+          claimed_at?: string | null;
           created_at?: string;
         };
-        Relationships: [];
+      };
+      posts_text: {
+        Row: {
+          id: string;
+          user_id: string;
+          title?: string;
+          body: string;
+          tags?: string[];
+          emoji_mood?: string;
+          visibility?: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          title?: string;
+          body: string;
+          tags?: string[];
+          emoji_mood?: string;
+          visibility?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          title?: string;
+          body?: string;
+          tags?: string[];
+          emoji_mood?: string;
+          visibility?: string;
+          created_at?: string;
+        };
       };
     };
   };

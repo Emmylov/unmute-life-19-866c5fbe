@@ -17,7 +17,8 @@ import { toast } from "sonner";
 // Ensure Post type has the required content property
 type Post = {
   id: string | number;
-  content: string;
+  content?: string;
+  body?: string; // For posts_text
   created_at: string;
   user_id?: string;
   // Additional properties
@@ -30,6 +31,7 @@ type Post = {
   mood?: string;
   image_url?: string;
   image_urls?: string[];
+  emoji_mood?: string;
   profiles?: {
     username?: string;
     avatar?: string;
@@ -53,10 +55,10 @@ const Home = () => {
 
   // Map the fetched posts to ensure they have the content property
   const mappedPosts = posts?.map(post => {
-    // Ensure post has content property (use body field if available or empty string as fallback)
+    // Ensure post has content property (use body field from posts_text if available or empty string as fallback)
     const postWithContent = {
       ...post,
-      content: post.content || (post as any).body || ''
+      content: post.content || post.body || ''
     };
     return postWithContent as Post;
   });
