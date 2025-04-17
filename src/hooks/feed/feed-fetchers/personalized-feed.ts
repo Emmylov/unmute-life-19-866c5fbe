@@ -1,9 +1,7 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Post } from "../feed-utils";
 import { fetchFollowingFeed } from "./following-feed";
 import { fetchTrendingFeed } from "./trending-feed";
-import { limit } from "stringz";
 
 /**
  * Fetches a personalized feed for a user that includes:
