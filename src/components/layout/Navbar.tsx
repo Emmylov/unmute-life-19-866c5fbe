@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useIsMobile, useIsTablet } from "@/hooks/use-responsive";
@@ -66,8 +65,7 @@ const Navbar = ({ pageTitle }: NavbarProps) => {
           if (payload.new && !payload.new.read) {
             setUnreadMessages(prev => prev + 1);
             
-            toast({
-              title: "New message",
+            toast("New message", {
               description: "You have received a new message",
               duration: 3000,
             });
@@ -99,8 +97,7 @@ const Navbar = ({ pageTitle }: NavbarProps) => {
   
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    toast({
-      title: "Signed out successfully",
+    toast("Signed out successfully", {
       description: "You have been signed out of your account",
       duration: 3000,
     });
