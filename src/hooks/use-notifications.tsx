@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -21,21 +21,35 @@ interface Notification {
 }
 
 // Create audio element for notification sounds
-const notificationSound = new Audio("/notification-sound.mp3");
+let notificationSound: HTMLAudioElement | null = null;
+try {
+  notificationSound = new Audio("/notification-sound.mp3");
+} catch (e) {
+  console.error("Failed to initialize notification sound:", e);
+}
 
 export const useNotifications = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   const { user, profile } = useAuth();
   
   // Fetch notifications for the current user
-  const fetchNotifications = async () => {
-    if (!user) return;
+  const fetchNotifications = useCallback(async () => {
+    if (!user) {
+      setLoading(false);
+      setNotifications([]);
+      setUnreadCount(0);
+      return;
+    }
     
     setLoading(true);
+    setError(null);
     
     try {
+      console.log("Fetching notifications for user:", user.id);
+      
       // Get notifications with user details of who created the notification
       const { data, error } = await supabase
         .from('notifications')
@@ -48,33 +62,39 @@ export const useNotifications = () => {
         .limit(20);
       
       if (error) {
-        throw error;
+        console.error("Error fetching notifications:", error);
+        throw new Error(`Failed to fetch notifications: ${error.message}`);
       }
+      
+      console.log("Notifications data received:", data);
       
       // Cast the data to the Notification type after handling potential errors with from_user
       const processedData = (data || []).map(item => {
-        // Handle case where from_user is an error object
-        if (item.from_user && 'error' in item.from_user) {
+        // Handle case where from_user is null or an error object
+        if (!item.from_user || (item.from_user && 'error' in item.from_user)) {
           return {
             ...item,
             from_user: null
           };
         }
         return item;
-      }) as unknown as Notification[];
+      }) as Notification[];
       
       setNotifications(processedData);
       
       // Count unread notifications
-      const unread = processedData.filter(n => !n.read).length || 0;
-      setUnreadCount(unread);
-    } catch (error) {
-      console.error("Error fetching notifications:", error);
-      toast.error("Failed to load notifications");
+      const unreadCount = processedData.filter(n => !n.read).length || 0;
+      setUnreadCount(unreadCount);
+    } catch (error: any) {
+      console.error("Error in useNotifications hook:", error);
+      setError(error);
+      toast("Failed to load notifications", {
+        description: error.message,
+      });
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
   
   // Mark a notification as read
   const markAsRead = async (notificationId: string) => {
@@ -105,11 +125,11 @@ export const useNotifications = () => {
           .update({ notification_count: Math.max(0, profile.notification_count - 1) })
           .eq("id", user.id);
       }
-
-      toast.success("Notification marked as read");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error marking notification as read:", error);
-      toast.error("Failed to mark notification as read");
+      toast("Error", {
+        description: "Failed to mark notification as read"
+      });
     }
   };
   
@@ -140,19 +160,29 @@ export const useNotifications = () => {
           .eq("id", user.id);
       }
       
-      toast.success("All notifications marked as read");
-    } catch (error) {
+      toast("Success", { 
+        description: "All notifications marked as read"
+      });
+    } catch (error: any) {
       console.error("Error marking all notifications as read:", error);
-      toast.error("Failed to mark notifications as read");
+      toast("Error", {
+        description: "Failed to mark notifications as read"
+      });
     }
   };
+  
+  // Initialize notifications on component mount
+  useEffect(() => {
+    if (user) {
+      fetchNotifications();
+    }
+  }, [user, fetchNotifications]);
   
   // Listen for real-time notification updates
   useEffect(() => {
     if (!user) return;
     
-    // Fetch initial notifications
-    fetchNotifications();
+    console.log("Setting up real-time notification subscription for user:", user.id);
     
     // Set up real-time subscription for new notifications
     const channel = supabase
@@ -166,39 +196,59 @@ export const useNotifications = () => {
           filter: `user_id=eq.${user.id}`
         },
         (payload) => {
+          console.log("New notification received:", payload);
+          
           // Play notification sound
-          try {
-            notificationSound.play().catch(err => console.log('Audio playback prevented:', err));
-          } catch (e) {
-            console.log('Audio playback error:', e);
+          if (notificationSound) {
+            notificationSound.play().catch(err => 
+              console.log('Audio playback prevented:', err)
+            );
           }
           
           // Add the new notification to our state
           const newNotification = payload.new as Notification;
-          setNotifications(prev => [newNotification, ...prev]);
-          setUnreadCount(prev => prev + 1);
           
-          // Show a toast notification
-          toast("New notification", {
-            description: newNotification.content,
-            action: {
-              label: "View",
-              onClick: () => markAsRead(newNotification.id),
-            },
-          });
+          // Fetch the user data for this notification since it's not included in the payload
+          supabase
+            .from('profiles')
+            .select('username, avatar')
+            .eq('id', newNotification.from_user_id)
+            .single()
+            .then(({ data: fromUser }) => {
+              const enrichedNotification = {
+                ...newNotification,
+                from_user: fromUser
+              };
+              
+              setNotifications(prev => [enrichedNotification as Notification, ...prev]);
+              setUnreadCount(prev => prev + 1);
+              
+              // Show a toast notification
+              toast("New notification", {
+                description: newNotification.content,
+                action: {
+                  label: "View",
+                  onClick: () => markAsRead(newNotification.id),
+                },
+              });
+            });
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log("Notification subscription status:", status);
+      });
     
     return () => {
+      console.log("Cleaning up notification subscription");
       supabase.removeChannel(channel);
     };
-  }, [user?.id]);
+  }, [user?.id, markAsRead]);
   
   return {
     notifications,
     unreadCount,
     loading,
+    error,
     fetchNotifications,
     markAsRead,
     markAllAsRead

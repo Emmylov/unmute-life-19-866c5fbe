@@ -14,14 +14,18 @@ import { toast } from "sonner";
 
 const NotificationBell: React.FC = () => {
   const [open, setOpen] = useState(false);
-  const { unreadCount, fetchNotifications, notifications } = useNotifications();
+  const { unreadCount, fetchNotifications, notifications, loading } = useNotifications();
   const navigate = useNavigate();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const previousUnreadCount = useRef(unreadCount);
   
   // Initialize audio element
   useEffect(() => {
-    audioRef.current = new Audio("/notification-sound.mp3");
+    try {
+      audioRef.current = new Audio("/notification-sound.mp3");
+    } catch (err) {
+      console.error("Error creating audio element:", err);
+    }
   }, []);
 
   // Play sound when new notifications arrive
@@ -37,7 +41,6 @@ const NotificationBell: React.FC = () => {
       // Show toast notification
       toast("New notification", {
         description: "You have received a new notification",
-        position: "top-right",
       });
     }
     previousUnreadCount.current = unreadCount;
@@ -69,7 +72,11 @@ const NotificationBell: React.FC = () => {
       </PopoverTrigger>
       <PopoverContent className="w-80 p-0" align="end">
         <div className="flex flex-col">
-          <NotificationsList />
+          {loading ? (
+            <div className="p-4 text-center">Loading notifications...</div>
+          ) : (
+            <NotificationsList />
+          )}
           <div className="p-2 border-t">
             <Button 
               variant="ghost" 

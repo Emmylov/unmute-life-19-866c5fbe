@@ -3,13 +3,14 @@ import React from "react";
 import { useNotifications } from "@/hooks/use-notifications";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Loader2, Check } from "lucide-react";
+import { Loader2, Check, AlertCircle } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { motion } from "framer-motion";
 
 const NotificationsList: React.FC = () => {
-  const { notifications, loading, unreadCount, markAsRead, markAllAsRead } = useNotifications();
+  const { notifications, loading, error, unreadCount, markAsRead, markAllAsRead, fetchNotifications } = useNotifications();
 
+  // Show loading state
   if (loading) {
     return (
       <div className="flex items-center justify-center p-4">
@@ -18,6 +19,25 @@ const NotificationsList: React.FC = () => {
     );
   }
 
+  // Show error state with retry button
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center p-4 text-center">
+        <AlertCircle className="h-6 w-6 text-red-500 mb-2" />
+        <p className="text-sm text-gray-600 mb-2">Failed to load notifications</p>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => fetchNotifications()}
+          className="mt-2"
+        >
+          Try Again
+        </Button>
+      </div>
+    );
+  }
+
+  // Show empty state
   if (notifications.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center p-6 text-center">
@@ -29,6 +49,7 @@ const NotificationsList: React.FC = () => {
     );
   }
 
+  // Show notifications
   return (
     <div className="flex flex-col">
       <div className="flex items-center justify-between p-3 border-b">

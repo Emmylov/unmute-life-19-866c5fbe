@@ -85,7 +85,7 @@ function App() {
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
-        <Toaster position="top-right" />
+        <Toaster position="top-right" closeButton />
       </AuthProvider>
     </div>
   );
