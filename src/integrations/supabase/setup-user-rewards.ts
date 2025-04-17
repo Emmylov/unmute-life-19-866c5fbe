@@ -6,25 +6,31 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const checkAndSetupUserRewards = async () => {
   try {
-    // Check if user_rewards table exists
-    const { data: tablesData } = await supabase
-      .from('information_schema.tables')
-      .select('table_name')
-      .eq('table_schema', 'public')
-      .eq('table_name', 'user_rewards');
-
-    // If table doesn't exist, we'd handle it in the UI by showing
-    // appropriate messaging rather than trying to create it from client-side
-    const tableExists = tablesData && tablesData.length > 0;
+    // Instead of checking information_schema, let's try to fetch data from the rewards table
+    // If it doesn't exist, it will fail gracefully
+    const { error: rewardsError } = await supabase
+      .from('rewards')
+      .select('id')
+      .limit(1);
     
-    if (!tableExists) {
-      console.warn('user_rewards table does not exist. Rewards functionality will be limited.');
+    const { error: userRewardsError } = await supabase
+      .from('user_rewards')
+      .select('id')
+      .limit(1);
+    
+    // Check if any of the tables don't exist by looking at the error code
+    const tablesMissing = 
+      (rewardsError && rewardsError.code === "42P01") || 
+      (userRewardsError && userRewardsError.code === "42P01");
+    
+    if (tablesMissing) {
+      console.warn('Rewards system tables do not exist. Rewards functionality will be limited.');
       return false;
     }
 
     return true;
   } catch (error) {
-    console.error('Error checking user_rewards table:', error);
+    console.error('Error checking rewards tables:', error);
     return false;
   }
 };
@@ -34,7 +40,7 @@ export const setupUserRewardsSystem = () => {
   checkAndSetupUserRewards()
     .then(exists => {
       if (!exists) {
-        console.warn('The rewards system requires the user_rewards table to be set up in Supabase.');
+        console.warn('The rewards system requires the rewards and user_rewards tables to be set up in Supabase.');
       } else {
         console.log('Rewards system is ready.');
       }

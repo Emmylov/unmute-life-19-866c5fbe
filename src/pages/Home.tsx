@@ -14,6 +14,29 @@ import CreatePost from '@/components/home/CreatePost';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from "sonner";
 
+// Ensure Post type has the required content property
+type Post = {
+  id: string | number;
+  content: string;
+  created_at: string;
+  user_id?: string;
+  // Additional properties
+  author?: string;
+  username?: string;
+  avatar?: string;
+  date?: string;
+  likes?: number;
+  comments?: number;
+  mood?: string;
+  image_url?: string;
+  image_urls?: string[];
+  profiles?: {
+    username?: string;
+    avatar?: string;
+    full_name?: string;
+  };
+};
+
 const Home = () => {
   const [showRewardModal, setShowRewardModal] = useState(false);
   const { posts, loading, refresh } = useFeed({ limit: 20 });
@@ -27,6 +50,16 @@ const Home = () => {
     refresh();
     toast.success("Post created successfully!");
   };
+
+  // Map the fetched posts to ensure they have the content property
+  const mappedPosts = posts?.map(post => {
+    // Ensure post has content property (use body field if available or empty string as fallback)
+    const postWithContent = {
+      ...post,
+      content: post.content || (post as any).body || ''
+    };
+    return postWithContent as Post;
+  });
 
   // Mock profile data for HomeRightSidebar if real profile isn't available
   const profileData = profile || {
@@ -58,8 +91,8 @@ const Home = () => {
                 <div key={i} className="bg-gray-100 h-64 animate-pulse rounded-xl"></div>
               ))}
             </div>
-          ) : posts && posts.length > 0 ? (
-            posts.map(post => (
+          ) : mappedPosts && mappedPosts.length > 0 ? (
+            mappedPosts.map(post => (
               <PostCard key={post.id} post={post} />
             ))
           ) : (

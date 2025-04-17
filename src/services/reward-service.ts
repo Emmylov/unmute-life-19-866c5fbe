@@ -25,14 +25,15 @@ export interface Reward {
  */
 export const fetchAllRewards = async (): Promise<Reward[]> => {
   try {
-    const { data, error } = await supabase
+    // Cast the supabase client to 'any' to bypass type checking for tables not in the main types.ts
+    const { data, error } = await (supabase as any)
       .from('rewards')
       .select('*')
       .order('points_required', { ascending: true });
       
     if (error) throw error;
     
-    return data || [];
+    return data as Reward[] || [];
   } catch (error) {
     console.error("Error fetching rewards:", error);
     toast.error("Failed to load rewards");
@@ -45,8 +46,8 @@ export const fetchAllRewards = async (): Promise<Reward[]> => {
  */
 export const fetchUserRewards = async (userId: string): Promise<UserReward[]> => {
   try {
-    // Direct table query since the RPC function doesn't exist
-    const { data, error } = await supabase
+    // Cast the supabase client to bypass type checking
+    const { data, error } = await (supabase as any)
       .from('user_rewards')
       .select('*')
       .eq('user_id', userId);
@@ -66,8 +67,8 @@ export const fetchUserRewards = async (userId: string): Promise<UserReward[]> =>
  */
 export const claimReward = async (userId: string, rewardId: string): Promise<boolean> => {
   try {
-    // Direct insert since the RPC function doesn't exist
-    const { error } = await supabase
+    // Cast the supabase client to bypass type checking
+    const { error } = await (supabase as any)
       .from('user_rewards')
       .insert({
         user_id: userId,

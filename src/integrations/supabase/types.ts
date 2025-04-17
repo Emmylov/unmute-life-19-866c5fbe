@@ -639,6 +639,36 @@ export type Database = {
           },
         ]
       }
+      rewards: {
+        Row: {
+          created_at: string | null
+          description: string
+          id: string
+          image_url: string | null
+          name: string
+          points_required: number | null
+          reward_type: string
+        }
+        Insert: {
+          created_at?: string | null
+          description: string
+          id?: string
+          image_url?: string | null
+          name: string
+          points_required?: number | null
+          reward_type: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          id?: string
+          image_url?: string | null
+          name?: string
+          points_required?: number | null
+          reward_type?: string
+        }
+        Relationships: []
+      }
       saved_reels: {
         Row: {
           created_at: string | null
@@ -831,6 +861,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_rewards: {
+        Row: {
+          claimed_at: string | null
+          created_at: string | null
+          id: string
+          reward_id: string
+          user_id: string
+        }
+        Insert: {
+          claimed_at?: string | null
+          created_at?: string | null
+          id?: string
+          reward_id: string
+          user_id: string
+        }
+        Update: {
+          claimed_at?: string | null
+          created_at?: string | null
+          id?: string
+          reward_id?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       user_settings: {
         Row: {
