@@ -1,6 +1,7 @@
+
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, LogOut } from "lucide-react";
+import { Menu, LogOut, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
