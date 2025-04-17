@@ -1,240 +1,164 @@
-import React from "react";
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { 
-  Home, 
-  Compass, 
-  Video, 
-  Users, 
-  Bell,
-  Bookmark,
-  Settings,
-  User,
-  BadgeHelp,
-  LogOut,
-  PlusCircle,
+import React from 'react';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
+import { Separator } from "@/components/ui/separator"
+import { ModeToggle } from "@/components/layout/ModeToggle"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useAuth } from "@/contexts/AuthContext";
+import { Link } from "react-router-dom";
+import { useLocation } from 'react-router-dom';
+import { Badge } from "@/components/ui/badge"
+import {
+  Home,
+  Compass,
+  Users,
+  Video,
+  MessageSquare,
   Heart,
-  Gamepad2
+  User,
+  Sparkles,
+  Bookmark,
+  PlusCircle,
+  LucideIcon,
+  Gamepad2,
+  Music
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 
-const sidebarAnimation = {
-  hidden: { opacity: 0, x: -20 },
-  visible: { 
-    opacity: 1, 
-    x: 0,
-    transition: {
-      duration: 0.4,
-      staggerChildren: 0.1
-    }
-  }
-};
-
-const itemAnimation = {
-  hidden: { opacity: 0, x: -20 },
-  visible: { opacity: 1, x: 0 }
-};
-
-interface SidebarProps {
-  collapsed?: boolean;
+interface NavItemProps {
+  name: string;
+  href: string;
+  icon: LucideIcon;
+  badge?: number;
 }
 
-const Sidebar = ({ collapsed = false }: SidebarProps) => {
+const NavItem: React.FC<NavItemProps> = ({ name, href, icon: Icon, badge }) => {
   const location = useLocation();
-  const { toast } = useToast();
-  const navigate = useNavigate();
-  
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    toast({
-      title: "Signed out successfully",
-      description: "You have been signed out of your account",
-      duration: 3000,
-    });
-    window.location.href = "/";
-  };
-  
+  const isActive = location.pathname === href;
+
   return (
-    <motion.aside 
-      className={`hidden md:flex flex-col ${collapsed ? 'w-20' : 'w-64'} bg-white/80 backdrop-blur-md border-r border-gray-100 min-h-screen transition-all duration-300`}
-      initial="hidden"
-      animate="visible"
-      variants={sidebarAnimation}
-    >
-      <div className="p-6">
-        <motion.nav 
-          className="mt-4 flex flex-col space-y-1"
-          variants={itemAnimation}
-        >
-          <SidebarLink 
-            to="/home" 
-            icon={<Home className="h-5 w-5" />} 
-            label="Home"
-            isActive={location.pathname === '/home'}
-            collapsed={collapsed}
-          />
-          <SidebarLink 
-            to="/explore" 
-            icon={<Compass className="h-5 w-5" />} 
-            label="Explore"
-            isActive={location.pathname === '/explore'}
-            hasNotification
-            collapsed={collapsed}
-          />
-          <SidebarLink 
-            to="/reels" 
-            icon={<Video className="h-5 w-5" />} 
-            label="Reels"
-            isActive={location.pathname === '/reels'}
-            collapsed={collapsed}
-          />
-          <SidebarLink 
-            to="/wellness" 
-            icon={<Heart className="h-5 w-5" />} 
-            label="Wellness"
-            isActive={location.pathname === '/wellness' || location.pathname === '/wellness/plus'}
-            collapsed={collapsed}
-          />
-          <SidebarLink 
-            to="/communities" 
-            icon={<Users className="h-5 w-5" />} 
-            label="Communities"
-            isActive={location.pathname === '/communities'}
-            collapsed={collapsed}
-          />
-          <SidebarLink 
-            to="/notifications" 
-            icon={<Bell className="h-5 w-5" />} 
-            label="Notifications"
-            isActive={location.pathname === '/notifications'}
-            hasNotification
-            collapsed={collapsed}
-          />
-          <SidebarLink 
-            to="/saved" 
-            icon={<Bookmark className="h-5 w-5" />} 
-            label="Saved"
-            isActive={location.pathname === '/saved'}
-            collapsed={collapsed}
-          />
-          <SidebarLink 
-            to="/games" 
-            icon={<Gamepad2 className="h-5 w-5" />} 
-            label="Games"
-            isActive={location.pathname === '/games'}
-            collapsed={collapsed}
-          />
-        </motion.nav>
-        
-        <motion.div
-          className="mt-8 flex justify-center"
-          variants={itemAnimation}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <button 
-            onClick={() => navigate('/create')}
-            className={`${collapsed ? 'p-3' : 'w-full py-3 px-4'} bg-cosmic-crush text-white rounded-full font-medium flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all`}
-          >
-            <PlusCircle className="h-5 w-5" />
-            {!collapsed && "Create Content"}
-          </button>
-        </motion.div>
-        
-        {!collapsed && (
-          <motion.h2 
-            className="text-lg font-semibold mt-8 mb-2"
-            variants={itemAnimation}
-          >
-            Account
-          </motion.h2>
+    <li>
+      <Link
+        to={href}
+        className={`flex items-center p-2 rounded-md hover:bg-secondary transition-colors ${isActive ? 'bg-secondary font-semibold' : ''}`}
+      >
+        <Icon className="w-5 h-5 mr-2" />
+        {name}
+        {badge && (
+          <Badge variant="secondary" className="ml-auto">
+            {badge}
+          </Badge>
         )}
-        
-        <motion.nav 
-          className="mt-4 flex flex-col space-y-1"
-          variants={itemAnimation}
-        >
-          <SidebarLink 
-            to="/profile" 
-            icon={<User className="h-5 w-5" />} 
-            label="Profile"
-            isActive={location.pathname === '/profile'}
-            collapsed={collapsed}
-          />
-          <SidebarLink 
-            to="/settings" 
-            icon={<Settings className="h-5 w-5" />} 
-            label="Settings"
-            isActive={location.pathname === '/settings'}
-            collapsed={collapsed}
-          />
-          <SidebarLink 
-            to="/help" 
-            icon={<BadgeHelp className="h-5 w-5" />} 
-            label="Help"
-            isActive={location.pathname === '/help'}
-            collapsed={collapsed}
-          />
-          <div
-            onClick={handleSignOut}
-            className={`flex items-center ${collapsed ? 'justify-center px-2' : 'px-4'} py-3 text-sm font-medium rounded-xl transition-colors text-gray-600 hover:bg-gray-100 cursor-pointer`}
-          >
-            <span className={collapsed ? "" : "mr-3"}>
-              <LogOut className="h-5 w-5 text-gray-500" />
-            </span>
-            {!collapsed && "Sign out"}
-          </div>
-        </motion.nav>
-      </div>
-      
-      {!collapsed && (
-        <div className="mt-auto p-6 border-t border-gray-100">
-          <div className="bg-dream-mist rounded-xl p-4">
-            <h4 className="text-sm font-medium mb-2">Upgrade to Pro</h4>
-            <p className="text-xs text-gray-600 mb-3">Get access to premium features</p>
-            <button className="text-xs px-3 py-1.5 bg-cosmic-crush text-white rounded-full font-medium shadow-sm hover:shadow-md transition-all">
-              Learn more
-            </button>
-          </div>
-        </div>
-      )}
-    </motion.aside>
+      </Link>
+    </li>
   );
 };
 
-interface SidebarLinkProps {
-  to: string;
-  icon: React.ReactNode;
-  label: string;
-  isActive?: boolean;
-  hasNotification?: boolean;
-  collapsed?: boolean;
-}
+const Sidebar = () => {
+  const { user, profile } = useAuth();
+  const notificationCount = 5; // Example notification count
 
-const SidebarLink = ({ to, icon, label, isActive = false, hasNotification = false, collapsed = false }: SidebarLinkProps) => {
+  const navigation = [
+    { name: "Home", href: "/home", icon: Home },
+    { name: "Explore", href: "/explore", icon: Compass },
+    { name: "Communities", href: "/communities", icon: Users },
+    { name: "Reels", href: "/reels", icon: Video },
+    { name: "Games", href: "/games", icon: Gamepad2 },
+    { name: "Music", href: "/music", icon: Music },
+    { name: "Chat", href: "/chat", icon: MessageSquare },
+    { name: "Notifications", href: "/notifications", icon: Heart, badge: notificationCount },
+    { name: "Profile", href: "/profile", icon: User },
+    { name: "Wellness", href: "/wellness", icon: Sparkles },
+    { name: "Saved", href: "/saved", icon: Bookmark },
+    { name: "Create", href: "/content-creator", icon: PlusCircle },
+  ];
+
   return (
-    <motion.div variants={itemAnimation}>
-      <NavLink
-        to={to}
-        className={`
-          flex items-center ${collapsed ? 'justify-center' : 'px-4'} py-3 text-sm font-medium rounded-xl transition-all relative
-          ${
-            isActive
-              ? "bg-unmute-purple/20 text-unmute-purple-dark font-bold"
-              : "text-gray-600 hover:bg-gray-100"
-          }
-        `}
-        title={collapsed ? label : undefined}
-      >
-        <span className={collapsed ? "" : "mr-3"}>{icon}</span>
-        {!collapsed && label}
-        
-        {hasNotification && (
-          <span className={`h-2 w-2 bg-secondary rounded-full ${collapsed ? "absolute top-2 right-2" : "absolute right-4 top-1/2 transform -translate-y-1/2"}`} />
-        )}
-      </NavLink>
-    </motion.div>
+    <>
+      <Sheet>
+        <SheetTrigger asChild>
+          <button className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-secondary h-10 px-4 py-2 lg:hidden">Menu</button>
+        </SheetTrigger>
+        <SheetContent className="w-full sm:w-3/4 md:w-2/5 right-0 border-l">
+          <SheetHeader className="text-left">
+            <SheetTitle>Menu</SheetTitle>
+            <SheetDescription>
+              Navigate through the app.
+            </SheetDescription>
+          </SheetHeader>
+          <Separator className="my-4" />
+
+          <nav className="flex flex-col space-y-1">
+            <ul className="space-y-0.5">
+              {navigation.map((item) => (
+                <NavItem key={item.name} name={item.name} href={item.href} icon={item.icon} badge={item.badge} />
+              ))}
+            </ul>
+          </nav>
+
+          <Separator className="my-4" />
+
+          <div className="flex items-center space-x-2">
+            <Avatar>
+              <AvatarImage src={profile?.avatar || ""} />
+              <AvatarFallback>{profile?.username?.substring(0, 2).toUpperCase()}</AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col space-y-0">
+              <p className="text-sm font-medium leading-none">{profile?.full_name}</p>
+              <p className="text-sm text-muted-foreground">
+                {profile?.username}
+              </p>
+            </div>
+          </div>
+
+          <Separator className="my-4" />
+
+          <ModeToggle />
+        </SheetContent>
+      </Sheet>
+      <aside className="hidden lg:flex lg:flex-col lg:w-64 bg-background border-r py-4">
+        <div className="px-6">
+          <Link to="/home" className="flex items-center text-2xl font-semibold">
+            Moodify
+          </Link>
+        </div>
+        <Separator className="my-4" />
+
+        <nav className="flex flex-col space-y-1">
+          <ul className="space-y-0.5">
+            {navigation.map((item) => (
+              <NavItem key={item.name} name={item.name} href={item.href} icon={item.icon} badge={item.badge} />
+            ))}
+          </ul>
+        </nav>
+
+        <Separator className="my-4" />
+
+        <div className="px-6">
+          <div className="flex items-center space-x-2">
+            <Avatar>
+              <AvatarImage src={profile?.avatar || ""} />
+              <AvatarFallback>{profile?.username?.substring(0, 2).toUpperCase()}</AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col space-y-0">
+              <p className="text-sm font-medium leading-none">{profile?.full_name}</p>
+              <p className="text-sm text-muted-foreground">
+                {profile?.username}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-auto px-6">
+          <ModeToggle />
+        </div>
+      </aside>
+    </>
   );
 };
 

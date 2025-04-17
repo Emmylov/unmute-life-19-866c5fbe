@@ -1,210 +1,95 @@
-import React, { useEffect, useState } from "react";
-import { BrowserRouter as Router, Routes, Route, useParams, useSearchParams } from "react-router-dom";
-import Auth from "./pages/Auth";
-import Home from "./pages/Home";
-import Profile from "./pages/Profile";
-import Chat from "./pages/Chat";
-import Explore from "./pages/Explore";
-import Wellness from "./pages/Wellness";
-import NotFound from "./pages/NotFound";
-import Index from "./pages/Index";
-import Onboarding from "./pages/Onboarding";
-import ContentCreator from "./pages/ContentCreator";
-import Reels from "./pages/Reels";
-import VibeCheck from "./pages/VibeCheck";
-import WellnessPlus from "./pages/WellnessPlus";
-import CreateCollab from "./pages/CreateCollab";
-import Notifications from "./pages/Notifications";
-import Communities from "./pages/Communities";
-import Settings from "./pages/Settings";
-import Help from "./pages/Help";
-import Saved from "./pages/Saved";
-import "./App.css";
-import ProtectedLayout from "./components/auth/ProtectedLayout";
-import ErrorBoundary from "./components/ui/error-boundary";
-import Games from "./pages/Games";
-import MemoryMatch from "./pages/games/MemoryMatch";
-import WordScramble from "./pages/games/WordScramble";
-import BubblePop from "./pages/games/BubblePop";
-import { Toaster } from "sonner";
-import { AuthProvider } from "./contexts/AuthContext";
-import { useAuth } from "./contexts/AuthContext";
-import { supabase } from "./integrations/supabase/client";
-import { differenceInHours } from "date-fns";
-import DailyRewardModal from "./components/rewards/DailyRewardModal";
-
-interface UserSettings {
-  settings: {
-    rewards?: {
-      lastClaimed?: string;
-    }
-  }
-}
-
-function ChatWithId() {
-  const { id } = useParams();
-  return <Chat chatId={id} />;
-}
-
-function ReelsWithParams() {
-  const [searchParams] = useSearchParams();
-  const reelId = searchParams.get('reel');
-  return <Reels initialReelId={reelId} />;
-}
+import React, { useEffect } from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
+import Index from "@/pages/Index";
+import Auth from "@/pages/Auth";
+import Home from "@/pages/Home";
+import Explore from "@/pages/Explore";
+import Communities from "@/pages/Communities";
+import Reels from "@/pages/Reels";
+import Chat from "@/pages/Chat";
+import Notifications from "@/pages/Notifications";
+import Profile from "@/pages/Profile";
+import Wellness from "@/pages/Wellness";
+import WellnessPlus from "@/pages/WellnessPlus";
+import Saved from "@/pages/Saved";
+import ContentCreator from "@/pages/ContentCreator";
+import CreateCollab from "@/pages/CreateCollab";
+import VibeCheck from "@/pages/VibeCheck";
+import Settings from "@/pages/Settings";
+import Help from "@/pages/Help";
+import NotFound from "@/pages/NotFound";
+import ProtectedLayout from "@/components/layout/ProtectedLayout";
+import Onboarding from "@/pages/Onboarding";
+import Games from "@/pages/Games";
+import MemoryMatch from "@/pages/games/MemoryMatch";
+import BubblePop from "@/pages/games/BubblePop";
+import WordScramble from "@/pages/games/WordScramble";
+import Music from "@/pages/Music";
 
 function App() {
-  const [showRewardModal, setShowRewardModal] = useState(false);
-  const { user } = useAuth();
-
   useEffect(() => {
-    if (user) {
-      checkDailyRewardStatus();
-    }
-  }, [user]);
+    // Set a custom attribute on the document element to indicate user interaction
+    const handleInteraction = () => {
+      document.documentElement.setAttribute('data-user-interacted', 'true');
+      // Remove the event listeners after the first interaction
+      document.removeEventListener('click', handleInteraction);
+      document.removeEventListener('touchstart', handleInteraction);
+      document.removeEventListener('keydown', handleInteraction);
+    };
 
-  const checkDailyRewardStatus = async () => {
-    if (!user) return;
+    // Add event listeners for common user interactions
+    document.addEventListener('click', handleInteraction);
+    document.addEventListener('touchstart', handleInteraction);
+    document.addEventListener('keydown', handleInteraction);
 
-    try {
-      const { data: userSettings } = await supabase
-        .from('user_settings')
-        .select('settings')
-        .eq('user_id', user.id)
-        .single();
-
-      const settings = userSettings?.settings as UserSettings['settings'] || {};
-      const now = new Date();
-      const lastClaimed = settings?.rewards?.lastClaimed 
-        ? new Date(settings.rewards.lastClaimed)
-        : null;
-      
-      if (!lastClaimed || (differenceInHours(now, lastClaimed) >= 24 && !sessionStorage.getItem('rewardCheckDone'))) {
-        setTimeout(() => setShowRewardModal(true), 2000);
-      }
-
-      sessionStorage.setItem('rewardCheckDone', 'true');
-    } catch (error) {
-      console.error("Error checking reward status:", error);
-    }
-  };
+    // Clean up the event listeners when the component unmounts
+    return () => {
+      document.removeEventListener('click', handleInteraction);
+      document.removeEventListener('touchstart', handleInteraction);
+      document.removeEventListener('keydown', handleInteraction);
+    };
+  }, []);
 
   return (
-    <React.StrictMode>
-      <Router>
-        <AuthProvider>
-          <ErrorBoundary>
-            <div className="w-full">
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/onboarding" element={<Onboarding />} />
-                <Route path="/help" element={<Help />} />
-                
-                <Route path="/home" element={
-                  <ProtectedLayout>
-                    <Home />
-                  </ProtectedLayout>
-                } />
-                <Route path="/profile" element={
-                  <ProtectedLayout>
-                    <Profile />
-                  </ProtectedLayout>
-                } />
-                <Route path="/chat" element={
-                  <ProtectedLayout>
-                    <Chat />
-                  </ProtectedLayout>
-                } />
-                <Route path="/chat/:id" element={
-                  <ProtectedLayout>
-                    <ChatWithId />
-                  </ProtectedLayout>
-                } />
-                <Route path="/explore" element={
-                  <ProtectedLayout>
-                    <Explore />
-                  </ProtectedLayout>
-                } />
-                <Route path="/communities" element={
-                  <ProtectedLayout>
-                    <Communities />
-                  </ProtectedLayout>
-                } />
-                <Route path="/wellness" element={
-                  <ProtectedLayout>
-                    <Wellness />
-                  </ProtectedLayout>
-                } />
-                <Route path="/wellness/plus" element={
-                  <ProtectedLayout>
-                    <WellnessPlus />
-                  </ProtectedLayout>
-                } />
-                <Route path="/create" element={
-                  <ProtectedLayout>
-                    <ContentCreator />
-                  </ProtectedLayout>
-                } />
-                <Route path="/create-collab" element={
-                  <ProtectedLayout>
-                    <CreateCollab />
-                  </ProtectedLayout>
-                } />
-                <Route path="/reels" element={
-                  <ProtectedLayout>
-                    <ReelsWithParams />
-                  </ProtectedLayout>
-                } />
-                <Route path="/vibe-check" element={
-                  <ProtectedLayout>
-                    <VibeCheck />
-                  </ProtectedLayout>
-                } />
-                <Route path="/notifications" element={
-                  <ProtectedLayout>
-                    <Notifications />
-                  </ProtectedLayout>
-                } />
-                <Route path="/settings" element={
-                  <ProtectedLayout>
-                    <Settings />
-                  </ProtectedLayout>
-                } />
-                <Route path="/saved" element={
-                  <ProtectedLayout>
-                    <Saved />
-                  </ProtectedLayout>
-                } />
-                <Route path="/games" element={
-                  <ProtectedLayout>
-                    <Games />
-                  </ProtectedLayout>
-                } />
-                <Route path="/games/memory" element={
-                  <ProtectedLayout>
-                    <MemoryMatch />
-                  </ProtectedLayout>
-                } />
-                <Route path="/games/word-scramble" element={
-                  <ProtectedLayout>
-                    <WordScramble />
-                  </ProtectedLayout>
-                } />
-                <Route path="/games/bubble-pop" element={
-                  <ProtectedLayout>
-                    <BubblePop />
-                  </ProtectedLayout>
-                } />
-                
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-              <Toaster position="top-right" />
-              <DailyRewardModal open={showRewardModal} onOpenChange={setShowRewardModal} />
-            </div>
-          </ErrorBoundary>
-        </AuthProvider>
-      </Router>
-    </React.StrictMode>
+    <div className="App">
+      <BrowserRouter>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<Index />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/onboarding" element={<Onboarding />} />
+
+          {/* Protected Routes */}
+          <Route element={<ProtectedLayout />}>
+            <Route path="/home" element={<Home />} />
+            <Route path="/explore" element={<Explore />} />
+            <Route path="/communities" element={<Communities />} />
+            <Route path="/reels" element={<Reels />} />
+            <Route path="/chat" element={<Chat />} />
+            <Route path="/notifications" element={<Notifications />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/wellness" element={<Wellness />} />
+            <Route path="/wellness-plus" element={<WellnessPlus />} />
+            <Route path="/saved" element={<Saved />} />
+            <Route path="/content-creator" element={<ContentCreator />} />
+            <Route path="/create-collab" element={<CreateCollab />} />
+            <Route path="/vibe-check" element={<VibeCheck />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/help" element={<Help />} />
+            <Route path="/games" element={<Games />} />
+            <Route path="/games/memory-match" element={<MemoryMatch />} />
+            <Route path="/games/bubble-pop" element={<BubblePop />} />
+            <Route path="/games/word-scramble" element={<WordScramble />} />
+            <Route path="/music" element={<Music />} />
+          </Route>
+
+          {/* 404 */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
+      <Toaster />
+    </div>
   );
 }
 
