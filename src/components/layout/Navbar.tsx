@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -168,15 +167,15 @@ const Navbar = ({ pageTitle }: NavbarProps) => {
   ];
   
   return (
-    <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-gray-100 w-full">
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
-        <div className="flex items-center justify-between h-14 md:h-16">
+    <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-gray-100 w-full h-12 md:h-14">
+      <div className="max-w-7xl mx-auto px-2 sm:px-3 lg:px-4">
+        <div className="flex items-center justify-between h-12 md:h-14">
           <div className="flex items-center">
             {isMobile && (
               <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="mr-2">
-                    <Menu className="h-5 w-5" />
+                  <Button variant="ghost" size="icon" className="mr-1 h-8 w-8">
+                    <Menu className="h-4 w-4" />
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="left" className="p-0 w-[280px] sm:w-[350px]">
@@ -257,75 +256,75 @@ const Navbar = ({ pageTitle }: NavbarProps) => {
             )}
             
             <Link to="/home" className="flex items-center">
-              <span className="text-xl font-bold bg-gradient-to-r from-unmute-purple to-unmute-pink bg-clip-text text-transparent">Unmute</span>
+              <span className="text-lg font-bold bg-gradient-to-r from-unmute-purple to-unmute-pink bg-clip-text text-transparent">Unmute</span>
             </Link>
             
             {pageTitle && (
-              <div className="ml-4 md:ml-6 flex items-center">
-                <span className="text-gray-400 mx-2">/</span>
-                <h1 className="text-lg font-medium text-gray-900 truncate max-w-[120px] sm:max-w-none">{pageTitle}</h1>
+              <div className="ml-2 md:ml-3 flex items-center">
+                <span className="text-gray-400 mx-1">/</span>
+                <h1 className="text-base font-medium text-gray-900 truncate max-w-[100px] sm:max-w-none">{pageTitle}</h1>
               </div>
             )}
           </div>
           
           {(!isMobile || (isMobile && isSearchOpen)) && (
-            <div className={`${isSearchOpen ? 'absolute inset-x-0 top-0 bg-white px-3 py-3 z-30' : 'relative'} max-w-md w-full mx-4 ${isMobile ? 'hidden' : 'flex'} ${isTablet ? 'max-w-[180px] lg:max-w-md' : ''}`}>
+            <div className={`${isSearchOpen ? 'absolute inset-x-0 top-0 bg-white px-3 py-2 z-30' : 'relative'} max-w-md w-full mx-2 ${isMobile ? 'hidden' : 'flex'} ${isTablet ? 'max-w-[150px] lg:max-w-md' : ''}`}>
               <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-3 w-3" />
                 <Input 
                   type="text" 
-                  placeholder={isDesktop ? "Search voices, people, and communities..." : "Search..."}
-                  className="pl-10 bg-gray-50/80 border-none focus-visible:ring-unmute-purple/30 rounded-full w-full"
+                  placeholder={isDesktop ? "Search..." : "Search..."}
+                  className="h-8 pl-7 bg-gray-50/80 border-none focus-visible:ring-unmute-purple/30 rounded-full w-full text-sm"
                   ref={searchInputRef}
                 />
                 {isSearchOpen && (
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7" 
+                    className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6" 
                     onClick={() => setIsSearchOpen(false)}
                   >
-                    <X className="h-4 w-4" />
+                    <X className="h-3 w-3" />
                   </Button>
                 )}
               </div>
             </div>
           )}
           
-          <div className="flex items-center space-x-1 sm:space-x-2 md:space-x-3">
+          <div className="flex items-center space-x-1 sm:space-x-1">
             {isMobile && (
-              <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(!isSearchOpen)} className="text-gray-500">
-                <Search className="h-5 w-5" />
+              <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(!isSearchOpen)} className="text-gray-500 h-8 w-8">
+                <Search className="h-4 w-4" />
               </Button>
             )}
             
             <Button 
               variant="ghost" 
               size="icon" 
-              className={`relative text-unmute-purple hover:text-unmute-purple/80 transition-colors ${location.pathname === '/create' ? 'bg-unmute-purple/10' : ''}`}
+              className={`relative text-unmute-purple hover:text-unmute-purple/80 transition-colors h-8 w-8 ${location.pathname === '/create' ? 'bg-unmute-purple/10' : ''}`}
               onClick={() => navigate('/create')}
             >
-              <PlusCircle className="h-5 w-5" />
+              <PlusCircle className="h-4 w-4" />
               <span className="sr-only">Create</span>
             </Button>
             
             <Button 
-              className={`hidden sm:flex items-center gap-2 unmute-primary-button px-4 py-2 h-9`}
+              className={`hidden sm:flex items-center gap-1 unmute-primary-button px-2 py-1 h-8 text-xs`}
               onClick={() => navigate('/create')}
             >
-              <Video className="h-4 w-4" />
+              <Video className="h-3 w-3" />
               {isDesktop ? "Create" : ""}
             </Button>
 
             <Button 
               variant="ghost" 
               size="icon" 
-              className={`relative text-gray-500 hover:text-unmute-purple transition-colors ${location.pathname.includes('/chat') ? 'bg-unmute-purple/10 text-unmute-purple' : ''}`}
+              className={`relative text-gray-500 hover:text-unmute-purple transition-colors h-8 w-8 ${location.pathname.includes('/chat') ? 'bg-unmute-purple/10 text-unmute-purple' : ''}`}
               onClick={() => navigate('/chat')}
             >
-              <MessageSquare className="h-5 w-5" />
+              <MessageSquare className="h-4 w-4" />
               {unreadMessages > 0 && (
-                <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-unmute-pink text-white text-xs flex items-center justify-center font-medium">
+                <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-unmute-pink text-white text-xs flex items-center justify-center font-medium">
                   {unreadMessages > 9 ? '9+' : unreadMessages}
                 </span>
               )}
@@ -335,15 +334,15 @@ const Navbar = ({ pageTitle }: NavbarProps) => {
             <Button 
               variant="ghost" 
               size="icon" 
-              className="relative text-gray-500"
+              className="relative text-gray-500 h-8 w-8"
             >
-              <Bell className="h-5 w-5" />
-              <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-unmute-pink"></span>
+              <Bell className="h-4 w-4" />
+              <span className="absolute top-0 right-0 h-1.5 w-1.5 rounded-full bg-unmute-pink"></span>
             </Button>
             
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Avatar className="h-8 w-8 md:h-9 md:w-9 cursor-pointer ring-2 ring-white hover:ring-unmute-purple/20 transition-all">
+                <Avatar className="h-7 w-7 md:h-8 md:w-8 cursor-pointer ring-1 ring-white hover:ring-unmute-purple/20 transition-all">
                   <AvatarImage 
                     src={profile?.avatar || ''} 
                     alt={profile?.username || user?.email || 'User'}
