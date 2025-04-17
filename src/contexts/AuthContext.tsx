@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session, User } from '@supabase/supabase-js';
@@ -41,15 +42,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const checkEarlyAccess = useCallback(async (email: string) => {
     try {
+      // We need to handle the case where the column might not exist yet in some environments
       const { data, error } = await supabase
         .from('waitlist')
-        .select('email_verified')
+        .select('*')  // Select all columns instead of specifically requesting email_verified
         .eq('email', email)
         .single();
 
       if (error) throw error;
 
-      return data?.email_verified || false;
+      // Check if the email_verified property exists and is true
+      return data && data.email_verified === true;
     } catch (error) {
       console.error('Early access check failed:', error);
       return false;
