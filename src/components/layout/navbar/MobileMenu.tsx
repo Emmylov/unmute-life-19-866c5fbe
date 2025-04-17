@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Menu, LogOut, PlusCircle } from "lucide-react";
@@ -33,7 +34,14 @@ const MobileMenu = ({
     { name: "Reels", path: "/reels" },
     { name: "Communities", path: "/communities" },
     { name: "Chat", path: "/chat" },
-    { name: "Profile", path: "/profile" },
+    { name: "Notifications", path: "/notifications" },
+    { name: "Wellness", path: "/wellness" },
+    { name: "Saved", path: "/saved" },
+    { name: "Content Creator", path: "/content-creator" },
+    { name: "Create Collab", path: "/create-collab" },
+    { name: "Games", path: "/games" },
+    { name: "Music", path: "/music" },
+    { name: "Vibe Check", path: "/vibe-check" },
     { name: "Settings", path: "/settings" },
   ];
 

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,43 +15,26 @@ import {
   Film,
   MessageSquare,
   Bell,
-  User,
   HeartPulse,
   Bookmark,
   Pencil,
   UserPlus,
   ActivitySquare,
   Settings,
-  HelpCircle,
   LogOut,
-  Menu,
   Music,
-  Gamepad2
+  Gamepad2,
+  Menu
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useIsMobile } from "@/hooks/use-responsive";
-import { Badge } from "@/components/ui/badge";
-import { supabase } from "@/integrations/supabase/client";
-
-interface NavItemType {
-  icon: React.ReactNode;
-  label: string;
-  path: string;
-  badge?: number;
-}
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 const Sidebar = () => {
-  const [collapsed, setCollapsed] = useState(false);
-  const { user, profile, signOut, refreshProfile } = useAuth();
+  const [isOpen, setIsOpen] = useState(false);
+  const { user, profile, signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const pathname = location.pathname;
-  const isMobile = useIsMobile();
 
-  const toggleCollapse = () => {
-    setCollapsed(!collapsed);
-  };
-  
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -60,116 +43,25 @@ const Sidebar = () => {
       console.error("Sign out failed:", error);
     }
   };
-  
-  const mainNavItems: NavItemType[] = [
-    {
-      icon: <Home className="h-5 w-5 shrink-0" />,
-      label: "Home",
-      path: "/home",
-    },
-    {
-      icon: <Compass className="h-5 w-5 shrink-0" />,
-      label: "Explore",
-      path: "/explore",
-    },
-    {
-      icon: <Film className="h-5 w-5 shrink-0" />,
-      label: "Reels",
-      path: "/reels",
-    },
-    {
-      icon: <Users className="h-5 w-5 shrink-0" />,
-      label: "Communities",
-      path: "/communities",
-    },
-    {
-      icon: <MessageSquare className="h-5 w-5 shrink-0" />,
-      label: "Chat",
-      path: "/chat",
-    },
-    {
-      icon: <Bell className="h-5 w-5 shrink-0" />,
-      label: "Notifications",
-      path: "/notifications",
-      badge: profile?.notification_count || 0,
-    },
+
+  const navigationLinks = [
+    { icon: <Home className="h-5 w-5 shrink-0" />, label: "Home", path: "/home" },
+    { icon: <Compass className="h-5 w-5 shrink-0" />, label: "Explore", path: "/explore" },
+    { icon: <Film className="h-5 w-5 shrink-0" />, label: "Reels", path: "/reels" },
+    { icon: <Users className="h-5 w-5 shrink-0" />, label: "Communities", path: "/communities" },
+    { icon: <MessageSquare className="h-5 w-5 shrink-0" />, label: "Chat", path: "/chat" },
+    { icon: <Bell className="h-5 w-5 shrink-0" />, label: "Notifications", path: "/notifications" },
+    { icon: <HeartPulse className="h-5 w-5 shrink-0" />, label: "Wellness", path: "/wellness" },
+    { icon: <Bookmark className="h-5 w-5 shrink-0" />, label: "Saved", path: "/saved" },
+    { icon: <Pencil className="h-5 w-5 shrink-0" />, label: "Content Creator", path: "/content-creator" },
+    { icon: <UserPlus className="h-5 w-5 shrink-0" />, label: "Create Collab", path: "/create-collab" },
+    { icon: <ActivitySquare className="h-5 w-5 shrink-0" />, label: "Vibe Check", path: "/vibe-check" },
+    { icon: <Gamepad2 className="h-5 w-5 shrink-0" />, label: "Games", path: "/games" },
+    { icon: <Music className="h-5 w-5 shrink-0" />, label: "Music", path: "/music" },
+    { icon: <Settings className="h-5 w-5 shrink-0" />, label: "Settings", path: "/settings" },
   ];
-  
-  const secondaryNavItems: NavItemType[] = [
-    {
-      icon: <HeartPulse className="h-5 w-5 shrink-0" />,
-      label: "Wellness",
-      path: "/wellness",
-    },
-    {
-      icon: <Bookmark className="h-5 w-5 shrink-0" />,
-      label: "Saved",
-      path: "/saved",
-    },
-    {
-      icon: <Pencil className="h-5 w-5 shrink-0" />,
-      label: "Content Creator",
-      path: "/content-creator",
-    },
-    {
-      icon: <UserPlus className="h-5 w-5 shrink-0" />,
-      label: "Create Collab",
-      path: "/create-collab",
-    },
-    {
-      icon: <ActivitySquare className="h-5 w-5 shrink-0" />,
-      label: "Vibe Check",
-      path: "/vibe-check",
-    },
-    {
-      icon: <Gamepad2 className="h-5 w-5 shrink-0" />,
-      label: "Games",
-      path: "/games",
-    },
-    {
-      icon: <Music className="h-5 w-5 shrink-0" />,
-      label: "Music",
-      path: "/music",
-    },
-    {
-      icon: <Settings className="h-5 w-5 shrink-0" />,
-      label: "Settings",
-      path: "/settings",
-    },
-    {
-      icon: <HelpCircle className="h-5 w-5 shrink-0" />,
-      label: "Help",
-      path: "/help",
-    },
-  ];
-  
-  useEffect(() => {
-    // Fetch profile data when the component mounts or when the user changes
-    const fetchProfile = async () => {
-      if (user) {
-        try {
-          const { data, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', user.id)
-            .single();
-            
-          if (data && !error) {
-            // Use the refreshProfile function from useAuth context
-            await refreshProfile();
-          } else if (error) {
-            console.error("Error fetching profile:", error);
-          }
-        } catch (error) {
-          console.error("Error in fetchProfile:", error);
-        }
-      }
-    };
-    
-    fetchProfile();
-  }, [user, refreshProfile]);
-  
-  const getInitials = (name?: string) => {
+
+  const getInitials = (name: string) => {
     if (!name) return "U";
     return name
       .split(' ')
@@ -178,140 +70,69 @@ const Sidebar = () => {
       .toUpperCase()
       .substring(0, 2);
   };
-  
+
   return (
-    <aside
-      className={cn(
-        "fixed left-0 top-0 z-10 hidden h-screen w-64 flex-col bg-white border-r border-gray-200 pt-14 transition-all duration-300 ease-in-out md:flex",
-        collapsed && "w-[70px]"
-      )}
-    >
-      <div className="flex flex-col h-full overflow-y-auto p-3">
-        {/* Navigation Links */}
-        <nav className="space-y-1 mt-2">
-          {mainNavItems.map((item) => (
-            <NavItem 
-              key={item.path} 
-              icon={item.icon} 
-              label={item.label} 
-              path={item.path} 
-              isActive={pathname === item.path}
-              collapsed={collapsed}
-              badge={item.badge}
-            />
-          ))}
-          
-          {/* Divider */}
-          <div className="border-t border-gray-200 my-3"></div>
-          
-          {/* Secondary Navigation */}
-          {secondaryNavItems.map((item) => (
-            <NavItem 
-              key={item.path} 
-              icon={item.icon} 
-              label={item.label} 
-              path={item.path} 
-              isActive={pathname === item.path}
-              collapsed={collapsed}
-              badge={item.badge}
-            />
-          ))}
-          
-          {/* User Profile Section */}
-          <div className="mt-auto pt-4">
-            <div className={cn("flex items-center mt-3 p-2 rounded-md", 
-              pathname === '/profile' ? 'bg-primary/10 text-primary' : 'hover:bg-gray-100'
-            )}>
-              <Avatar className="h-8 w-8 shrink-0">
+    <Sheet open={isOpen} onOpenChange={setIsOpen}>
+      <SheetTrigger asChild>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="relative flex items-center justify-center p-0 h-8 w-8 hover:bg-gray-100 rounded-full fixed left-4 top-3 z-50"
+        >
+          <Menu className="h-5 w-5 text-gray-600" />
+          <span className="sr-only">Toggle navigation</span>
+        </Button>
+      </SheetTrigger>
+      <SheetContent side="left" className="p-0 w-[280px] sm:w-[350px]">
+        <SheetHeader className="px-4 py-3 border-b">
+          <SheetTitle>
+            <span className="text-xl font-bold bg-gradient-to-r from-unmute-purple to-unmute-pink bg-clip-text text-transparent">
+              Unmute
+            </span>
+          </SheetTitle>
+        </SheetHeader>
+        <div className="flex flex-col h-full overflow-y-auto p-3">
+          {profile && (
+            <div className="px-4 py-3 mb-2 flex items-center">
+              <Avatar className="h-10 w-10 mr-3">
                 <AvatarImage src={profile?.avatar} alt={profile?.username || "User"} />
-                <AvatarFallback className="bg-primary/20">{getInitials(profile?.username || profile?.full_name || "User")}</AvatarFallback>
+                <AvatarFallback className="bg-primary/20">{getInitials(profile?.username || "User")}</AvatarFallback>
               </Avatar>
-              
-              {!collapsed && (
-                <div className="ml-2 overflow-hidden">
-                  <p className="text-sm font-medium truncate">{profile?.username || profile?.full_name || "User"}</p>
-                  <p className="text-xs text-muted-foreground truncate">@{profile?.username || "username"}</p>
-                </div>
-              )}
+              <div>
+                <p className="text-sm font-medium truncate">{profile?.username || profile?.full_name || "User"}</p>
+                <p className="text-xs text-muted-foreground truncate">@{profile?.username || "username"}</p>
+              </div>
             </div>
-          </div>
-          
+          )}
+
+          <nav className="space-y-1 mt-2">
+            {navigationLinks.map((item) => (
+              <Link
+                key={item.path}
+                to={item.path}
+                onClick={() => setIsOpen(false)}
+                className={`flex items-center p-2 rounded-md transition-colors ${
+                  pathname === item.path
+                    ? "bg-primary/10 text-primary font-medium"
+                    : "text-gray-700 hover:bg-gray-100"
+                }`}
+              >
+                {item.icon}
+                <span className="ml-2 text-sm">{item.label}</span>
+              </Link>
+            ))}
+          </nav>
+
           <button 
             onClick={handleSignOut}
-            className={cn("flex items-center p-2 w-full text-left rounded-md text-destructive hover:bg-destructive/10 mt-2")}
+            className="flex items-center p-2 mt-auto text-left rounded-md text-destructive hover:bg-destructive/10"
           >
             <LogOut className="h-5 w-5 shrink-0" />
-            {!collapsed && <span className="ml-2">Sign Out</span>}
+            <span className="ml-2 text-sm">Sign Out</span>
           </button>
-        </nav>
-      </div>
-      
-      {/* Collapse Toggle Button */}
-      <button
-        onClick={toggleCollapse}
-        className="absolute -right-3 top-24 h-6 w-6 rounded-full bg-primary text-white flex items-center justify-center shadow-md"
-      >
-        <Menu className="h-4 w-4" />
-      </button>
-    </aside>
-  );
-};
-
-// Helper function to get initials from name
-const getInitials = (name: string) => {
-  return name
-    .split(' ')
-    .map(part => part[0])
-    .join('')
-    .toUpperCase()
-    .substring(0, 2);
-};
-
-interface NavItemProps {
-  icon: React.ReactNode;
-  label: string;
-  path: string;
-  isActive: boolean;
-  collapsed: boolean;
-  badge?: number;
-}
-
-const NavItem = ({ icon, label, path, isActive, collapsed, badge }: NavItemProps) => {
-  return (
-    <Link
-      to={path}
-      className={cn(
-        "flex items-center p-2 rounded-md transition-colors",
-        isActive ? "bg-primary/10 text-primary font-medium" : "text-gray-700 hover:bg-gray-100"
-      )}
-    >
-      <div className="flex items-center justify-center h-5 w-5 shrink-0">
-        {icon}
-      </div>
-      
-      {!collapsed && (
-        <>
-          <span className="ml-2 text-sm">{label}</span>
-          {badge !== undefined && badge > 0 && (
-            <Badge
-              variant="destructive"
-              className="ml-auto h-5 w-5 flex items-center justify-center p-0 text-xs font-bold"
-            >
-              {badge > 9 ? "9+" : badge}
-            </Badge>
-          )}
-        </>
-      )}
-      
-      {collapsed && badge !== undefined && badge > 0 && (
-        <Badge
-          variant="destructive"
-          className="absolute top-0 right-0 h-4 w-4 flex items-center justify-center p-0 text-[10px] font-bold translate-x-1 -translate-y-1"
-        >
-          {badge > 9 ? "9+" : badge}
-        </Badge>
-      )}
-    </Link>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 };
 
