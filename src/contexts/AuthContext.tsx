@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session, User } from '@supabase/supabase-js';
@@ -51,8 +50,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) throw error;
 
-      // Check if the email_verified property exists and is true
-      return data && data.email_verified === true;
+      // First check if data exists, then safely check if the email_verified property exists
+      // This approach avoids TypeScript errors by using optional chaining and type checking
+      return Boolean(data && (data as Record<string, any>)['email_verified'] === true);
     } catch (error) {
       console.error('Early access check failed:', error);
       return false;
