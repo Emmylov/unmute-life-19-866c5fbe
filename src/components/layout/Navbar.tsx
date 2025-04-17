@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useIsMobile, useIsTablet } from "@/hooks/use-responsive";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 // Import refactored components
 import MobileMenu from "./navbar/MobileMenu";
@@ -26,7 +26,6 @@ const Navbar = ({ pageTitle }: NavbarProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [unreadMessages, setUnreadMessages] = useState(0);
   const navigate = useNavigate();
-  const { toast } = useToast();
   
   useEffect(() => {
     const getUser = async () => {
@@ -80,7 +79,7 @@ const Navbar = ({ pageTitle }: NavbarProps) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user?.id, toast]);
+  }, [user?.id]);
   
   const fetchUnreadMessages = async (userId: string) => {
     try {
