@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session, User } from '@supabase/supabase-js';
@@ -40,7 +39,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  // Setup session monitoring and refresh
+  const checkEarlyAccess = useCallback(async (email: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('waitlist')
+        .select('email_verified')
+        .eq('email', email)
+        .single();
+
+      if (error) throw error;
+
+      return data?.email_verified || false;
+    } catch (error) {
+      console.error('Early access check failed:', error);
+      return false;
+    }
+  }, []);
+
   useEffect(() => {
     if (session) {
       const expiresAt = session.expires_at;
@@ -53,14 +68,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [session]);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, newSession) => {
-        // Only synchronous state updates here
         setSession(newSession);
         setUser(newSession?.user ?? null);
         
-        // Defer other operations to prevent deadlocks
         setTimeout(() => {
           if (event === 'SIGNED_IN' && newSession?.user) {
             fetchProfile(newSession.user.id);
@@ -83,7 +95,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
-    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
@@ -96,11 +107,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(false);
     });
 
-    // Cleanup subscription
     return () => {
       subscription.unsubscribe();
     };
-  }, [fetchProfile]);
+  }, [fetchProfile, checkEarlyAccess]);
 
   const refreshProfile = async () => {
     if (!user) return;
@@ -111,18 +121,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setIsLoading(true);
       setLoading(true);
+
+      const hasEarlyAccess = await checkEarlyAccess(email);
+      const currentDate = new Date();
+      const launchDate = new Date('2025-04-20');
+
+      if (currentDate < launchDate && !hasEarlyAccess) {
+        throw new Error('Early access is currently closed. Please join the waitlist.');
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       toast.success('Signed in successfully');
     } catch (error: any) {
-      toast.error(error.message || 'Failed to sign in');
+      toast.error(error.message || 'Failed to sign in', {
+        description: error.message === 'Early access is currently closed. Please join the waitlist.' 
+          ? 'Visit our website to join the waitlist for early access.' 
+          : 'Please check your credentials and try again.'
+      });
       throw error;
     } finally {
       setIsLoading(false);
@@ -166,7 +187,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw error;
       }
       
-      // Clear profile after successful sign out
       setProfile(null);
       toast.success('Signed out successfully');
     } catch (error: any) {
