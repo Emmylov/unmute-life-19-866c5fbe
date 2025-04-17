@@ -10,7 +10,7 @@ import MobileMenu from "./navbar/MobileMenu";
 import SearchBar from "./navbar/SearchBar";
 import CreateContentButton from "./navbar/CreateContentButton";
 import MessagesButton from "./navbar/MessagesButton";
-import NavbarNotifications from "./navbar/NavbarNotifications";
+import NotificationBell from "@/components/notifications/NotificationBell";
 import UserProfileDropdown from "./navbar/UserProfileDropdown";
 import { getInitials, getAvatarFallbackColor } from "./navbar/NavbarUtils";
 
@@ -142,7 +142,7 @@ const Navbar = ({ pageTitle }: NavbarProps) => {
           <div className="flex items-center space-x-0.5 sm:space-x-1">
             <CreateContentButton />
             <MessagesButton unreadMessages={unreadMessages} />
-            <NavbarNotifications />
+            <NotificationBell />
             
             <UserProfileDropdown
               profile={profile}

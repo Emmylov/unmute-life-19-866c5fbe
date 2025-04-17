@@ -1,13 +1,13 @@
 
 import React, { ReactNode, useEffect, useState } from "react";
-import { Navigate, useLocation } from "react-router-dom";
+import { Navigate, useLocation, Outlet } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { toast } from "sonner";
 import ErrorDisplay from "@/components/ui/error-display";
 
 interface ProtectedLayoutProps {
-  children: ReactNode;
+  children?: ReactNode;
   redirectTo?: string;
   showLoading?: boolean;
 }
@@ -69,8 +69,8 @@ const ProtectedLayout = ({
     return <Navigate to={redirectTo} state={{ from: location.pathname }} replace />;
   }
 
-  // If authenticated, render the protected content
-  return <>{children}</>;
+  // If authenticated, render the protected content or the Outlet for nested routes
+  return <>{children || <Outlet />}</>;
 };
 
 export default ProtectedLayout;

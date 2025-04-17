@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'sonner';
@@ -22,7 +21,7 @@ import VibeCheck from "@/pages/VibeCheck";
 import Settings from "@/pages/Settings";
 import Help from "@/pages/Help";
 import NotFound from "@/pages/NotFound";
-import ProtectedLayout from "@/components/layout/ProtectedLayout";
+import ProtectedLayout from "@/components/auth/ProtectedLayout";
 import Onboarding from "@/pages/Onboarding";
 import Games from "@/pages/Games";
 import MemoryMatch from "@/pages/games/MemoryMatch";
@@ -32,21 +31,17 @@ import Music from "@/pages/Music";
 
 function App() {
   useEffect(() => {
-    // Set a custom attribute on the document element to indicate user interaction
     const handleInteraction = () => {
       document.documentElement.setAttribute('data-user-interacted', 'true');
-      // Remove the event listeners after the first interaction
       document.removeEventListener('click', handleInteraction);
       document.removeEventListener('touchstart', handleInteraction);
       document.removeEventListener('keydown', handleInteraction);
     };
 
-    // Add event listeners for common user interactions
     document.addEventListener('click', handleInteraction);
     document.addEventListener('touchstart', handleInteraction);
     document.addEventListener('keydown', handleInteraction);
 
-    // Clean up the event listeners when the component unmounts
     return () => {
       document.removeEventListener('click', handleInteraction);
       document.removeEventListener('touchstart', handleInteraction);
@@ -59,12 +54,10 @@ function App() {
       <AuthProvider>
         <BrowserRouter>
           <Routes>
-            {/* Public Routes */}
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/onboarding" element={<Onboarding />} />
 
-            {/* Protected Routes */}
             <Route element={<ProtectedLayout />}>
               <Route path="/home" element={<Home />} />
               <Route path="/explore" element={<Explore />} />
@@ -88,7 +81,6 @@ function App() {
               <Route path="/music" element={<Music />} />
             </Route>
 
-            {/* 404 */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
