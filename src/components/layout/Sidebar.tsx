@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -30,10 +31,18 @@ import {
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-responsive";
 import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
+
+interface NavItemType {
+  icon: React.ReactNode;
+  label: string;
+  path: string;
+  badge?: number;
+}
 
 const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, signOut, refreshProfile } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const pathname = location.pathname;
@@ -52,7 +61,7 @@ const Sidebar = () => {
     }
   };
   
-  const mainNavItems = [
+  const mainNavItems: NavItemType[] = [
     {
       icon: <Home className="h-5 w-5 shrink-0" />,
       label: "Home",
@@ -82,10 +91,11 @@ const Sidebar = () => {
       icon: <Bell className="h-5 w-5 shrink-0" />,
       label: "Notifications",
       path: "/notifications",
+      badge: profile?.notification_count || 0,
     },
   ];
   
-  const secondaryNavItems = [
+  const secondaryNavItems: NavItemType[] = [
     {
       icon: <HeartPulse className="h-5 w-5 shrink-0" />,
       label: "Wellness",
@@ -137,23 +147,27 @@ const Sidebar = () => {
     // Fetch profile data when the component mounts or when the user changes
     const fetchProfile = async () => {
       if (user) {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-          
-        if (data && !error) {
-          // Update the profile state with the fetched data
-          setProfile(data);
-        } else if (error) {
-          console.error("Error fetching profile:", error);
+        try {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+            
+          if (data && !error) {
+            // Use the refreshProfile function from useAuth context
+            await refreshProfile();
+          } else if (error) {
+            console.error("Error fetching profile:", error);
+          }
+        } catch (error) {
+          console.error("Error in fetchProfile:", error);
         }
       }
     };
     
     fetchProfile();
-  }, [user]);
+  }, [user, refreshProfile]);
   
   const getInitials = (name?: string) => {
     if (!name) return "U";
@@ -199,6 +213,7 @@ const Sidebar = () => {
               path={item.path} 
               isActive={pathname === item.path}
               collapsed={collapsed}
+              badge={item.badge}
             />
           ))}
           
