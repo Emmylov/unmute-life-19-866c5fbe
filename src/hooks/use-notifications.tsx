@@ -68,17 +68,18 @@ export const useNotifications = () => {
       
       console.log("Notifications data received:", data);
       
-      // Cast the data to the Notification type after handling potential errors with from_user
-      const processedData = (data || []).map(item => {
-        // Handle case where from_user is null or an error object
-        if (!item.from_user || (item.from_user && 'error' in item.from_user)) {
-          return {
-            ...item,
-            from_user: null
-          };
-        }
-        return item;
-      }) as Notification[];
+      // Process the data to handle potential errors with from_user
+      const processedData: Notification[] = data ? data.map((item: any) => {
+        // Handle case where from_user has an error
+        const fromUser = item.from_user && typeof item.from_user === 'object' && !('error' in item.from_user)
+          ? item.from_user
+          : null;
+          
+        return {
+          ...item,
+          from_user: fromUser
+        };
+      }) : [];
       
       setNotifications(processedData);
       
@@ -195,7 +196,7 @@ export const useNotifications = () => {
           table: 'notifications',
           filter: `user_id=eq.${user.id}`
         },
-        (payload) => {
+        async (payload) => {
           console.log("New notification received:", payload);
           
           // Play notification sound
@@ -208,30 +209,65 @@ export const useNotifications = () => {
           // Add the new notification to our state
           const newNotification = payload.new as Notification;
           
+          if (!newNotification.from_user_id) {
+            // System notification without a user
+            const enrichedNotification = {
+              ...newNotification,
+              from_user: null
+            };
+            
+            setNotifications(prev => [enrichedNotification as Notification, ...prev]);
+            setUnreadCount(prev => prev + 1);
+            
+            toast("New notification", {
+              description: newNotification.content,
+              action: {
+                label: "View",
+                onClick: () => markAsRead(newNotification.id),
+              },
+            });
+            return;
+          }
+          
           // Fetch the user data for this notification since it's not included in the payload
-          supabase
-            .from('profiles')
-            .select('username, avatar')
-            .eq('id', newNotification.from_user_id)
-            .single()
-            .then(({ data: fromUser }) => {
+          try {
+            const { data: fromUser, error } = await supabase
+              .from('profiles')
+              .select('username, avatar')
+              .eq('id', newNotification.from_user_id)
+              .single();
+            
+            if (error) {
+              console.error("Error fetching user data for notification:", error);
+              // Still add notification but without user data
+              const enrichedNotification = {
+                ...newNotification,
+                from_user: null
+              };
+              
+              setNotifications(prev => [enrichedNotification as Notification, ...prev]);
+            } else {
               const enrichedNotification = {
                 ...newNotification,
                 from_user: fromUser
               };
               
               setNotifications(prev => [enrichedNotification as Notification, ...prev]);
-              setUnreadCount(prev => prev + 1);
-              
-              // Show a toast notification
-              toast("New notification", {
-                description: newNotification.content,
-                action: {
-                  label: "View",
-                  onClick: () => markAsRead(newNotification.id),
-                },
-              });
+            }
+            
+            setUnreadCount(prev => prev + 1);
+            
+            // Show a toast notification
+            toast("New notification", {
+              description: newNotification.content,
+              action: {
+                label: "View",
+                onClick: () => markAsRead(newNotification.id),
+              },
             });
+          } catch (fetchError) {
+            console.error("Error processing new notification:", fetchError);
+          }
         }
       )
       .subscribe((status) => {
@@ -242,7 +278,7 @@ export const useNotifications = () => {
       console.log("Cleaning up notification subscription");
       supabase.removeChannel(channel);
     };
-  }, [user?.id, markAsRead]);
+  }, [user?.id]);
   
   return {
     notifications,
@@ -254,3 +290,4 @@ export const useNotifications = () => {
     markAllAsRead
   };
 };
+

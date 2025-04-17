@@ -83,7 +83,7 @@ const NotificationsList: React.FC = () => {
             <div className="flex items-start gap-3">
               <Avatar className="h-9 w-9">
                 <AvatarImage src={notification.from_user?.avatar || ""} alt="User" />
-                <AvatarFallback>
+                <AvatarFallback className="bg-unmute-blue text-white">
                   {notification.from_user?.username?.[0]?.toUpperCase() || "U"}
                 </AvatarFallback>
               </Avatar>
@@ -126,3 +126,4 @@ const NotificationsList: React.FC = () => {
 };
 
 export default NotificationsList;
+

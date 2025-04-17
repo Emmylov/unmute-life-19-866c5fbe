@@ -72,11 +72,7 @@ const NotificationBell: React.FC = () => {
       </PopoverTrigger>
       <PopoverContent className="w-80 p-0" align="end">
         <div className="flex flex-col">
-          {loading ? (
-            <div className="p-4 text-center">Loading notifications...</div>
-          ) : (
-            <NotificationsList />
-          )}
+          <NotificationsList />
           <div className="p-2 border-t">
             <Button 
               variant="ghost" 
