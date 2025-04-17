@@ -1,101 +1,145 @@
-
-import React, { useState } from 'react';
-import AppLayout from "@/components/layout/AppLayout";
-import HomeHeader from "@/components/home/HomeHeader";
-import MoodSelector from "@/components/home/MoodSelector";
-import PostCard from "@/components/home/PostCard";
-import HomeRightSidebar from "@/components/home/HomeRightSidebar";
-import HomeGreeting from "@/components/home/HomeGreeting";
-import DailyRewardButton from "@/components/home/DailyRewardButton";
-import DailyRewardModal from "@/components/rewards/DailyRewardModal";
+import React from 'react';
+import AppLayout from '@/components/layout/AppLayout';
+import LaunchBanner from '@/components/home/LaunchBanner';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import { PlusCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import PostFeed from '@/components/feed/PostFeed';
+import StoriesBar from '@/components/stories/StoriesBar';
+import SuggestedUsers from '@/components/feed/SuggestedUsers';
+import DailyReward from '@/components/rewards/DailyReward';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 const Home = () => {
-  const [showRewardModal, setShowRewardModal] = useState(false);
-  const posts = [
-    {
-      id: 1,
-      author: "Sarah",
-      username: "sarah_smiles",
-      avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8dXNlcnxlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&w=800&q=60",
-      date: "2 hours ago",
-      content: "Just had a great meditation session! Feeling so refreshed and ready to tackle the day. 🧘‍♀️ #mindfulness #meditation",
-      likes: 32,
-      comments: 8,
-      mood: "Calm",
-      created_at: new Date().toISOString(),
-      profiles: {
-        username: "sarah_smiles",
-        avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8dXNlcnxlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&w=800&q=60",
-        full_name: "Sarah"
+  const { user, profile } = useAuth();
+  const [showRewardDialog, setShowRewardDialog] = useState(false);
+  
+  useEffect(() => {
+    // Check if user should see daily reward
+    const checkDailyReward = async () => {
+      if (!user) return;
+      
+      try {
+        const { data: userSettings } = await supabase
+          .from('user_settings')
+          .select('settings')
+          .eq('user_id', user.id)
+          .single();
+          
+        const settings = userSettings?.settings || {};
+        const lastClaimed = settings?.rewards?.lastClaimed 
+          ? new Date(settings.rewards.lastClaimed)
+          : null;
+          
+        const now = new Date();
+        
+        // If never claimed or claimed more than 20 hours ago, show dialog
+        if (!lastClaimed || (now.getTime() - lastClaimed.getTime()) > 20 * 60 * 60 * 1000) {
+          // Don't show immediately, wait a bit for better UX
+          setTimeout(() => setShowRewardDialog(true), 2000);
+        }
+      } catch (error) {
+        console.error("Error checking reward status:", error);
       }
-    },
-    {
-      id: 2,
-      author: "Tom",
-      username: "tom_the_thinker",
-      avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8dXNlcnxlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&w=800&q=60",
-      date: "5 hours ago",
-      content: "Finished a challenging workout! 💪 Endorphins are pumping and feeling amazing. Remember to push your limits! #fitness #motivation",
-      likes: 54,
-      comments: 12,
-      mood: "Energetic",
-      created_at: new Date().toISOString(),
-      profiles: {
-        username: "tom_the_thinker",
-        avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8dXNlcnxlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&w=800&q=60",
-        full_name: "Tom"
-      }
-    },
-    {
-      id: 3,
-      author: "Emily",
-      username: "emily_reads",
-      avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fHVzZXJ8ZW58MHx8MHx8fDA%3D&auto=format&fit=crop&w=800&q=60",
-      date: "1 day ago",
-      content: "Spent the afternoon reading in the park. 📚 Nothing beats a good book and fresh air. What are you reading today? #reading #books",
-      likes: 41,
-      comments: 6,
-      mood: "Relaxed",
-      created_at: new Date().toISOString(),
-      profiles: {
-        username: "emily_reads",
-        avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fHVzZXJ8ZW58MHx8MHx8fDA%3D&auto=format&fit=crop&w=800&q=60",
-        full_name: "Emily"
-      }
-    }
-  ];
-
-  const handleMoodSelect = (mood: string) => {
-    console.log(`Selected mood: ${mood}`);
-  };
-
-  // Mock profile data for HomeRightSidebar
-  const profileData = {
-    username: "user",
-    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80",
-    name: "User",
-  };
+    };
+    
+    checkDailyReward();
+  }, [user]);
 
   return (
     <AppLayout pageTitle="Home">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 px-3 sm:px-4">
-        <div className="lg:col-span-8 space-y-4">
-          <div className="flex justify-between items-center">
-            <HomeGreeting />
-            <DailyRewardButton onClick={() => setShowRewardModal(true)} />
+      <div className="max-w-4xl mx-auto px-4 py-6">
+        <LaunchBanner />
+        
+        <div className="flex flex-col md:flex-row gap-6">
+          <div className="flex-1 space-y-6">
+            <StoriesBar />
+            
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Your Feed</h2>
+              <Link to="/create">
+                <Button size="sm" className="unmute-primary-button">
+                  <PlusCircle className="h-4 w-4 mr-1" />
+                  Create
+                </Button>
+              </Link>
+            </div>
+            
+            <PostFeed />
           </div>
           
-          <HomeHeader />
-          <MoodSelector onSelect={handleMoodSelect} />
-          {posts.map(post => (
-            <PostCard key={post.id} post={post} />
-          ))}
+          <div className="md:w-80 space-y-6">
+            {profile && (
+              <div className="bg-white rounded-lg shadow p-4">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
+                    {profile.avatar ? (
+                      <img 
+                        src={profile.avatar} 
+                        alt={profile.username || "Profile"} 
+                        className="w-full h-full rounded-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-lg font-bold">
+                        {(profile.username || "U")[0].toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="font-medium">{profile.username || "User"}</h3>
+                    <p className="text-sm text-gray-500">@{profile.username || "username"}</p>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-3 gap-2 text-center border-t border-b py-2 my-2">
+                  <div>
+                    <div className="font-bold">{profile.posts_count || 0}</div>
+                    <div className="text-xs text-gray-500">Posts</div>
+                  </div>
+                  <div>
+                    <div className="font-bold">{profile.followers || 0}</div>
+                    <div className="text-xs text-gray-500">Followers</div>
+                  </div>
+                  <div>
+                    <div className="font-bold">{profile.following || 0}</div>
+                    <div className="text-xs text-gray-500">Following</div>
+                  </div>
+                </div>
+                
+                <Link to="/profile">
+                  <Button variant="outline" size="sm" className="w-full mt-2">
+                    View Profile
+                  </Button>
+                </Link>
+              </div>
+            )}
+            
+            <SuggestedUsers />
+            
+            <div className="bg-white rounded-lg shadow p-4">
+              <h3 className="font-medium mb-2">Trending Topics</h3>
+              <div className="space-y-2">
+                {["#MentalHealth", "#SelfCare", "#Mindfulness", "#WellnessWednesday", "#DigitalDetox"].map((tag) => (
+                  <div key={tag} className="text-sm">
+                    <Link to={`/explore?tag=${tag.substring(1)}`} className="text-primary hover:underline">
+                      {tag}
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
-        
-        <HomeRightSidebar profile={profileData} />
       </div>
       
-      <DailyRewardModal open={showRewardModal} onOpenChange={setShowRewardModal} />
+      <Dialog open={showRewardDialog} onOpenChange={setShowRewardDialog}>
+        <DialogContent className="max-w-md p-0 overflow-hidden">
+          <DailyReward onClose={() => setShowRewardDialog(false)} />
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 };
