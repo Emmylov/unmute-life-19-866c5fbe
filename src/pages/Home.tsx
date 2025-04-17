@@ -1,3 +1,4 @@
+
 import React from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import LaunchBanner from '@/components/home/LaunchBanner';
@@ -5,9 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import PostFeed from '@/components/feed/PostFeed';
-import StoriesBar from '@/components/stories/StoriesBar';
-import SuggestedUsers from '@/components/feed/SuggestedUsers';
+import { PostFeed, StoriesBar, SuggestedUsers } from '@/components/home/DummyComponents';
 import DailyReward from '@/components/rewards/DailyReward';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useState, useEffect } from 'react';
@@ -29,9 +28,12 @@ const Home = () => {
           .eq('user_id', user.id)
           .single();
           
-        const settings = userSettings?.settings || {};
-        const lastClaimed = settings?.rewards?.lastClaimed 
-          ? new Date(settings.rewards.lastClaimed)
+        const settings = userSettings?.settings as Record<string, any> || {};
+        
+        // Safely access nested properties
+        const rewardsSettings = settings.rewards as Record<string, any> || {};
+        const lastClaimed = rewardsSettings.lastClaimed 
+          ? new Date(rewardsSettings.lastClaimed)
           : null;
           
         const now = new Date();

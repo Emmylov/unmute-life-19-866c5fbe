@@ -45,13 +45,14 @@ export const checkEarlyAdopterStatus = async (userId: string): Promise<boolean> 
 // Get all rewards available to a user
 export const getUserRewards = async (userId: string): Promise<UserReward[]> => {
   try {
+    // Using type casting to handle the table not in the auto-generated types
     const { data, error } = await supabase
-      .from('user_rewards')
+      .from('user_rewards' as any)
       .select('*')
       .eq('user_id', userId);
       
     if (error) throw error;
-    return data || [];
+    return (data as unknown as UserReward[]) || [];
   } catch (error) {
     console.error("Error fetching user rewards:", error);
     return [];
@@ -62,7 +63,7 @@ export const getUserRewards = async (userId: string): Promise<UserReward[]> => {
 export const claimReward = async (userId: string, rewardId: string): Promise<boolean> => {
   try {
     const { error } = await supabase
-      .from('user_rewards')
+      .from('user_rewards' as any)
       .insert({
         user_id: userId,
         reward_id: rewardId,
@@ -81,7 +82,7 @@ export const claimReward = async (userId: string, rewardId: string): Promise<boo
 export const hasClaimedReward = async (userId: string, rewardId: string): Promise<boolean> => {
   try {
     const { data, error } = await supabase
-      .from('user_rewards')
+      .from('user_rewards' as any)
       .select('*')
       .eq('user_id', userId)
       .eq('reward_id', rewardId)

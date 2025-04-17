@@ -26,8 +26,12 @@ const LaunchBanner = () => {
           .eq('user_id', user.id)
           .single();
           
-        if (data?.settings?.launch?.hideBanner) {
-          setIsVisible(false);
+        // Safely access nested properties to avoid type errors
+        if (data?.settings && typeof data.settings === 'object') {
+          const settings = data.settings as Record<string, any>;
+          if (settings.launch && typeof settings.launch === 'object' && settings.launch.hideBanner) {
+            setIsVisible(false);
+          }
         }
       } catch (error) {
         console.error("Error checking banner preferences:", error);
@@ -91,13 +95,17 @@ const LaunchBanner = () => {
           .maybeSingle();
           
         if (data) {
+          const currentSettings = typeof data.settings === 'object' ? data.settings : {};
+          
           await supabase
             .from('user_settings')
             .update({
               settings: {
-                ...data.settings,
+                ...currentSettings,
                 launch: {
-                  ...(data.settings?.launch || {}),
+                  ...(currentSettings && typeof currentSettings === 'object' && 
+                      currentSettings.launch && typeof currentSettings.launch === 'object' 
+                      ? currentSettings.launch : {}),
                   hideBanner: true
                 }
               }

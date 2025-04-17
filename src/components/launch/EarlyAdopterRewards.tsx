@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import SuccessConfetti from "@/components/content-creator/SuccessConfetti";
+import { claimReward, getUserRewards, hasClaimedReward } from "@/services/reward-service";
 
 interface Reward {
   id: string;
@@ -55,19 +56,26 @@ const EarlyAdopterRewards = () => {
         .eq('user_id', user.id)
         .single();
         
-      const hasSeenRewards = settings?.settings?.launch?.seenRewards || false;
+      const userSettings = settings?.settings as Record<string, any> || {};
+      const launchSettings = userSettings.launch as Record<string, any> || {};
+      const hasSeenRewards = launchSettings.seenRewards || false;
       
       if (isEarlyAdopter && !hasSeenRewards) {
         setOpen(true);
         // Mark as seen
+        const currentSettings = typeof settings?.settings === 'object' ? settings.settings : {};
+        const currentLaunch = currentSettings && typeof currentSettings === 'object' && 
+                            currentSettings.launch && typeof currentSettings.launch === 'object' 
+                            ? currentSettings.launch : {};
+                            
         await supabase
           .from('user_settings')
           .upsert({
             user_id: user.id,
             settings: {
-              ...(settings?.settings || {}),
+              ...currentSettings,
               launch: { 
-                ...(settings?.settings?.launch || {}),
+                ...currentLaunch,
                 seenRewards: true 
               }
             }
@@ -85,12 +93,6 @@ const EarlyAdopterRewards = () => {
     
     try {
       setLoading(true);
-      
-      // Check if user has claimed rewards already
-      const { data: userRewards } = await supabase
-        .from('user_rewards')
-        .select('*')
-        .eq('user_id', user.id);
       
       // Define available rewards
       const availableRewards: Reward[] = [
@@ -124,11 +126,11 @@ const EarlyAdopterRewards = () => {
         }
       ];
       
-      // Mark rewards as claimed if user has claimed them
-      const processedRewards = availableRewards.map(reward => {
-        const claimed = userRewards?.some(ur => ur.reward_id === reward.id) || false;
+      // Check if user has claimed rewards already
+      const processedRewards = await Promise.all(availableRewards.map(async (reward) => {
+        const claimed = await hasClaimedReward(user.id, reward.id);
         return { ...reward, claimed };
-      });
+      }));
       
       setRewards(processedRewards);
     } catch (error) {
@@ -138,20 +140,18 @@ const EarlyAdopterRewards = () => {
     }
   };
 
-  const claimReward = async (rewardId: string) => {
+  const handleClaimReward = async (rewardId: string) => {
     if (!user) return;
     
     try {
       setLoading(true);
       
       // Record the claim
-      await supabase
-        .from('user_rewards')
-        .insert({
-          user_id: user.id,
-          reward_id: rewardId,
-          claimed_at: new Date().toISOString()
-        });
+      const success = await claimReward(user.id, rewardId);
+      
+      if (!success) {
+        throw new Error("Failed to claim reward");
+      }
       
       // Update local state
       setRewards(prev => 
@@ -205,13 +205,13 @@ const EarlyAdopterRewards = () => {
       }
       
       // Record all claims
-      const claims = unclaimedRewards.map(reward => ({
-        user_id: user.id,
-        reward_id: reward.id,
-        claimed_at: new Date().toISOString()
-      }));
+      const allClaimed = await Promise.all(
+        unclaimedRewards.map(reward => claimReward(user.id, reward.id))
+      );
       
-      await supabase.from('user_rewards').insert(claims);
+      if (allClaimed.some(success => !success)) {
+        throw new Error("Some rewards failed to claim");
+      }
       
       // Update local state
       setRewards(prev => 
@@ -301,7 +301,7 @@ const EarlyAdopterRewards = () => {
                         size="sm"
                         variant="outline"
                         className="mt-2"
-                        onClick={() => claimReward(reward.id)}
+                        onClick={() => handleClaimReward(reward.id)}
                         disabled={loading}
                       >
                         Claim
