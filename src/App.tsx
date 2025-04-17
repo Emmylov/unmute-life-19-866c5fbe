@@ -1,6 +1,9 @@
+
 import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { Toaster } from 'react-hot-toast';
+import { Toaster } from 'sonner';
+import { AuthProvider } from '@/contexts/AuthContext';
+
 import Index from "@/pages/Index";
 import Auth from "@/pages/Auth";
 import Home from "@/pages/Home";
@@ -53,42 +56,44 @@ function App() {
 
   return (
     <div className="App">
-      <BrowserRouter>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<Index />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/onboarding" element={<Onboarding />} />
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<Index />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/onboarding" element={<Onboarding />} />
 
-          {/* Protected Routes */}
-          <Route element={<ProtectedLayout />}>
-            <Route path="/home" element={<Home />} />
-            <Route path="/explore" element={<Explore />} />
-            <Route path="/communities" element={<Communities />} />
-            <Route path="/reels" element={<Reels />} />
-            <Route path="/chat" element={<Chat />} />
-            <Route path="/notifications" element={<Notifications />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/wellness" element={<Wellness />} />
-            <Route path="/wellness-plus" element={<WellnessPlus />} />
-            <Route path="/saved" element={<Saved />} />
-            <Route path="/content-creator" element={<ContentCreator />} />
-            <Route path="/create-collab" element={<CreateCollab />} />
-            <Route path="/vibe-check" element={<VibeCheck />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/help" element={<Help />} />
-            <Route path="/games" element={<Games />} />
-            <Route path="/games/memory-match" element={<MemoryMatch />} />
-            <Route path="/games/bubble-pop" element={<BubblePop />} />
-            <Route path="/games/word-scramble" element={<WordScramble />} />
-            <Route path="/music" element={<Music />} />
-          </Route>
+            {/* Protected Routes */}
+            <Route element={<ProtectedLayout />}>
+              <Route path="/home" element={<Home />} />
+              <Route path="/explore" element={<Explore />} />
+              <Route path="/communities" element={<Communities />} />
+              <Route path="/reels" element={<Reels />} />
+              <Route path="/chat" element={<Chat />} />
+              <Route path="/notifications" element={<Notifications />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/wellness" element={<Wellness />} />
+              <Route path="/wellness-plus" element={<WellnessPlus />} />
+              <Route path="/saved" element={<Saved />} />
+              <Route path="/content-creator" element={<ContentCreator />} />
+              <Route path="/create-collab" element={<CreateCollab />} />
+              <Route path="/vibe-check" element={<VibeCheck />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/help" element={<Help />} />
+              <Route path="/games" element={<Games />} />
+              <Route path="/games/memory-match" element={<MemoryMatch />} />
+              <Route path="/games/bubble-pop" element={<BubblePop />} />
+              <Route path="/games/word-scramble" element={<WordScramble />} />
+              <Route path="/music" element={<Music />} />
+            </Route>
 
-          {/* 404 */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-      <Toaster />
+            {/* 404 */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+        <Toaster position="top-right" />
+      </AuthProvider>
     </div>
   );
 }

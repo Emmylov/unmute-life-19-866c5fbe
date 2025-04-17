@@ -1,14 +1,15 @@
 
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { motion } from "framer-motion";
+import { Loader2 } from "lucide-react";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
@@ -16,29 +17,27 @@ const Auth = () => {
   const [username, setUsername] = useState("");
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
+  
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const location = useLocation();
+  const { user, signIn, signUp, isLoading } = useAuth();
+  
+  // Get the page they were trying to access from state
+  const from = location.state?.from || "/home";
   
   // Check if user is already logged in
   useEffect(() => {
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        navigate("/home");
-      }
-    };
-    
-    checkSession();
-  }, [navigate]);
+    if (user) {
+      navigate(from, { replace: true });
+    }
+  }, [user, navigate, from]);
   
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!email || !password || !username) {
-      toast({
-        title: "Missing fields",
-        description: "Please fill in all required fields",
-        variant: "destructive"
+      toast.error("Missing required fields", {
+        description: "Please fill in all required fields"
       });
       return;
     }
@@ -46,56 +45,18 @@ const Auth = () => {
     try {
       setLoading(true);
       
-      // Sign up with Supabase Auth
-      const { data, error } = await supabase.auth.signUp({ 
-        email, 
-        password,
-        options: {
-          data: {
-            username,
-            full_name: fullName
-          }
-        }
+      // Sign up with email, password and metadata
+      await signUp(email, password, {
+        username,
+        full_name: fullName || username
       });
       
-      if (error) throw error;
-      
-      // Check if we need to create a profile
-      if (data?.user) {
-        // Create or update profile info
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .upsert({
-            id: data.user.id,
-            username,
-            full_name: fullName,
-            avatar: "",
-            created_at: new Date().toISOString()
-          });
-        
-        if (profileError) {
-          console.error("Error creating profile:", profileError);
-          toast({
-            title: "Account created",
-            description: "Your account was created, but profile setup failed. Please complete your profile later.",
-            variant: "default"
-          });
-        }
-        
-        toast({
-          title: "Account created!",
-          description: "Please check your email for confirmation",
-          variant: "default"
-        });
-        
-        // Redirect new users to the onboarding page
-        navigate("/onboarding");
-      }
+      // Navigate new users to onboarding
+      navigate("/onboarding", { replace: true });
     } catch (error: any) {
-      toast({
-        title: "Error creating account",
-        description: error.message || "An unknown error occurred",
-        variant: "destructive"
+      console.error("Sign up error:", error);
+      toast.error("Error creating account", {
+        description: error.message || "An unknown error occurred"
       });
     } finally {
       setLoading(false);
@@ -106,39 +67,21 @@ const Auth = () => {
     e.preventDefault();
     
     if (!email || !password) {
-      toast({
-        title: "Missing fields",
-        description: "Please fill in all required fields",
-        variant: "destructive"
+      toast.error("Missing credentials", {
+        description: "Please enter both email and password"
       });
       return;
     }
     
     try {
       setLoading(true);
+      await signIn(email, password);
       
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-      
-      if (error) throw error;
-      
-      if (data?.user) {
-        toast({
-          title: "Welcome back!",
-          description: "You have successfully signed in",
-          variant: "default"
-        });
-        
-        // Always redirect returning users directly to home page
-        navigate("/home");
-      }
+      // Successfully signed in, will be redirected by the useEffect
     } catch (error: any) {
-      toast({
-        title: "Error signing in",
-        description: error.message || "An unknown error occurred",
-        variant: "destructive"
+      console.error("Sign in error:", error);
+      toast.error("Error signing in", {
+        description: error.message || "Invalid email or password"
       });
     } finally {
       setLoading(false);
@@ -150,16 +93,25 @@ const Auth = () => {
     visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
   };
   
+  // If still checking authentication status, show loading
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+  
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-unmute-purple/10 to-unmute-pink/10">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-purple-50 to-blue-50 dark:from-slate-900 dark:to-slate-800">
       <motion.div
         className="w-full max-w-md"
         initial="hidden"
         animate="visible"
         variants={containerAnimation}
       >
-        <Card>
-          <CardHeader className="text-center">
+        <Card className="border-0 shadow-lg">
+          <CardHeader className="text-center space-y-1">
             <CardTitle className="text-2xl font-bold">Welcome to Unmute</CardTitle>
             <CardDescription>
               Sign in or create an account to get started
@@ -185,6 +137,7 @@ const Auth = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
+                      autoComplete="email"
                     />
                   </div>
                   
@@ -197,6 +150,7 @@ const Auth = () => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
+                      autoComplete="current-password"
                     />
                   </div>
                 </CardContent>
@@ -204,9 +158,10 @@ const Auth = () => {
                 <CardFooter>
                   <Button 
                     type="submit" 
-                    className="unmute-primary-button w-full" 
+                    className="w-full" 
                     disabled={loading}
                   >
+                    {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                     {loading ? "Signing in..." : "Sign In"}
                   </Button>
                 </CardFooter>
@@ -226,6 +181,7 @@ const Auth = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
+                      autoComplete="email"
                     />
                   </div>
                   
@@ -238,6 +194,7 @@ const Auth = () => {
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
                       required
+                      autoComplete="username"
                     />
                   </div>
                   
@@ -249,6 +206,7 @@ const Auth = () => {
                       placeholder="Jane Doe" 
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
+                      autoComplete="name"
                     />
                   </div>
                   
@@ -261,6 +219,7 @@ const Auth = () => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
+                      autoComplete="new-password"
                     />
                   </div>
                 </CardContent>
@@ -268,9 +227,10 @@ const Auth = () => {
                 <CardFooter>
                   <Button 
                     type="submit" 
-                    className="unmute-primary-button w-full" 
+                    className="w-full" 
                     disabled={loading}
                   >
+                    {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                     {loading ? "Creating account..." : "Create Account"}
                   </Button>
                 </CardFooter>

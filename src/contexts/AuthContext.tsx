@@ -32,6 +32,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const profileData = await getUserProfile(userId);
       if (profileData) {
         setProfile(profileData);
+      } else {
+        console.log('No profile found, user might be new');
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -51,39 +53,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [session]);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setIsLoading(false);
-      setLoading(false); // Update both loading states
-      
-      if (session?.user) {
-        fetchProfile(session.user.id);
-      }
-    });
-
-    // Listen for auth changes
+    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setIsLoading(false);
-        setLoading(false); // Update both loading states
+      (event, newSession) => {
+        // Only synchronous state updates here
+        setSession(newSession);
+        setUser(newSession?.user ?? null);
         
-        if (event === 'SIGNED_IN' && session?.user) {
-          fetchProfile(session.user.id);
-        } else if (event === 'SIGNED_OUT') {
-          setProfile(null);
-        } else if (event === 'TOKEN_REFRESHED' && session?.user) {
-          // Handle successful token refresh
-          console.log('Auth token refreshed');
-        } else if (event === 'USER_UPDATED' && session?.user) {
-          // Refresh profile when user data is updated
-          fetchProfile(session.user.id);
-        }
+        // Defer other operations to prevent deadlocks
+        setTimeout(() => {
+          if (event === 'SIGNED_IN' && newSession?.user) {
+            fetchProfile(newSession.user.id);
+            setIsLoading(false);
+            setLoading(false);
+          } else if (event === 'SIGNED_OUT') {
+            setProfile(null);
+            setIsLoading(false);
+            setLoading(false);
+          } else if (event === 'TOKEN_REFRESHED' && newSession?.user) {
+            console.log('Auth token refreshed');
+            setIsLoading(false);
+            setLoading(false);
+          } else if (event === 'USER_UPDATED' && newSession?.user) {
+            fetchProfile(newSession.user.id);
+            setIsLoading(false);
+            setLoading(false);
+          }
+        }, 0);
       }
     );
+
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      setSession(currentSession);
+      setUser(currentSession?.user ?? null);
+      
+      if (currentSession?.user) {
+        fetchProfile(currentSession.user.id);
+      }
+      
+      setIsLoading(false);
+      setLoading(false);
+    });
 
     // Cleanup subscription
     return () => {
@@ -155,6 +166,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw error;
       }
       
+      // Clear profile after successful sign out
+      setProfile(null);
       toast.success('Signed out successfully');
     } catch (error: any) {
       toast.error(error.message || 'Failed to sign out');
