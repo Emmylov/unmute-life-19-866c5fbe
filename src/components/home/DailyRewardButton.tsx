@@ -1,105 +1,55 @@
 
-import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Gift, Star } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import { differenceInHours } from 'date-fns';
+import { Gift } from "lucide-react";
+import { useState, useEffect } from "react";
 
 interface DailyRewardButtonProps {
   onClick: () => void;
 }
 
-interface UserSettings {
-  settings: {
-    rewards?: {
-      lastClaimed?: string;
-      streak?: number;
-    }
-  }
-}
-
 const DailyRewardButton = ({ onClick }: DailyRewardButtonProps) => {
-  const [isClaimable, setIsClaimable] = useState(false);
-  const [streak, setStreak] = useState(0);
-  const { user } = useAuth();
+  const [hasUnclaimedReward, setHasUnclaimedReward] = useState(true);
+  const [isAnimating, setIsAnimating] = useState(false);
 
+  // Check if user has unclaimed rewards
   useEffect(() => {
-    if (user) {
-      checkRewardStatus();
-    }
-  }, [user]);
-
-  const checkRewardStatus = async () => {
-    if (!user) return;
-
-    try {
-      // Get user settings to check last reward claim
-      const { data: userSettings } = await supabase
-        .from('user_settings')
-        .select('settings')
-        .eq('user_id', user.id)
-        .single();
-
-      const now = new Date();
-      const settings = userSettings?.settings as UserSettings['settings'] || {};
-      
-      const lastClaimed = settings?.rewards?.lastClaimed 
-        ? new Date(settings.rewards.lastClaimed)
-        : null;
-      const currentStreak = settings?.rewards?.streak || 0;
-      
-      setStreak(currentStreak);
-
-      // Check if a day has passed since last claim
-      if (!lastClaimed || differenceInHours(now, lastClaimed) >= 20) {
-        setIsClaimable(true);
-      } else {
-        setIsClaimable(false);
-      }
-    } catch (error) {
-      console.error("Error checking reward status:", error);
-    }
-  };
+    // This would usually come from an API call
+    const checkForUnclaimedRewards = () => {
+      // Simulate API call result
+      setHasUnclaimedReward(true);
+    };
+    
+    checkForUnclaimedRewards();
+    
+    // Animate button every 30 seconds to draw attention
+    const animationInterval = setInterval(() => {
+      setIsAnimating(true);
+      setTimeout(() => {
+        setIsAnimating(false);
+      }, 1500);
+    }, 30000);
+    
+    return () => clearInterval(animationInterval);
+  }, []);
 
   return (
-    <motion.div
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
+    <Button
+      variant="outline"
+      size="sm"
+      className={`flex items-center gap-2 border-2 border-amber-400 bg-amber-50 text-amber-700 hover:bg-amber-100 hover:text-amber-800 ${
+        isAnimating ? 'animate-bounce' : ''
+      } ${hasUnclaimedReward ? 'ring-2 ring-amber-200' : ''}`}
+      onClick={onClick}
     >
-      <Button
-        onClick={onClick}
-        className={`relative flex items-center gap-2 font-medium ${
-          isClaimable ? "bg-primary hover:bg-primary/90" : "bg-gray-100 hover:bg-gray-200 text-gray-700"
-        }`}
-        size="sm"
-      >
-        {isClaimable ? (
-          <>
-            <motion.div
-              initial={{ scale: 1 }}
-              animate={{ scale: [1, 1.2, 1] }}
-              transition={{ repeat: Infinity, duration: 2 }}
-              className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"
-            />
-            <Gift className="h-4 w-4" />
-            Claim Reward
-          </>
-        ) : (
-          <>
-            <Gift className="h-4 w-4" />
-            Daily Reward
-          </>
-        )}
-        {streak >= 3 && (
-          <div className="flex items-center text-yellow-500 ml-1">
-            <Star className="h-3 w-3" />
-            <span className="text-xs ml-0.5">{streak}</span>
-          </div>
-        )}
-      </Button>
-    </motion.div>
+      <Gift className="h-4 w-4 text-amber-500" />
+      <span>Daily Gift</span>
+      {hasUnclaimedReward && (
+        <span className="flex h-2 w-2 relative">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+        </span>
+      )}
+    </Button>
   );
 };
 

@@ -3,12 +3,13 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
-import { SoundProvider } from './contexts/SoundContext';
+import { setupUserRewardsSystem } from './integrations/supabase/setup-user-rewards';
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
+// Initialize the rewards system
+setupUserRewardsSystem();
+
+ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
-    <SoundProvider>
-      <App />
-    </SoundProvider>
-  </React.StrictMode>,
+    <App />
+  </React.StrictMode>
 );
