@@ -5,30 +5,6 @@ import type { Database as OriginalDatabase } from './types';
 export type ExtendedDatabase = OriginalDatabase & {
   public: {
     Tables: OriginalDatabase['public']['Tables'] & {
-      user_rewards: {
-        Row: {
-          id: string;
-          user_id: string;
-          reward_id: string;
-          claimed_at: string;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          user_id: string;
-          reward_id: string;
-          claimed_at: string;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          user_id?: string;
-          reward_id?: string;
-          claimed_at?: string;
-          created_at?: string;
-        };
-        Relationships: [];
-      };
       posts_text: {
         Row: {
           id: string;
