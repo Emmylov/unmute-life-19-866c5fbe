@@ -11,6 +11,15 @@ interface DailyRewardButtonProps {
   onClick: () => void;
 }
 
+interface UserSettings {
+  settings: {
+    rewards?: {
+      lastClaimed?: string;
+      streak?: number;
+    }
+  }
+}
+
 const DailyRewardButton = ({ onClick }: DailyRewardButtonProps) => {
   const [isClaimable, setIsClaimable] = useState(false);
   const [streak, setStreak] = useState(0);
@@ -34,10 +43,12 @@ const DailyRewardButton = ({ onClick }: DailyRewardButtonProps) => {
         .single();
 
       const now = new Date();
-      const lastClaimed = userSettings?.settings?.rewards?.lastClaimed 
-        ? new Date(userSettings.settings.rewards.lastClaimed)
+      const settings = userSettings?.settings as UserSettings['settings'] || {};
+      
+      const lastClaimed = settings?.rewards?.lastClaimed 
+        ? new Date(settings.rewards.lastClaimed)
         : null;
-      const currentStreak = userSettings?.settings?.rewards?.streak || 0;
+      const currentStreak = settings?.rewards?.streak || 0;
       
       setStreak(currentStreak);
 

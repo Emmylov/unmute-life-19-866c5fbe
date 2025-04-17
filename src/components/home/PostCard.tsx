@@ -8,11 +8,18 @@ import { Button } from "@/components/ui/button";
 
 interface PostCardProps {
   post: {
-    id: string;
+    id: number | string;
+    author?: string;
+    username?: string;
+    avatar?: string;
+    date?: string;
     content: string;
+    likes?: number;
+    comments?: number;
+    mood?: string;
     created_at: string;
     image_url?: string;
-    profiles: {
+    profiles?: {
       username?: string;
       avatar?: string;
       full_name?: string;
@@ -21,24 +28,26 @@ interface PostCardProps {
 }
 
 const PostCard = ({ post }: PostCardProps) => {
+  // Convert the post format to handle both old and new formats
+  const authorName = post.author || post.profiles?.full_name || post.profiles?.username || "Anonymous";
+  const authorAvatar = post.avatar || post.profiles?.avatar || '';
+  const authorUsername = post.username || post.profiles?.username || "user";
+  const postDate = post.date || formatDistanceToNow(new Date(post.created_at), { addSuffix: true });
+
   return (
     <Card className="overflow-hidden border-none shadow-md hover:shadow-lg transition-shadow duration-300">
       <CardContent className="p-4">
         {/* Post Header - User Info */}
         <div className="flex items-center gap-3 mb-4">
           <Avatar className="h-10 w-10 ring-2 ring-white">
-            <AvatarImage src={post.profiles.avatar || ''} />
+            <AvatarImage src={authorAvatar} />
             <AvatarFallback className="bg-primary text-white">
-              {post.profiles.username?.[0]?.toUpperCase() || post.profiles.full_name?.[0]?.toUpperCase() || "U"}
+              {authorUsername[0]?.toUpperCase() || "U"}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1">
-            <h4 className="font-semibold text-sm">
-              {post.profiles.full_name || post.profiles.username || "Anonymous"}
-            </h4>
-            <p className="text-xs text-gray-500">
-              {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
-            </p>
+            <h4 className="font-semibold text-sm">{authorName}</h4>
+            <p className="text-xs text-gray-500">{postDate}</p>
           </div>
         </div>
 

@@ -13,6 +13,16 @@ interface DailyRewardProps {
   onClose?: () => void;
 }
 
+interface UserSettings {
+  settings: {
+    rewards?: {
+      lastClaimed?: string;
+      streak?: number;
+      totalClaimed?: number;
+    }
+  }
+}
+
 const DailyReward = ({ onClose }: DailyRewardProps) => {
   const [isClaimable, setIsClaimable] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -41,10 +51,12 @@ const DailyReward = ({ onClose }: DailyRewardProps) => {
         .single();
 
       const now = new Date();
-      const lastClaimed = userSettings?.settings?.rewards?.lastClaimed 
-        ? new Date(userSettings.settings.rewards.lastClaimed)
+      const settings = userSettings?.settings as UserSettings['settings'] || {};
+      
+      const lastClaimed = settings?.rewards?.lastClaimed 
+        ? new Date(settings.rewards.lastClaimed)
         : null;
-      const currentStreak = userSettings?.settings?.rewards?.streak || 0;
+      const currentStreak = settings?.rewards?.streak || 0;
       
       setStreak(currentStreak);
 
@@ -56,7 +68,7 @@ const DailyReward = ({ onClose }: DailyRewardProps) => {
         const nextReward = new Date(lastClaimed);
         nextReward.setHours(nextReward.getHours() + 24);
         const hoursRemaining = Math.max(0, differenceInHours(nextReward, now));
-        const minutesRemaining = Math.max(0, Math.floor((differenceInHours(nextReward, now, { decimal: true }) - hoursRemaining) * 60));
+        const minutesRemaining = Math.max(0, Math.floor((differenceInHours(nextReward, now) - hoursRemaining) * 60));
         
         setTimeRemaining(`${hoursRemaining}h ${minutesRemaining}m`);
         setIsClaimable(false);
@@ -83,13 +95,16 @@ const DailyReward = ({ onClose }: DailyRewardProps) => {
         .maybeSingle();
         
       // Prepare new settings object
-      const settings = {
-        ...(currentSettings?.settings || {}),
+      const currentSettingsData = currentSettings?.settings as UserSettings['settings'] || {};
+      const rewardsData = currentSettingsData?.rewards || {};
+      
+      const updatedSettings = {
+        ...currentSettingsData,
         rewards: {
-          ...(currentSettings?.settings?.rewards || {}),
+          ...rewardsData,
           lastClaimed: now.toISOString(),
-          streak: (currentSettings?.settings?.rewards?.streak || 0) + 1,
-          totalClaimed: (currentSettings?.settings?.rewards?.totalClaimed || 0) + 1
+          streak: (rewardsData?.streak || 0) + 1,
+          totalClaimed: (rewardsData?.totalClaimed || 0) + 1
         }
       };
       
@@ -97,17 +112,17 @@ const DailyReward = ({ onClose }: DailyRewardProps) => {
         // Update existing settings
         await supabase
           .from('user_settings')
-          .update({ settings })
+          .update({ settings: updatedSettings })
           .eq('id', currentSettings.id);
       } else {
         // Create new settings
         await supabase
           .from('user_settings')
-          .insert({ user_id: user.id, settings });
+          .insert({ user_id: user.id, settings: updatedSettings });
       }
       
       // Update local state
-      setStreak(settings.rewards.streak);
+      setStreak(updatedSettings.rewards.streak);
       setIsClaimable(false);
       setShowConfetti(true);
       
@@ -115,15 +130,15 @@ const DailyReward = ({ onClose }: DailyRewardProps) => {
       let rewardMessage = "You received a daily reward!";
       let rewardPoints = 10;
       
-      if (settings.rewards.streak % 7 === 0) {
+      if (updatedSettings.rewards.streak % 7 === 0) {
         // Weekly bonus
         rewardMessage = "🎉 Weekly streak bonus! +50 points!";
         rewardPoints = 50;
-      } else if (settings.rewards.streak % 30 === 0) {
+      } else if (updatedSettings.rewards.streak % 30 === 0) {
         // Monthly bonus
         rewardMessage = "🏆 Monthly streak achieved! +200 points!";
         rewardPoints = 200;
-      } else if (settings.rewards.streak === 100) {
+      } else if (updatedSettings.rewards.streak === 100) {
         // Special milestone
         rewardMessage = "🌟 100 DAY STREAK! Amazing dedication! +500 points!";
         rewardPoints = 500;
@@ -131,7 +146,7 @@ const DailyReward = ({ onClose }: DailyRewardProps) => {
       
       toast({
         title: rewardMessage,
-        description: `You now have a ${settings.rewards.streak} day streak!`,
+        description: `You now have a ${updatedSettings.rewards.streak} day streak!`,
         duration: 5000,
       });
       
@@ -144,7 +159,7 @@ const DailyReward = ({ onClose }: DailyRewardProps) => {
       const nextReward = new Date();
       nextReward.setHours(nextReward.getHours() + 24);
       const hoursRemaining = Math.max(0, differenceInHours(nextReward, now));
-      const minutesRemaining = Math.max(0, Math.floor((differenceInHours(nextReward, now, { decimal: true }) - hoursRemaining) * 60));
+      const minutesRemaining = Math.max(0, Math.floor((differenceInHours(nextReward, now) - hoursRemaining) * 60));
       setTimeRemaining(`${hoursRemaining}h ${minutesRemaining}m`);
       
     } catch (error) {

@@ -33,6 +33,14 @@ import { supabase } from "./integrations/supabase/client";
 import { differenceInHours } from "date-fns";
 import DailyRewardModal from "./components/rewards/DailyRewardModal";
 
+interface UserSettings {
+  settings: {
+    rewards?: {
+      lastClaimed?: string;
+    }
+  }
+}
+
 function ChatWithId() {
   const { id } = useParams();
   return <Chat chatId={id} />;
@@ -64,9 +72,10 @@ function App() {
         .eq('user_id', user.id)
         .single();
 
+      const settings = userSettings?.settings as UserSettings['settings'] || {};
       const now = new Date();
-      const lastClaimed = userSettings?.settings?.rewards?.lastClaimed 
-        ? new Date(userSettings.settings.rewards.lastClaimed)
+      const lastClaimed = settings?.rewards?.lastClaimed 
+        ? new Date(settings.rewards.lastClaimed)
         : null;
       
       if (!lastClaimed || (differenceInHours(now, lastClaimed) >= 24 && !sessionStorage.getItem('rewardCheckDone'))) {
