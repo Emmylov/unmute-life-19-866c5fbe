@@ -55,8 +55,8 @@ function App() {
   return (
     <div className="App">
       <AuthProvider>
-        <TutorialProvider>
-          <BrowserRouter>
+        <BrowserRouter>
+          <TutorialProvider>
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
@@ -90,9 +90,9 @@ function App() {
             
             {/* Tutorial overlay */}
             <TutorialOverlay />
-          </BrowserRouter>
+          </TutorialProvider>
           <Toaster position="top-right" closeButton richColors />
-        </TutorialProvider>
+        </BrowserRouter>
       </AuthProvider>
     </div>
   );
