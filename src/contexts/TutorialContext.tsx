@@ -81,6 +81,9 @@ export const tutorials: Record<string, TutorialStep[]> = {
   ]
 };
 
+// List of paths where tutorials should be disabled
+const TUTORIAL_DISABLED_PATHS = ['/', '/auth', '/onboarding'];
+
 export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isTutorialActive, setIsTutorialActive] = useState(false);
   const [currentTutorialId, setCurrentTutorialId] = useState<string | null>(null);
@@ -93,18 +96,32 @@ export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   });
   
   const location = useLocation();
+  const currentPath = location.pathname;
+  
+  // Disable tutorial on certain paths
+  useEffect(() => {
+    if (TUTORIAL_DISABLED_PATHS.includes(currentPath) && isTutorialActive) {
+      setIsTutorialActive(false);
+    }
+  }, [currentPath, isTutorialActive]);
   
   // Check if we should show tutorial when route changes
   useEffect(() => {
     if (!isTutorialActive) {
       const path = location.pathname.split('/')[1] || 'home';
+      
+      // Don't show tutorials on disabled paths
+      if (TUTORIAL_DISABLED_PATHS.includes(currentPath)) {
+        return;
+      }
+      
       if (tutorials[path] && !tutorialSeen[path]) {
         setTimeout(() => {
           startTutorial(path);
         }, 1000); // Delay to allow page to fully render
       }
     }
-  }, [location, isTutorialActive]);
+  }, [location, isTutorialActive, currentPath]);
   
   // Save tutorial seen status to localStorage
   useEffect(() => {
@@ -112,6 +129,11 @@ export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [tutorialSeen]);
   
   const startTutorial = (tutorialId: string) => {
+    // Don't start tutorials on disabled paths
+    if (TUTORIAL_DISABLED_PATHS.includes(currentPath)) {
+      return;
+    }
+    
     if (tutorials[tutorialId]) {
       setCurrentTutorialId(tutorialId);
       setSteps(tutorials[tutorialId]);

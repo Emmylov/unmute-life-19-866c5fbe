@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import { CountdownTimer } from "@/components/ui/countdown-timer";
@@ -6,7 +5,6 @@ import WaitlistSignupForm from "@/components/waitlist/WaitlistSignupForm";
 import StarterPackSection from "@/components/waitlist/StarterPackSection";
 import TestimonialSection from "@/components/waitlist/TestimonialSection";
 import useAuthGuard from "@/hooks/use-auth-guard";
-import TutorialButton from "@/components/tutorial/TutorialButton";
 
 const Index = () => {
   const { isLoading } = useAuthGuard({ 
@@ -33,7 +31,6 @@ const Index = () => {
           <Link to="/onboarding" className="text-sm text-gray-600 hover:text-unmute-purple">
             Learn More
           </Link>
-          <TutorialButton />
         </div>
       </header>
       

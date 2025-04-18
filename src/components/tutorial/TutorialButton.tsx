@@ -11,11 +11,19 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
+// List of paths where the tutorial button should be hidden
+const HIDDEN_PATHS = ['/', '/auth', '/onboarding'];
+
 export const TutorialButton: React.FC = () => {
   const { startTutorial } = useTutorial();
   const location = useLocation();
   
   const currentPath = location.pathname.split('/')[1] || 'home';
+  
+  // Hide button on certain paths
+  if (HIDDEN_PATHS.includes(location.pathname)) {
+    return null;
+  }
   
   return (
     <DropdownMenu>
