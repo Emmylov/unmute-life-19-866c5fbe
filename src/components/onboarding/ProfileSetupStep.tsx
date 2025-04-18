@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Camera, User } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase, STORAGE_BUCKETS, getPublicUrl } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 
 interface ProfileSetupStepProps {
@@ -30,7 +30,6 @@ const ProfileSetupStep = ({ onNext }: ProfileSetupStepProps) => {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const { toast } = useToast();
   
   // Fetch current user on component mount
   useEffect(() => {
@@ -112,24 +111,24 @@ const ProfileSetupStep = ({ onNext }: ProfileSetupStepProps) => {
           username,
           bio,
           avatar: avatarUrl,
-          theme_color: selectedColor.replace('bg-', ''),
-          is_onboarded: true
+          theme_color: selectedColor.replace('bg-', '')
         })
         .eq('id', currentUser.id);
         
       if (updateError) throw updateError;
       
-      toast({
-        title: "Profile updated!",
+      toast.success("Profile updated!", {
         description: "Your profile has been set up successfully.",
       });
       
-      onNext();
+      // Allow a moment for the toast to be shown before proceeding
+      setTimeout(() => {
+        onNext();
+      }, 500);
+      
     } catch (error: any) {
-      toast({
-        title: "Error saving profile",
+      toast.error("Error saving profile", {
         description: error.message || "Something went wrong",
-        variant: "destructive",
       });
     } finally {
       setLoading(false);

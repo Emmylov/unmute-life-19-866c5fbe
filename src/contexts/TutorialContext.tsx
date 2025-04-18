@@ -121,7 +121,7 @@ export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         }, 1000); // Delay to allow page to fully render
       }
     }
-  }, [location, isTutorialActive, currentPath]);
+  }, [location, isTutorialActive, currentPath, tutorialSeen]);
   
   // Save tutorial seen status to localStorage
   useEffect(() => {
