@@ -50,36 +50,57 @@ export const useNotifications = () => {
     try {
       console.log("Fetching notifications for user:", user.id);
       
-      // Get notifications with user details of who created the notification
-      const { data, error } = await supabase
+      // First, get the notifications without joining profiles
+      const { data: notificationsData, error: notificationsError } = await supabase
         .from('notifications')
-        .select(`
-          *,
-          from_user:profiles(username, avatar)
-        `)
+        .select('*')
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
         .limit(20);
       
-      if (error) {
-        console.error("Error fetching notifications:", error);
-        throw new Error(`Failed to fetch notifications: ${error.message}`);
+      if (notificationsError) {
+        console.error("Error fetching notifications:", notificationsError);
+        throw new Error(`Failed to fetch notifications: ${notificationsError.message}`);
       }
       
-      console.log("Notifications data received:", data);
+      console.log("Notifications data received:", notificationsData);
       
-      // Process the data to handle potential errors with from_user
-      const processedData: Notification[] = data ? data.map((item: any) => {
-        // Handle case where from_user has an error
-        const fromUser = item.from_user && typeof item.from_user === 'object' && !('error' in item.from_user)
-          ? item.from_user
-          : null;
-          
+      // Now fetch user profiles for all from_user_ids in a separate query
+      const fromUserIds = notificationsData
+        .filter(n => n.from_user_id)
+        .map(n => n.from_user_id);
+      
+      // If there are any from_user_ids, get their profiles
+      let userProfiles = {};
+      if (fromUserIds.length > 0) {
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, username, avatar')
+          .in('id', fromUserIds);
+        
+        if (profilesError) {
+          console.error("Error fetching user profiles:", profilesError);
+        } else if (profiles) {
+          // Create a map of user_id -> profile data
+          userProfiles = profiles.reduce((acc, profile) => {
+            acc[profile.id] = profile;
+            return acc;
+          }, {});
+        }
+      }
+      
+      // Combine the data
+      const processedData: Notification[] = notificationsData.map((item: any) => {
+        const fromUserProfile = item.from_user_id ? userProfiles[item.from_user_id] : null;
+        
         return {
           ...item,
-          from_user: fromUser
+          from_user: fromUserProfile ? {
+            username: fromUserProfile.username || 'Unknown user',
+            avatar: fromUserProfile.avatar || ''
+          } : null
         };
-      }) : [];
+      });
       
       setNotifications(processedData);
       
@@ -290,4 +311,3 @@ export const useNotifications = () => {
     markAllAsRead
   };
 };
-
