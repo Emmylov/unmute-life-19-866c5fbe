@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'sonner';
@@ -59,10 +58,10 @@ function App() {
           <TutorialProvider>
             <Routes>
               <Route path="/" element={<Index />} />
-              <Route path="/onboarding" element={<Onboarding />} />
               <Route path="/auth" element={<Auth />} />
 
               <Route element={<ProtectedLayout />}>
+                <Route path="/onboarding" element={<Onboarding />} />
                 <Route path="/home" element={<Home />} />
                 <Route path="/explore" element={<Explore />} />
                 <Route path="/communities" element={<Communities />} />

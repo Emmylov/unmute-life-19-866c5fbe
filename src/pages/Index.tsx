@@ -1,8 +1,11 @@
+
 import React from "react";
 import { Link } from "react-router-dom";
 import WaitlistSignupForm from "@/components/waitlist/WaitlistSignupForm";
 import StarterPackSection from "@/components/waitlist/StarterPackSection";
 import TestimonialSection from "@/components/waitlist/TestimonialSection";
+import { Button } from "@/components/ui/button";
+import { ArrowRight } from "lucide-react";
 import useAuthGuard from "@/hooks/use-auth-guard";
 
 const Index = () => {
@@ -25,8 +28,8 @@ const Index = () => {
         </h1>
         
         <div className="flex items-center space-x-4">
-          <Link to="/onboarding" className="text-sm text-gray-600 hover:text-unmute-purple">
-            Get Started
+          <Link to="/auth" className="text-sm text-gray-600 hover:text-unmute-purple">
+            Sign In
           </Link>
         </div>
       </header>
@@ -40,8 +43,19 @@ const Index = () => {
           <p className="text-xl md:text-2xl text-gray-700 mb-6 max-w-2xl mx-auto">
             Join the movement. Be one of the first. Get the OG Starter Pack.
           </p>
-          
-          <WaitlistSignupForm className="max-w-md mx-auto mb-12" />
+
+          <div className="flex flex-col items-center gap-4 mb-12">
+            <WaitlistSignupForm className="max-w-md mx-auto" />
+            
+            <div className="text-center">
+              <Link 
+                to="/auth" 
+                className="inline-flex items-center text-unmute-purple hover:text-unmute-purple/80 font-medium"
+              >
+                Early access user? Sign in here <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </div>
+          </div>
         </section>
         
         <StarterPackSection />
