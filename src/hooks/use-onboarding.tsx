@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { trackAnalyticEvent } from "@/services/analytics-service";
 import { updateOnboardingStep, saveOnboardingData } from "@/services/user-settings-service";
 import { toast } from "sonner";
+import { getCurrentUser } from "@/services/auth-service";
 
 const TOTAL_STEPS = 12;
 
@@ -18,8 +19,14 @@ export const useOnboarding = () => {
   
   useEffect(() => {
     const checkOnboardingStatus = async () => {
-      if (user) {
+      // Check authentication directly with supabase
+      const currentUser = await getCurrentUser();
+      
+      if (currentUser) {
         setIsLoggedIn(true);
+        
+        // Refresh the profile to make sure we have the latest data
+        await refreshProfile();
         
         if (profile) {
           setOnboardingData({
@@ -29,6 +36,7 @@ export const useOnboarding = () => {
             avatar: profile.avatar,
             is_activist: profile.is_activist,
             interests: profile.interests || [],
+            theme_color: profile.theme_color,
           });
           
           if (profile.is_onboarded) {
@@ -40,20 +48,32 @@ export const useOnboarding = () => {
             setCurrentStep(4);
           }
         }
+        
+        // If we're still at step 0 but user exists, move to step 4 (account creation is done)
+        if (currentStep === 0 && !profile?.onboarding_step) {
+          setCurrentStep(4);
+        }
+      } else if (currentStep >= 4) {
+        // If we're past account creation step but no user, go back to step 0
+        setCurrentStep(0);
       }
+      
       setLoading(false);
     };
     
     checkOnboardingStatus();
-  }, [navigate, currentStep, user, profile]);
+  }, [navigate, currentStep, user, profile, refreshProfile]);
 
   const handleNext = async () => {
     if (currentStep < TOTAL_STEPS - 1) {
       const nextStep = currentStep + 1;
       setCurrentStep(nextStep);
       
-      if (user) {
-        trackAnalyticEvent(user.id, "onboarding_step_complete", { 
+      // Refresh user to make sure we have the latest data
+      const currentUser = await getCurrentUser();
+      
+      if (currentUser) {
+        trackAnalyticEvent(currentUser.id, "onboarding_step_complete", { 
           resource_type: "onboarding", 
           step: currentStep, 
           next_step: nextStep 
@@ -61,7 +81,7 @@ export const useOnboarding = () => {
         
         try {
           const stepName = getStepName(nextStep);
-          await updateOnboardingStep(user.id, stepName);
+          await updateOnboardingStep(currentUser.id, stepName);
         } catch (error) {
           console.error("Error updating onboarding step:", error);
         }
@@ -70,8 +90,14 @@ export const useOnboarding = () => {
   };
 
   const handleComplete = async () => {
-    if (!user) {
-      navigate("/home");
+    // Double check authentication
+    const currentUser = await getCurrentUser();
+    
+    if (!currentUser) {
+      toast.error("No user logged in", {
+        description: "Please sign in to complete onboarding."
+      });
+      navigate("/auth");
       return;
     }
     
@@ -81,12 +107,12 @@ export const useOnboarding = () => {
       // Show a toast to indicate we're processing
       toast.loading("Completing your onboarding...", { id: "onboarding-complete" });
       
-      await saveOnboardingData(user.id, {
+      await saveOnboardingData(currentUser.id, {
         ...onboardingData,
         is_onboarded: true
       });
       
-      trackAnalyticEvent(user.id, "onboarding_complete", { 
+      trackAnalyticEvent(currentUser.id, "onboarding_complete", { 
         resource_type: "onboarding" 
       });
       

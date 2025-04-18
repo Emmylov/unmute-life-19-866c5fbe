@@ -1,9 +1,12 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useOnboarding } from "@/hooks/use-onboarding";
 import OnboardingBackground from "@/components/onboarding/OnboardingBackground";
 import OnboardingStepRenderer from "@/components/onboarding/OnboardingStepRenderer";
 import OnboardingProgress from "@/components/onboarding/OnboardingProgress";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { getCurrentUser } from "@/services/auth-service";
+import { useNavigate } from "react-router-dom";
 
 const TOTAL_STEPS = 12;
 
@@ -15,10 +18,28 @@ const Onboarding = () => {
     handleComplete
   } = useOnboarding();
   
+  const navigate = useNavigate();
+  
+  // Check if the user is authenticated
+  useEffect(() => {
+    const checkAuthentication = async () => {
+      const user = await getCurrentUser();
+      
+      // For steps 4 and above, we require authentication
+      if (currentStep >= 4 && !user) {
+        navigate('/auth', { state: { from: '/onboarding' } });
+      }
+    };
+    
+    if (!loading) {
+      checkAuthentication();
+    }
+  }, [currentStep, loading, navigate]);
+  
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center">
-        <div className="animate-spin h-8 w-8 border-4 border-unmute-purple border-t-transparent rounded-full"></div>
+        <LoadingSpinner size="large" color="purple" text="Loading onboarding..." />
       </div>
     );
   }

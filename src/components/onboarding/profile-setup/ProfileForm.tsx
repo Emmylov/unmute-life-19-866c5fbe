@@ -25,31 +25,31 @@ const ProfileForm: React.FC<ProfileFormProps> = ({
   return (
     <div className="space-y-6 mb-6 w-full">
       <div className="space-y-2">
-        <Label htmlFor="username">Username</Label>
+        <Label htmlFor="username" className="text-base">Username</Label>
         <Input
           id="username"
           placeholder="Choose a username"
           value={username}
           onChange={(e) => onUsernameChange(e.target.value)}
           required
-          className="text-base sm:text-sm"
+          className="text-base p-3 sm:p-2"
         />
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor="bio">Bio</Label>
+        <Label htmlFor="bio" className="text-base">Bio</Label>
         <Textarea
           id="bio"
           placeholder="Write a short bio..."
           value={bio}
           onChange={(e) => onBioChange(e.target.value)}
           rows={3}
-          className="text-base sm:text-sm"
+          className="text-base p-3 sm:p-2"
         />
       </div>
       
-      <div className="space-y-2">
-        <Label>Select a profile theme color</Label>
+      <div className="space-y-3">
+        <Label className="text-base">Select a profile theme color</Label>
         <ColorSelector 
           selectedColor={selectedColor} 
           onColorSelect={onColorSelect}

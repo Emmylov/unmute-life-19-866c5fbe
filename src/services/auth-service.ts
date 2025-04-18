@@ -73,7 +73,7 @@ export const getUserProfile = async (userId: string) => {
       .from("profiles")
       .select("*")
       .eq("id", userId)
-      .single();
+      .maybeSingle();
       
     if (error) {
       console.error("Error fetching user profile:", error);
@@ -83,6 +83,35 @@ export const getUserProfile = async (userId: string) => {
     return data;
   } catch (error) {
     console.error("Unexpected error fetching profile:", error);
+    return null;
+  }
+};
+
+// Helper function to check if user is authenticated
+export const isUserAuthenticated = async (): Promise<{authenticated: boolean, userId?: string}> => {
+  try {
+    const { data } = await supabase.auth.getSession();
+    return {
+      authenticated: !!data.session,
+      userId: data.session?.user?.id
+    };
+  } catch (error) {
+    console.error("Error checking authentication:", error);
+    return { authenticated: false };
+  }
+};
+
+// Get the current user directly from supabase
+export const getCurrentUser = async () => {
+  try {
+    const { data, error } = await supabase.auth.getUser();
+    if (error) {
+      console.error("Error getting current user:", error);
+      return null;
+    }
+    return data.user;
+  } catch (error) {
+    console.error("Unexpected error getting current user:", error);
     return null;
   }
 };

@@ -20,11 +20,11 @@ const ColorSelector: React.FC<ColorSelectorProps> = ({
   onColorSelect,
 }) => {
   return (
-    <div className="flex flex-wrap gap-3 justify-center sm:justify-start">
+    <div className="flex flex-wrap gap-4 sm:gap-3 justify-center sm:justify-start">
       {themeColors.map((color) => (
         <button
           key={color.value}
-          className={`w-10 h-10 sm:w-8 sm:h-8 rounded-full ${color.value} transition-all ${
+          className={`w-12 h-12 sm:w-10 sm:h-10 rounded-full ${color.value} transition-all ${
             selectedColor === color.value
               ? "ring-2 ring-offset-2 ring-unmute-purple"
               : ""
