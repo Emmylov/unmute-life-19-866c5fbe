@@ -1,8 +1,8 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import { LogOut } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import EarlyAccessBadge from "@/components/badges/EarlyAccessBadge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -50,7 +50,10 @@ const UserProfileDropdown = ({
         </Avatar>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56 glass-card">
-        <DropdownMenuLabel>My Account</DropdownMenuLabel>
+        <DropdownMenuLabel className="flex items-center justify-between">
+          My Account
+          <EarlyAccessBadge className="ml-2" />
+        </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link to="/profile" className="cursor-pointer">Profile</Link>
