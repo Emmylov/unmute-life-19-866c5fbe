@@ -3,15 +3,7 @@ import React, { ReactNode, useEffect } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Sidebar from "@/components/layout/Sidebar";
 import { useIsMobile, useIsTablet } from "@/hooks/use-responsive";
-import { useLocation, Link } from "react-router-dom";
-import { 
-  Home, 
-  Search, 
-  Film, 
-  User,
-  Smile
-} from "lucide-react";
-import { motion } from "framer-motion";
+import { useLocation } from "react-router-dom";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -34,109 +26,18 @@ const AppLayout = ({ children, pageTitle }: AppLayoutProps) => {
   
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col w-full">
-      {/* Don't show the navbar on the reels page for more immersive experience */}
       {!isReelsPage && <Navbar pageTitle={pageTitle} />}
       
       <div className={`flex flex-grow ${isReelsPage ? '' : ''}`}>
         {!isMobile && <Sidebar />}
         
-        <main className={`flex-1 ${showMobileNav ? 'pb-14' : 'pb-0'} ${!isMobile ? 'mt-1' : 'mt-0'}`}>
-          <div className={`${isReelsPage ? 'p-0 max-w-none' : 'max-w-7xl mx-auto px-2 sm:px-3 md:px-4 lg:px-5 py-1'}`}>
+        <main className={`flex-1 ${showMobileNav ? 'pb-16' : 'pb-0'} ${!isMobile ? 'mt-1' : 'mt-0'}`}>
+          <div className={`${isReelsPage ? 'p-0 max-w-none' : 'px-0 py-0 md:px-4 lg:px-5'}`}>
             {children}
           </div>
         </main>
       </div>
-      
-      {showMobileNav && <MobileNavigation currentPath={location.pathname} />}
     </div>
-  );
-};
-
-interface MobileNavigationProps {
-  currentPath: string;
-}
-
-const MobileNavigation = ({ currentPath }: MobileNavigationProps) => {
-  return (
-    <motion.nav 
-      initial={{ y: 100 }}
-      animate={{ y: 0 }}
-      transition={{ duration: 0.3, ease: "easeOut" }}
-      className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-2 py-0.5 flex items-center justify-around z-50 shadow-lg"
-    >
-      <NavLink 
-        icon={<Home className="h-4 w-4" />} 
-        label="Home" 
-        to="/home" 
-        isActive={currentPath === '/home'} 
-      />
-      <NavLink 
-        icon={<Search className="h-4 w-4" />} 
-        label="Explore" 
-        to="/explore" 
-        isActive={currentPath === '/explore'} 
-      />
-      <NavLink 
-        icon={<Film className="h-4 w-4" />} 
-        label="Reels" 
-        to="/reels" 
-        isActive={currentPath === '/reels'} 
-      />
-      <NavLink 
-        icon={<Smile className="h-4 w-4" />} 
-        label="Vibe" 
-        to="/vibe-check" 
-        isActive={currentPath === '/vibe-check'} 
-      />
-      <NavLink 
-        icon={<User className="h-4 w-4" />} 
-        label="Profile" 
-        to="/profile" 
-        isActive={currentPath === '/profile'} 
-      />
-    </motion.nav>
-  );
-};
-
-interface NavLinkProps {
-  icon: React.ReactNode;
-  label: string;
-  to: string;
-  isActive?: boolean;
-}
-
-const NavLink = ({ icon, label, to, isActive = false }: NavLinkProps) => {
-  return (
-    <Link
-      to={to}
-      className="relative flex flex-col items-center py-1.5"
-    >
-      <motion.div
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.95 }}
-        className={`flex items-center justify-center mb-1 ${
-          isActive ? "text-primary font-medium" : "text-gray-500"
-        }`}
-      >
-        {icon}
-        {isActive && (
-          <motion.div 
-            layoutId="activeTab" 
-            className="absolute -bottom-1 left-1/2 w-5 h-1 bg-primary rounded-full transform -translate-x-1/2"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.2 }}
-          />
-        )}
-      </motion.div>
-      <span
-        className={`text-xs ${
-          isActive ? "text-primary font-medium" : "text-gray-500"
-        }`}
-      >
-        {label}
-      </span>
-    </Link>
   );
 };
 

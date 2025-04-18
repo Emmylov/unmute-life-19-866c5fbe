@@ -12,6 +12,7 @@ import { useFeed } from "@/hooks/feed";
 import StoriesBar from '@/components/stories/StoriesBar';
 import CreatePost from '@/components/home/CreatePost';
 import { useAuth } from '@/contexts/AuthContext';
+import { useIsMobile } from '@/hooks/use-responsive';
 import { toast } from "sonner";
 
 // Ensure Post type has the required content property
@@ -43,6 +44,7 @@ const Home = () => {
   const [showRewardModal, setShowRewardModal] = useState(false);
   const { posts, loading, refresh } = useFeed({ limit: 20 });
   const { user, profile } = useAuth();
+  const isMobile = useIsMobile();
   
   const handleMoodSelect = (mood: string) => {
     toast.success(`Mood set to: ${mood}`);
@@ -71,41 +73,47 @@ const Home = () => {
   };
 
   return (
-    <AppLayout pageTitle="Home">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 px-3 sm:px-4">
-        <div className="lg:col-span-8 space-y-4">
-          <div className="flex justify-between items-center">
-            <HomeGreeting />
-            <DailyRewardButton onClick={() => setShowRewardModal(true)} />
-          </div>
+    <AppLayout>
+      <div className={`grid grid-cols-1 lg:grid-cols-12 gap-4 ${isMobile ? 'px-0' : 'px-4'}`}>
+        <div className="lg:col-span-8 space-y-3">
+          {!isMobile && (
+            <div className="flex justify-between items-center">
+              <HomeGreeting />
+              <DailyRewardButton onClick={() => setShowRewardModal(true)} />
+            </div>
+          )}
           
           <StoriesBar />
           <HomeHeader />
           <MoodSelector onSelect={handleMoodSelect} />
           
           {user && profile && (
-            <CreatePost profile={profile} onPostCreated={handlePostCreated} />
+            <div className="px-4 py-2 bg-white rounded-lg shadow-sm">
+              <CreatePost profile={profile} onPostCreated={handlePostCreated} />
+            </div>
           )}
 
-          {loading ? (
-            <div className="space-y-4">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="bg-gray-100 h-64 animate-pulse rounded-xl"></div>
-              ))}
-            </div>
-          ) : mappedPosts && mappedPosts.length > 0 ? (
-            mappedPosts.map(post => (
-              <PostCard key={post.id} post={post} />
-            ))
-          ) : (
-            <div className="bg-white p-6 rounded-xl text-center">
-              <h3 className="text-lg font-medium">No posts yet</h3>
-              <p className="text-gray-500 mt-2">Follow some users to see their posts here, or create your first post!</p>
-            </div>
-          )}
+          <div className="space-y-3">
+            {loading ? (
+              <div className="space-y-4">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="bg-gray-100 h-48 animate-pulse rounded-xl"></div>
+                ))}
+              </div>
+            ) : mappedPosts && mappedPosts.length > 0 ? (
+              mappedPosts.map(post => (
+                <PostCard key={post.id} post={post} />
+              ))
+            ) : (
+              <div className="bg-white p-6 rounded-xl text-center mx-4">
+                <h3 className="text-lg font-medium">No posts yet</h3>
+                <p className="text-gray-500 mt-2">Follow some users to see their posts here, or create your first post!</p>
+              </div>
+            )}
+          </div>
         </div>
         
-        <HomeRightSidebar profile={profileData} />
+        {!isMobile && <HomeRightSidebar profile={profileData} />}
       </div>
       
       <DailyRewardModal open={showRewardModal} onOpenChange={setShowRewardModal} />
