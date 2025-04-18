@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { uploadImage } from "@/services/upload-service";
+import { useIsMobile } from "@/hooks/use-responsive";
 
 interface CreatePostProps {
   profile: any;
