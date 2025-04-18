@@ -1,9 +1,9 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { toggleFollowUser } from "@/integrations/supabase/profile-functions";
+import { toggleFollowUser, checkIsFollowing } from "@/integrations/supabase/profile-functions";
+import { createFollowNotification } from "@/services/notification-service";
 
 export const useSocialActions = () => {
   const { user, refreshProfile } = useAuth();
@@ -18,14 +18,7 @@ export const useSocialActions = () => {
     setLoadingFollowState(prev => ({ ...prev, [targetUserId]: true }));
     
     try {
-      const { data } = await supabase
-        .from("user_follows")
-        .select("*")
-        .eq("follower_id", user.id)
-        .eq("following_id", targetUserId)
-        .single();
-        
-      const following = !!data;
+      const following = await checkIsFollowing(user.id, targetUserId);
       setIsFollowing(prev => ({ ...prev, [targetUserId]: following }));
       return following;
     } catch (error) {
@@ -56,15 +49,19 @@ export const useSocialActions = () => {
       // Update local state
       setIsFollowing(prev => ({ ...prev, [targetUserId]: result }));
       
+      // If the user is now following, create a notification
+      if (result) {
+        try {
+          await createFollowNotification(targetUserId, user.id);
+        } catch (notifError) {
+          console.error("Error creating follow notification:", notifError);
+        }
+      }
+      
       // Refresh the user profile to get updated counts
       await refreshProfile();
       
-      // Show feedback to the user
-      if (result) {
-        toast.success("User followed successfully");
-      } else {
-        toast.success("User unfollowed successfully");
-      }
+      toast.success(result ? "Started following user" : "Unfollowed user");
       
       return result;
     } catch (error) {
