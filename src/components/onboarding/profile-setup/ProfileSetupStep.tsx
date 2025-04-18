@@ -16,7 +16,7 @@ interface ProfileSetupStepProps {
 const ProfileSetupStep: React.FC<ProfileSetupStepProps> = ({ onNext }) => {
   const [username, setUsername] = useState("");
   const [bio, setBio] = useState("");
-  const [selectedColor, setSelectedColor] = useState("bg-unmute-purple");
+  const [selectedColor, setSelectedColor] = useState("unmute-purple");
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
@@ -31,9 +31,8 @@ const ProfileSetupStep: React.FC<ProfileSetupStepProps> = ({ onNext }) => {
       if (profile.avatar) {
         setPreviewImage(profile.avatar);
       }
-      // Set the color if it exists in the profile
       if (profile.theme_color) {
-        setSelectedColor(`bg-${profile.theme_color}`);
+        setSelectedColor(profile.theme_color);
       }
     }
   }, [profile]);
@@ -97,9 +96,6 @@ const ProfileSetupStep: React.FC<ProfileSetupStepProps> = ({ onNext }) => {
         }
       }
       
-      // Extract the color value without the "bg-" prefix
-      const themeColor = selectedColor.replace('bg-', '');
-      
       // Update the user profile
       const { error: updateError } = await supabase
         .from('profiles')
@@ -107,7 +103,7 @@ const ProfileSetupStep: React.FC<ProfileSetupStepProps> = ({ onNext }) => {
           username,
           bio,
           avatar: avatarUrl,
-          theme_color: themeColor
+          theme_color: selectedColor
         })
         .eq('id', userId);
         

@@ -7,12 +7,12 @@ interface ColorSelectorProps {
 }
 
 const themeColors = [
-  { name: "Purple", value: "bg-unmute-purple" },
-  { name: "Pink", value: "bg-unmute-pink" },
-  { name: "Coral", value: "bg-unmute-coral" },
-  { name: "Teal", value: "bg-unmute-teal" },
-  { name: "Blue", value: "bg-blue-500" },
-  { name: "Green", value: "bg-green-500" },
+  { name: "Purple", value: "unmute-purple" },
+  { name: "Pink", value: "unmute-pink" },
+  { name: "Coral", value: "unmute-coral" },
+  { name: "Teal", value: "unmute-teal" },
+  { name: "Blue", value: "blue-500" },
+  { name: "Green", value: "green-500" },
 ];
 
 const ColorSelector: React.FC<ColorSelectorProps> = ({
@@ -24,7 +24,7 @@ const ColorSelector: React.FC<ColorSelectorProps> = ({
       {themeColors.map((color) => (
         <button
           key={color.value}
-          className={`w-12 h-12 sm:w-10 sm:h-10 rounded-full ${color.value} transition-all ${
+          className={`w-12 h-12 sm:w-10 sm:h-10 rounded-full bg-${color.value} transition-all ${
             selectedColor === color.value
               ? "ring-2 ring-offset-2 ring-unmute-purple"
               : ""

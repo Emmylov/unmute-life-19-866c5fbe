@@ -419,6 +419,7 @@ export type Database = {
           location: string | null
           notification_count: number | null
           onboarding_step: string | null
+          theme_color: string | null
           tutorial_completed: boolean | null
           username: string | null
           website: string | null
@@ -437,6 +438,7 @@ export type Database = {
           location?: string | null
           notification_count?: number | null
           onboarding_step?: string | null
+          theme_color?: string | null
           tutorial_completed?: boolean | null
           username?: string | null
           website?: string | null
@@ -455,6 +457,7 @@ export type Database = {
           location?: string | null
           notification_count?: number | null
           onboarding_step?: string | null
+          theme_color?: string | null
           tutorial_completed?: boolean | null
           username?: string | null
           website?: string | null
