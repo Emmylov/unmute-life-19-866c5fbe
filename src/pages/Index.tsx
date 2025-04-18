@@ -6,6 +6,7 @@ import WaitlistSignupForm from "@/components/waitlist/WaitlistSignupForm";
 import StarterPackSection from "@/components/waitlist/StarterPackSection";
 import TestimonialSection from "@/components/waitlist/TestimonialSection";
 import useAuthGuard from "@/hooks/use-auth-guard";
+import TutorialButton from "@/components/tutorial/TutorialButton";
 
 const Index = () => {
   const { isLoading } = useAuthGuard({ 
@@ -28,10 +29,11 @@ const Index = () => {
           <span className="unmute-gradient-text">Unmute</span>
         </h1>
         
-        <div className="space-x-4">
+        <div className="flex items-center space-x-4">
           <Link to="/onboarding" className="text-sm text-gray-600 hover:text-unmute-purple">
             Learn More
           </Link>
+          <TutorialButton />
         </div>
       </header>
       

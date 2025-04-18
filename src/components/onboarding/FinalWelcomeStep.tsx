@@ -9,6 +9,7 @@ interface FinalWelcomeStepProps {
 
 const FinalWelcomeStep = ({ onComplete }: FinalWelcomeStepProps) => {
   const [showConfetti, setShowConfetti] = useState(false);
+  const [isCompleting, setIsCompleting] = useState(false);
   
   useEffect(() => {
     setShowConfetti(true);
@@ -42,6 +43,15 @@ const FinalWelcomeStep = ({ onComplete }: FinalWelcomeStepProps) => {
       frame();
     }
   }, []);
+  
+  const handleComplete = async () => {
+    try {
+      setIsCompleting(true);
+      await onComplete(); // Ensure we await the completion
+    } catch (error) {
+      console.error("Error completing onboarding:", error);
+    }
+  };
   
   return (
     <div className="flex flex-col items-center justify-center flex-grow text-center p-6">
@@ -80,10 +90,11 @@ const FinalWelcomeStep = ({ onComplete }: FinalWelcomeStepProps) => {
       </div>
       
       <Button 
-        onClick={onComplete} 
+        onClick={handleComplete} 
         className="unmute-primary-button"
+        disabled={isCompleting}
       >
-        Take me to the app
+        {isCompleting ? "Taking you to the app..." : "Take me to the app"}
       </Button>
     </div>
   );

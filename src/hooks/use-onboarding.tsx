@@ -4,6 +4,9 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { trackAnalyticEvent } from "@/services/analytics-service";
 import { updateOnboardingStep, saveOnboardingData } from "@/services/user-settings-service";
+import { toast } from "sonner";
+
+const TOTAL_STEPS = 12;
 
 export const useOnboarding = () => {
   const [currentStep, setCurrentStep] = useState(0);
@@ -79,6 +82,10 @@ export const useOnboarding = () => {
     
     try {
       setLoading(true);
+      
+      // Show a toast to indicate we're processing
+      toast.loading("Completing your onboarding...", { id: "onboarding-complete" });
+      
       await saveOnboardingData(user.id, {
         ...onboardingData,
         is_onboarded: true
@@ -89,9 +96,23 @@ export const useOnboarding = () => {
       });
       
       await refreshProfile();
-      navigate("/home");
+      
+      // Show success toast
+      toast.success("Onboarding completed!", { 
+        id: "onboarding-complete",
+        description: "Welcome to Unmute! Your profile is ready." 
+      });
+      
+      // Add a small delay before navigating to make sure the user sees the success message
+      setTimeout(() => {
+        navigate("/home");
+      }, 500);
     } catch (error) {
       console.error("Error completing onboarding:", error);
+      toast.error("Something went wrong", { 
+        id: "onboarding-complete",
+        description: "Please try again or contact support."
+      });
     } finally {
       setLoading(false);
     }
@@ -108,8 +129,6 @@ export const useOnboarding = () => {
   };
 };
 
-const TOTAL_STEPS = 12;
-
 const getStepName = (step: number): string => {
   switch (step) {
     case 1: return "about";
@@ -122,4 +141,3 @@ const getStepName = (step: number): string => {
     default: return "welcome";
   }
 };
-

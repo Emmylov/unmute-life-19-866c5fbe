@@ -3,6 +3,8 @@ import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { TutorialProvider } from '@/contexts/TutorialContext';
+import TutorialOverlay from '@/components/tutorial/TutorialOverlay';
 
 import Index from "@/pages/Index";
 import Auth from "@/pages/Auth";
@@ -53,39 +55,44 @@ function App() {
   return (
     <div className="App">
       <AuthProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/onboarding" element={<Onboarding />} />
+        <TutorialProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/onboarding" element={<Onboarding />} />
 
-            <Route element={<ProtectedLayout />}>
-              <Route path="/home" element={<Home />} />
-              <Route path="/explore" element={<Explore />} />
-              <Route path="/communities" element={<Communities />} />
-              <Route path="/reels" element={<Reels />} />
-              <Route path="/chat" element={<Chat />} />
-              <Route path="/notifications" element={<Notifications />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/wellness" element={<Wellness />} />
-              <Route path="/wellness-plus" element={<WellnessPlus />} />
-              <Route path="/saved" element={<Saved />} />
-              <Route path="/content-creator" element={<ContentCreator />} />
-              <Route path="/create-collab" element={<CreateCollab />} />
-              <Route path="/vibe-check" element={<VibeCheck />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/help" element={<Help />} />
-              <Route path="/games" element={<Games />} />
-              <Route path="/games/memory-match" element={<MemoryMatch />} />
-              <Route path="/games/bubble-pop" element={<BubblePop />} />
-              <Route path="/games/word-scramble" element={<WordScramble />} />
-              <Route path="/music" element={<Music />} />
-            </Route>
+              <Route element={<ProtectedLayout />}>
+                <Route path="/home" element={<Home />} />
+                <Route path="/explore" element={<Explore />} />
+                <Route path="/communities" element={<Communities />} />
+                <Route path="/reels" element={<Reels />} />
+                <Route path="/chat" element={<Chat />} />
+                <Route path="/notifications" element={<Notifications />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/wellness" element={<Wellness />} />
+                <Route path="/wellness-plus" element={<WellnessPlus />} />
+                <Route path="/saved" element={<Saved />} />
+                <Route path="/content-creator" element={<ContentCreator />} />
+                <Route path="/create-collab" element={<CreateCollab />} />
+                <Route path="/vibe-check" element={<VibeCheck />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/help" element={<Help />} />
+                <Route path="/games" element={<Games />} />
+                <Route path="/games/memory-match" element={<MemoryMatch />} />
+                <Route path="/games/bubble-pop" element={<BubblePop />} />
+                <Route path="/games/word-scramble" element={<WordScramble />} />
+                <Route path="/music" element={<Music />} />
+              </Route>
 
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-        <Toaster position="top-right" closeButton />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            
+            {/* Tutorial overlay */}
+            <TutorialOverlay />
+          </BrowserRouter>
+          <Toaster position="top-right" closeButton richColors />
+        </TutorialProvider>
       </AuthProvider>
     </div>
   );
