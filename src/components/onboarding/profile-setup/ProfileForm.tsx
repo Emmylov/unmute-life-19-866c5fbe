@@ -23,7 +23,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({
   onColorSelect,
 }) => {
   return (
-    <div className="space-y-6 mb-6">
+    <div className="space-y-6 mb-6 w-full">
       <div className="space-y-2">
         <Label htmlFor="username">Username</Label>
         <Input
@@ -32,6 +32,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({
           value={username}
           onChange={(e) => onUsernameChange(e.target.value)}
           required
+          className="text-base sm:text-sm"
         />
       </div>
       
@@ -43,6 +44,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({
           value={bio}
           onChange={(e) => onBioChange(e.target.value)}
           rows={3}
+          className="text-base sm:text-sm"
         />
       </div>
       
