@@ -1,7 +1,5 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
-import { CountdownTimer } from "@/components/ui/countdown-timer";
 import WaitlistSignupForm from "@/components/waitlist/WaitlistSignupForm";
 import StarterPackSection from "@/components/waitlist/StarterPackSection";
 import TestimonialSection from "@/components/waitlist/TestimonialSection";
@@ -12,8 +10,6 @@ const Index = () => {
     redirectIfAuthenticated: true, 
     authenticatedRedirectTo: "/home" 
   });
-  
-  const launchDate = new Date("2025-04-18T00:00:00");
   
   if (isLoading) {
     return <div className="min-h-screen flex items-center justify-center">
@@ -38,12 +34,8 @@ const Index = () => {
       <main className="flex-grow flex flex-col">
         <section className="max-w-6xl mx-auto px-6 py-8 md:py-12 text-center">
           <h1 className="text-4xl md:text-6xl font-bold mb-4 leading-tight">
-            <span className="unmute-gradient-text">Unmute Is Launching Soon!</span>
+            <span className="unmute-gradient-text">Welcome to Unmute!</span>
           </h1>
-          
-          <div className="max-w-lg mx-auto mb-8">
-            <CountdownTimer targetDate={launchDate} className="transform scale-110" />
-          </div>
           
           <p className="text-xl md:text-2xl text-gray-700 mb-6 max-w-2xl mx-auto">
             Join the movement. Be one of the first. Get the OG Starter Pack.

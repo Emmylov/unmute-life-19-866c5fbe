@@ -2,16 +2,12 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { PlayCircle } from 'lucide-react';
-import { CountdownTimer } from "@/components/ui/countdown-timer";
 
 const WelcomeBanner = () => {
   const playAudio = () => {
     // Audio functionality would go here
     console.log("Playing welcome audio");
   };
-  
-  // Set the launch date to April 18, 2025
-  const launchDate = new Date("2025-04-18T00:00:00");
   
   return (
     <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-[#E5DEFF] to-[#FDE1D3] p-8 md:p-12">
@@ -34,15 +30,6 @@ const WelcomeBanner = () => {
               <PlayCircle className="h-6 w-6 mr-2" />
               <span>Listen to intro</span>
             </button>
-          </div>
-          
-          {/* Countdown Timer */}
-          <div className="bg-white/70 backdrop-blur-sm rounded-lg p-4 mt-4">
-            <h3 className="text-sm font-semibold mb-2">Full Launch Coming:</h3>
-            <CountdownTimer 
-              targetDate={launchDate} 
-              showIcon={false}
-            />
           </div>
         </div>
         <div className="flex justify-center">
