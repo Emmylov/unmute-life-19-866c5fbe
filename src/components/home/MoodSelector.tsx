@@ -26,18 +26,18 @@ const MoodSelector = ({ onSelect }: MoodSelectorProps) => {
   };
 
   return (
-    <div className="bg-white p-4 rounded-xl shadow-sm">
+    <div className="bg-white px-4 py-3 rounded-xl shadow-sm">
       <h3 className="text-sm font-medium mb-3">How are you feeling today?</h3>
-      <div className="overflow-x-auto flex gap-2 pb-2">
+      <div className="grid grid-cols-4 gap-2 pb-1">
         {moods.map((mood) => (
           <Button 
             key={mood.name}
             variant={selectedMood === mood.name ? "default" : "outline"}
-            className="flex flex-col items-center py-2 min-w-[70px]"
+            className="flex flex-col items-center py-2 h-auto"
             onClick={() => handleMoodSelect(mood.name)}
           >
             <span className="text-xl mb-1">{mood.emoji}</span>
-            <span className="text-xs">{mood.name}</span>
+            <span className="text-xs line-clamp-1">{mood.name}</span>
           </Button>
         ))}
       </div>

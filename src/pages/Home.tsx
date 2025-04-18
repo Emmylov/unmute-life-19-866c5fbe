@@ -74,46 +74,54 @@ const Home = () => {
 
   return (
     <AppLayout>
-      <div className={`grid grid-cols-1 lg:grid-cols-12 gap-4 ${isMobile ? 'px-0' : 'px-4'}`}>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         <div className="lg:col-span-8 space-y-3">
           {!isMobile && (
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center px-4">
               <HomeGreeting />
               <DailyRewardButton onClick={() => setShowRewardModal(true)} />
             </div>
           )}
           
-          <StoriesBar />
-          <HomeHeader />
-          <MoodSelector onSelect={handleMoodSelect} />
-          
-          {user && profile && (
-            <div className="px-4 py-2 bg-white rounded-lg shadow-sm">
-              <CreatePost profile={profile} onPostCreated={handlePostCreated} />
+          <div className="space-y-4">
+            <StoriesBar />
+            <HomeHeader />
+            <div className="px-4">
+              <MoodSelector onSelect={handleMoodSelect} />
             </div>
-          )}
-
-          <div className="space-y-3">
-            {loading ? (
-              <div className="space-y-4">
-                {[...Array(3)].map((_, i) => (
-                  <div key={i} className="bg-gray-100 h-48 animate-pulse rounded-xl"></div>
-                ))}
-              </div>
-            ) : mappedPosts && mappedPosts.length > 0 ? (
-              mappedPosts.map(post => (
-                <PostCard key={post.id} post={post} />
-              ))
-            ) : (
-              <div className="bg-white p-6 rounded-xl text-center mx-4">
-                <h3 className="text-lg font-medium">No posts yet</h3>
-                <p className="text-gray-500 mt-2">Follow some users to see their posts here, or create your first post!</p>
+            
+            {user && profile && (
+              <div className="px-4">
+                <CreatePost profile={profile} onPostCreated={handlePostCreated} />
               </div>
             )}
+
+            <div className="space-y-3 px-4">
+              {loading ? (
+                <div className="space-y-4">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="bg-gray-100 h-48 animate-pulse rounded-xl"></div>
+                  ))}
+                </div>
+              ) : mappedPosts && mappedPosts.length > 0 ? (
+                mappedPosts.map(post => (
+                  <PostCard key={post.id} post={post} />
+                ))
+              ) : (
+                <div className="bg-white p-6 rounded-xl text-center">
+                  <h3 className="text-lg font-medium">No posts yet</h3>
+                  <p className="text-gray-500 mt-2">Follow some users to see their posts here, or create your first post!</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
         
-        {!isMobile && <HomeRightSidebar profile={profileData} />}
+        {!isMobile && (
+          <div className="lg:col-span-4 px-4">
+            <HomeRightSidebar profile={profileData} />
+          </div>
+        )}
       </div>
       
       <DailyRewardModal open={showRewardModal} onOpenChange={setShowRewardModal} />

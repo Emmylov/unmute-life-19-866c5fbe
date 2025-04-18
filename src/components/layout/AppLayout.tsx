@@ -15,11 +15,9 @@ const AppLayout = ({ children, pageTitle }: AppLayoutProps) => {
   const isTablet = useIsTablet();
   const location = useLocation();
   
-  // Hide mobile navigation on Reels page on mobile to give more space
   const isReelsPage = location.pathname === '/reels';
   const showMobileNav = isMobile && !isReelsPage;
   
-  // For better UX, we want the page to scroll to top when navigating
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [location.pathname]);
@@ -28,11 +26,11 @@ const AppLayout = ({ children, pageTitle }: AppLayoutProps) => {
     <div className="min-h-screen bg-gray-50 flex flex-col w-full">
       {!isReelsPage && <Navbar pageTitle={pageTitle} />}
       
-      <div className={`flex flex-grow ${isReelsPage ? '' : ''}`}>
+      <div className={`flex flex-grow ${isReelsPage ? '' : 'pt-1'}`}>
         {!isMobile && <Sidebar />}
         
-        <main className={`flex-1 ${showMobileNav ? 'pb-16' : 'pb-0'} ${!isMobile ? 'mt-1' : 'mt-0'}`}>
-          <div className={`${isReelsPage ? 'p-0 max-w-none' : 'px-0 py-0 md:px-4 lg:px-5'}`}>
+        <main className={`flex-1 ${showMobileNav ? 'pb-16' : 'pb-0'}`}>
+          <div className={`h-full ${isReelsPage ? 'p-0 max-w-none' : 'px-0 md:px-4 lg:px-5'}`}>
             {children}
           </div>
         </main>
