@@ -1,77 +1,47 @@
 
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Camera, User } from "lucide-react";
-import { Textarea } from "@/components/ui/textarea";
 import { supabase, STORAGE_BUCKETS, getPublicUrl } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
+import ProfileImageUploader from "./profile-setup/ProfileImageUploader";
+import ProfileForm from "./profile-setup/ProfileForm";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ProfileSetupStepProps {
   onNext: () => void;
 }
 
-const themeColors = [
-  { name: "Purple", value: "bg-unmute-purple" },
-  { name: "Pink", value: "bg-unmute-pink" },
-  { name: "Coral", value: "bg-unmute-coral" },
-  { name: "Teal", value: "bg-unmute-teal" },
-  { name: "Blue", value: "bg-blue-500" },
-  { name: "Green", value: "bg-green-500" },
-];
-
-const ProfileSetupStep = ({ onNext }: ProfileSetupStepProps) => {
+const ProfileSetupStep: React.FC<ProfileSetupStepProps> = ({ onNext }) => {
   const [username, setUsername] = useState("");
   const [bio, setBio] = useState("");
-  const [selectedColor, setSelectedColor] = useState(themeColors[0].value);
+  const [selectedColor, setSelectedColor] = useState("bg-unmute-purple");
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const { user, profile, refreshProfile } = useAuth();
   
   // Fetch current user on component mount
   useEffect(() => {
-    const fetchUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        setCurrentUser(session.user);
-        
-        // Check if user already has profile data
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('username, bio, avatar')
-          .eq('id', session.user.id)
-          .single();
-          
-        if (profile) {
-          setUsername(profile.username || '');
-          setBio(profile.bio || '');
-          if (profile.avatar) {
-            setPreviewImage(profile.avatar);
-          }
-        }
+    if (profile) {
+      setUsername(profile.username || '');
+      setBio(profile.bio || '');
+      if (profile.avatar) {
+        setPreviewImage(profile.avatar);
       }
-    };
-    
-    fetchUser();
-  }, []);
-  
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setImageFile(file);
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setPreviewImage(event.target?.result as string);
-      };
-      reader.readAsDataURL(file);
     }
+  }, [profile]);
+  
+  const handleImageChange = (imageUrl: string | null, file: File | null) => {
+    setPreviewImage(imageUrl);
+    setImageFile(file);
   };
   
   const saveProfile = async () => {
-    if (!currentUser) return;
+    if (!user) {
+      toast.error("No user logged in");
+      return;
+    }
     
     try {
       setLoading(true);
@@ -90,7 +60,7 @@ const ProfileSetupStep = ({ onNext }: ProfileSetupStepProps) => {
         // Upload the avatar
         const fileExt = imageFile.name.split('.').pop();
         const fileName = `${uuidv4()}.${fileExt}`;
-        const filePath = `${currentUser.id}/${fileName}`;
+        const filePath = `${user.id}/${fileName}`;
         
         const { error: uploadError } = await supabase.storage
           .from(STORAGE_BUCKETS.AVATARS)
@@ -113,9 +83,12 @@ const ProfileSetupStep = ({ onNext }: ProfileSetupStepProps) => {
           avatar: avatarUrl,
           theme_color: selectedColor.replace('bg-', '')
         })
-        .eq('id', currentUser.id);
+        .eq('id', user.id);
         
       if (updateError) throw updateError;
+      
+      // Refresh the profile to get the updated data
+      await refreshProfile();
       
       toast.success("Profile updated!", {
         description: "Your profile has been set up successfully.",
@@ -124,7 +97,7 @@ const ProfileSetupStep = ({ onNext }: ProfileSetupStepProps) => {
       // Allow a moment for the toast to be shown before proceeding
       setTimeout(() => {
         onNext();
-      }, 500);
+      }, 800);
       
     } catch (error: any) {
       toast.error("Error saving profile", {
@@ -140,73 +113,20 @@ const ProfileSetupStep = ({ onNext }: ProfileSetupStepProps) => {
       <h2 className="text-3xl font-bold mb-6 text-center">Profile Setup</h2>
       
       <div className="flex justify-center mb-6">
-        <div className="relative">
-          <div className={`w-24 h-24 rounded-full flex items-center justify-center overflow-hidden ${
-            previewImage ? "" : "border-2 border-dashed border-gray-300 bg-gray-50"
-          }`}>
-            {previewImage ? (
-              <img src={previewImage} alt="Profile" className="w-full h-full object-cover" />
-            ) : (
-              <User className="h-12 w-12 text-gray-400" />
-            )}
-          </div>
-          <label
-            htmlFor="profile-upload"
-            className="absolute -bottom-2 -right-2 w-8 h-8 flex items-center justify-center rounded-full bg-unmute-purple text-white cursor-pointer"
-          >
-            <Camera className="h-4 w-4" />
-            <input
-              id="profile-upload"
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleImageUpload}
-            />
-          </label>
-        </div>
+        <ProfileImageUploader 
+          initialImage={previewImage}
+          onImageChange={handleImageChange}
+        />
       </div>
       
-      <div className="space-y-6 mb-6">
-        <div className="space-y-2">
-          <Label htmlFor="username">Username</Label>
-          <Input
-            id="username"
-            placeholder="Choose a username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="bio">Bio</Label>
-          <Textarea
-            id="bio"
-            placeholder="Write a short bio..."
-            value={bio}
-            onChange={(e) => setBio(e.target.value)}
-            rows={3}
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <Label>Select a profile theme color</Label>
-          <div className="flex flex-wrap gap-3">
-            {themeColors.map((color) => (
-              <button
-                key={color.value}
-                className={`w-8 h-8 rounded-full ${color.value} transition-all ${
-                  selectedColor === color.value
-                    ? "ring-2 ring-offset-2 ring-unmute-purple"
-                    : ""
-                }`}
-                onClick={() => setSelectedColor(color.value)}
-                aria-label={`Select ${color.name} theme`}
-              />
-            ))}
-          </div>
-        </div>
-      </div>
+      <ProfileForm
+        username={username}
+        bio={bio}
+        selectedColor={selectedColor}
+        onUsernameChange={setUsername}
+        onBioChange={setBio}
+        onColorSelect={setSelectedColor}
+      />
       
       <div className="mt-auto">
         <Button

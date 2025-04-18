@@ -36,13 +36,8 @@ export const useOnboarding = () => {
             return;
           }
           
-          if (currentStep < 4) {
+          if (profile.onboarding_step === 'account-creation' && currentStep < 4) {
             setCurrentStep(4);
-            try {
-              await updateOnboardingStep(user.id, 'account-creation');
-            } catch (error) {
-              console.error("Error updating onboarding step:", error);
-            }
           }
         }
       }
@@ -106,7 +101,7 @@ export const useOnboarding = () => {
       // Add a small delay before navigating to make sure the user sees the success message
       setTimeout(() => {
         navigate("/home");
-      }, 500);
+      }, 800);
     } catch (error) {
       console.error("Error completing onboarding:", error);
       toast.error("Something went wrong", { 
