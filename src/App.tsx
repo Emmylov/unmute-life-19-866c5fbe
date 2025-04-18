@@ -24,7 +24,7 @@ import VibeCheck from "@/pages/VibeCheck";
 import Settings from "@/pages/Settings";
 import Help from "@/pages/Help";
 import NotFound from "@/pages/NotFound";
-import ProtectedLayout from "@/components/auth/ProtectedLayout";
+import ProtectedLayout from "@/components/layout/ProtectedLayout";
 import Onboarding from "@/pages/Onboarding";
 import Games from "@/pages/Games";
 import MemoryMatch from "@/pages/games/MemoryMatch";
@@ -59,8 +59,8 @@ function App() {
           <TutorialProvider>
             <Routes>
               <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<Auth />} />
               <Route path="/onboarding" element={<Onboarding />} />
+              <Route path="/auth" element={<Auth />} />
 
               <Route element={<ProtectedLayout />}>
                 <Route path="/home" element={<Home />} />

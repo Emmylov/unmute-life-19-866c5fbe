@@ -18,21 +18,16 @@ const ProtectedLayout: React.FC = () => {
     );
   }
 
-  // If not authenticated, redirect to login page with a message
+  // If not authenticated, redirect to onboarding page (changed from /auth)
   if (!user) {
-    // Only show the toast if coming from a protected route (not initial load)
-    if (location.pathname !== '/' && location.pathname !== '/onboarding') {
-      toast.error("Please log in to access this page");
-      return <Navigate to="/auth" state={{ from: location.pathname }} replace />;
+    // Show error toast for non-root paths
+    if (location.pathname !== '/') {
+      toast.error("Please complete onboarding to access this page");
+      return <Navigate to="/onboarding" state={{ from: location.pathname }} replace />;
     }
     
-    // Special case for onboarding - redirect to auth but don't show error
-    if (location.pathname === '/onboarding') {
-      return <Navigate to="/auth" state={{ from: location.pathname }} replace />;
-    }
-    
-    // For the root route, just navigate to auth without message
-    return <Navigate to="/auth" state={{ from: location.pathname }} replace />;
+    // For the root route, just navigate to onboarding without message
+    return <Navigate to="/onboarding" replace />;
   }
 
   // If authenticated, render the protected content

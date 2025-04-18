@@ -7,7 +7,7 @@ import { updateOnboardingStep, saveOnboardingData } from "@/services/user-settin
 import { toast } from "sonner";
 import { getCurrentUser } from "@/services/auth-service";
 
-const TOTAL_STEPS = 12;
+const TOTAL_STEPS = 13; // Updated from 12 to 13 since we added a step
 
 export const useOnboarding = () => {
   const [currentStep, setCurrentStep] = useState(0);
@@ -40,22 +40,16 @@ export const useOnboarding = () => {
           });
           
           if (profile.is_onboarded) {
+            // If fully onboarded, go to home
             navigate('/home');
             return;
           }
-          
-          if (profile.onboarding_step === 'account-creation' && currentStep < 4) {
-            setCurrentStep(4);
-          }
         }
         
-        // If we're still at step 0 but user exists, move to step 4 (account creation is done)
-        if (currentStep === 0 && !profile?.onboarding_step) {
-          setCurrentStep(4);
+        // If we're still at step 0-3 but user exists, move to step 5
+        if (currentStep < 4 && currentUser) {
+          setCurrentStep(5);
         }
-      } else if (currentStep >= 4) {
-        // If we're past account creation step but no user, go back to step 0
-        setCurrentStep(0);
       }
       
       setLoading(false);
@@ -69,7 +63,7 @@ export const useOnboarding = () => {
       const nextStep = currentStep + 1;
       setCurrentStep(nextStep);
       
-      // Refresh user to make sure we have the latest data
+      // Track analytics event if user is logged in
       const currentUser = await getCurrentUser();
       
       if (currentUser) {
@@ -97,7 +91,7 @@ export const useOnboarding = () => {
       toast.error("No user logged in", {
         description: "Please sign in to complete onboarding."
       });
-      navigate("/auth");
+      setCurrentStep(4); // Go to account creation step
       return;
     }
     
@@ -152,13 +146,19 @@ export const useOnboarding = () => {
 
 const getStepName = (step: number): string => {
   switch (step) {
-    case 1: return "about";
-    case 2: return "how-it-works";
-    case 3: return "signup-prompt";
-    case 4: return "account-creation";
-    case 5: return "interests";
-    case 6: return "profile-setup";
-    case 7: return "final-welcome";
+    case 1: return "welcome";
+    case 2: return "why-did-you-come";
+    case 3: return "mood-check";
+    case 4: return "expression-style";
+    case 5: return "account-creation";
+    case 6: return "interests";
+    case 7: return "communities";
+    case 8: return "wellness-setup";
+    case 9: return "unmute-ritual";
+    case 10: return "profile-setup";
+    case 11: return "first-unmute";
+    case 12: return "welcome-feed";
+    case 13: return "final-welcome";
     default: return "welcome";
   }
 };

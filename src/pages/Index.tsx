@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link } from "react-router-dom";
 import { CountdownTimer } from "@/components/ui/countdown-timer";
@@ -29,7 +30,7 @@ const Index = () => {
         
         <div className="flex items-center space-x-4">
           <Link to="/onboarding" className="text-sm text-gray-600 hover:text-unmute-purple">
-            Learn More
+            Get Started
           </Link>
         </div>
       </header>

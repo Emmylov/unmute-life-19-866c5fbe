@@ -7,6 +7,7 @@ import OnboardingProgress from "@/components/onboarding/OnboardingProgress";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { getCurrentUser } from "@/services/auth-service";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 const TOTAL_STEPS = 12;
 
@@ -19,22 +20,20 @@ const Onboarding = () => {
   } = useOnboarding();
   
   const navigate = useNavigate();
+  const { user } = useAuth();
   
-  // Check if the user is authenticated
+  // Check if the user is already fully onboarded
   useEffect(() => {
-    const checkAuthentication = async () => {
-      const user = await getCurrentUser();
-      
-      // For steps 4 and above, we require authentication
-      if (currentStep >= 4 && !user) {
-        navigate('/auth', { state: { from: '/onboarding' } });
+    const checkOnboardingStatus = async () => {
+      if (user?.user_metadata?.is_onboarded) {
+        navigate('/home');
       }
     };
     
     if (!loading) {
-      checkAuthentication();
+      checkOnboardingStatus();
     }
-  }, [currentStep, loading, navigate]);
+  }, [user, loading, navigate]);
   
   if (loading) {
     return (
