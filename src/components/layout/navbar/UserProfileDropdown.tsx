@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { LogOut } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import EarlyAccessBadge from "@/components/badges/EarlyAccessBadge";
+import OGBadge from "@/components/badges/OGBadge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -50,9 +51,12 @@ const UserProfileDropdown = ({
         </Avatar>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56 glass-card">
-        <DropdownMenuLabel className="flex items-center justify-between">
+        <DropdownMenuLabel className="flex items-center justify-between flex-wrap gap-2">
           My Account
-          <EarlyAccessBadge className="ml-2" />
+          <div className="flex items-center gap-2">
+            <OGBadge className="ml-2" />
+            <EarlyAccessBadge className="ml-2" />
+          </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
