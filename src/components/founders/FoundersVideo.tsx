@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { PlayCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface FoundersVideoProps {
   videoUrl: string;
@@ -31,6 +32,7 @@ const FoundersVideo = ({ videoUrl, className, muted = true, autoPlay = false }: 
       video.onerror = () => {
         console.error("Error loading video from URL:", videoUrl);
         setVideoError(true);
+        toast.error("Couldn't load the founders video");
       };
     };
     
@@ -75,7 +77,10 @@ const FoundersVideo = ({ videoUrl, className, muted = true, autoPlay = false }: 
             controls
             autoPlay
             muted={muted}
-            onError={() => setVideoError(true)}
+            onError={() => {
+              setVideoError(true);
+              toast.error("Error playing video");
+            }}
           />
         </div>
       )}

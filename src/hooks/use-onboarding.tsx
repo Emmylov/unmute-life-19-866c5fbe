@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -28,14 +29,15 @@ export const useOnboarding = () => {
         await refreshProfile();
         
         if (profile) {
+          // Populate onboarding data from profile if available
           setOnboardingData({
-            username: profile.username,
-            full_name: profile.full_name,
-            bio: profile.bio,
-            avatar: profile.avatar,
-            is_activist: profile.is_activist,
+            username: profile.username || '',
+            full_name: profile.full_name || '',
+            bio: profile.bio || '',
+            avatar: profile.avatar || '',
+            is_activist: profile.is_activist || false,
             interests: profile.interests || [],
-            theme_color: profile.theme_color,
+            theme_color: profile.theme_color || '',
           });
           
           if (profile.is_onboarded) {
@@ -44,16 +46,10 @@ export const useOnboarding = () => {
             return;
           }
           
-          // Check for saved onboarding step
-          if (profile.onboarding_step) {
-            const stepIndex = getStepIndexByName(profile.onboarding_step);
-            if (stepIndex > 0) {
-              setCurrentStep(stepIndex);
-            }
-          }
+          // For ongoing onboarding, always start at the beginning for now
+          // This ensures users always see the welcome video
+          setCurrentStep(0);
         }
-        
-        // Keep step at 0 for new users with no profile
       }
       
       setLoading(false);

@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import WaitlistSignupForm from "@/components/waitlist/WaitlistSignupForm";
 import StarterPackSection from "@/components/waitlist/StarterPackSection";
 import TestimonialSection from "@/components/waitlist/TestimonialSection";
@@ -9,6 +9,7 @@ import { ArrowRight } from "lucide-react";
 import useAuthGuard from "@/hooks/use-auth-guard";
 
 const Index = () => {
+  const navigate = useNavigate();
   const { isLoading } = useAuthGuard({ 
     redirectIfAuthenticated: true, 
     authenticatedRedirectTo: "/home" 
@@ -47,13 +48,22 @@ const Index = () => {
           <div className="flex flex-col items-center gap-4 mb-12">
             <WaitlistSignupForm className="max-w-md mx-auto" />
             
-            <div className="text-center">
+            <div className="text-center space-y-4">
               <Link 
                 to="/auth" 
                 className="inline-flex items-center text-unmute-purple hover:text-unmute-purple/80 font-medium"
               >
                 Early access user? Sign in here <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
+              
+              <div>
+                <Button
+                  onClick={() => navigate('/onboarding')}
+                  className="bg-unmute-purple hover:bg-unmute-purple/90 text-white"
+                >
+                  Start Onboarding Experience
+                </Button>
+              </div>
             </div>
           </div>
         </section>

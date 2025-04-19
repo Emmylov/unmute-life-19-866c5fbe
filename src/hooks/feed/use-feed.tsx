@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { getFeedPosts } from '@/services/post-service';
 import { getCurrentUser } from '@/services/auth-service';
@@ -15,6 +15,7 @@ export const useFeed = ({ limit = 10, type = 'personalized', refreshTrigger }: U
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const refreshCountRef = useRef(0);
 
   const fetchFeed = useCallback(async () => {
     setLoading(true);
@@ -52,13 +53,14 @@ export const useFeed = ({ limit = 10, type = 'personalized', refreshTrigger }: U
   // Refresh function that can be called manually
   const refresh = useCallback(() => {
     console.log("Refreshing feed...");
+    refreshCountRef.current += 1;
     fetchFeed();
   }, [fetchFeed]);
 
   // Initial fetch
   useEffect(() => {
     fetchFeed();
-  }, [fetchFeed, refreshTrigger]);
+  }, [fetchFeed, refreshTrigger, refreshCountRef.current]);
 
   return { posts, loading, error, refresh };
 };
