@@ -7,9 +7,10 @@ import { cn } from '@/lib/utils';
 interface FoundersVideoProps {
   videoUrl: string;
   className?: string;
+  muted?: boolean;
 }
 
-const FoundersVideo = ({ videoUrl, className }: FoundersVideoProps) => {
+const FoundersVideo = ({ videoUrl, className, muted = true }: FoundersVideoProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
 
   return (
@@ -35,6 +36,7 @@ const FoundersVideo = ({ videoUrl, className }: FoundersVideoProps) => {
             className="w-full h-full"
             controls
             autoPlay
+            muted={muted}
           />
         </div>
       )}

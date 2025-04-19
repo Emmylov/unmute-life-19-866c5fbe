@@ -1,6 +1,7 @@
 
-import React, { useState } from "react";
-import { Camera, User } from "lucide-react";
+import React, { useRef, useState, useEffect } from "react";
+import { Camera } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface ProfileImageUploaderProps {
   initialImage: string | null;
@@ -11,45 +12,63 @@ const ProfileImageUploader: React.FC<ProfileImageUploaderProps> = ({
   initialImage,
   onImageChange,
 }) => {
-  const [previewImage, setPreviewImage] = useState<string | null>(initialImage);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(initialImage);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const preview = event.target?.result as string;
-        setPreviewImage(preview);
-        onImageChange(preview, file);
-      };
-      reader.readAsDataURL(file);
+  useEffect(() => {
+    if (initialImage) {
+      setPreviewUrl(initialImage);
+    }
+  }, [initialImage]);
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = reader.result as string;
+      setPreviewUrl(result);
+      onImageChange(result, file);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
     }
   };
 
   return (
     <div className="relative">
-      <div className={`w-32 h-32 sm:w-28 sm:h-28 rounded-full flex items-center justify-center overflow-hidden ${
-        previewImage ? "" : "border-2 border-dashed border-gray-300 bg-gray-50"
-      }`}>
-        {previewImage ? (
-          <img src={previewImage} alt="Profile" className="w-full h-full object-cover" />
-        ) : (
-          <User className="h-16 w-16 sm:h-14 sm:w-14 text-gray-400" />
-        )}
-      </div>
-      <label
-        htmlFor="profile-upload"
-        className="absolute -bottom-2 -right-2 w-12 h-12 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-unmute-purple text-white cursor-pointer shadow-md"
+      <Avatar 
+        className="h-24 w-24 sm:h-32 sm:w-32 border-4 border-white shadow-md cursor-pointer group"
+        onClick={handleClick}
       >
-        <Camera className="h-6 w-6 sm:h-5 sm:w-5" />
-        <input
-          id="profile-upload"
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={handleImageUpload}
-        />
-      </label>
+        <AvatarImage src={previewUrl || undefined} alt="Profile picture" />
+        <AvatarFallback className="bg-unmute-purple text-white text-3xl">
+          {previewUrl ? "" : "U"}
+        </AvatarFallback>
+        <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
+          <Camera className="h-8 w-8 text-white" />
+        </div>
+      </Avatar>
+      
+      <div
+        className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-gray-100 border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-gray-200"
+        onClick={handleClick}
+      >
+        <Camera className="h-4 w-4 text-gray-600" />
+      </div>
+      
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        accept="image/*"
+        className="hidden"
+      />
     </div>
   );
 };

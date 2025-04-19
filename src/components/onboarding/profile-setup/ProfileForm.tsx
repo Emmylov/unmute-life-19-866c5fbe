@@ -1,7 +1,6 @@
 
 import React from "react";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import ColorSelector from "./ColorSelector";
 
@@ -9,8 +8,8 @@ interface ProfileFormProps {
   username: string;
   bio: string;
   selectedColor: string;
-  onUsernameChange: (value: string) => void;
-  onBioChange: (value: string) => void;
+  onUsernameChange: (username: string) => void;
+  onBioChange: (bio: string) => void;
   onColorSelect: (color: string) => void;
 }
 
@@ -23,36 +22,44 @@ const ProfileForm: React.FC<ProfileFormProps> = ({
   onColorSelect,
 }) => {
   return (
-    <div className="space-y-6 mb-6 w-full">
+    <div className="space-y-6 w-full">
       <div className="space-y-2">
-        <Label htmlFor="username" className="text-base">Username</Label>
+        <label htmlFor="username" className="text-sm font-medium">
+          Username
+        </label>
         <Input
           id="username"
           placeholder="Choose a username"
           value={username}
           onChange={(e) => onUsernameChange(e.target.value)}
-          required
-          className="text-base p-3 sm:p-2"
+          className="border-gray-300 focus:border-unmute-purple"
         />
       </div>
-      
+
       <div className="space-y-2">
-        <Label htmlFor="bio" className="text-base">Bio</Label>
+        <label htmlFor="bio" className="text-sm font-medium">
+          Bio
+        </label>
         <Textarea
           id="bio"
-          placeholder="Write a short bio..."
+          placeholder="Tell us about yourself..."
           value={bio}
           onChange={(e) => onBioChange(e.target.value)}
-          rows={3}
-          className="text-base p-3 sm:p-2"
+          className="border-gray-300 focus:border-unmute-purple min-h-[120px]"
         />
       </div>
-      
-      <div className="space-y-3">
-        <Label className="text-base">Select a profile theme color</Label>
-        <ColorSelector 
-          selectedColor={selectedColor} 
+
+      <div className="space-y-2">
+        <p className="text-sm font-medium">Select a profile theme color</p>
+        <ColorSelector
+          selectedColor={selectedColor}
           onColorSelect={onColorSelect}
+          colorOptions={[
+            "unmute-purple", 
+            "unmute-pink", 
+            "unmute-blue", 
+            "unmute-green"
+          ]}
         />
       </div>
     </div>

@@ -16,7 +16,7 @@ interface ProfileSetupStepProps {
 const ProfileSetupStep: React.FC<ProfileSetupStepProps> = ({ onNext }) => {
   const [username, setUsername] = useState("");
   const [bio, setBio] = useState("");
-  const [selectedColor, setSelectedColor] = useState("bg-unmute-purple");
+  const [selectedColor, setSelectedColor] = useState("unmute-purple");
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
@@ -31,9 +31,8 @@ const ProfileSetupStep: React.FC<ProfileSetupStepProps> = ({ onNext }) => {
       if (profile.avatar) {
         setPreviewImage(profile.avatar);
       }
-      // Set the color if it exists in the profile
       if (profile.theme_color) {
-        setSelectedColor(`bg-${profile.theme_color}`);
+        setSelectedColor(profile.theme_color);
       }
     }
   }, [profile]);
@@ -43,12 +42,22 @@ const ProfileSetupStep: React.FC<ProfileSetupStepProps> = ({ onNext }) => {
     setImageFile(file);
   };
   
+  // Handler for username change
+  const handleUsernameChange = (newUsername: string) => {
+    setUsername(newUsername);
+  };
+  
+  // Handler for bio change
+  const handleBioChange = (newBio: string) => {
+    setBio(newBio);
+  };
+  
+  // Handler for color selection
+  const handleColorSelect = (newColor: string) => {
+    setSelectedColor(newColor);
+  };
+  
   const saveProfile = async () => {
-    if (!user) {
-      toast.error("No user logged in");
-      return;
-    }
-    
     if (!username.trim()) {
       toast.error("Username is required");
       return;
@@ -56,6 +65,17 @@ const ProfileSetupStep: React.FC<ProfileSetupStepProps> = ({ onNext }) => {
     
     try {
       setLoading(true);
+      
+      // Check if user is authenticated
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session?.user) {
+        toast.error("No user logged in", { 
+          description: "Please sign in to continue with onboarding." 
+        });
+        return;
+      }
+      
+      const userId = sessionData.session.user.id;
       
       // Upload avatar if provided
       let avatarUrl = previewImage;
@@ -72,7 +92,7 @@ const ProfileSetupStep: React.FC<ProfileSetupStepProps> = ({ onNext }) => {
           // Upload the avatar
           const fileExt = imageFile.name.split('.').pop();
           const fileName = `${uuidv4()}.${fileExt}`;
-          const filePath = `${user.id}/${fileName}`;
+          const filePath = `${userId}/${fileName}`;
           
           const { error: uploadError } = await supabase.storage
             .from(STORAGE_BUCKETS.AVATARS)
@@ -91,9 +111,6 @@ const ProfileSetupStep: React.FC<ProfileSetupStepProps> = ({ onNext }) => {
         }
       }
       
-      // Extract the color value without the "bg-" prefix
-      const themeColor = selectedColor.replace('bg-', '');
-      
       // Update the user profile
       const { error: updateError } = await supabase
         .from('profiles')
@@ -101,9 +118,9 @@ const ProfileSetupStep: React.FC<ProfileSetupStepProps> = ({ onNext }) => {
           username,
           bio,
           avatar: avatarUrl,
-          theme_color: themeColor
+          theme_color: selectedColor
         })
-        .eq('id', user.id);
+        .eq('id', userId);
         
       if (updateError) throw updateError;
       
@@ -144,15 +161,15 @@ const ProfileSetupStep: React.FC<ProfileSetupStepProps> = ({ onNext }) => {
         username={username}
         bio={bio}
         selectedColor={selectedColor}
-        onUsernameChange={setUsername}
-        onBioChange={setBio}
-        onColorSelect={setSelectedColor}
+        onUsernameChange={handleUsernameChange}
+        onBioChange={handleBioChange}
+        onColorSelect={handleColorSelect}
       />
       
-      <div className="mt-auto w-full">
+      <div className="mt-auto pt-4 w-full">
         <Button
           onClick={saveProfile}
-          className="unmute-primary-button w-full text-base py-6 sm:py-2"
+          className="unmute-primary-button w-full text-base py-5 sm:py-2"
           disabled={!username || loading}
         >
           {loading ? "Saving..." : "Done!"}
