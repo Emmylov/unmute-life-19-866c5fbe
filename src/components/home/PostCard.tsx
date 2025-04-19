@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useSocialActions } from "@/hooks/use-social-actions";
 import { cn } from "@/lib/utils";
+import OGBadge from "@/components/badges/OGBadge";
 
 interface PostCardProps {
   post: {
@@ -29,12 +29,12 @@ interface PostCardProps {
       username?: string;
       avatar?: string;
       full_name?: string;
+      is_og?: boolean;
     };
   };
 }
 
 const PostCard = ({ post }: PostCardProps) => {
-  // Convert the post format to handle both old and new formats
   const authorName = post.author || post.profiles?.full_name || post.profiles?.username || "Anonymous";
   const authorAvatar = post.avatar || post.profiles?.avatar || '';
   const authorUsername = post.username || post.profiles?.username || "user";
@@ -58,12 +58,10 @@ const PostCard = ({ post }: PostCardProps) => {
     try {
       const result = await toggleLikePost(post.id as string);
       if (result !== isLiked) {
-        // Reset if API call gives different result
         setIsLiked(result);
         setLikeCount(prev => result ? prev + 1 : prev - 1);
       }
     } catch (error) {
-      // Reset on error
       setIsLiked(!isLiked);
       setLikeCount(prev => isLiked ? prev - 1 : prev + 1);
       toast.error("Failed to update like status");
@@ -101,7 +99,6 @@ const PostCard = ({ post }: PostCardProps) => {
   return (
     <Card className="overflow-hidden border-none shadow-md hover:shadow-lg transition-shadow duration-300">
       <CardContent className="p-4">
-        {/* Post Header - User Info */}
         <div className="flex items-center gap-3 mb-4">
           <Avatar className="h-10 w-10 ring-2 ring-white">
             <AvatarImage src={authorAvatar} />
@@ -110,7 +107,10 @@ const PostCard = ({ post }: PostCardProps) => {
             </AvatarFallback>
           </Avatar>
           <div className="flex-1">
-            <h4 className="font-semibold text-sm">{authorName}</h4>
+            <div className="flex items-center gap-2">
+              <h4 className="font-semibold text-sm">{authorName}</h4>
+              {post.profiles?.is_og && <OGBadge />}
+            </div>
             <div className="flex items-center">
               <p className="text-xs text-gray-500">{postDate}</p>
               {moodEmoji && (
@@ -122,7 +122,6 @@ const PostCard = ({ post }: PostCardProps) => {
           </div>
         </div>
 
-        {/* Post Content */}
         <div className="mb-4">
           <p className="text-gray-800 whitespace-pre-wrap">{postContent}</p>
           {imageUrl && (
@@ -134,7 +133,6 @@ const PostCard = ({ post }: PostCardProps) => {
           )}
         </div>
 
-        {/* Post Actions */}
         <div className="flex items-center justify-between pt-3 border-t">
           <div className="flex gap-2">
             <Button 

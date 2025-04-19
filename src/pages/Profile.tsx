@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogTitle, DialogHeader } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { OGBadge } from "@/components/ui/og-badge";
 
 const fadeIn = {
   hidden: { opacity: 0, y: 10 },
@@ -428,7 +429,10 @@ const Profile = () => {
         </motion.div>
         
         <motion.div variants={fadeIn} className="mt-4">
-          <h1 className="text-2xl font-bold">{profile.full_name || profile.username}</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold">{profile.full_name || profile.username}</h1>
+            {profile.is_og && <OGBadge />}
+          </div>
           <p className="text-gray-600 mb-2">@{profile.username}</p>
           
           {profile.location && (
