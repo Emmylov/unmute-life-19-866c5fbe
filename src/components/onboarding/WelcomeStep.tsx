@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Volume2, VolumeX } from "lucide-react";
+import FoundersVideo from "@/components/founders/FoundersVideo";
 
 interface WelcomeStepProps {
   onNext: () => void;
@@ -14,6 +15,8 @@ const WelcomeStep = ({ onNext }: WelcomeStepProps) => {
     setIsMuted(!isMuted);
     // Add sound handling logic here
   };
+
+  const founderVideoUrl = "https://kjjnnzwtqniqmaupecle.supabase.co/storage/v1/object/public/founders/welcome-video.mp4";
 
   return (
     <div className="flex flex-col items-center justify-center flex-grow text-center p-6">
@@ -47,11 +50,8 @@ const WelcomeStep = ({ onNext }: WelcomeStepProps) => {
         The internet is loud. This is your quiet, powerful space to be real.
       </p>
 
-      <div className="w-full max-w-md aspect-video rounded-xl overflow-hidden bg-gray-100 mb-8">
-        {/* Add your founder video component here */}
-        <div className="w-full h-full flex items-center justify-center text-gray-400">
-          Founder's Welcome Video
-        </div>
+      <div className="w-full max-w-md mb-8">
+        <FoundersVideo videoUrl={founderVideoUrl} />
       </div>
 
       <Button onClick={onNext} className="unmute-primary-button">

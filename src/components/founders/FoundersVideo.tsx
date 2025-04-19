@@ -1,7 +1,8 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { PlayCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface FoundersVideoProps {
   videoUrl: string;
