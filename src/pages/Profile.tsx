@@ -17,7 +17,7 @@ import { Dialog, DialogContent, DialogTitle, DialogHeader } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { OGBadge } from "@/components/ui/og-badge";
+import OGBadge from "@/components/badges/OGBadge";
 
 const fadeIn = {
   hidden: { opacity: 0, y: 10 },
