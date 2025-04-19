@@ -1,8 +1,9 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Volume2, VolumeX } from "lucide-react";
 import FoundersVideo from "@/components/founders/FoundersVideo";
+import { toast } from "sonner";
 
 interface WelcomeStepProps {
   onNext: () => void;
@@ -10,13 +11,35 @@ interface WelcomeStepProps {
 
 const WelcomeStep = ({ onNext }: WelcomeStepProps) => {
   const [isMuted, setIsMuted] = useState(true);
+  const [isVideoLoaded, setIsVideoLoaded] = useState(false);
+
+  // This is the URL for the founders video
+  const founderVideoUrl = "https://kjjnnzwtqniqmaupecle.supabase.co/storage/v1/object/public/founders/welcome-video.mp4";
+
+  useEffect(() => {
+    // Check if video is accessible
+    const preloadVideo = () => {
+      const video = document.createElement('video');
+      video.src = founderVideoUrl;
+      
+      video.onloadeddata = () => {
+        setIsVideoLoaded(true);
+      };
+      
+      video.onerror = () => {
+        console.error("Error loading founders video");
+        toast.error("Couldn't load the welcome video", {
+          description: "Please continue with onboarding"
+        });
+      };
+    };
+    
+    preloadVideo();
+  }, [founderVideoUrl]);
 
   const toggleSound = () => {
     setIsMuted(!isMuted);
-    // Add sound handling logic here
   };
-
-  const founderVideoUrl = "https://kjjnnzwtqniqmaupecle.supabase.co/storage/v1/object/public/founders/welcome-video.mp4";
 
   return (
     <div className="flex flex-col items-center justify-center flex-grow text-center p-6">
@@ -51,7 +74,10 @@ const WelcomeStep = ({ onNext }: WelcomeStepProps) => {
       </p>
 
       <div className="w-full max-w-md mb-8">
-        <FoundersVideo videoUrl={founderVideoUrl} />
+        <FoundersVideo 
+          videoUrl={founderVideoUrl} 
+          muted={isMuted}
+        />
       </div>
 
       <Button onClick={onNext} className="unmute-primary-button">

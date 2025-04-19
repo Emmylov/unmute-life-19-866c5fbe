@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -7,10 +6,10 @@ import { updateOnboardingStep, saveOnboardingData } from "@/services/user-settin
 import { toast } from "sonner";
 import { getCurrentUser } from "@/services/auth-service";
 
-const TOTAL_STEPS = 13; // Updated from 12 to 13 since we added a step
+const TOTAL_STEPS = 13;
 
 export const useOnboarding = () => {
-  const [currentStep, setCurrentStep] = useState(0);
+  const [currentStep, setCurrentStep] = useState(0); // Always start at 0
   const [loading, setLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [onboardingData, setOnboardingData] = useState<any>({});
@@ -44,19 +43,24 @@ export const useOnboarding = () => {
             navigate('/home');
             return;
           }
+          
+          // Check for saved onboarding step
+          if (profile.onboarding_step) {
+            const stepIndex = getStepIndexByName(profile.onboarding_step);
+            if (stepIndex > 0) {
+              setCurrentStep(stepIndex);
+            }
+          }
         }
         
-        // If we're still at step 0-3 but user exists, move to step 5
-        if (currentStep < 4 && currentUser) {
-          setCurrentStep(5);
-        }
+        // Keep step at 0 for new users with no profile
       }
       
       setLoading(false);
     };
     
     checkOnboardingStatus();
-  }, [navigate, currentStep, user, profile, refreshProfile]);
+  }, [navigate, user, profile, refreshProfile]);
 
   const handleNext = async () => {
     if (currentStep < TOTAL_STEPS - 1) {
@@ -144,21 +148,41 @@ export const useOnboarding = () => {
   };
 };
 
+// Helper function to get step index by name
+const getStepIndexByName = (stepName: string): number => {
+  switch (stepName) {
+    case "welcome": return 0;
+    case "why-did-you-come": return 1;
+    case "mood-check": return 2;
+    case "expression-style": return 3;
+    case "account-creation": return 4;
+    case "interests": return 5;
+    case "communities": return 6;
+    case "wellness-setup": return 7;
+    case "unmute-ritual": return 8;
+    case "profile-setup": return 9;
+    case "first-unmute": return 10;
+    case "welcome-feed": return 11;
+    case "final-welcome": return 12;
+    default: return 0;
+  }
+};
+
 const getStepName = (step: number): string => {
   switch (step) {
-    case 1: return "welcome";
-    case 2: return "why-did-you-come";
-    case 3: return "mood-check";
-    case 4: return "expression-style";
-    case 5: return "account-creation";
-    case 6: return "interests";
-    case 7: return "communities";
-    case 8: return "wellness-setup";
-    case 9: return "unmute-ritual";
-    case 10: return "profile-setup";
-    case 11: return "first-unmute";
-    case 12: return "welcome-feed";
-    case 13: return "final-welcome";
+    case 0: return "welcome";
+    case 1: return "why-did-you-come";
+    case 2: return "mood-check";
+    case 3: return "expression-style";
+    case 4: return "account-creation";
+    case 5: return "interests";
+    case 6: return "communities";
+    case 7: return "wellness-setup";
+    case 8: return "unmute-ritual";
+    case 9: return "profile-setup";
+    case 10: return "first-unmute";
+    case 11: return "welcome-feed";
+    case 12: return "final-welcome";
     default: return "welcome";
   }
 };

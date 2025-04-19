@@ -1,115 +1,66 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from "@/contexts/AuthContext";
-import { trackAnalyticEvent } from "@/services/analytics-service";
-import { toast } from "sonner";
-import {
-  fetchFollowingFeed,
-  fetchTrendingFeed,
-  fetchMusicFeed,
-  fetchCollabsFeed,
-  fetchPersonalizedFeed
-} from './feed-fetchers';
-import { Post } from './feed-utils';
+import { supabase } from '@/integrations/supabase/client';
+import { getFeedPosts } from '@/services/post-service';
+import { getCurrentUser } from '@/services/auth-service';
+import { toast } from 'sonner';
 
-interface FeedOptions {
-  feedType?: 'forYou' | 'following' | 'trending' | 'music' | 'collabs';
+interface UseFeedProps {
   limit?: number;
-  tags?: string[];
+  type?: 'following' | 'trending' | 'personalized';
+  refreshTrigger?: any;
 }
 
-export const useFeed = (options: FeedOptions = {}) => {
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState<boolean>(true);
-  const [offset, setOffset] = useState<number>(0);
-  const { user, profile } = useAuth();
-  
-  const { 
-    feedType = 'forYou', 
-    limit = 10,
-    tags
-  } = options;
-  
-  const fetchFeed = useCallback(async (reset: boolean = false) => {
-    if (!user) return;
+export const useFeed = ({ limit = 10, type = 'personalized', refreshTrigger }: UseFeedProps = {}) => {
+  const [posts, setPosts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  const fetchFeed = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     
     try {
-      setLoading(true);
-      setError(null);
+      const currentUser = await getCurrentUser();
       
-      const newOffset = reset ? 0 : offset;
-      let newPosts: Post[] = [];
-      
-      switch (feedType) {
-        case 'following':
-          newPosts = await fetchFollowingFeed(user.id, limit, newOffset);
-          break;
+      if (!currentUser) {
+        // If no user, get some general posts
+        const { data, error } = await supabase
+          .from('posts_images')
+          .select('*, profiles(*)')
+          .order('created_at', { ascending: false })
+          .limit(limit);
           
-        case 'trending':
-          newPosts = await fetchTrendingFeed(limit, newOffset);
-          break;
-          
-        case 'music':
-          newPosts = await fetchMusicFeed(limit, newOffset);
-          break;
-          
-        case 'collabs':
-          newPosts = await fetchCollabsFeed(limit, newOffset);
-          break;
-          
-        case 'forYou':
-        default:
-          newPosts = await fetchPersonalizedFeed(user.id, profile?.interests, limit, newOffset);
-          break;
+        if (error) throw error;
+        setPosts(data || []);
+        return;
       }
       
-      setHasMore(newPosts.length === limit);
-      
-      if (reset) {
-        setPosts(newPosts);
-      } else {
-        setPosts(prev => [...prev, ...newPosts]);
-      }
-      
-      if (reset) {
-        setOffset(limit);
-      } else {
-        setOffset(offset + limit);
-      }
-      
-      trackAnalyticEvent(user.id, 'feed_view', { feed_type: feedType, offset: newOffset, limit });
-    } catch (err: any) {
-      console.error("Error fetching feed:", err);
-      setError(err.message || "Failed to load feed");
-      toast.error("Failed to load feed");
+      // Get feed posts based on who the user follows
+      const feedPosts = await getFeedPosts(currentUser.id, limit);
+      console.log("Feed posts fetched:", feedPosts);
+      setPosts(feedPosts || []);
+    } catch (err) {
+      console.error('Error fetching feed:', err);
+      setError(err instanceof Error ? err : new Error('Failed to fetch feed'));
+      toast.error('Failed to load feed. Please try refreshing the page.');
     } finally {
       setLoading(false);
     }
-  }, [user, profile, feedType, limit, offset, tags]);
-  
-  const fetchMore = useCallback(() => {
-    if (loading || !hasMore) return;
-    fetchFeed();
-  }, [fetchFeed, loading, hasMore]);
-  
+  }, [limit]);
+
+  // Refresh function that can be called manually
   const refresh = useCallback(() => {
-    fetchFeed(true);
+    console.log("Refreshing feed...");
+    fetchFeed();
   }, [fetchFeed]);
-  
+
+  // Initial fetch
   useEffect(() => {
-    if (user) {
-      fetchFeed(true);
-    }
-  }, [user, feedType, tags]);
-  
-  return {
-    posts,
-    loading,
-    error,
-    hasMore,
-    fetchMore,
-    refresh
-  };
+    fetchFeed();
+  }, [fetchFeed, refreshTrigger]);
+
+  return { posts, loading, error, refresh };
 };
+
+export default useFeed;

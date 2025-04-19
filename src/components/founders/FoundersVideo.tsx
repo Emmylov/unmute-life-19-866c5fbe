@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { PlayCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -8,14 +8,52 @@ interface FoundersVideoProps {
   videoUrl: string;
   className?: string;
   muted?: boolean;
+  autoPlay?: boolean;
 }
 
-const FoundersVideo = ({ videoUrl, className, muted = true }: FoundersVideoProps) => {
+const FoundersVideo = ({ videoUrl, className, muted = true, autoPlay = false }: FoundersVideoProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
+  const [videoError, setVideoError] = useState(false);
+
+  // Attempt to preload the video to check if it exists
+  useEffect(() => {
+    const checkVideo = () => {
+      const video = document.createElement("video");
+      video.src = videoUrl;
+      
+      video.onloadeddata = () => {
+        setVideoError(false);
+        if (autoPlay) {
+          setIsPlaying(true);
+        }
+      };
+      
+      video.onerror = () => {
+        console.error("Error loading video from URL:", videoUrl);
+        setVideoError(true);
+      };
+    };
+    
+    if (videoUrl) {
+      checkVideo();
+    }
+    
+    // Clean up
+    return () => {
+      setVideoError(false);
+    };
+  }, [videoUrl, autoPlay]);
 
   return (
     <Card className={cn("overflow-hidden relative group", className)}>
-      {!isPlaying ? (
+      {videoError ? (
+        <div className="aspect-video bg-gray-900 flex items-center justify-center">
+          <div className="text-white text-center p-4">
+            <p>Video not available</p>
+            <p className="text-sm opacity-70 mt-2">Please check the video URL</p>
+          </div>
+        </div>
+      ) : !isPlaying ? (
         <div 
           className="relative cursor-pointer"
           onClick={() => setIsPlaying(true)}
@@ -37,6 +75,7 @@ const FoundersVideo = ({ videoUrl, className, muted = true }: FoundersVideoProps
             controls
             autoPlay
             muted={muted}
+            onError={() => setVideoError(true)}
           />
         </div>
       )}

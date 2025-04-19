@@ -94,6 +94,7 @@ const CreatePost = ({ profile, onPostCreated }: CreatePostProps) => {
     
     try {
       let imageUrl = null;
+      let createdPost = null;
       
       // Upload image if selected
       if (selectedImage) {
@@ -110,24 +111,26 @@ const CreatePost = ({ profile, onPostCreated }: CreatePostProps) => {
       // Determine which table to insert into based on content type
       if (imageUrl) {
         // Create an image post
-        const { error } = await supabase.from('posts_images').insert({
+        const { data, error } = await supabase.from('posts_images').insert({
           user_id: profile.id,
           image_urls: [imageUrl],
           caption: newPostText || null,
           visibility: visibility
-        });
+        }).select();
         
         if (error) throw error;
+        createdPost = data?.[0];
       } else {
         // Create a text post
-        const { error } = await supabase.from('posts_text').insert({
+        const { data, error } = await supabase.from('posts_text').insert({
           user_id: profile.id,
           body: newPostText,
           emoji_mood: selectedMood,
           visibility: visibility
-        });
+        }).select();
         
         if (error) throw error;
+        createdPost = data?.[0];
       }
       
       // Reset form
@@ -136,6 +139,8 @@ const CreatePost = ({ profile, onPostCreated }: CreatePostProps) => {
       setSelectedImage(null);
       setPreviewImage(null);
       setVisibility('public');
+      
+      console.log("Post created successfully:", createdPost);
       
       // Notify parent component
       onPostCreated();
