@@ -1,9 +1,10 @@
+
 import React, { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import StarterPackSection from "@/components/waitlist/StarterPackSection";
 import TestimonialSection from "@/components/waitlist/TestimonialSection";
 import { Button } from "@/components/ui/button";
-import { PartyPopper, Confetti, ChevronDown, Gift } from "lucide-react";
+import { PartyPopper, Sparkles, ChevronDown, Gift } from "lucide-react";
 import useAuthGuard from "@/hooks/use-auth-guard";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
@@ -108,7 +109,7 @@ const Index = () => {
           <div className="inline-flex items-center gap-2 mb-4 px-6 py-2 bg-gradient-to-r from-yellow-400/20 to-pink-400/20 backdrop-blur-sm rounded-full text-lg font-medium text-unmute-purple border border-yellow-400/30 animate-pulse">
             <PartyPopper className="w-6 h-6 text-yellow-400" />
             Launch Party Now Live!
-            <Confetti className="w-6 h-6 text-pink-400" />
+            <Sparkles className="w-6 h-6 text-pink-400" />
           </div>
           
           <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
