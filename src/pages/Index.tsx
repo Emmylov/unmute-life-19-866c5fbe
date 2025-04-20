@@ -1,12 +1,13 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import WaitlistSignupForm from "@/components/waitlist/WaitlistSignupForm";
 import StarterPackSection from "@/components/waitlist/StarterPackSection";
 import TestimonialSection from "@/components/waitlist/TestimonialSection";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ChevronDown, Gift } from "lucide-react";
 import useAuthGuard from "@/hooks/use-auth-guard";
+import { toast } from "sonner";
+import confetti from "canvas-confetti";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -14,6 +15,46 @@ const Index = () => {
     redirectIfAuthenticated: true, 
     authenticatedRedirectTo: "/home" 
   });
+  
+  useEffect(() => {
+    // Launch day celebration effect
+    const launchConfetti = () => {
+      const duration = 3 * 1000;
+      const end = Date.now() + duration;
+
+      const runConfetti = () => {
+        confetti({
+          particleCount: 2,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0 },
+          colors: ['#9b87f5', '#f59bf1', '#87c9f5']
+        });
+        
+        confetti({
+          particleCount: 2,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1 },
+          colors: ['#9b87f5', '#f59bf1', '#87c9f5']
+        });
+
+        if (Date.now() < end) {
+          requestAnimationFrame(runConfetti);
+        }
+      };
+      
+      runConfetti();
+    };
+    
+    launchConfetti();
+    
+    // Show launch toast
+    toast.success("We're officially launched! 🎉", {
+      description: "Welcome to Unmute - Your space to be heard.",
+      duration: 5000,
+    });
+  }, []);
   
   if (isLoading) {
     return <div className="min-h-screen flex items-center justify-center">
@@ -36,41 +77,63 @@ const Index = () => {
       </header>
       
       <main className="flex-grow flex flex-col">
-        <section className="max-w-6xl mx-auto px-6 py-8 md:py-12 text-center">
-          <h1 className="text-4xl md:text-6xl font-bold mb-4 leading-tight">
-            <span className="unmute-gradient-text">Welcome to Unmute!</span>
+        <section className="max-w-6xl mx-auto px-6 py-12 md:py-20 text-center">
+          <div className="inline-block mb-4 px-4 py-1 bg-white/60 backdrop-blur-sm rounded-full text-sm font-medium text-unmute-purple border border-unmute-purple/20">
+            🎉 We're officially launched!
+          </div>
+          
+          <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
+            <span className="unmute-gradient-text">Your voice matters.</span>
           </h1>
           
-          <p className="text-xl md:text-2xl text-gray-700 mb-6 max-w-2xl mx-auto">
-            Join the movement. Be one of the first. Get the OG Starter Pack.
+          <p className="text-xl md:text-2xl text-gray-700 mb-8 max-w-3xl mx-auto">
+            Join the movement. Express yourself authentically. Connect meaningfully.
           </p>
 
-          <div className="flex flex-col items-center gap-4 mb-12">
-            <WaitlistSignupForm className="max-w-md mx-auto" />
+          <div className="flex flex-col md:flex-row items-center justify-center gap-4 mb-12">
+            <Button 
+              onClick={() => navigate('/auth')}
+              className="bg-unmute-purple hover:bg-unmute-purple/90 text-white px-8 py-6 h-auto text-lg"
+              size="lg"
+            >
+              Get Started Now
+            </Button>
             
-            <div className="text-center space-y-4">
-              <Link 
-                to="/auth" 
-                className="inline-flex items-center text-unmute-purple hover:text-unmute-purple/80 font-medium"
-              >
-                Early access user? Sign in here <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-              
-              <div>
-                <Button
-                  onClick={() => navigate('/onboarding')}
-                  className="bg-unmute-purple hover:bg-unmute-purple/90 text-white"
-                >
-                  Start Onboarding Experience
-                </Button>
+            <Button 
+              onClick={() => navigate('/onboarding')}
+              variant="outline"
+              className="border-unmute-purple text-unmute-purple hover:bg-unmute-purple/10 px-8 py-6 h-auto text-lg"
+              size="lg"
+            >
+              Take the Tour
+            </Button>
+          </div>
+          
+          <div className="mt-16 flex justify-center">
+            <ChevronDown className="w-10 h-10 text-unmute-purple/70 animate-bounce" />
+          </div>
+        </section>
+        
+        <section className="py-16 bg-white/30 backdrop-blur-sm">
+          <div className="max-w-6xl mx-auto px-6 text-center">
+            <h2 className="text-3xl md:text-4xl font-bold mb-6">
+              Launch Day Special
+            </h2>
+            <p className="text-xl text-gray-700 mb-12 max-w-3xl mx-auto">
+              Join today and get the exclusive OG Starter Pack with premium features and customizations.
+            </p>
+            
+            <div className="bg-gradient-to-r from-unmute-purple/10 to-unmute-pink/10 p-6 md:p-10 rounded-2xl border border-white/60 mb-16">
+              <div className="flex items-center justify-center mb-6">
+                <Gift className="h-12 w-12 text-unmute-purple mr-4" />
+                <h3 className="text-2xl md:text-3xl font-bold">OG Starter Pack</h3>
               </div>
+              <StarterPackSection className="bg-transparent py-0" />
             </div>
           </div>
         </section>
         
-        <StarterPackSection />
-        
-        <section className="py-12 bg-gradient-to-b from-white/0 to-unmute-purple/10">
+        <section className="py-16 bg-gradient-to-b from-white/0 to-unmute-purple/10">
           <div className="max-w-4xl mx-auto px-6 text-center">
             <TestimonialSection />
           </div>

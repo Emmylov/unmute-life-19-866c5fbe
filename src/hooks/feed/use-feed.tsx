@@ -26,9 +26,10 @@ export const useFeed = ({ limit = 10, type = 'personalized', refreshTrigger }: U
       
       if (!currentUser) {
         // If no user, get some general posts
+        // Use posts table directly instead of posts_images which seems to have an issue with the profiles relation
         const { data, error } = await supabase
-          .from('posts_images')
-          .select('*, profiles(*)')
+          .from('posts')
+          .select('*, profiles:user_id(*)')
           .order('created_at', { ascending: false })
           .limit(limit);
           
@@ -43,12 +44,30 @@ export const useFeed = ({ limit = 10, type = 'personalized', refreshTrigger }: U
       setPosts(feedPosts || []);
     } catch (err) {
       console.error('Error fetching feed:', err);
+      
+      // Fallback to simple posts query if there's an error
+      try {
+        console.log("Using fallback posts query");
+        const { data: fallbackPosts } = await supabase
+          .from('posts')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(limit);
+          
+        if (fallbackPosts && fallbackPosts.length > 0) {
+          setPosts(fallbackPosts);
+          return;
+        }
+      } catch (fallbackErr) {
+        console.error("Fallback query failed too:", fallbackErr);
+      }
+      
       setError(err instanceof Error ? err : new Error('Failed to fetch feed'));
       toast.error('Failed to load feed. Please try refreshing the page.');
     } finally {
       setLoading(false);
     }
-  }, [limit]);
+  }, [limit, type]);
 
   // Refresh function that can be called manually
   const refresh = useCallback(() => {
