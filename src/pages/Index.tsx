@@ -3,10 +3,11 @@ import { Link, useNavigate } from "react-router-dom";
 import StarterPackSection from "@/components/waitlist/StarterPackSection";
 import TestimonialSection from "@/components/waitlist/TestimonialSection";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, ChevronDown, Gift } from "lucide-react";
+import { PartyPopper, Confetti, ChevronDown, Gift } from "lucide-react";
 import useAuthGuard from "@/hooks/use-auth-guard";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
+import { playSound } from "@/utils/sound-effects";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -16,26 +17,32 @@ const Index = () => {
   });
   
   useEffect(() => {
-    // Launch day celebration effect
-    const launchConfetti = () => {
-      const duration = 3 * 1000;
+    // Launch party celebration effects
+    const launchParty = () => {
+      const duration = 5 * 1000;
       const end = Date.now() + duration;
+      
+      const colors = ['#9b87f5', '#f59bf1', '#87c9f5', '#FFD700', '#FF69B4'];
 
       const runConfetti = () => {
         confetti({
-          particleCount: 2,
+          particleCount: 3,
           angle: 60,
           spread: 55,
           origin: { x: 0 },
-          colors: ['#9b87f5', '#f59bf1', '#87c9f5']
+          colors: colors,
+          shapes: ['circle', 'square'],
+          scalar: 2
         });
         
         confetti({
-          particleCount: 2,
+          particleCount: 3,
           angle: 120,
           spread: 55,
           origin: { x: 1 },
-          colors: ['#9b87f5', '#f59bf1', '#87c9f5']
+          colors: colors,
+          shapes: ['circle', 'square'],
+          scalar: 2
         });
 
         if (Date.now() < end) {
@@ -44,15 +51,36 @@ const Index = () => {
       };
       
       runConfetti();
+      
+      // Add some celebratory sprinkles from the middle
+      setTimeout(() => {
+        confetti({
+          particleCount: 50,
+          spread: 100,
+          origin: { y: 0.6 },
+          colors: colors,
+          shapes: ['star'],
+          scalar: 2
+        });
+      }, 500);
+      
+      // Try to play celebration sound
+      playSound('reward', 0.3).catch(() => {
+        // Silently fail if sound can't play
+      });
     };
     
-    launchConfetti();
+    launchParty();
     
-    // Show launch toast
-    toast.success("We're officially launched! 🎉", {
-      description: "Welcome to Unmute - Your space to be heard.",
-      duration: 5000,
-    });
+    // Show launch party toast
+    toast.success(
+      "🎉 Launch Party Time!", 
+      {
+        description: "Join us in celebrating the official launch of Unmute! Get your exclusive OG Pack now.",
+        duration: 6000,
+        icon: <PartyPopper className="text-yellow-400 animate-bounce" />
+      }
+    );
   }, []);
   
   if (isLoading) {
@@ -77,8 +105,10 @@ const Index = () => {
       
       <main className="flex-grow flex flex-col">
         <section className="max-w-6xl mx-auto px-6 py-12 md:py-20 text-center">
-          <div className="inline-block mb-4 px-4 py-1 bg-white/60 backdrop-blur-sm rounded-full text-sm font-medium text-unmute-purple border border-unmute-purple/20">
-            🎉 We're officially launched!
+          <div className="inline-flex items-center gap-2 mb-4 px-6 py-2 bg-gradient-to-r from-yellow-400/20 to-pink-400/20 backdrop-blur-sm rounded-full text-lg font-medium text-unmute-purple border border-yellow-400/30 animate-pulse">
+            <PartyPopper className="w-6 h-6 text-yellow-400" />
+            Launch Party Now Live!
+            <Confetti className="w-6 h-6 text-pink-400" />
           </div>
           
           <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
@@ -86,22 +116,23 @@ const Index = () => {
           </h1>
           
           <p className="text-xl md:text-2xl text-gray-700 mb-8 max-w-3xl mx-auto">
-            Join the movement. Express yourself authentically. Connect meaningfully.
+            Join the celebration. Express yourself authentically. Connect meaningfully.
           </p>
 
           <div className="flex flex-col md:flex-row items-center justify-center gap-4 mb-12">
             <Button 
               onClick={() => navigate('/auth')}
-              className="bg-unmute-purple hover:bg-unmute-purple/90 text-white px-8 py-6 h-auto text-lg"
+              className="bg-gradient-to-r from-unmute-purple to-unmute-pink hover:opacity-90 text-white px-8 py-6 h-auto text-lg group transition-all duration-300 animate-pulse"
               size="lg"
             >
-              Get Started Now
+              <Gift className="mr-2 w-5 h-5 group-hover:rotate-12 transition-transform" />
+              Join the Party Now
             </Button>
             
             <Button 
               onClick={() => navigate('/onboarding')}
               variant="outline"
-              className="border-unmute-purple text-unmute-purple hover:bg-unmute-purple/10 px-8 py-6 h-auto text-lg"
+              className="border-2 border-unmute-purple text-unmute-purple hover:bg-unmute-purple/10 px-8 py-6 h-auto text-lg"
               size="lg"
             >
               Take the Tour
