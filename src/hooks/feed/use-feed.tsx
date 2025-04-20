@@ -25,45 +25,52 @@ export const useFeed = ({ limit = 10, type = 'personalized', refreshTrigger }: U
       const currentUser = await getCurrentUser();
       
       if (!currentUser) {
-        // If no user, get some general posts
-        // Use posts table directly instead of posts_images which seems to have an issue with the profiles relation
-        const { data, error } = await supabase
+        // If no user, get general posts using a simpler query
+        const { data: generalPosts, error: generalError } = await supabase
           .from('posts')
-          .select('*, profiles:user_id(*)')
+          .select(`
+            *,
+            user:user_id (
+              id,
+              email
+            )
+          `)
           .order('created_at', { ascending: false })
           .limit(limit);
           
-        if (error) throw error;
-        setPosts(data || []);
+        if (generalError) throw generalError;
+        setPosts(generalPosts || []);
         return;
       }
       
-      // Get feed posts based on who the user follows
-      const feedPosts = await getFeedPosts(currentUser.id, limit);
-      console.log("Feed posts fetched:", feedPosts);
-      setPosts(feedPosts || []);
-    } catch (err) {
-      console.error('Error fetching feed:', err);
-      
-      // Fallback to simple posts query if there's an error
       try {
+        // First attempt with full relations
+        const feedPosts = await getFeedPosts(currentUser.id, limit);
+        setPosts(feedPosts || []);
+      } catch (err) {
+        console.error("Error with primary feed query:", err);
+        
+        // Fallback to simpler query if the relation query fails
         console.log("Using fallback posts query");
-        const { data: fallbackPosts } = await supabase
+        const { data: fallbackPosts, error: fallbackError } = await supabase
           .from('posts')
           .select('*')
           .order('created_at', { ascending: false })
           .limit(limit);
           
+        if (fallbackError) throw fallbackError;
+        
         if (fallbackPosts && fallbackPosts.length > 0) {
           setPosts(fallbackPosts);
           return;
         }
-      } catch (fallbackErr) {
-        console.error("Fallback query failed too:", fallbackErr);
       }
-      
+    } catch (err) {
+      console.error('Error fetching feed:', err);
       setError(err instanceof Error ? err : new Error('Failed to fetch feed'));
-      toast.error('Failed to load feed. Please try refreshing the page.');
+      toast.error('Failed to load feed', {
+        description: 'Please try refreshing the page.'
+      });
     } finally {
       setLoading(false);
     }

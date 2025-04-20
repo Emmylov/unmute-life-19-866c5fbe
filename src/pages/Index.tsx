@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import StarterPackSection from "@/components/waitlist/StarterPackSection";
@@ -115,22 +114,7 @@ const Index = () => {
         </section>
         
         <section className="py-16 bg-white/30 backdrop-blur-sm">
-          <div className="max-w-6xl mx-auto px-6 text-center">
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">
-              Launch Day Special
-            </h2>
-            <p className="text-xl text-gray-700 mb-12 max-w-3xl mx-auto">
-              Join today and get the exclusive OG Starter Pack with premium features and customizations.
-            </p>
-            
-            <div className="bg-gradient-to-r from-unmute-purple/10 to-unmute-pink/10 p-6 md:p-10 rounded-2xl border border-white/60 mb-16">
-              <div className="flex items-center justify-center mb-6">
-                <Gift className="h-12 w-12 text-unmute-purple mr-4" />
-                <h3 className="text-2xl md:text-3xl font-bold">OG Starter Pack</h3>
-              </div>
-              <StarterPackSection className="bg-transparent py-0" />
-            </div>
-          </div>
+          <StarterPackSection className="bg-transparent py-0" />
         </section>
         
         <section className="py-16 bg-gradient-to-b from-white/0 to-unmute-purple/10">
