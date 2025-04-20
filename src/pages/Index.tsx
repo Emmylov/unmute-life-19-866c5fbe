@@ -193,7 +193,7 @@ const Index = () => {
               
               <div className="order-1 md:order-2" id="founder-video">
                 <FoundersVideo 
-                  videoUrl="https://storage.googleapis.com/unmute-dev/founders-message.mp4" 
+                  videoUrl="https://lovable-uploads.s3.amazonaws.com/default/founder-story.mp4" 
                   className="shadow-xl rounded-xl overflow-hidden"
                 />
               </div>

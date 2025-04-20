@@ -14,7 +14,7 @@ const WelcomeStep = ({ onNext }: WelcomeStepProps) => {
   const [isVideoLoaded, setIsVideoLoaded] = useState(false);
 
   // This is the URL for the founders video
-  const founderVideoUrl = "https://kjjnnzwtqniqmaupecle.supabase.co/storage/v1/object/public/founders/welcome-video.mp4";
+  const founderVideoUrl = "https://lovable-uploads.s3.amazonaws.com/default/welcome-video.mp4";
 
   useEffect(() => {
     // Check if video is accessible
