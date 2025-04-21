@@ -59,9 +59,10 @@ const WelcomeStep = ({ onNext }: WelcomeStepProps) => {
     });
   };
 
-  // Allow users to skip this step if they're having problems
+  // This function was calling onNext, which causes the problem of not skipping
   const handleSkip = () => {
     toast.info("Skipping welcome video");
+    // Call onNext directly to advance to the next step
     onNext();
   };
 
