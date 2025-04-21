@@ -19,7 +19,19 @@ const AppLayout = ({ children, pageTitle }: AppLayoutProps) => {
   const showMobileNav = isMobile && !isReelsPage;
   
   useEffect(() => {
+    // Scroll to top when route changes
     window.scrollTo(0, 0);
+    
+    // Add proper viewport meta for mobile devices
+    const viewportMeta = document.querySelector('meta[name="viewport"]');
+    if (viewportMeta) {
+      viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0');
+    } else {
+      const meta = document.createElement('meta');
+      meta.name = 'viewport';
+      meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0';
+      document.getElementsByTagName('head')[0].appendChild(meta);
+    }
   }, [location.pathname]);
   
   return (
@@ -29,12 +41,15 @@ const AppLayout = ({ children, pageTitle }: AppLayoutProps) => {
       <div className={`flex flex-grow ${isReelsPage ? '' : 'pt-1'}`}>
         {!isMobile && <Sidebar />}
         
-        <main className={`flex-1 ${showMobileNav ? 'pb-16' : 'pb-0'}`}>
-          <div className={`h-full ${isReelsPage ? 'p-0 max-w-none' : 'px-0 md:px-4 lg:px-5'}`}>
+        <main className={`flex-1 ${showMobileNav ? 'pb-20' : 'pb-0'}`}>
+          <div className={`h-full ${isReelsPage ? 'p-0 max-w-none' : 'px-3 md:px-4 lg:px-5'}`}>
             {children}
           </div>
         </main>
       </div>
+      
+      {/* Mobile padding to ensure content isn't hidden behind bottom nav */}
+      {isMobile && <div className="h-16" />}
     </div>
   );
 };

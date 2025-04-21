@@ -10,8 +10,9 @@ import { getCurrentUser } from "@/services/auth-service";
 const TOTAL_STEPS = 13;
 
 export const useOnboarding = () => {
-  const [currentStep, setCurrentStep] = useState(0); // Always start at 0
+  const [currentStep, setCurrentStep] = useState(0); // Start at welcome step
   const [loading, setLoading] = useState(true);
+  const [loadingError, setLoadingError] = useState<string | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [onboardingData, setOnboardingData] = useState<any>({});
   const [errors, setErrors] = useState<string[]>([]);
@@ -23,6 +24,7 @@ export const useOnboarding = () => {
     
     const checkOnboardingStatus = async () => {
       try {
+        setLoadingError(null);
         // Check authentication directly with supabase
         const currentUser = await getCurrentUser();
         
@@ -53,25 +55,42 @@ export const useOnboarding = () => {
             }
             
             // For ongoing onboarding, always start at the beginning for now
-            // This ensures users always see the welcome video
             if (isMounted) setCurrentStep(0);
           }
         }
         
         if (isMounted) setLoading(false);
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error checking onboarding status:", error);
         if (isMounted) {
           setLoading(false);
+          setLoadingError(error.message || "Failed to check onboarding status");
           setErrors(prev => [...prev, "Failed to check onboarding status"]);
+          
+          // Show toast for error
+          toast.error("Error checking onboarding status", {
+            description: "Please try refreshing the page"
+          });
         }
       }
     };
+    
+    // Set a timeout to prevent hanging
+    const timeoutId = setTimeout(() => {
+      if (isMounted && loading) {
+        setLoading(false);
+        setLoadingError("Loading timed out. Please refresh the page.");
+        toast.error("Loading is taking too long", {
+          description: "Please try refreshing the page"
+        });
+      }
+    }, 10000);
     
     checkOnboardingStatus();
     
     return () => {
       isMounted = false;
+      clearTimeout(timeoutId);
     };
   }, [navigate, user, profile, refreshProfile]);
 
@@ -160,6 +179,7 @@ export const useOnboarding = () => {
   // Allow resetting errors
   const resetErrors = () => {
     setErrors([]);
+    setLoadingError(null);
   };
 
   return {
@@ -168,6 +188,7 @@ export const useOnboarding = () => {
     isLoggedIn,
     onboardingData,
     errors,
+    loadingError,
     handleNext,
     handleComplete,
     resetErrors,

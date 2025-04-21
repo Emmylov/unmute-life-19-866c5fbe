@@ -13,7 +13,7 @@ import FoundersVideo from "@/components/founders/FoundersVideo";
 import FAQSection from "@/components/waitlist/FAQSection";
 import WaitlistSignupForm from "@/components/waitlist/WaitlistSignupForm";
 import WhatIsUnmuteSection from "@/components/waitlist/WhatIsUnmuteSection";
-import { Helmet } from "react-helmet";
+import SEO from "@/components/shared/SEO";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -95,25 +95,22 @@ const Index = () => {
   }, []);
   
   if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center">
-      <div className="animate-spin h-12 w-12 border-4 border-unmute-purple rounded-full border-t-transparent"></div>
-    </div>
+    return (
+      <>
+        <SEO />
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="animate-spin h-12 w-12 border-4 border-unmute-purple rounded-full border-t-transparent"></div>
+        </div>
+      </>
+    );
   }
   
   return (
     <>
-      <Helmet>
-        <title>Unmute | Speak your truth, find your community</title>
-        <meta name="description" content="Join Unmute - the authentic social platform where your voice matters. Express yourself authentically and connect meaningfully with a supportive community." />
-        <meta property="og:title" content="Unmute | Speak your truth, find your community" />
-        <meta property="og:description" content="Express yourself authentically and connect meaningfully on Unmute - the social platform where your voice matters." />
-        <meta property="og:type" content="website" />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Unmute | Speak your truth, find your community" />
-        <meta name="twitter:description" content="Express yourself authentically and connect meaningfully on Unmute - the social platform where your voice matters." />
-        <meta name="keywords" content="unmute, social media, authentic connection, mental health, community, voice, expression, wellness" />
-        <link rel="canonical" href="https://unmutelife.online" />
-      </Helmet>
+      <SEO 
+        title="Unmute | Speak your truth, find your community" 
+        description="Join Unmute - the authentic social platform where your voice matters. Express yourself authentically and connect meaningfully with a supportive community." 
+      />
       
       <div className="min-h-screen flex flex-col bg-gradient-to-br from-unmute-purple/10 to-unmute-pink/10">
         <header className="w-full py-4 px-6 flex justify-between items-center">
@@ -148,7 +145,14 @@ const Index = () => {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
               <Button 
                 onClick={() => {
-                  navigate('/onboarding');
+                  try {
+                    navigate('/onboarding');
+                  } catch (error) {
+                    console.error("Navigation error:", error);
+                    toast.error("Navigation failed", {
+                      description: "Please try again or refresh the page"
+                    });
+                  }
                 }}
                 className="bg-gradient-to-r from-unmute-purple to-unmute-pink hover:opacity-90 text-white px-8 py-6 h-auto text-lg group transition-all duration-300 w-full sm:w-auto"
                 size="lg"
