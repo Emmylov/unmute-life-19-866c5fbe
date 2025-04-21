@@ -145,7 +145,7 @@ const AccountCreationStep = ({ onNext }: AccountCreationStepProps) => {
   };
   
   return (
-    <div className="flex flex-col flex-grow p-4 sm:p-6">
+    <div className="flex flex-col flex-grow p-4 sm:p-6 overflow-y-auto">
       <h2 className="text-2xl sm:text-3xl font-bold mb-2 text-center">Join Unmute</h2>
       <p className="text-center text-gray-600 mb-6">Let your voice be heard</p>
       
@@ -189,17 +189,18 @@ const AccountCreationStep = ({ onNext }: AccountCreationStepProps) => {
         <TabsList className="grid w-full grid-cols-2 mb-6">
           <TabsTrigger value="signup" className="flex items-center gap-2">
             <UserPlus className="h-4 w-4" />
-            Create Account
+            <span className="hidden sm:inline">Create Account</span>
+            <span className="sm:hidden">Sign Up</span>
           </TabsTrigger>
           <TabsTrigger value="signin" className="flex items-center gap-2">
             <LogIn className="h-4 w-4" />
-            Sign In
+            <span>Sign In</span>
           </TabsTrigger>
         </TabsList>
         
         <TabsContent value="signup">
-          <form onSubmit={handleSignUp} className="space-y-4 sm:space-y-6">
-            <div className="space-y-2">
+          <form onSubmit={handleSignUp} className="space-y-3 sm:space-y-4">
+            <div className="space-y-1 sm:space-y-2">
               <Label htmlFor="email">Email</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -216,7 +217,7 @@ const AccountCreationStep = ({ onNext }: AccountCreationStepProps) => {
               </div>
             </div>
             
-            <div className="space-y-2">
+            <div className="space-y-1 sm:space-y-2">
               <Label htmlFor="password">Password</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -236,7 +237,7 @@ const AccountCreationStep = ({ onNext }: AccountCreationStepProps) => {
             
             <Button 
               type="submit" 
-              className="unmute-primary-button w-full py-5 text-base"
+              className="unmute-primary-button w-full py-4 sm:py-5 text-base mt-2"
               disabled={loading}
             >
               {loading ? "Creating Account..." : "Create Account"}
@@ -246,8 +247,8 @@ const AccountCreationStep = ({ onNext }: AccountCreationStepProps) => {
         </TabsContent>
         
         <TabsContent value="signin">
-          <form onSubmit={handleSignIn} className="space-y-4 sm:space-y-6">
-            <div className="space-y-2">
+          <form onSubmit={handleSignIn} className="space-y-3 sm:space-y-4">
+            <div className="space-y-1 sm:space-y-2">
               <Label htmlFor="signin-email">Email</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -263,7 +264,7 @@ const AccountCreationStep = ({ onNext }: AccountCreationStepProps) => {
               </div>
             </div>
             
-            <div className="space-y-2">
+            <div className="space-y-1 sm:space-y-2">
               <Label htmlFor="signin-password">Password</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -286,7 +287,7 @@ const AccountCreationStep = ({ onNext }: AccountCreationStepProps) => {
             
             <Button 
               type="submit" 
-              className="unmute-primary-button w-full py-5 text-base"
+              className="unmute-primary-button w-full py-4 sm:py-5 text-base mt-2"
               disabled={loading}
             >
               {loading ? "Signing In..." : "Sign In"}

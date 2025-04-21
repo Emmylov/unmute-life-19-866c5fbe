@@ -32,6 +32,20 @@ const AppLayout = ({ children, pageTitle }: AppLayoutProps) => {
       meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0';
       document.getElementsByTagName('head')[0].appendChild(meta);
     }
+    
+    // Fix any iOS-specific issues
+    document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
+    
+    // Update on resize
+    const handleResize = () => {
+      document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
   }, [location.pathname]);
   
   return (
@@ -41,7 +55,7 @@ const AppLayout = ({ children, pageTitle }: AppLayoutProps) => {
       <div className={`flex flex-grow ${isReelsPage ? '' : 'pt-1'}`}>
         {!isMobile && <Sidebar />}
         
-        <main className={`flex-1 ${showMobileNav ? 'pb-20' : 'pb-0'}`}>
+        <main className={`flex-1 ${showMobileNav ? 'pb-20' : 'pb-0'} overflow-x-hidden`}>
           <div className={`h-full ${isReelsPage ? 'p-0 max-w-none' : 'px-3 md:px-4 lg:px-5'}`}>
             {children}
           </div>

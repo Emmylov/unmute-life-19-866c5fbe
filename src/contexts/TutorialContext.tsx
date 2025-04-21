@@ -1,204 +1,168 @@
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import React, { createContext, useContext, useState, useCallback } from 'react';
+import { toast } from 'sonner';
 
-type TutorialStep = {
-  id: string;
+// Define the tutorial step structure
+interface TutorialStep {
+  element: string;
   title: string;
   content: string;
-  element?: string;
   position?: 'top' | 'right' | 'bottom' | 'left';
-};
+}
 
-type TutorialContextType = {
+// Define the tutorial context type
+interface TutorialContextType {
   isTutorialActive: boolean;
   currentStep: number;
   steps: TutorialStep[];
-  startTutorial: (tutorialId: string) => void;
-  endTutorial: () => void;
+  startTutorial: (type?: string) => void;
   nextStep: () => void;
   prevStep: () => void;
   skipTutorial: () => void;
-  tutorialSeen: Record<string, boolean>;
-  markTutorialSeen: (tutorialId: string) => void;
-};
+}
 
-const TutorialContext = createContext<TutorialContextType | undefined>(undefined);
+// Create the context with a default value
+const TutorialContext = createContext<TutorialContextType>({
+  isTutorialActive: false,
+  currentStep: 0,
+  steps: [],
+  startTutorial: () => {},
+  nextStep: () => {},
+  prevStep: () => {},
+  skipTutorial: () => {},
+});
 
-export const tutorials: Record<string, TutorialStep[]> = {
-  'home': [
+// Define tutorial steps for different pages
+const tutorialSteps: Record<string, TutorialStep[]> = {
+  home: [
     {
-      id: 'welcome',
+      element: '.home-greeting',
       title: 'Welcome to Unmute!',
-      content: 'This is your personal dashboard where you can see content from users you follow.',
-      element: '[data-tutorial="home-feed"]',
+      content: 'This is your personalized feed where you can see posts from people you follow.',
       position: 'bottom',
     },
     {
-      id: 'sidebar',
-      title: 'Navigation',
-      content: 'Use the sidebar to navigate to different sections of the app.',
-      element: '[data-tutorial="sidebar"]',
+      element: '.create-post',
+      title: 'Share Your Voice',
+      content: 'Click here to create a new post and share your thoughts with the community.',
+      position: 'bottom',
+    },
+    {
+      element: '.mood-selector',
+      title: 'How Are You Feeling?',
+      content: 'You can set your mood to let others know how you\'re doing today.',
+      position: 'bottom',
+    },
+  ],
+  explore: [
+    {
+      element: '.explore-search',
+      title: 'Discover Content',
+      content: 'Search for topics, people, or communities you\'re interested in.',
+      position: 'bottom',
+    },
+    {
+      element: '.trending-topics',
+      title: 'Trending Topics',
+      content: 'See what\'s popular in the Unmute community right now.',
       position: 'right',
     },
-    {
-      id: 'create-post',
-      title: 'Express Yourself',
-      content: 'Create posts, share thoughts, and connect with others.',
-      element: '[data-tutorial="create-post"]',
-      position: 'bottom',
-    }
   ],
-  'explore': [
+  wellness: [
     {
-      id: 'explore-intro',
-      title: 'Discover Content',
-      content: 'Discover new content, communities, and users to follow.',
-      position: 'top',
-    },
-    {
-      id: 'trending',
-      title: 'Trending Topics',
-      content: 'See what topics are popular right now.',
-      element: '[data-tutorial="trending"]',
-      position: 'bottom',
-    }
-  ],
-  'wellness': [
-    {
-      id: 'wellness-intro',
+      element: '.wellness-banner',
       title: 'Your Wellness Hub',
-      content: 'Access resources, tools, and support for your mental health.',
-      position: 'top',
+      content: 'This is your personalized wellness space for mental health resources.',
+      position: 'bottom',
     },
     {
-      id: 'daily-check',
-      title: 'Daily Check-in',
-      content: 'Track your mood and mental wellbeing daily.',
-      element: '[data-tutorial="daily-check"]',
+      element: '.daily-dose',
+      title: 'Daily Dose',
+      content: 'Get a daily dose of positivity and wellness tips.',
+      position: 'right',
+    },
+  ],
+  onboarding: [
+    {
+      element: '', // No specific element for general intro
+      title: 'Welcome to Onboarding',
+      content: 'Let\'s get you set up with Unmute! We\'ll guide you through a few simple steps.',
       position: 'bottom',
-    }
-  ]
+    },
+    {
+      element: '.onboarding-card',
+      title: 'Complete Your Profile',
+      content: 'Tell us about yourself so we can personalize your experience.',
+      position: 'bottom',
+    },
+  ],
 };
 
-// List of paths where tutorials should be disabled
-const TUTORIAL_DISABLED_PATHS = ['/', '/auth', '/onboarding'];
-
+// Tutorial Provider component
 export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isTutorialActive, setIsTutorialActive] = useState(false);
-  const [currentTutorialId, setCurrentTutorialId] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [steps, setSteps] = useState<TutorialStep[]>([]);
-  const [tutorialSeen, setTutorialSeen] = useState<Record<string, boolean>>(() => {
-    // Load from localStorage
-    const saved = localStorage.getItem('tutorials-seen');
-    return saved ? JSON.parse(saved) : {};
-  });
-  
-  const location = useLocation();
-  const currentPath = location.pathname;
-  
-  // Disable tutorial on certain paths
-  useEffect(() => {
-    if (TUTORIAL_DISABLED_PATHS.includes(currentPath) && isTutorialActive) {
-      setIsTutorialActive(false);
-    }
-  }, [currentPath, isTutorialActive]);
-  
-  // Check if we should show tutorial when route changes
-  useEffect(() => {
-    if (!isTutorialActive) {
-      const path = location.pathname.split('/')[1] || 'home';
-      
-      // Don't show tutorials on disabled paths
-      if (TUTORIAL_DISABLED_PATHS.includes(currentPath)) {
-        return;
-      }
-      
-      if (tutorials[path] && !tutorialSeen[path]) {
-        setTimeout(() => {
-          startTutorial(path);
-        }, 1000); // Delay to allow page to fully render
-      }
-    }
-  }, [location, isTutorialActive, currentPath, tutorialSeen]);
-  
-  // Save tutorial seen status to localStorage
-  useEffect(() => {
-    localStorage.setItem('tutorials-seen', JSON.stringify(tutorialSeen));
-  }, [tutorialSeen]);
-  
-  const startTutorial = (tutorialId: string) => {
-    // Don't start tutorials on disabled paths
-    if (TUTORIAL_DISABLED_PATHS.includes(currentPath)) {
+
+  const startTutorial = useCallback((type = 'home') => {
+    // Check if we have tutorial steps for this type
+    if (!tutorialSteps[type]) {
+      console.warn(`No tutorial steps found for "${type}"`);
+      toast.info('Tutorial not available for this page yet');
       return;
     }
     
-    if (tutorials[tutorialId]) {
-      setCurrentTutorialId(tutorialId);
-      setSteps(tutorials[tutorialId]);
-      setCurrentStep(0);
-      setIsTutorialActive(true);
-    }
-  };
-  
-  const endTutorial = () => {
-    if (currentTutorialId) {
-      markTutorialSeen(currentTutorialId);
-    }
-    setIsTutorialActive(false);
+    setSteps(tutorialSteps[type]);
     setCurrentStep(0);
-  };
-  
-  const nextStep = () => {
+    setIsTutorialActive(true);
+    
+    // Add a class to the body for potential tutorial styling
+    document.body.classList.add('tutorial-active');
+    
+    toast.success('Tutorial started', {
+      description: 'Follow along to learn about this page'
+    });
+  }, []);
+
+  const nextStep = useCallback(() => {
     if (currentStep < steps.length - 1) {
-      setCurrentStep(prevStep => prevStep + 1);
+      setCurrentStep(prev => prev + 1);
     } else {
-      endTutorial();
+      // End tutorial if we're at the last step
+      setIsTutorialActive(false);
+      document.body.classList.remove('tutorial-active');
+      toast.success('Tutorial completed!');
     }
-  };
-  
-  const prevStep = () => {
+  }, [currentStep, steps.length]);
+
+  const prevStep = useCallback(() => {
     if (currentStep > 0) {
-      setCurrentStep(prevStep => prevStep - 1);
+      setCurrentStep(prev => prev - 1);
     }
-  };
-  
-  const skipTutorial = () => {
-    endTutorial();
-  };
-  
-  const markTutorialSeen = (tutorialId: string) => {
-    setTutorialSeen(prev => ({
-      ...prev,
-      [tutorialId]: true
-    }));
-  };
-  
-  const value = {
-    isTutorialActive,
-    currentStep,
-    steps,
-    startTutorial,
-    endTutorial,
-    nextStep,
-    prevStep,
-    skipTutorial,
-    tutorialSeen,
-    markTutorialSeen
-  };
-  
+  }, [currentStep]);
+
+  const skipTutorial = useCallback(() => {
+    setIsTutorialActive(false);
+    document.body.classList.remove('tutorial-active');
+    toast('Tutorial skipped', { description: 'You can restart it anytime' });
+  }, []);
+
   return (
-    <TutorialContext.Provider value={value}>
+    <TutorialContext.Provider
+      value={{
+        isTutorialActive,
+        currentStep,
+        steps,
+        startTutorial,
+        nextStep,
+        prevStep,
+        skipTutorial,
+      }}
+    >
       {children}
     </TutorialContext.Provider>
   );
 };
 
-export const useTutorial = () => {
-  const context = useContext(TutorialContext);
-  if (context === undefined) {
-    throw new Error('useTutorial must be used within a TutorialProvider');
-  }
-  return context;
-};
+// Custom hook to use the tutorial context
+export const useTutorial = () => useContext(TutorialContext);

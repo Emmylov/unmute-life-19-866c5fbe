@@ -27,7 +27,7 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
         <div className="absolute -z-10 bottom-0 right-0 w-60 h-60 rounded-full bg-unmute-teal/20 blur-3xl" />
         
         {/* Onboarding card */}
-        <div className={`unmute-card w-full ${isMobile ? 'min-h-[90vh]' : 'min-h-[500px]'} flex flex-col`}>
+        <div className={`unmute-card w-full ${isMobile ? 'min-h-[85vh]' : 'min-h-[500px]'} flex flex-col overflow-y-auto`}>
           {children}
         </div>
       </div>

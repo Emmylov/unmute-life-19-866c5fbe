@@ -1,27 +1,45 @@
 
-import React, { useState, useEffect } from 'react';
-import { Navigate, Outlet, useLocation } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import React, { ReactNode, useEffect, useState } from "react";
+import { Navigate, useLocation, Outlet } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { toast } from "sonner";
+import ErrorDisplay from "@/components/ui/error-display";
 
-const ProtectedLayout: React.FC = () => {
-  const { user, isLoading } = useAuth();
+interface ProtectedLayoutProps {
+  children?: ReactNode;
+  redirectTo?: string;
+  showLoading?: boolean;
+}
+
+/**
+ * A layout component that protects routes requiring authentication
+ * Shows consistent loading spinner and handles redirects
+ */
+const ProtectedLayout = ({ 
+  children, 
+  redirectTo = "/auth",
+  showLoading = true
+}: ProtectedLayoutProps) => {
+  const { user, loading, isLoading } = useAuth();
   const location = useLocation();
+  const [error, setError] = useState<Error | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   const [hasShownMessage, setHasShownMessage] = useState(false);
   const [authCheckComplete, setAuthCheckComplete] = useState(false);
-  
+
   useEffect(() => {
-    // Reset the flag when location changes
+    // Reset error state when location changes
+    setError(null);
     setHasShownMessage(false);
     
-    // Set a reasonable timeout to consider auth check complete even if stuck
+    // Set a timeout to consider auth check complete even if stuck
     const timeoutId = setTimeout(() => {
       if (!authCheckComplete) {
         setAuthCheckComplete(true);
         console.warn("Auth check timed out, proceeding with available data");
       }
-    }, 5000); // 5 seconds timeout
+    }, 3000); // 3 seconds timeout
     
     return () => {
       clearTimeout(timeoutId);
@@ -30,50 +48,65 @@ const ProtectedLayout: React.FC = () => {
   
   // When auth state changes, mark check as complete
   useEffect(() => {
-    if (!isLoading) {
+    if (!isLoading && !loading) {
       setAuthCheckComplete(true);
     }
-  }, [isLoading]);
-  
+  }, [isLoading, loading]);
+
+  const handleRetry = () => {
+    setError(null);
+    setRetryCount(prev => prev + 1);
+    toast.info("Retrying...");
+  };
+
+  // Use either loading or isLoading - for backward compatibility
+  const isAuthLoading = (loading || isLoading) && !authCheckComplete;
+
   // While checking authentication, show a loading indicator
-  if (isLoading && !authCheckComplete) {
+  if (isAuthLoading && showLoading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-4">
-        <LoadingSpinner size="large" color="primary" text="Verifying your access..." />
-        <p className="text-sm text-gray-500 mt-4">This should only take a moment...</p>
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner size="large" color="purple" text="Verifying access..." />
       </div>
     );
   }
 
-  // If not authenticated, redirect to onboarding page
+  // If there was an error, show error display with retry option
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <ErrorDisplay
+          title="Authentication Error"
+          message={`We couldn't verify your access: ${error.message}`}
+          onRetry={handleRetry}
+        />
+      </div>
+    );
+  }
+
+  // If not authenticated, redirect to login page
   if (!user) {
-    // Show error toast for non-root paths, but only once per path
-    if (location.pathname !== '/' && !hasShownMessage) {
-      toast.error("Please complete onboarding to access this page", {
-        duration: 4000
-      });
+    // Save the page they were trying to access
+    if (!hasShownMessage && location.pathname !== '/' && location.pathname !== '/auth') {
+      toast.error("Please log in to access this page");
       setHasShownMessage(true);
-      return <Navigate to="/onboarding" state={{ from: location.pathname }} replace />;
     }
-    
-    // For the root route, just navigate to onboarding without message
-    return <Navigate to="/onboarding" replace />;
+    return <Navigate to={redirectTo} state={{ from: location.pathname }} replace />;
   }
 
   // If the user exists but hasn't completed onboarding and is not on the onboarding page
   if (user && !user.user_metadata?.is_onboarded && !location.pathname.includes('/onboarding')) {
     if (!hasShownMessage) {
       toast.info("Please complete your onboarding first", {
-        description: "You're almost there!",
-        duration: 4000
+        description: "You're almost there!"
       });
       setHasShownMessage(true);
     }
     return <Navigate to="/onboarding" state={{ from: location.pathname }} replace />;
   }
 
-  // If authenticated, render the protected content
-  return <Outlet />;
+  // If authenticated, render the protected content or the Outlet for nested routes
+  return <>{children || <Outlet />}</>;
 };
 
 export default ProtectedLayout;

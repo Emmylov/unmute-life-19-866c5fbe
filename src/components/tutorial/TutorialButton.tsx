@@ -25,6 +25,14 @@ export const TutorialButton: React.FC = () => {
     return null;
   }
   
+  const handleStartTutorial = (pageType: string) => {
+    try {
+      startTutorial(pageType);
+    } catch (error) {
+      console.error("Error starting tutorial:", error);
+    }
+  };
+  
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -38,17 +46,29 @@ export const TutorialButton: React.FC = () => {
         </Button>
       </DropdownMenuTrigger>
       
-      <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuItem onClick={() => startTutorial(currentPath)}>
+      <DropdownMenuContent align="end" className="w-56 bg-white z-50">
+        <DropdownMenuItem 
+          onClick={() => handleStartTutorial(currentPath)}
+          className="cursor-pointer"
+        >
           Tour this page
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => startTutorial('home')}>
+        <DropdownMenuItem 
+          onClick={() => handleStartTutorial('home')}
+          className="cursor-pointer"
+        >
           Home tutorial
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => startTutorial('explore')}>
+        <DropdownMenuItem 
+          onClick={() => handleStartTutorial('explore')}
+          className="cursor-pointer"
+        >
           Explore tutorial
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => startTutorial('wellness')}>
+        <DropdownMenuItem 
+          onClick={() => handleStartTutorial('wellness')}
+          className="cursor-pointer"
+        >
           Wellness tutorial
         </DropdownMenuItem>
       </DropdownMenuContent>

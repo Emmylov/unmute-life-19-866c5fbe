@@ -19,7 +19,7 @@ export const TutorialOverlay: React.FC = () => {
   const overlayRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
-    if (!isTutorialActive) return;
+    if (!isTutorialActive || steps.length === 0) return;
     
     const currentStepData = steps[currentStep];
     if (!currentStepData.element) {
@@ -33,29 +33,48 @@ export const TutorialOverlay: React.FC = () => {
       return;
     }
     
-    const element = document.querySelector(currentStepData.element);
-    if (!element) {
-      console.warn(`Tutorial element not found: ${currentStepData.element}`);
-      return;
-    }
-    
-    const rect = element.getBoundingClientRect();
-    
-    // Add a small buffer around the element
-    const buffer = 10;
-    setPosition({
-      top: rect.top - buffer,
-      left: rect.left - buffer,
-      width: rect.width + buffer * 2,
-      height: rect.height + buffer * 2
-    });
-    
-    // Scroll element into view if needed
-    if (rect.top < 0 || rect.bottom > window.innerHeight) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    try {
+      const element = document.querySelector(currentStepData.element);
+      if (!element) {
+        console.warn(`Tutorial element not found: ${currentStepData.element}`);
+        // Use fallback positioning if element not found
+        setPosition({
+          top: window.innerHeight / 2 - 100,
+          left: window.innerWidth / 2 - 150,
+          width: 300,
+          height: 200
+        });
+        return;
+      }
+      
+      const rect = element.getBoundingClientRect();
+      
+      // Add a small buffer around the element
+      const buffer = 10;
+      setPosition({
+        top: rect.top - buffer,
+        left: rect.left - buffer,
+        width: rect.width + buffer * 2,
+        height: rect.height + buffer * 2
+      });
+      
+      // Scroll element into view if needed
+      if (rect.top < 0 || rect.bottom > window.innerHeight) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    } catch (error) {
+      console.error("Error positioning tutorial overlay:", error);
+      // Fallback positioning
+      setPosition({
+        top: 100,
+        left: window.innerWidth / 2 - 150,
+        width: 300,
+        height: 200
+      });
     }
   }, [isTutorialActive, currentStep, steps]);
   
+  // Don't render anything if tutorial is not active
   if (!isTutorialActive || steps.length === 0) {
     return null;
   }
@@ -95,12 +114,18 @@ export const TutorialOverlay: React.FC = () => {
           top: `${position.top + position.height / 2}px`,
           transform: 'translateY(-50%)'
         };
+      default:
+        return { 
+          top: `${position.top + position.height + 10}px`, 
+          left: `${position.left + position.width / 2}px`,
+          transform: 'translateX(-50%)'
+        };
     }
   };
   
   return (
     <div 
-      className="fixed inset-0 z-50 bg-black bg-opacity-50 pointer-events-auto"
+      className="fixed inset-0 z-[1000] bg-black bg-opacity-50 pointer-events-auto"
       onClick={(e) => {
         // Only close if clicking outside the tooltip and highlighted area
         if (overlayRef.current && !overlayRef.current.contains(e.target as Node)) {
@@ -131,7 +156,7 @@ export const TutorialOverlay: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.2 }}
-          className="absolute bg-white rounded-lg shadow-lg p-4 w-80 z-50"
+          className="absolute bg-white rounded-lg shadow-lg p-4 w-80 z-[1001]"
           style={tooltipPosition()}
         >
           <div className="flex items-center gap-2 mb-2 text-unmute-purple">
