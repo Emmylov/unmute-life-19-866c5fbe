@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -34,7 +34,8 @@ import WordScramble from "@/pages/games/WordScramble";
 import Music from "@/pages/Music";
 
 function App() {
-  useEffect(() => {
+  // User interaction tracking
+  React.useEffect(() => {
     const handleInteraction = () => {
       document.documentElement.setAttribute('data-user-interacted', 'true');
       document.removeEventListener('click', handleInteraction);
@@ -56,8 +57,8 @@ function App() {
   return (
     <div className="App">
       <HelmetProvider>
-        <AuthProvider>
-          <BrowserRouter>
+        <BrowserRouter>
+          <AuthProvider>
             <TutorialProvider>
               <Routes>
                 <Route path="/" element={<Index />} />
@@ -94,8 +95,8 @@ function App() {
               <TutorialOverlay />
             </TutorialProvider>
             <Toaster position="top-right" closeButton richColors />
-          </BrowserRouter>
-        </AuthProvider>
+          </AuthProvider>
+        </BrowserRouter>
       </HelmetProvider>
     </div>
   );

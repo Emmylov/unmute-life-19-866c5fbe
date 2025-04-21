@@ -8,7 +8,10 @@ import { setupUserRewardsSystem } from './integrations/supabase/setup-user-rewar
 // Initialize the rewards system
 setupUserRewardsSystem();
 
-ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
+const rootElement = document.getElementById('root');
+if (!rootElement) throw new Error('Failed to find the root element');
+
+ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
     <App />
   </React.StrictMode>
