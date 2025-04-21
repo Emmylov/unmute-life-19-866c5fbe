@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import StarterPackSection from "@/components/waitlist/StarterPackSection";
@@ -23,12 +22,11 @@ const Index = () => {
   });
   
   useEffect(() => {
-    // Launch party celebration effects - only on first load
     const hasSeenEffect = sessionStorage.getItem('hasSeenLaunchEffect');
     
     if (!hasSeenEffect) {
       const launchParty = () => {
-        const duration = 3 * 1000; // Reduced duration for better performance
+        const duration = 3 * 1000;
         const end = Date.now() + duration;
         
         const colors = ['#9b87f5', '#f59bf1', '#87c9f5', '#FFD700', '#FF69B4'];
@@ -61,10 +59,9 @@ const Index = () => {
         
         runConfetti();
         
-        // Add some celebratory sprinkles from the middle
         setTimeout(() => {
           confetti({
-            particleCount: 30, // Reduced count
+            particleCount: 30,
             spread: 100,
             origin: { y: 0.6 },
             colors: colors,
@@ -73,16 +70,13 @@ const Index = () => {
           });
         }, 500);
         
-        // Try to play celebration sound
         playSound('reward', 0.3).catch(() => {
-          // Silently fail if sound can't play
         });
       };
       
       launchParty();
       sessionStorage.setItem('hasSeenLaunchEffect', 'true');
       
-      // Show launch party toast
       toast.success(
         "🎉 Launch Party Time!", 
         {
@@ -96,12 +90,9 @@ const Index = () => {
   
   if (isLoading) {
     return (
-      <>
-        <SEO />
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="animate-spin h-12 w-12 border-4 border-unmute-purple rounded-full border-t-transparent"></div>
-        </div>
-      </>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin h-12 w-12 border-4 border-unmute-purple rounded-full border-t-transparent"></div>
+      </div>
     );
   }
   
