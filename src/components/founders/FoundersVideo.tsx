@@ -1,90 +1,96 @@
 
-import React, { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/card';
-import { PlayCircle } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
+import React, { useEffect, useRef, useState } from "react";
 
 interface FoundersVideoProps {
   videoUrl: string;
-  className?: string;
   muted?: boolean;
+  className?: string;
+  fallbackImageUrl?: string;
   autoPlay?: boolean;
 }
 
-const FoundersVideo = ({ videoUrl, className, muted = true, autoPlay = false }: FoundersVideoProps) => {
+const FoundersVideo = ({
+  videoUrl,
+  muted = true,
+  className = "",
+  fallbackImageUrl,
+  autoPlay = true,
+}: FoundersVideoProps) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [error, setError] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [videoError, setVideoError] = useState(false);
 
-  // Attempt to preload the video to check if it exists
   useEffect(() => {
-    const checkVideo = () => {
-      const video = document.createElement("video");
-      video.src = videoUrl;
-      
-      video.onloadeddata = () => {
-        setVideoError(false);
-        if (autoPlay) {
-          setIsPlaying(true);
-        }
-      };
-      
-      video.onerror = () => {
-        console.error("Error loading video from URL:", videoUrl);
-        setVideoError(true);
-        toast.error("Couldn't load the founders video");
-      };
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handlePlay = () => {
+      setIsPlaying(true);
     };
-    
-    if (videoUrl) {
-      checkVideo();
+
+    const handlePause = () => {
+      setIsPlaying(false);
+    };
+
+    const handleError = () => {
+      console.error("Video failed to load:", videoUrl);
+      setError(true);
+    };
+
+    video.addEventListener("play", handlePlay);
+    video.addEventListener("pause", handlePause);
+    video.addEventListener("error", handleError);
+
+    // Attempt to play the video if autoPlay is true
+    if (autoPlay) {
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((error) => {
+          // Auto-play was prevented
+          console.warn("Autoplay prevented:", error);
+          // Don't set error state, as this is expected in some browsers
+        });
+      }
     }
-    
-    // Clean up
+
     return () => {
-      setVideoError(false);
+      video.removeEventListener("play", handlePlay);
+      video.removeEventListener("pause", handlePause);
+      video.removeEventListener("error", handleError);
     };
   }, [videoUrl, autoPlay]);
 
+  // If there's an error and we have a fallback image, show it
+  if (error && fallbackImageUrl) {
+    return (
+      <div className={`relative overflow-hidden rounded-lg ${className}`}>
+        <img 
+          src={fallbackImageUrl} 
+          alt="Video preview" 
+          className="w-full h-auto"
+        />
+        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40">
+          <span className="text-white text-sm">Video unavailable</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <Card className={cn("overflow-hidden relative group", className)}>
-      {videoError ? (
-        <div className="aspect-video bg-gray-900 flex items-center justify-center">
-          <div className="text-white text-center p-4">
-            <p>Video not available</p>
-            <p className="text-sm opacity-70 mt-2">Please check the video URL</p>
-          </div>
-        </div>
-      ) : !isPlaying ? (
-        <div 
-          className="relative cursor-pointer"
-          onClick={() => setIsPlaying(true)}
-        >
-          <div className="aspect-video bg-gray-900 flex items-center justify-center">
-            <PlayCircle className="w-16 h-16 text-white opacity-80 group-hover:opacity-100 transition-opacity" />
-          </div>
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
-            <h3 className="text-white font-semibold">
-              Message from our Founders
-            </h3>
-          </div>
-        </div>
-      ) : (
-        <div className="aspect-video">
-          <video
-            src={videoUrl}
-            className="w-full h-full"
-            controls
-            autoPlay
-            muted={muted}
-            onError={() => {
-              setVideoError(true);
-              toast.error("Error playing video");
-            }}
-          />
-        </div>
-      )}
-    </Card>
+    <div className={`relative overflow-hidden rounded-lg ${className}`}>
+      <video
+        ref={videoRef}
+        src={videoUrl}
+        muted={muted}
+        playsInline
+        controls
+        preload="metadata"
+        className="w-full h-auto"
+        onError={() => setError(true)}
+      >
+        Your browser does not support the video tag.
+      </video>
+    </div>
   );
 };
 

@@ -14,48 +14,65 @@ export const useOnboarding = () => {
   const [loading, setLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [onboardingData, setOnboardingData] = useState<any>({});
+  const [errors, setErrors] = useState<string[]>([]);
   const navigate = useNavigate();
   const { user, profile, refreshProfile } = useAuth();
   
   useEffect(() => {
+    let isMounted = true;
+    
     const checkOnboardingStatus = async () => {
-      // Check authentication directly with supabase
-      const currentUser = await getCurrentUser();
-      
-      if (currentUser) {
-        setIsLoggedIn(true);
+      try {
+        // Check authentication directly with supabase
+        const currentUser = await getCurrentUser();
         
-        // Refresh the profile to make sure we have the latest data
-        await refreshProfile();
-        
-        if (profile) {
-          // Populate onboarding data from profile if available
-          setOnboardingData({
-            username: profile.username || '',
-            full_name: profile.full_name || '',
-            bio: profile.bio || '',
-            avatar: profile.avatar || '',
-            is_activist: profile.is_activist || false,
-            interests: profile.interests || [],
-            theme_color: profile.theme_color || '',
-          });
+        if (currentUser) {
+          if (isMounted) setIsLoggedIn(true);
           
-          if (profile.is_onboarded) {
-            // If fully onboarded, go to home
-            navigate('/home');
-            return;
+          // Refresh the profile to make sure we have the latest data
+          await refreshProfile();
+          
+          if (profile) {
+            // Populate onboarding data from profile if available
+            if (isMounted) {
+              setOnboardingData({
+                username: profile.username || '',
+                full_name: profile.full_name || '',
+                bio: profile.bio || '',
+                avatar: profile.avatar || '',
+                is_activist: profile.is_activist || false,
+                interests: profile.interests || [],
+                theme_color: profile.theme_color || '',
+              });
+            }
+            
+            if (profile.is_onboarded) {
+              // If fully onboarded, go to home
+              navigate('/home');
+              return;
+            }
+            
+            // For ongoing onboarding, always start at the beginning for now
+            // This ensures users always see the welcome video
+            if (isMounted) setCurrentStep(0);
           }
-          
-          // For ongoing onboarding, always start at the beginning for now
-          // This ensures users always see the welcome video
-          setCurrentStep(0);
+        }
+        
+        if (isMounted) setLoading(false);
+      } catch (error) {
+        console.error("Error checking onboarding status:", error);
+        if (isMounted) {
+          setLoading(false);
+          setErrors(prev => [...prev, "Failed to check onboarding status"]);
         }
       }
-      
-      setLoading(false);
     };
     
     checkOnboardingStatus();
+    
+    return () => {
+      isMounted = false;
+    };
   }, [navigate, user, profile, refreshProfile]);
 
   const handleNext = async () => {
@@ -64,21 +81,27 @@ export const useOnboarding = () => {
       setCurrentStep(nextStep);
       
       // Track analytics event if user is logged in
-      const currentUser = await getCurrentUser();
-      
-      if (currentUser) {
-        trackAnalyticEvent(currentUser.id, "onboarding_step_complete", { 
-          resource_type: "onboarding", 
-          step: currentStep, 
-          next_step: nextStep 
-        });
+      try {
+        const currentUser = await getCurrentUser();
         
-        try {
-          const stepName = getStepName(nextStep);
-          await updateOnboardingStep(currentUser.id, stepName);
-        } catch (error) {
-          console.error("Error updating onboarding step:", error);
+        if (currentUser) {
+          trackAnalyticEvent(currentUser.id, "onboarding_step_complete", { 
+            resource_type: "onboarding", 
+            step: currentStep, 
+            next_step: nextStep 
+          });
+          
+          try {
+            const stepName = getStepName(nextStep);
+            await updateOnboardingStep(currentUser.id, stepName);
+          } catch (error) {
+            console.error("Error updating onboarding step:", error);
+            setErrors(prev => [...prev, "Failed to update onboarding step"]);
+          }
         }
+      } catch (error) {
+        console.error("Error during next step:", error);
+        // Don't block the user from continuing even if analytics fails
       }
     }
   };
@@ -128,9 +151,15 @@ export const useOnboarding = () => {
         id: "onboarding-complete",
         description: "Please try again or contact support."
       });
+      setErrors(prev => [...prev, "Failed to complete onboarding"]);
     } finally {
       setLoading(false);
     }
+  };
+
+  // Allow resetting errors
+  const resetErrors = () => {
+    setErrors([]);
   };
 
   return {
@@ -138,8 +167,10 @@ export const useOnboarding = () => {
     loading,
     isLoggedIn,
     onboardingData,
+    errors,
     handleNext,
     handleComplete,
+    resetErrors,
     setOnboardingData: (data: any) => setOnboardingData(prev => ({ ...prev, ...data }))
   };
 };

@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,6 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-responsive";
 
 interface AccountCreationStepProps {
   onNext: () => void;
@@ -23,6 +24,14 @@ const AccountCreationStep = ({ onNext }: AccountCreationStepProps) => {
   const [activeTab, setActiveTab] = useState<"signup" | "signin">("signup");
   const { toast: shadcnToast } = useToast();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
+  
+  // Clear error when user changes input
+  useEffect(() => {
+    if (error) {
+      setError(null);
+    }
+  }, [email, password]);
   
   const validateForm = () => {
     setError(null);
@@ -65,16 +74,30 @@ const AccountCreationStep = ({ onNext }: AccountCreationStepProps) => {
       
       if (error) throw error;
       
-      toast.success("Account created!", {
-        description: "Welcome to Unmute. Let's continue with your onboarding."
-      });
-      
-      onNext();
+      // Check if user was actually created
+      if (data.user) {
+        toast.success("Account created!", {
+          description: "Welcome to Unmute. Let's continue with your onboarding."
+        });
+        onNext();
+      } else {
+        toast.info("Check your email", {
+          description: "We sent a confirmation link to verify your account."
+        });
+      }
     } catch (error: any) {
       console.error("Signup error:", error);
-      toast.error("Error creating account", {
-        description: error.message || "Something went wrong"
-      });
+      
+      // Handle common signup errors with user-friendly messages
+      if (error.message.includes("already registered")) {
+        toast.error("Email already in use", {
+          description: "Please try signing in instead or use a different email"
+        });
+      } else {
+        toast.error("Error creating account", {
+          description: error.message || "Something went wrong"
+        });
+      }
       setError(error.message || "Failed to create account");
     } finally {
       setLoading(false);
@@ -104,9 +127,17 @@ const AccountCreationStep = ({ onNext }: AccountCreationStepProps) => {
       navigate("/home");
     } catch (error: any) {
       console.error("Signin error:", error);
-      toast.error("Sign in failed", {
-        description: error.message || "Invalid credentials"
-      });
+      
+      // Provide more user-friendly error messages
+      if (error.message.includes("Invalid login")) {
+        toast.error("Invalid credentials", {
+          description: "Please check your email and password"
+        });
+      } else {
+        toast.error("Sign in failed", {
+          description: error.message || "Please try again"
+        });
+      }
       setError(error.message || "Failed to sign in");
     } finally {
       setLoading(false);
@@ -114,8 +145,8 @@ const AccountCreationStep = ({ onNext }: AccountCreationStepProps) => {
   };
   
   return (
-    <div className="flex flex-col flex-grow p-6">
-      <h2 className="text-3xl font-bold mb-2 text-center">Join Unmute</h2>
+    <div className="flex flex-col flex-grow p-4 sm:p-6">
+      <h2 className="text-2xl sm:text-3xl font-bold mb-2 text-center">Join Unmute</h2>
       <p className="text-center text-gray-600 mb-6">Let your voice be heard</p>
       
       {error && (
@@ -167,7 +198,7 @@ const AccountCreationStep = ({ onNext }: AccountCreationStepProps) => {
         </TabsList>
         
         <TabsContent value="signup">
-          <form onSubmit={handleSignUp} className="space-y-6">
+          <form onSubmit={handleSignUp} className="space-y-4 sm:space-y-6">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <div className="relative">
@@ -180,6 +211,7 @@ const AccountCreationStep = ({ onNext }: AccountCreationStepProps) => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  autoComplete="email"
                 />
               </div>
             </div>
@@ -196,13 +228,15 @@ const AccountCreationStep = ({ onNext }: AccountCreationStepProps) => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  minLength={8}
                 />
               </div>
+              <p className="text-xs text-gray-500 mt-1">Must be at least 8 characters</p>
             </div>
             
             <Button 
               type="submit" 
-              className="unmute-primary-button w-full"
+              className="unmute-primary-button w-full py-5 text-base"
               disabled={loading}
             >
               {loading ? "Creating Account..." : "Create Account"}
@@ -212,7 +246,7 @@ const AccountCreationStep = ({ onNext }: AccountCreationStepProps) => {
         </TabsContent>
         
         <TabsContent value="signin">
-          <form onSubmit={handleSignIn} className="space-y-6">
+          <form onSubmit={handleSignIn} className="space-y-4 sm:space-y-6">
             <div className="space-y-2">
               <Label htmlFor="signin-email">Email</Label>
               <div className="relative">
@@ -243,11 +277,16 @@ const AccountCreationStep = ({ onNext }: AccountCreationStepProps) => {
                   required
                 />
               </div>
+              <div className="text-right">
+                <Button variant="link" className="text-xs p-0 h-auto" onClick={() => alert("Password reset feature coming soon!")}>
+                  Forgot password?
+                </Button>
+              </div>
             </div>
             
             <Button 
               type="submit" 
-              className="unmute-primary-button w-full"
+              className="unmute-primary-button w-full py-5 text-base"
               disabled={loading}
             >
               {loading ? "Signing In..." : "Sign In"}
