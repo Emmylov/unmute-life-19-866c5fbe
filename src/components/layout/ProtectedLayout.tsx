@@ -21,7 +21,7 @@ const ProtectedLayout = ({
   redirectTo = "/auth",
   showLoading = true
 }: ProtectedLayoutProps) => {
-  const { user, loading, isLoading } = useAuth();
+  const { user, profile, loading, isLoading } = useAuth();
   const location = useLocation();
   const [error, setError] = useState<Error | null>(null);
   const [retryCount, setRetryCount] = useState(0);
@@ -94,8 +94,15 @@ const ProtectedLayout = ({
     return <Navigate to={redirectTo} state={{ from: location.pathname }} replace />;
   }
 
-  // If the user exists but hasn't completed onboarding and is not on the onboarding page
-  if (user && !user.user_metadata?.is_onboarded && !location.pathname.includes('/onboarding')) {
+  // Check onboarding status using both user metadata and profile data for reliability
+  const isOnboarded = 
+    (user?.user_metadata?.is_onboarded) || 
+    (profile?.is_onboarded) || 
+    // If profile has basic data, consider them onboarded as a fallback
+    (profile && (profile.username || profile.full_name || profile.bio));
+  
+  // Only redirect to onboarding if explicitly not onboarded and not already on onboarding page
+  if (user && !isOnboarded && !location.pathname.includes('/onboarding')) {
     if (!hasShownMessage) {
       toast.info("Please complete your onboarding first", {
         description: "You're almost there!"

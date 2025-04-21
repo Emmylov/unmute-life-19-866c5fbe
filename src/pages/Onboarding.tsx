@@ -21,14 +21,39 @@ const Onboarding = () => {
   } = useOnboarding();
   
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   
   // Check if the user is already fully onboarded
   useEffect(() => {
     const checkOnboardingStatus = async () => {
       try {
+        // Check user metadata first
         if (user?.user_metadata?.is_onboarded) {
+          console.log("User already onboarded (user metadata). Redirecting to home.");
           navigate('/home');
+          return;
+        }
+        
+        // Then check profile data which is more reliable
+        if (profile?.is_onboarded) {
+          console.log("User already onboarded (profile data). Redirecting to home.");
+          navigate('/home');
+          return;
+        }
+        
+        // As a fallback, check if other profile data exists that would indicate completed onboarding
+        if (profile && (profile.username || profile.full_name || profile.bio)) {
+          console.log("User has profile data. Likely already onboarded. Redirecting to home.");
+          navigate('/home');
+          return;
+        }
+        
+        // Double check with direct auth service as last resort
+        const currentUser = await getCurrentUser();
+        if (currentUser?.user_metadata?.is_onboarded) {
+          console.log("User already onboarded (direct check). Redirecting to home.");
+          navigate('/home');
+          return;
         }
       } catch (error) {
         console.error("Error checking onboarding status:", error);
@@ -39,7 +64,7 @@ const Onboarding = () => {
     if (!loading) {
       checkOnboardingStatus();
     }
-  }, [user, loading, navigate]);
+  }, [user, profile, loading, navigate]);
 
   // Define a safe wrapper for handleNext to ensure it works properly
   const safeHandleNext = () => {
