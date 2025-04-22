@@ -141,22 +141,27 @@ export const getUserPosts = async (userId: string, limit: number = 10, type?: 'i
 export const getFeedPosts = async (userId: string, limit: number = 20) => {
   try {
     // Get the list of users the current user follows
-    const { data: followingData, error: followingError } = await supabase
-      .from("user_follows")
-      .select("following_id")
-      .eq("follower_id", userId);
+    let followingIds: string[] = [];
+    let userIds: string[] = [userId]; // Default with just the current user's ID
     
-    if (followingError) {
-      console.error("Error fetching following data:", followingError);
+    try {
+      const { data, error: followingError } = await supabase
+        .from("user_follows")
+        .select("following_id")
+        .eq("follower_id", userId);
+      
+      if (followingError) {
+        console.error("Error fetching following data:", followingError);
+      } else if (data && data.length > 0) {
+        // Extract the user IDs
+        followingIds = data.map(item => item.following_id);
+        // Add the following IDs to the user IDs array
+        userIds = [...followingIds, userId];
+      }
+    } catch (followErr) {
+      console.error("Exception when fetching following data:", followErr);
       // Continue with just the user's own posts
-      followingData = [];
     }
-    
-    // Extract the user IDs
-    const followingIds = followingData ? followingData.map(item => item.following_id) : [];
-    
-    // Add the current user's ID to see their own posts too
-    const userIds = [...followingIds, userId];
     
     // Use a more reliable approach: fetch posts first, then profiles separately
     
@@ -171,7 +176,7 @@ export const getFeedPosts = async (userId: string, limit: number = 20) => {
         created_at,
         user_id
       `)
-      .in("user_id", userIds.length > 0 ? userIds : [userId])
+      .in("user_id", userIds)
       .order("created_at", { ascending: false })
       .limit(Math.ceil(limit / 2));
     
@@ -192,7 +197,7 @@ export const getFeedPosts = async (userId: string, limit: number = 20) => {
         created_at,
         user_id
       `)
-      .in("user_id", userIds.length > 0 ? userIds : [userId])
+      .in("user_id", userIds)
       .order("created_at", { ascending: false })
       .limit(Math.ceil(limit / 2));
     
@@ -201,7 +206,7 @@ export const getFeedPosts = async (userId: string, limit: number = 20) => {
     }
     
     // Combine posts from both sources
-    let allPosts = [];
+    let allPosts: any[] = [];
     
     // Add image posts if available
     if (imagePostsData && imagePostsData.length > 0) {
@@ -241,28 +246,32 @@ export const getFeedPosts = async (userId: string, limit: number = 20) => {
       const uniqueUserIds = [...new Set(allPosts.map(post => post.user_id))];
       
       if (uniqueUserIds.length > 0) {
-        const { data: profilesData, error: profilesError } = await supabase
-          .from("profiles")
-          .select("id, username, avatar, full_name, is_og")
-          .in("id", uniqueUserIds);
-        
-        if (profilesError) {
-          console.error("Error fetching profiles:", profilesError);
-        } else if (profilesData && profilesData.length > 0) {
-          // Create a map of profiles for easy lookup
-          const profileMap = new Map();
-          profilesData.forEach(profile => {
-            profileMap.set(profile.id, profile);
-          });
+        try {
+          const { data: profilesData, error: profilesError } = await supabase
+            .from("profiles")
+            .select("id, username, avatar, full_name")
+            .in("id", uniqueUserIds);
           
-          // Merge post data with profile data
-          allPosts = allPosts.map(post => {
-            const userProfile = profileMap.get(post.user_id);
-            return {
-              ...post,
-              profiles: userProfile || null
-            };
-          });
+          if (profilesError) {
+            console.error("Error fetching profiles:", profilesError);
+          } else if (profilesData && profilesData.length > 0) {
+            // Create a map of profiles for easy lookup
+            const profileMap = new Map();
+            profilesData.forEach(profile => {
+              profileMap.set(profile.id, profile);
+            });
+            
+            // Merge post data with profile data
+            allPosts = allPosts.map(post => {
+              const userProfile = profileMap.get(post.user_id);
+              return {
+                ...post,
+                profiles: userProfile || null
+              };
+            });
+          }
+        } catch (err) {
+          console.error("Error fetching and mapping user profiles:", err);
         }
       }
     }

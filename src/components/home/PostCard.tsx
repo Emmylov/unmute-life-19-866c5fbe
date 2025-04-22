@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
@@ -116,6 +117,7 @@ const PostCard = ({ post }: PostCardProps) => {
     toast.success(isSaved ? "Post removed from saved items" : "Post saved successfully");
   };
 
+  // Don't show OGBadge as it references a field that doesn't exist in the database
   return (
     <Card className="overflow-hidden border-none shadow-md hover:shadow-lg transition-shadow duration-300">
       <CardContent className="p-4">
@@ -129,7 +131,7 @@ const PostCard = ({ post }: PostCardProps) => {
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <h4 className="font-semibold text-sm">{authorName}</h4>
-              {post.profiles?.is_og && <OGBadge />}
+              {/* Removed OGBadge since is_og doesn't exist */}
             </div>
             <div className="flex items-center">
               <p className="text-xs text-gray-500">{postDate}</p>

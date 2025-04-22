@@ -67,12 +67,14 @@ export const useFeed = ({ limit = 10, type = 'personalized', refreshTrigger }: U
           const userIds = [...new Set(generalPosts.map(post => post.user_id))];
           if (userIds.length > 0) {
             try {
-              const { data: profilesData } = await supabase
+              const { data: profilesData, error: profilesError } = await supabase
                 .from("profiles")
-                .select("id, username, avatar, full_name, is_og")
+                .select("id, username, avatar, full_name")
                 .in("id", userIds);
                 
-              if (profilesData && profilesData.length > 0) {
+              if (profilesError) {
+                console.error("Error fetching profiles:", profilesError);
+              } else if (profilesData && profilesData.length > 0) {
                 // Create a map of profiles for easy lookup
                 const profileMap = new Map();
                 profilesData.forEach(profile => {
@@ -148,12 +150,14 @@ export const useFeed = ({ limit = 10, type = 'personalized', refreshTrigger }: U
           const userIds = [...new Set(textPosts.map(post => post.user_id))];
           if (userIds.length > 0) {
             try {
-              const { data: profilesData } = await supabase
+              const { data: profilesData, error: profilesError } = await supabase
                 .from("profiles")
-                .select("id, username, avatar, full_name, is_og")
+                .select("id, username, avatar, full_name")
                 .in("id", userIds);
                 
-              if (profilesData && profilesData.length > 0) {
+              if (profilesError) {
+                console.error("Error fetching profiles for text posts:", profilesError);
+              } else if (profilesData && profilesData.length > 0) {
                 // Create a map of profiles for easy lookup
                 const profileMap = new Map();
                 profilesData.forEach(profile => {
