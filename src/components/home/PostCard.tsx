@@ -30,18 +30,38 @@ interface PostCardProps {
       avatar?: string;
       full_name?: string;
       is_og?: boolean;
-    };
+    } | null;
+    user_id?: string;
   };
 }
 
 const PostCard = ({ post }: PostCardProps) => {
-  const authorName = post.author || post.profiles?.full_name || post.profiles?.username || "Anonymous";
-  const authorAvatar = post.avatar || post.profiles?.avatar || '';
-  const authorUsername = post.username || post.profiles?.username || "user";
-  const postDate = post.date || formatDistanceToNow(new Date(post.created_at), { addSuffix: true });
-  const postContent = post.content || post.body || '';
-  const moodEmoji = post.mood || post.emoji_mood || '';
-  const imageUrl = post.image_url || (post.image_urls && post.image_urls.length > 0 ? post.image_urls[0] : undefined);
+  const authorName = post.author || 
+                     post.profiles?.full_name || 
+                     post.profiles?.username || 
+                     "Anonymous";
+  
+  const authorAvatar = post.avatar || 
+                       post.profiles?.avatar || 
+                       '';
+  
+  const authorUsername = post.username || 
+                         post.profiles?.username || 
+                         "user";
+  
+  const postDate = post.date || 
+                   formatDistanceToNow(new Date(post.created_at), { addSuffix: true });
+  
+  const postContent = post.content || 
+                      post.body || 
+                      '';
+  
+  const moodEmoji = post.mood || 
+                    post.emoji_mood || 
+                    '';
+  
+  const imageUrl = post.image_url || 
+                   (post.image_urls && post.image_urls.length > 0 ? post.image_urls[0] : undefined);
   
   const [commentCount, setCommentCount] = useState(post.comments || 0);
   const [likeCount, setLikeCount] = useState(post.likes || 0);

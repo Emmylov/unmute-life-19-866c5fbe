@@ -50,87 +50,90 @@ export const useFeed = ({ limit = 10, type = 'personalized', refreshTrigger }: U
       if (!currentUser) {
         // If no user, get general posts using a simpler query
         try {
+          // Use a more direct query without complex joins
           const { data: generalPosts, error: generalError } = await supabase
             .from('posts')
-            .select(`
-              *,
-              profiles:user_id (
-                id,
-                username,
-                avatar
-              )
-            `)
+            .select('*')
             .order('created_at', { ascending: false })
             .limit(limit);
             
           if (generalError) throw generalError;
           setPosts(generalPosts || []);
-          setLoading(false);
-          return;
         } catch (err) {
+          console.error('Error with general posts query:', err);
+          
+          // Try the absolute simplest query as a last resort
+          try {
+            const { data: simpleData } = await supabase
+              .from('posts_text')
+              .select('id, body, created_at, user_id')
+              .limit(5);
+            
+            if (simpleData && simpleData.length > 0) {
+              // Transform posts to ensure they have a content field
+              const formattedPosts = simpleData.map(post => ({
+                ...post,
+                content: post.body || ''
+              }));
+              
+              setPosts(formattedPosts);
+              return;
+            }
+          } catch (fallbackErr) {
+            console.error('Error with fallback query:', fallbackErr);
+          }
+        }
+      } else {
+        // If we have a user, try to get personalized feed with the fixed function
+        try {
+          const feedPosts = await getFeedPosts(currentUser.id, limit);
+          setPosts(feedPosts || []);
+        } catch (err) {
+          console.error("Error with primary feed query:", err);
+          
           if (err instanceof Error && err.message.includes('Failed to fetch')) {
-            console.error('Network error when fetching general posts:', err);
+            console.error('Network error when fetching feed posts:', err);
             setNetworkError(true);
             throw err;
           }
           
-          console.error('Error with general posts query:', err);
-          // Try the absolute simplest query as a last resort
-          const { data: simpleData } = await supabase
-            .from('posts')
-            .select('id, content, created_at')
-            .limit(5);
-          
-          if (simpleData && simpleData.length > 0) {
-            setPosts(simpleData);
-            return;
+          // Fallback to simpler query with no joins if the relation query fails
+          try {
+            console.log("Using fallback posts query");
+            const { data: fallbackPosts, error: fallbackError } = await supabase
+              .from('posts')
+              .select('*')
+              .order('created_at', { ascending: false })
+              .limit(limit);
+              
+            if (fallbackError) throw fallbackError;
+            
+            if (fallbackPosts && fallbackPosts.length > 0) {
+              setPosts(fallbackPosts);
+              return;
+            }
+          } catch (fallbackErr) {
+            console.error('Error with fallback query:', fallbackErr);
           }
           
-          throw err;
-        }
-      }
-      
-      // If we have a user, try to get personalized feed
-      try {
-        const feedPosts = await getFeedPosts(currentUser.id, limit);
-        setPosts(feedPosts || []);
-      } catch (err) {
-        console.error("Error with primary feed query:", err);
-        
-        if (err instanceof Error && err.message.includes('Failed to fetch')) {
-          console.error('Network error when fetching feed posts:', err);
-          setNetworkError(true);
-          throw err;
-        }
-        
-        // Fallback to simpler query if the relation query fails
-        console.log("Using fallback posts query");
-        const { data: fallbackPosts, error: fallbackError } = await supabase
-          .from('posts')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(limit);
+          // If still no posts, try the simplest query
+          try {
+            const { data: simpleData } = await supabase
+              .from('posts_text')
+              .select('id, body as content, created_at, user_id')
+              .limit(5);
+            
+            if (simpleData && simpleData.length > 0) {
+              setPosts(simpleData);
+              return;
+            }
+          } catch (simpleErr) {
+            console.error('Error with simple query:', simpleErr);
+          }
           
-        if (fallbackError) throw fallbackError;
-        
-        if (fallbackPosts && fallbackPosts.length > 0) {
-          setPosts(fallbackPosts);
-          return;
+          // If all else fails, set empty posts
+          setPosts([]);
         }
-        
-        // If still no posts, try the simplest query
-        const { data: simpleData } = await supabase
-          .from('posts')
-          .select('id, content, created_at')
-          .limit(5);
-        
-        if (simpleData && simpleData.length > 0) {
-          setPosts(simpleData);
-          return;
-        }
-        
-        // If all else fails, set empty posts
-        setPosts([]);
       }
     } catch (err) {
       console.error('Error fetching feed:', err);
