@@ -18,6 +18,9 @@ export const checkSessionValid = async (): Promise<boolean> => {
     return !!data.session;
   } catch (error) {
     console.error("Unexpected error checking session:", error);
+    if (error instanceof Error && error.message.includes('Failed to fetch')) {
+      console.warn('Network connectivity issue detected during session check');
+    }
     return false;
   }
 };
@@ -39,6 +42,10 @@ export const refreshSession = async (): Promise<boolean> => {
     return !!data.session;
   } catch (error) {
     console.error("Unexpected error refreshing session:", error);
+    // Don't show toast for network errors as they can be transient
+    if (!(error instanceof Error && error.message.includes('Failed to fetch'))) {
+      toast.error("Session refresh failed, please try again");
+    }
     return false;
   }
 };
@@ -50,12 +57,18 @@ export const refreshSession = async (): Promise<boolean> => {
 export const setupSessionRefresh = (expiresIn?: number): (() => void) => {
   if (!expiresIn) return () => {};
   
-  // Calculate refresh time (1 minute before expiry)
-  const refreshTime = (expiresIn - 60) * 1000;
+  // Calculate refresh time (1 minute before expiry, but not less than 30 seconds from now)
+  const refreshTime = Math.max((expiresIn - 60), 30) * 1000;
   
   // Setup refresh timer
-  const timerId = setTimeout(() => {
-    refreshSession();
+  const timerId = setTimeout(async () => {
+    try {
+      await refreshSession();
+    } catch (error) {
+      console.error("Error during scheduled session refresh:", error);
+      // Schedule another attempt in 30 seconds if it fails
+      setTimeout(() => refreshSession(), 30000);
+    }
   }, refreshTime);
   
   // Return cleanup function
@@ -87,8 +100,11 @@ export const getUserProfile = async (userId: string) => {
   }
 };
 
-// Helper function to check if user is authenticated
-export const isUserAuthenticated = async (): Promise<{authenticated: boolean, userId?: string}> => {
+/**
+ * Helper function to check if user is authenticated
+ * Includes offline detection and retry
+ */
+export const isUserAuthenticated = async (retries = 1): Promise<{authenticated: boolean, userId?: string}> => {
   try {
     const { data } = await supabase.auth.getSession();
     return {
@@ -97,12 +113,27 @@ export const isUserAuthenticated = async (): Promise<{authenticated: boolean, us
     };
   } catch (error) {
     console.error("Error checking authentication:", error);
+    
+    // If it's a network error and we have retries left, try again after a delay
+    if (error instanceof Error && 
+        error.message.includes('Failed to fetch') && 
+        retries > 0) {
+      console.log(`Retrying auth check, ${retries} attempts left`);
+      
+      // Wait 2 seconds before retry
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      return isUserAuthenticated(retries - 1);
+    }
+    
     return { authenticated: false };
   }
 };
 
-// Get the current user directly from supabase
-export const getCurrentUser = async () => {
+/**
+ * Get the current user directly from supabase
+ * Added retry capability for intermittent network issues
+ */
+export const getCurrentUser = async (retries = 1) => {
   try {
     const { data, error } = await supabase.auth.getUser();
     if (error) {
@@ -112,6 +143,18 @@ export const getCurrentUser = async () => {
     return data.user;
   } catch (error) {
     console.error("Unexpected error getting current user:", error);
+    
+    // If it's a network error and we have retries left, try again after a delay
+    if (error instanceof Error && 
+        error.message.includes('Failed to fetch') && 
+        retries > 0) {
+      console.log(`Retrying getCurrentUser, ${retries} attempts left`);
+      
+      // Wait 2 seconds before retry
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      return getCurrentUser(retries - 1);
+    }
+    
     return null;
   }
 };

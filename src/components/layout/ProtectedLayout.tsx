@@ -5,6 +5,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { toast } from "sonner";
 import ErrorDisplay from "@/components/ui/error-display";
+import { Button } from "@/components/ui/button";
+import { RefreshCcw } from "lucide-react";
 
 interface ProtectedLayoutProps {
   children?: ReactNode;
@@ -27,19 +29,22 @@ const ProtectedLayout = ({
   const [retryCount, setRetryCount] = useState(0);
   const [hasShownMessage, setHasShownMessage] = useState(false);
   const [authCheckComplete, setAuthCheckComplete] = useState(false);
+  const [loadingTimeout, setLoadingTimeout] = useState(false);
 
   useEffect(() => {
     // Reset error state when location changes
     setError(null);
     setHasShownMessage(false);
+    setLoadingTimeout(false);
     
     // Set a timeout to consider auth check complete even if stuck
     const timeoutId = setTimeout(() => {
       if (!authCheckComplete) {
         setAuthCheckComplete(true);
+        setLoadingTimeout(true);
         console.warn("Auth check timed out, proceeding with available data");
       }
-    }, 3000); // 3 seconds timeout
+    }, 5000); // 5 seconds timeout
     
     return () => {
       clearTimeout(timeoutId);
@@ -56,11 +61,38 @@ const ProtectedLayout = ({
   const handleRetry = () => {
     setError(null);
     setRetryCount(prev => prev + 1);
+    setLoadingTimeout(false);
+    setAuthCheckComplete(false);
     toast.info("Retrying...");
+    // Force refresh auth data
+    window.location.reload();
   };
 
   // Use either loading or isLoading - for backward compatibility
   const isAuthLoading = (loading || isLoading) && !authCheckComplete;
+
+  // If we hit the timeout but have user data already, continue
+  if (loadingTimeout && user) {
+    console.log("Loading timed out but user exists, continuing");
+  } 
+  // If we hit the timeout without user data, show retry option
+  else if (loadingTimeout && !user) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-4">
+        <h2 className="text-2xl font-bold mb-4">Connection Issue</h2>
+        <p className="text-gray-600 mb-6 text-center">
+          We're having trouble verifying your access.
+          This could be due to network connectivity issues.
+        </p>
+        <Button 
+          onClick={handleRetry}
+          className="flex items-center gap-2"
+        >
+          <RefreshCcw className="h-4 w-4" /> Try Again
+        </Button>
+      </div>
+    );
+  }
 
   // While checking authentication, show a loading indicator
   if (isAuthLoading && showLoading) {
