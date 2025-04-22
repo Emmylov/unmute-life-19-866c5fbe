@@ -147,17 +147,21 @@ export const getFeedPosts = async (userId: string, limit: number = 20) => {
       .eq("follower_id", userId);
     
     if (followingError) {
-      throw followingError;
+      console.error("Error fetching following data:", followingError);
+      // Continue with just the user's own posts
+      followingData = [];
     }
     
     // Extract the user IDs
-    const followingIds = followingData.map(item => item.following_id);
+    const followingIds = followingData ? followingData.map(item => item.following_id) : [];
     
     // Add the current user's ID to see their own posts too
     const userIds = [...followingIds, userId];
     
-    // Modified: First try to fetch posts with a simple query without the problematic join
-    const { data: postsData, error: postsError } = await supabase
+    // Use a more reliable approach: fetch posts first, then profiles separately
+    
+    // First fetch posts_images
+    const { data: imagePostsData, error: imagePostsError } = await supabase
       .from("posts_images")
       .select(`
         id, 
@@ -169,49 +173,14 @@ export const getFeedPosts = async (userId: string, limit: number = 20) => {
       `)
       .in("user_id", userIds.length > 0 ? userIds : [userId])
       .order("created_at", { ascending: false })
-      .limit(limit);
+      .limit(Math.ceil(limit / 2));
     
-    if (postsError) {
-      throw postsError;
+    if (imagePostsError) {
+      console.error("Error fetching image posts:", imagePostsError);
+      // Continue to try text posts
     }
     
-    // If we have posts, now fetch the user profiles separately and merge the data
-    if (postsData && postsData.length > 0) {
-      // Get unique user IDs from the posts
-      const uniqueUserIds = [...new Set(postsData.map(post => post.user_id))];
-      
-      // Fetch profiles for these users
-      const { data: profilesData, error: profilesError } = await supabase
-        .from("profiles")
-        .select("id, username, avatar, full_name")
-        .in("id", uniqueUserIds);
-      
-      if (profilesError) {
-        console.error("Error fetching profiles:", profilesError);
-        // Return posts without profile data if there's an error
-        return postsData;
-      }
-      
-      // Create a map of profiles for easy lookup
-      const profileMap = new Map();
-      profilesData?.forEach(profile => {
-        profileMap.set(profile.id, profile);
-      });
-      
-      // Merge post data with profile data
-      const postsWithProfiles = postsData.map(post => {
-        const userProfile = profileMap.get(post.user_id);
-        return {
-          ...post,
-          profiles: userProfile || null
-        };
-      });
-      
-      return postsWithProfiles;
-    }
-    
-    // If no posts found in posts_images, try getting data from other post tables
-    console.log("No image posts found, checking text posts...");
+    // Then fetch posts_text
     const { data: textPostsData, error: textPostsError } = await supabase
       .from("posts_text")
       .select(`
@@ -225,53 +194,82 @@ export const getFeedPosts = async (userId: string, limit: number = 20) => {
       `)
       .in("user_id", userIds.length > 0 ? userIds : [userId])
       .order("created_at", { ascending: false })
-      .limit(limit);
+      .limit(Math.ceil(limit / 2));
     
     if (textPostsError) {
       console.error("Error fetching text posts:", textPostsError);
-      return [];
     }
     
-    // If we have text posts, fetch and merge profile data
+    // Combine posts from both sources
+    let allPosts = [];
+    
+    // Add image posts if available
+    if (imagePostsData && imagePostsData.length > 0) {
+      // Add a post_type field to help identify the source later
+      const formattedImagePosts = imagePostsData.map(post => ({
+        ...post,
+        post_type: 'image'
+      }));
+      allPosts.push(...formattedImagePosts);
+    }
+    
+    // Add text posts if available
     if (textPostsData && textPostsData.length > 0) {
-      // Get unique user IDs from the posts
-      const uniqueUserIds = [...new Set(textPostsData.map(post => post.user_id))];
+      // Normalize the data structure and add post_type
+      const formattedTextPosts = textPostsData.map(post => ({
+        ...post,
+        content: post.body, // Ensure content field exists for compatibility
+        post_type: 'text'
+      }));
+      allPosts.push(...formattedTextPosts);
+    }
+    
+    // If we have posts, sort them by creation date and limit to the requested amount
+    if (allPosts.length > 0) {
+      allPosts.sort((a, b) => {
+        const dateA = new Date(a.created_at).getTime();
+        const dateB = new Date(b.created_at).getTime();
+        return dateB - dateA; // Sort descending (newest first)
+      });
       
-      // Fetch profiles for these users
-      const { data: profilesData, error: profilesError } = await supabase
-        .from("profiles")
-        .select("id, username, avatar, full_name")
-        .in("id", uniqueUserIds);
-      
-      if (profilesError) {
-        console.error("Error fetching profiles for text posts:", profilesError);
-        // Return posts without profile data if there's an error
-        return textPostsData;
+      // Limit to the requested number of posts
+      if (allPosts.length > limit) {
+        allPosts = allPosts.slice(0, limit);
       }
       
-      // Create a map of profiles for easy lookup
-      const profileMap = new Map();
-      profilesData?.forEach(profile => {
-        profileMap.set(profile.id, profile);
-      });
+      // Now fetch profiles for all posts at once
+      const uniqueUserIds = [...new Set(allPosts.map(post => post.user_id))];
       
-      // Merge post data with profile data
-      const postsWithProfiles = textPostsData.map(post => {
-        const userProfile = profileMap.get(post.user_id);
-        return {
-          ...post,
-          content: post.body,  // Ensure content field exists for compatibility
-          profiles: userProfile || null
-        };
-      });
-      
-      return postsWithProfiles;
+      if (uniqueUserIds.length > 0) {
+        const { data: profilesData, error: profilesError } = await supabase
+          .from("profiles")
+          .select("id, username, avatar, full_name, is_og")
+          .in("id", uniqueUserIds);
+        
+        if (profilesError) {
+          console.error("Error fetching profiles:", profilesError);
+        } else if (profilesData && profilesData.length > 0) {
+          // Create a map of profiles for easy lookup
+          const profileMap = new Map();
+          profilesData.forEach(profile => {
+            profileMap.set(profile.id, profile);
+          });
+          
+          // Merge post data with profile data
+          allPosts = allPosts.map(post => {
+            const userProfile = profileMap.get(post.user_id);
+            return {
+              ...post,
+              profiles: userProfile || null
+            };
+          });
+        }
+      }
     }
     
-    return [];
+    return allPosts;
   } catch (error) {
     console.error("Error fetching feed posts:", error);
     throw error;
   }
 };
-

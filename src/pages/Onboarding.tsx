@@ -19,14 +19,14 @@ const Onboarding = () => {
     currentStep,
     loading,
     handleNext,
-    handleComplete
+    handleComplete,
+    checkComplete
   } = useOnboarding();
   
   const navigate = useNavigate();
   const { user, profile } = useAuth();
   const [loadingCheck, setLoadingCheck] = useState(true);
   const [checkError, setCheckError] = useState<string | null>(null);
-  const [checkTimeout, setCheckTimeout] = useState(false);
   
   // Check if the user is already fully onboarded
   useEffect(() => {
@@ -35,17 +35,9 @@ const Onboarding = () => {
         setLoadingCheck(true);
         setCheckError(null);
         
-        // Set timeout to prevent infinite loading
-        const timeoutId = setTimeout(() => {
-          setCheckTimeout(true);
-          setLoadingCheck(false);
-          console.warn("Onboarding check timed out");
-        }, 5000);
-        
         // Check user metadata first
         if (user?.user_metadata?.is_onboarded) {
           console.log("User already onboarded (user metadata). Redirecting to home.");
-          clearTimeout(timeoutId);
           navigate('/home');
           return;
         }
@@ -53,7 +45,6 @@ const Onboarding = () => {
         // Then check profile data which is more reliable
         if (profile?.is_onboarded) {
           console.log("User already onboarded (profile data). Redirecting to home.");
-          clearTimeout(timeoutId);
           navigate('/home');
           return;
         }
@@ -61,7 +52,6 @@ const Onboarding = () => {
         // As a fallback, check if other profile data exists that would indicate completed onboarding
         if (profile && (profile.username || profile.full_name || profile.bio)) {
           console.log("User has profile data. Likely already onboarded. Redirecting to home.");
-          clearTimeout(timeoutId);
           navigate('/home');
           return;
         }
@@ -71,7 +61,6 @@ const Onboarding = () => {
           const currentUser = await getCurrentUser();
           if (currentUser?.user_metadata?.is_onboarded) {
             console.log("User already onboarded (direct check). Redirecting to home.");
-            clearTimeout(timeoutId);
             navigate('/home');
             return;
           }
@@ -80,7 +69,6 @@ const Onboarding = () => {
           // Continue onboarding if this check fails, don't block the flow
         }
         
-        clearTimeout(timeoutId);
         setLoadingCheck(false);
       } catch (error) {
         console.error("Error checking onboarding status:", error);
@@ -90,30 +78,17 @@ const Onboarding = () => {
       }
     };
     
-    if (!loading) {
+    if (!loading && checkComplete) {
       checkOnboardingStatus();
+    } else if (!loading && !checkComplete) {
+      // If hook has finished loading but check isn't complete, start our check
+      setLoadingCheck(false);
     }
-  }, [user, profile, loading, navigate]);
+  }, [user, profile, loading, navigate, checkComplete]);
 
   const handleRetry = () => {
     window.location.reload();
   };
-  
-  // Handle timeout - if the check takes too long, show retry option
-  if (checkTimeout) {
-    return (
-      <div className="h-screen flex flex-col items-center justify-center p-6">
-        <h2 className="text-2xl font-bold mb-4">Loading Taking Too Long</h2>
-        <p className="text-gray-600 mb-6 text-center">
-          We're having trouble checking your onboarding status.
-          This could be due to network connectivity issues.
-        </p>
-        <Button onClick={handleRetry} className="flex items-center gap-2">
-          <RefreshCcw className="h-4 w-4" /> Retry
-        </Button>
-      </div>
-    );
-  }
 
   // Define a safe wrapper for handleNext to ensure it works properly
   const safeHandleNext = () => {
@@ -135,10 +110,12 @@ const Onboarding = () => {
     }
   };
   
+  // Show loading UI if we're loading either from the hook or our extra check
   if (loading || loadingCheck) {
     return (
-      <div className="h-screen flex items-center justify-center">
+      <div className="h-screen flex flex-col items-center justify-center">
         <LoadingSpinner size="large" color="purple" text="Loading onboarding..." />
+        <p className="text-gray-500 mt-2 text-sm">This should only take a moment...</p>
       </div>
     );
   }

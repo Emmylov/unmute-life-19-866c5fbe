@@ -155,6 +155,24 @@ export const getCurrentUser = async (retries = 1) => {
       return getCurrentUser(retries - 1);
     }
     
-    return null;
+    throw error; // Rethrow so caller can handle appropriately
   }
+};
+
+/**
+ * Check auth with timeout to prevent hanging
+ */
+export const getCurrentUserWithTimeout = async (timeoutMs = 5000) => {
+  return Promise.race([
+    getCurrentUser(),
+    new Promise((_, reject) => 
+      setTimeout(() => reject(new Error("Auth check timed out")), timeoutMs)
+    )
+  ]).then(
+    (user) => user,
+    (error) => {
+      console.warn("Auth check timed out or failed:", error);
+      return null;
+    }
+  );
 };

@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { getCurrentUser } from "@/services/auth-service";
 
 const TOTAL_STEPS = 13;
+const AUTH_CHECK_TIMEOUT = 8000; // 8 seconds timeout for auth checks
 
 export const useOnboarding = () => {
   const [currentStep, setCurrentStep] = useState(0); // Start at welcome step
@@ -16,6 +17,7 @@ export const useOnboarding = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [onboardingData, setOnboardingData] = useState<any>({});
   const [errors, setErrors] = useState<string[]>([]);
+  const [checkComplete, setCheckComplete] = useState(false);
   const navigate = useNavigate();
   const { user, profile, refreshProfile } = useAuth();
   
@@ -25,14 +27,43 @@ export const useOnboarding = () => {
     const checkOnboardingStatus = async () => {
       try {
         setLoadingError(null);
-        // Check authentication directly with supabase
-        const currentUser = await getCurrentUser();
+        
+        // Set timeout to ensure we don't hang indefinitely
+        const timeoutId = setTimeout(() => {
+          if (isMounted && !checkComplete) {
+            console.log("Onboarding auth check timed out");
+            setLoading(false);
+            setCheckComplete(true);
+            // Don't set error - we'll just proceed with whatever data we have
+          }
+        }, AUTH_CHECK_TIMEOUT);
+        
+        // Check authentication directly with supabase with retries
+        let currentUser = null;
+        let attempts = 0;
+        while (!currentUser && attempts < 2) {
+          try {
+            currentUser = await getCurrentUser();
+            break;
+          } catch (error) {
+            attempts++;
+            if (attempts < 2) {
+              // Wait a bit before retrying
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+          }
+        }
         
         if (currentUser) {
           if (isMounted) setIsLoggedIn(true);
           
           // Refresh the profile to make sure we have the latest data
-          await refreshProfile();
+          try {
+            await refreshProfile();
+          } catch (profileError) {
+            console.warn("Error refreshing profile:", profileError);
+            // Continue without profile refresh
+          }
           
           if (profile) {
             // Populate onboarding data from profile if available
@@ -48,22 +79,36 @@ export const useOnboarding = () => {
               });
             }
             
+            // Check if user is already onboarded
             if (profile.is_onboarded) {
-              // If fully onboarded, go to home
+              console.log("User is already onboarded based on profile data");
+              clearTimeout(timeoutId);
               navigate('/home');
               return;
             }
             
-            // For ongoing onboarding, always start at the beginning for now
+            // For ongoing onboarding, start at the beginning
             if (isMounted) setCurrentStep(0);
+          } else if (currentUser.user_metadata?.is_onboarded) {
+            // If profile not found but metadata says onboarded
+            console.log("User is onboarded based on metadata");
+            clearTimeout(timeoutId);
+            navigate('/home');
+            return;
           }
         }
         
-        if (isMounted) setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+          setCheckComplete(true);
+        }
+        
+        clearTimeout(timeoutId);
       } catch (error: any) {
         console.error("Error checking onboarding status:", error);
         if (isMounted) {
           setLoading(false);
+          setCheckComplete(true);
           setLoadingError(error.message || "Failed to check onboarding status");
           setErrors(prev => [...prev, "Failed to check onboarding status"]);
           
@@ -75,22 +120,10 @@ export const useOnboarding = () => {
       }
     };
     
-    // Set a timeout to prevent hanging
-    const timeoutId = setTimeout(() => {
-      if (isMounted && loading) {
-        setLoading(false);
-        setLoadingError("Loading timed out. Please refresh the page.");
-        toast.error("Loading is taking too long", {
-          description: "Please try refreshing the page"
-        });
-      }
-    }, 10000);
-    
     checkOnboardingStatus();
     
     return () => {
       isMounted = false;
-      clearTimeout(timeoutId);
     };
   }, [navigate, user, profile, refreshProfile]);
 
@@ -127,7 +160,16 @@ export const useOnboarding = () => {
 
   const handleComplete = async () => {
     // Double check authentication
-    const currentUser = await getCurrentUser();
+    let currentUser;
+    try {
+      currentUser = await getCurrentUser();
+    } catch (error) {
+      console.error("Error checking authentication:", error);
+      toast.error("Authentication check failed", {
+        description: "Please try again or sign in again."
+      });
+      return;
+    }
     
     if (!currentUser) {
       toast.error("No user logged in", {
@@ -148,11 +190,17 @@ export const useOnboarding = () => {
         is_onboarded: true
       });
       
+      // Track the onboarding completion event
       trackAnalyticEvent(currentUser.id, "onboarding_complete", { 
         resource_type: "onboarding" 
       });
       
-      await refreshProfile();
+      try {
+        await refreshProfile();
+      } catch (error) {
+        console.warn("Error refreshing profile:", error);
+        // Continue anyway - we've already saved the onboarding data
+      }
       
       // Show success toast
       toast.success("Onboarding completed!", { 
@@ -189,6 +237,7 @@ export const useOnboarding = () => {
     onboardingData,
     errors,
     loadingError,
+    checkComplete,
     handleNext,
     handleComplete,
     resetErrors,

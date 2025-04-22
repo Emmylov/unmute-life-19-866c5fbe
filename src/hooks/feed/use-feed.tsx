@@ -19,6 +19,7 @@ export const useFeed = ({ limit = 10, type = 'personalized', refreshTrigger }: U
   const refreshCountRef = useRef(0);
   const attemptsRef = useRef(0);
   const maxAttempts = 3;
+  const [hasFetchedData, setHasFetchedData] = useState(false);
 
   const fetchFeed = useCallback(async () => {
     setLoading(true);
@@ -47,47 +48,70 @@ export const useFeed = ({ limit = 10, type = 'personalized', refreshTrigger }: U
         // Continue without user - will use general feed
       }
       
-      if (!currentUser) {
-        // If no user, get general posts using a simpler query
-        try {
-          // Use a more direct query without complex joins
-          const { data: generalPosts, error: generalError } = await supabase
-            .from('posts')
-            .select('*')
-            .order('created_at', { ascending: false })
-            .limit(limit);
-            
-          if (generalError) throw generalError;
-          setPosts(generalPosts || []);
-        } catch (err) {
-          console.error('Error with general posts query:', err);
+      // Fetch general posts first as most reliable approach
+      try {
+        const { data: generalPosts, error: generalError } = await supabase
+          .from('posts')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(limit);
           
-          // Try the absolute simplest query as a last resort
-          try {
-            const { data: simpleData } = await supabase
-              .from('posts_text')
-              .select('id, body, created_at, user_id')
-              .limit(5);
-            
-            if (simpleData && simpleData.length > 0) {
-              // Transform posts to ensure they have a content field
-              const formattedPosts = simpleData.map(post => ({
-                ...post,
-                content: post.body || ''
-              }));
-              
-              setPosts(formattedPosts);
-              return;
+        if (generalError) {
+          console.error('Error with general posts query:', generalError);
+        } else if (generalPosts && generalPosts.length > 0) {
+          setPosts(generalPosts);
+          setHasFetchedData(true);
+          setLoading(false);
+          
+          // Try to fetch user profiles separately for these posts
+          const userIds = [...new Set(generalPosts.map(post => post.user_id))];
+          if (userIds.length > 0) {
+            try {
+              const { data: profilesData } = await supabase
+                .from("profiles")
+                .select("id, username, avatar, full_name, is_og")
+                .in("id", userIds);
+                
+              if (profilesData && profilesData.length > 0) {
+                // Create a map of profiles for easy lookup
+                const profileMap = new Map();
+                profilesData.forEach(profile => {
+                  profileMap.set(profile.id, profile);
+                });
+                
+                // Merge post data with profile data
+                const postsWithProfiles = generalPosts.map(post => {
+                  const userProfile = profileMap.get(post.user_id);
+                  return {
+                    ...post,
+                    profiles: userProfile || null
+                  };
+                });
+                
+                setPosts(postsWithProfiles);
+              }
+            } catch (profileError) {
+              console.error("Error fetching profiles:", profileError);
+              // We already have posts, so don't set an error state
             }
-          } catch (fallbackErr) {
-            console.error('Error with fallback query:', fallbackErr);
           }
+          
+          return;
         }
-      } else {
-        // If we have a user, try to get personalized feed with the fixed function
+      } catch (err) {
+        console.error('Error with general posts query:', err);
+        // Continue to other approaches
+      }
+      
+      // If user exists, try the personalized feed
+      if (currentUser) {
         try {
           const feedPosts = await getFeedPosts(currentUser.id, limit);
-          setPosts(feedPosts || []);
+          if (feedPosts && feedPosts.length > 0) {
+            setPosts(feedPosts);
+            setHasFetchedData(true);
+            return;
+          }
         } catch (err) {
           console.error("Error with primary feed query:", err);
           
@@ -96,45 +120,72 @@ export const useFeed = ({ limit = 10, type = 'personalized', refreshTrigger }: U
             setNetworkError(true);
             throw err;
           }
-          
-          // Fallback to simpler query with no joins if the relation query fails
-          try {
-            console.log("Using fallback posts query");
-            const { data: fallbackPosts, error: fallbackError } = await supabase
-              .from('posts')
-              .select('*')
-              .order('created_at', { ascending: false })
-              .limit(limit);
-              
-            if (fallbackError) throw fallbackError;
-            
-            if (fallbackPosts && fallbackPosts.length > 0) {
-              setPosts(fallbackPosts);
-              return;
-            }
-          } catch (fallbackErr) {
-            console.error('Error with fallback query:', fallbackErr);
-          }
-          
-          // If still no posts, try the simplest query
-          try {
-            const { data: simpleData } = await supabase
-              .from('posts_text')
-              .select('id, body as content, created_at, user_id')
-              .limit(5);
-            
-            if (simpleData && simpleData.length > 0) {
-              setPosts(simpleData);
-              return;
-            }
-          } catch (simpleErr) {
-            console.error('Error with simple query:', simpleErr);
-          }
-          
-          // If all else fails, set empty posts
-          setPosts([]);
         }
       }
+      
+      // Try posts_text table as a fallback
+      try {
+        console.log("Using text posts fallback query");
+        const { data: textPosts, error: textError } = await supabase
+          .from('posts_text')
+          .select('id, body, title, created_at, user_id, emoji_mood, tags')
+          .order('created_at', { ascending: false })
+          .limit(limit);
+          
+        if (textError) {
+          console.error('Error with text posts query:', textError);
+        } else if (textPosts && textPosts.length > 0) {
+          // Transform posts to ensure they have a content field
+          const formattedPosts = textPosts.map(post => ({
+            ...post,
+            content: post.body || ''
+          }));
+          
+          setPosts(formattedPosts);
+          setHasFetchedData(true);
+          
+          // Try to fetch user profiles for these posts
+          const userIds = [...new Set(textPosts.map(post => post.user_id))];
+          if (userIds.length > 0) {
+            try {
+              const { data: profilesData } = await supabase
+                .from("profiles")
+                .select("id, username, avatar, full_name, is_og")
+                .in("id", userIds);
+                
+              if (profilesData && profilesData.length > 0) {
+                // Create a map of profiles for easy lookup
+                const profileMap = new Map();
+                profilesData.forEach(profile => {
+                  profileMap.set(profile.id, profile);
+                });
+                
+                // Merge post data with profile data
+                const postsWithProfiles = formattedPosts.map(post => {
+                  const userProfile = profileMap.get(post.user_id);
+                  return {
+                    ...post,
+                    profiles: userProfile || null
+                  };
+                });
+                
+                setPosts(postsWithProfiles);
+              }
+            } catch (profileError) {
+              console.error("Error fetching profiles for text posts:", profileError);
+            }
+          }
+          
+          return;
+        }
+      } catch (textErr) {
+        console.error('Error with text posts fallback:', textErr);
+      }
+      
+      // If all else fails, set empty posts
+      console.log("No posts found from any source");
+      setPosts([]);
+      
     } catch (err) {
       console.error('Error fetching feed:', err);
       setError(err instanceof Error ? err : new Error('Failed to fetch feed'));
@@ -184,7 +235,7 @@ export const useFeed = ({ limit = 10, type = 'personalized', refreshTrigger }: U
   // Initial fetch
   useEffect(() => {
     fetchFeed();
-  }, [fetchFeed, refreshTrigger, refreshCountRef.current]);
+  }, [fetchFeed, refreshTrigger]);
 
   return { 
     posts, 
@@ -192,7 +243,8 @@ export const useFeed = ({ limit = 10, type = 'personalized', refreshTrigger }: U
     error, 
     refresh, 
     networkError,
-    isRetrying: attemptsRef.current > 1 && attemptsRef.current < maxAttempts
+    isRetrying: attemptsRef.current > 1 && attemptsRef.current < maxAttempts,
+    hasFetchedData
   };
 };
 
