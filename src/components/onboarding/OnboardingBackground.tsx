@@ -7,16 +7,10 @@ interface OnboardingBackgroundProps {
   children: React.ReactNode;
 }
 
-interface OnboardingLayoutProps {
+const OnboardingLayout: React.FC<{
   children: React.ReactNode;
   backgroundClass?: string;
-}
-
-// First create the OnboardingLayout component
-const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({ 
-  children, 
-  backgroundClass = "bg-purple-teal-gradient" 
-}) => {
+}> = ({ children, backgroundClass = "bg-purple-teal-gradient" }) => {
   const isMobile = useIsMobile();
   
   return (
@@ -35,7 +29,7 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
   );
 };
 
-export const OnboardingBackground: React.FC<OnboardingBackgroundProps> = ({ step, children }) => {
+const OnboardingBackground: React.FC<OnboardingBackgroundProps> = ({ step, children }) => {
   const getBackgroundClass = () => {
     switch (step) {
       case 0:

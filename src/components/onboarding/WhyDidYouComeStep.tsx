@@ -1,61 +1,48 @@
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Check } from "lucide-react";
 
 interface WhyDidYouComeStepProps {
   onNext: () => void;
 }
 
-const reasons = [
-  "I want to feel more heard",
-  "I'm tired of fake platforms",
-  "I want to talk about my health",
-  "I want to connect without judgment",
-  "I'm hurting but I'm healing",
-  "I just want a safe place to be myself",
-  "I'm not sure yet, but I'm curious",
-];
+const WhyDidYouComeStep: React.FC<WhyDidYouComeStepProps> = ({ onNext }) => {
+  const [selectedReason, setSelectedReason] = useState<string | null>(null);
 
-const WhyDidYouComeStep = ({ onNext }: WhyDidYouComeStepProps) => {
-  const [selectedReasons, setSelectedReasons] = useState<string[]>([]);
-
-  const toggleReason = (reason: string) => {
-    if (selectedReasons.includes(reason)) {
-      setSelectedReasons(selectedReasons.filter((r) => r !== reason));
-    } else {
-      setSelectedReasons([...selectedReasons, reason]);
-    }
-  };
+  const reasons = [
+    { id: "express", label: "To express myself" },
+    { id: "connect", label: "To connect with others" },
+    { id: "find-community", label: "To find my community" },
+    { id: "share", label: "To share my story" },
+  ];
 
   return (
     <div className="flex flex-col items-center justify-center flex-grow p-6">
-      <h2 className="text-3xl font-bold mb-2">Why Did You Come?</h2>
-      <p className="text-gray-600 mb-8 text-center">Choose what brought you here</p>
+      <h2 className="text-2xl sm:text-3xl font-bold mb-2">Why did you come to Unmute?</h2>
+      <p className="text-gray-600 mb-8 text-center">
+        Your answer helps us personalize your experience
+      </p>
 
-      <div className="grid gap-3 w-full max-w-md mb-8">
-        {reasons.map((reason) => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-md mb-8">
+        {reasons.map(({ id, label }) => (
           <button
-            key={reason}
-            onClick={() => toggleReason(reason)}
-            className={`unmute-bubble p-4 text-left flex items-center justify-between ${
-              selectedReasons.includes(reason)
+            key={id}
+            onClick={() => setSelectedReason(id)}
+            className={`unmute-bubble py-4 px-5 flex items-center justify-center ${
+              selectedReason === id
                 ? "bg-gradient-to-r from-unmute-purple to-unmute-pink text-white"
                 : "bg-white hover:bg-gray-50"
             }`}
           >
-            <span>{reason}</span>
-            {selectedReasons.includes(reason) && (
-              <Check className="h-5 w-5 ml-2" />
-            )}
+            <span className="text-center">{label}</span>
           </button>
         ))}
       </div>
 
-      <Button
-        onClick={onNext}
+      <Button 
+        onClick={onNext} 
         className="unmute-primary-button"
-        disabled={selectedReasons.length === 0}
+        disabled={!selectedReason}
       >
         Next
       </Button>

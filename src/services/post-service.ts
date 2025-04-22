@@ -141,7 +141,6 @@ export const getUserPosts = async (userId: string, limit: number = 10, type?: 'i
 export const getFeedPosts = async (userId: string, limit: number = 20) => {
   try {
     // Get the list of users the current user follows
-    let followingIds: string[] = [];
     let userIds: string[] = [userId]; // Default with just the current user's ID
     
     try {
@@ -154,7 +153,7 @@ export const getFeedPosts = async (userId: string, limit: number = 20) => {
         console.error("Error fetching following data:", followingError);
       } else if (data && data.length > 0) {
         // Extract the user IDs
-        followingIds = data.map(item => item.following_id);
+        const followingIds = data.map(item => item.following_id);
         // Add the following IDs to the user IDs array
         userIds = [...followingIds, userId];
       }
