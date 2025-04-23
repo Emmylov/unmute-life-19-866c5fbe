@@ -16,6 +16,10 @@ const WhyDidYouComeStep: React.FC<WhyDidYouComeStepProps> = ({ onNext }) => {
     { id: "share", label: "To share my story" },
   ];
 
+  const handleReasonSelect = (id: string) => {
+    setSelectedReason(id);
+  };
+
   return (
     <div className="flex flex-col items-center justify-center flex-grow p-6">
       <h2 className="text-2xl sm:text-3xl font-bold mb-2">Why did you come to Unmute?</h2>
@@ -27,7 +31,7 @@ const WhyDidYouComeStep: React.FC<WhyDidYouComeStepProps> = ({ onNext }) => {
         {reasons.map(({ id, label }) => (
           <button
             key={id}
-            onClick={() => setSelectedReason(id)}
+            onClick={() => handleReasonSelect(id)}
             className={`unmute-bubble py-4 px-5 flex items-center justify-center ${
               selectedReason === id
                 ? "bg-gradient-to-r from-unmute-purple to-unmute-pink text-white"
