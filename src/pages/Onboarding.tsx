@@ -27,6 +27,20 @@ const Onboarding = () => {
   const { user, profile } = useAuth();
   const [loadingCheck, setLoadingCheck] = useState(true);
   const [checkError, setCheckError] = useState<string | null>(null);
+  const [loadingTimeout, setLoadingTimeout] = useState(false);
+  
+  // Set a timeout to proceed even if auth checks are taking too long
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (loadingCheck) {
+        console.log("Onboarding loading check timed out, proceeding anyway");
+        setLoadingCheck(false);
+        setLoadingTimeout(true);
+      }
+    }, 5000); // 5 second timeout
+    
+    return () => clearTimeout(timer);
+  }, [loadingCheck]);
   
   // Check if the user is already fully onboarded
   useEffect(() => {
@@ -56,17 +70,34 @@ const Onboarding = () => {
           return;
         }
         
-        // Double check with direct auth service as last resort
+        // Double check with direct auth service as last resort - but don't wait too long
         try {
-          const currentUser = await getCurrentUser();
-          if (currentUser?.user_metadata?.is_onboarded) {
-            console.log("User already onboarded (direct check). Redirecting to home.");
-            navigate('/home');
-            return;
-          }
+          const checkPromise = new Promise<void>(async (resolve) => {
+            try {
+              const currentUser = await getCurrentUser();
+              if (currentUser?.user_metadata?.is_onboarded) {
+                console.log("User already onboarded (direct check). Redirecting to home.");
+                navigate('/home');
+              }
+            } catch (error) {
+              console.warn("Error with direct auth check:", error);
+            } finally {
+              resolve();
+            }
+          });
+          
+          // Set a timeout for this check
+          const timeoutPromise = new Promise<void>((resolve) => {
+            setTimeout(() => {
+              console.log("Direct auth check timed out");
+              resolve();
+            }, 2000);
+          });
+          
+          // Use Promise.race to proceed with whichever finishes first
+          await Promise.race([checkPromise, timeoutPromise]);
         } catch (error) {
-          console.error("Error with direct auth check:", error);
-          // Continue onboarding if this check fails, don't block the flow
+          console.warn("Auth check failed but continuing:", error);
         }
         
         setLoadingCheck(false);
@@ -74,7 +105,6 @@ const Onboarding = () => {
         console.error("Error checking onboarding status:", error);
         setCheckError("Failed to check onboarding status");
         setLoadingCheck(false);
-        toast.error("Error checking onboarding status");
       }
     };
     
@@ -111,7 +141,7 @@ const Onboarding = () => {
   };
   
   // Show loading UI if we're loading either from the hook or our extra check
-  if (loading || loadingCheck) {
+  if (loading || (loadingCheck && !loadingTimeout)) {
     return (
       <div className="h-screen flex flex-col items-center justify-center">
         <LoadingSpinner size="large" color="purple" text="Loading onboarding..." />
@@ -132,6 +162,7 @@ const Onboarding = () => {
     );
   }
   
+  // Proceed with onboarding even if auth checks failed but we have baseline data
   return (
     <OnboardingBackground step={currentStep}>
       <OnboardingStepRenderer
