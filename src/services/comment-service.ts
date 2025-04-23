@@ -84,8 +84,8 @@ export const addReelComment = async (reelId: string, userId: string, content: st
       throw new Error("Reel not found");
     }
     
-    // Create a direct insert using a function that bypasses the foreign key constraint
-    const { data, error } = await supabase.functions.invoke<{ id: string, success: boolean }>(
+    // Use the edge function to add the comment
+    const response = await supabase.functions.invoke<{ id: string, success: boolean }>(
       'add-reel-comment',
       {
         body: { 
@@ -97,9 +97,30 @@ export const addReelComment = async (reelId: string, userId: string, content: st
       }
     );
     
-    if (error || !data?.success) {
-      console.error("Error adding reel comment:", error);
-      throw error;
+    if (!response.data?.success) {
+      console.error("Error adding reel comment via function:", response.error);
+      
+      // Fallback: Try direct insertion if function fails
+      const { data: directInsert, error: directError } = await supabase
+        .from("reel_comments")
+        .insert({
+          reel_id: reelId,
+          user_id: userId,
+          content: content,
+          created_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+      
+      if (directError) throw directError;
+      
+      // Return basic comment data without profile
+      return { 
+        id: directInsert.id, 
+        user_id: userId, 
+        content, 
+        created_at: directInsert.created_at 
+      };
     }
     
     // Return comment data with additional user profile info
@@ -111,14 +132,14 @@ export const addReelComment = async (reelId: string, userId: string, content: st
           id, username, avatar, full_name
         )
       `)
-      .eq("id", data.id)
+      .eq("id", response.data.id)
       .single();
     
     if (profileError) {
       console.error("Error fetching comment with profile:", profileError);
       // Return a basic comment object if we can't fetch the profile
       return { 
-        id: data.id, 
+        id: response.data.id, 
         user_id: userId, 
         content, 
         created_at: new Date().toISOString() 

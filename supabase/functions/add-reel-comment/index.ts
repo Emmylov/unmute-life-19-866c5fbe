@@ -37,25 +37,75 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
-    // Insert the comment directly using SQL to bypass foreign key constraint
-    // This is a workaround since we're storing comments in reel_comments but referencing posts_reels
-    const { data, error } = await supabaseClient
-      .from("reel_comments")
-      .insert({
-        reel_id: reelId,
-        user_id: userId,
-        content: content,
-        created_at: createdAt
-      })
-      .select('id')
-      .single();
+    // First check if the reel exists in posts_reels table
+    const { data: reelExists, error: reelCheckError } = await supabaseClient
+      .from("posts_reels")
+      .select("id")
+      .eq("id", reelId)
+      .maybeSingle();
 
-    if (error) throw error;
+    if (reelCheckError) {
+      console.error("Error checking reel:", reelCheckError);
+      throw reelCheckError;
+    }
+
+    if (!reelExists) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Reel not found"
+        }),
+        {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    // Insert the comment using raw SQL to bypass foreign key constraint issues
+    const { data, error } = await supabaseClient.rpc(
+      "insert_reel_comment",
+      {
+        p_reel_id: reelId,
+        p_user_id: userId,
+        p_content: content,
+        p_created_at: createdAt || new Date().toISOString()
+      }
+    );
+
+    if (error) {
+      console.error("Error inserting comment with RPC:", error);
+      
+      // Fallback: Try direct insert if RPC fails (may happen if the function doesn't exist yet)
+      const { data: directData, error: directError } = await supabaseClient
+        .from("reel_comments")
+        .insert({
+          reel_id: reelId,
+          user_id: userId,
+          content: content,
+          created_at: createdAt || new Date().toISOString()
+        })
+        .select('id')
+        .single();
+      
+      if (directError) {
+        console.error("Fallback insert failed:", directError);
+        throw directError;
+      }
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true,
+          id: directData.id
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     return new Response(
       JSON.stringify({ 
         success: true,
-        id: data.id
+        id: data
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
