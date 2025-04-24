@@ -32,9 +32,10 @@ const ProtectedLayout = ({
   const [authCheckComplete, setAuthCheckComplete] = useState(false);
   const [loadingTimeout, setLoadingTimeout] = useState(false);
   const [directAuthCheck, setDirectAuthCheck] = useState<any>(null);
+  const [forceShowContent, setForceShowContent] = useState(false);
 
   useEffect(() => {
-    // Reset error state when location changes
+    // Reset state when location changes
     setError(null);
     setHasShownMessage(false);
     setLoadingTimeout(false);
@@ -64,8 +65,14 @@ const ProtectedLayout = ({
       checkUserDirectly();
     }
     
+    // Force show content after a longer timeout as final fallback
+    const forceShowTimeout = setTimeout(() => {
+      setForceShowContent(true);
+    }, 8000); // 8 seconds max wait
+    
     return () => {
       clearTimeout(timeoutId);
+      clearTimeout(forceShowTimeout);
     };
   }, [location.pathname]);
   
@@ -88,7 +95,7 @@ const ProtectedLayout = ({
   };
 
   // Use either loading or isLoading - for backward compatibility
-  const isAuthLoading = (loading || isLoading) && !authCheckComplete;
+  const isAuthLoading = (loading || isLoading) && !authCheckComplete && !forceShowContent;
 
   // If we hit the timeout but have user data already (from any source), continue
   const hasUserData = user || directAuthCheck;
@@ -97,7 +104,7 @@ const ProtectedLayout = ({
     console.log("Loading timed out but user exists, continuing");
   } 
   // If we hit the timeout without user data, show retry option
-  else if (loadingTimeout && !hasUserData) {
+  else if (loadingTimeout && !hasUserData && !forceShowContent) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4">
         <h2 className="text-2xl font-bold mb-4">Connection Issue</h2>
@@ -126,7 +133,7 @@ const ProtectedLayout = ({
   }
 
   // If there was an error, show error display with retry option
-  if (error) {
+  if (error && !forceShowContent) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <ErrorDisplay
@@ -138,8 +145,8 @@ const ProtectedLayout = ({
     );
   }
 
-  // If not authenticated (from any source), redirect to login page
-  if (!user && !directAuthCheck) {
+  // If not authenticated (from any source) and not forced to show content, redirect to login page
+  if (!user && !directAuthCheck && !forceShowContent) {
     // Save the page they were trying to access
     if (!hasShownMessage && location.pathname !== '/' && location.pathname !== '/auth') {
       toast.error("Please log in to access this page");
@@ -159,7 +166,7 @@ const ProtectedLayout = ({
     (profile && (profile.username || profile.full_name || profile.bio));
   
   // Only redirect to onboarding if explicitly not onboarded and not already on onboarding page
-  if (effectiveUser && !isOnboarded && !location.pathname.includes('/onboarding')) {
+  if (effectiveUser && !isOnboarded && !location.pathname.includes('/onboarding') && !forceShowContent) {
     if (!hasShownMessage) {
       toast.info("Please complete your onboarding first", {
         description: "You're almost there!"
@@ -169,7 +176,7 @@ const ProtectedLayout = ({
     return <Navigate to="/onboarding" state={{ from: location.pathname }} replace />;
   }
 
-  // If authenticated, render the protected content or the Outlet for nested routes
+  // If authenticated or forced to show content, render the protected content or the Outlet for nested routes
   return <>{children || <Outlet />}</>;
 };
 

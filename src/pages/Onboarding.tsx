@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { RefreshCcw } from "lucide-react";
 
 const TOTAL_STEPS = 12;
+const MAX_LOADING_TIME = 8000; // 8 seconds maximum loading time
 
 const Onboarding = () => {
   const {
@@ -37,7 +38,7 @@ const Onboarding = () => {
         setLoadingCheck(false);
         setLoadingTimeout(true);
       }
-    }, 5000); // 5 second timeout
+    }, MAX_LOADING_TIME);
     
     return () => clearTimeout(timer);
   }, [loadingCheck]);
@@ -108,13 +109,14 @@ const Onboarding = () => {
       }
     };
     
-    if (!loading && checkComplete) {
+    // Start checking onboarding status once we have basic auth data or timeout
+    if ((!loading && checkComplete) || loadingTimeout) {
       checkOnboardingStatus();
     } else if (!loading && !checkComplete) {
-      // If hook has finished loading but check isn't complete, start our check
+      // If hook has finished loading but check isn't complete, proceed anyway
       setLoadingCheck(false);
     }
-  }, [user, profile, loading, navigate, checkComplete]);
+  }, [user, profile, loading, navigate, checkComplete, loadingTimeout]);
 
   const handleRetry = () => {
     window.location.reload();
@@ -140,8 +142,19 @@ const Onboarding = () => {
     }
   };
   
+  // After a certain time, show the content anyway regardless of loading state
+  const [forceShowContent, setForceShowContent] = useState(false);
+  useEffect(() => {
+    const forceTimer = setTimeout(() => {
+      setForceShowContent(true);
+    }, MAX_LOADING_TIME);
+    
+    return () => clearTimeout(forceTimer);
+  }, []);
+  
   // Show loading UI if we're loading either from the hook or our extra check
-  if (loading || (loadingCheck && !loadingTimeout)) {
+  // But if we've been loading too long, force show content
+  if ((loading || (loadingCheck && !loadingTimeout)) && !forceShowContent) {
     return (
       <div className="h-screen flex flex-col items-center justify-center">
         <LoadingSpinner size="large" color="purple" text="Loading onboarding..." />
@@ -150,7 +163,7 @@ const Onboarding = () => {
     );
   }
   
-  if (checkError) {
+  if (checkError && !forceShowContent) {
     return (
       <div className="h-screen flex flex-col items-center justify-center p-6">
         <h2 className="text-2xl font-bold mb-4">Something went wrong</h2>

@@ -41,15 +41,15 @@ export const useOnboarding = () => {
         // Check authentication directly with supabase with retries
         let currentUser = null;
         let attempts = 0;
-        while (!currentUser && attempts < 2) {
+        while (!currentUser && attempts < 3) {
           try {
             currentUser = await getCurrentUser();
             break;
           } catch (error) {
             attempts++;
-            if (attempts < 2) {
+            if (attempts < 3) {
               // Wait a bit before retrying
-              await new Promise(resolve => setTimeout(resolve, 1000));
+              await new Promise(resolve => setTimeout(resolve, 800));
             }
           }
         }
@@ -96,6 +96,9 @@ export const useOnboarding = () => {
             navigate('/home');
             return;
           }
+        } else {
+          // No user found after all retries
+          console.log("No authenticated user found after retries");
         }
         
         if (isMounted) {
@@ -110,12 +113,9 @@ export const useOnboarding = () => {
           setLoading(false);
           setCheckComplete(true);
           setLoadingError(error.message || "Failed to check onboarding status");
-          setErrors(prev => [...prev, "Failed to check onboarding status"]);
           
-          // Show toast for error
-          toast.error("Error checking onboarding status", {
-            description: "Please try refreshing the page"
-          });
+          // Don't block the onboarding process with errors
+          // Just log them and proceed with whatever data we have
         }
       }
     };
@@ -148,7 +148,7 @@ export const useOnboarding = () => {
             await updateOnboardingStep(currentUser.id, stepName);
           } catch (error) {
             console.error("Error updating onboarding step:", error);
-            setErrors(prev => [...prev, "Failed to update onboarding step"]);
+            // Don't block progression on error
           }
         }
       } catch (error) {
