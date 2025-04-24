@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Volume2, VolumeX, SkipForward } from "lucide-react";
 import FoundersVideo from "@/components/founders/FoundersVideo";
@@ -15,30 +14,9 @@ const WelcomeStep = ({ onNext }: WelcomeStepProps) => {
   const [isVideoLoaded, setIsVideoLoaded] = useState(false);
   const [videoLoadError, setVideoLoadError] = useState(false);
   const isMobile = useIsMobile();
-
-  // Make sure we use reliable and accessible video URLs
+  
   const founderVideoUrl = "https://lovable-uploads.s3.amazonaws.com/default/welcome-video.mp4";
-  // Fallback image in case video fails to load
   const fallbackImageUrl = "https://lovable-uploads.s3.amazonaws.com/08c4eb5b-4415-4b24-95f0-9dcb194018b2.png";
-
-  useEffect(() => {
-    // Show a loading toast to inform users
-    const toastId = toast.loading("Loading welcome message...");
-    
-    // Set a timeout to automatically go to next step if video takes too long
-    const timeoutId = setTimeout(() => {
-      if (!isVideoLoaded) {
-        toast.error("Video is taking too long to load", {
-          description: "You can continue with onboarding by clicking 'Skip intro'"
-        });
-      }
-    }, 10000); // 10 seconds timeout
-    
-    return () => {
-      toast.dismiss(toastId);
-      clearTimeout(timeoutId);
-    };
-  }, []);
 
   const toggleSound = () => {
     setIsMuted(!isMuted);
@@ -46,7 +24,7 @@ const WelcomeStep = ({ onNext }: WelcomeStepProps) => {
 
   const handleVideoLoadError = () => {
     setVideoLoadError(true);
-    setIsVideoLoaded(true); // Consider it "loaded" so we can continue
+    setIsVideoLoaded(true);
     toast.error("Couldn't load the welcome video", {
       description: "We're using a placeholder instead"
     });
@@ -54,15 +32,9 @@ const WelcomeStep = ({ onNext }: WelcomeStepProps) => {
 
   const handleVideoLoadSuccess = () => {
     setIsVideoLoaded(true);
-    toast.success("Welcome to Unmute!", {
-      id: "video-loaded"
-    });
   };
 
-  // This function was calling onNext, which causes the problem of not skipping
   const handleSkip = () => {
-    toast.info("Skipping welcome video");
-    // Call onNext directly to advance to the next step
     onNext();
   };
 
