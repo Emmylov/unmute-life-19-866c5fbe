@@ -106,19 +106,22 @@ const Navbar = ({ pageTitle }: NavbarProps) => {
   };
   
   return (
-    <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-gray-100 w-full h-10 md:h-12">
-      <div className="max-w-7xl mx-auto px-1 sm:px-2 lg:px-3">
-        <div className="flex items-center justify-between h-10 md:h-12">
+    <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-gray-100 w-full h-14">
+      <div className="max-w-7xl mx-auto px-3">
+        <div className="flex items-center justify-between h-14">
           <div className="flex items-center">
             <HamburgerMenu />
             
-            <Link to="/home" className="flex items-center">
+            <Link to="/home" className="flex items-center ml-1">
+              <div className="h-8 w-8 bg-gradient-to-r from-unmute-purple to-unmute-pink rounded-md flex items-center justify-center text-white font-bold mr-2">
+                U
+              </div>
               <span className="text-base font-bold bg-gradient-to-r from-unmute-purple to-unmute-pink bg-clip-text text-transparent">Unmute</span>
             </Link>
             
             {pageTitle && (
-              <div className="ml-1.5 md:ml-2 flex items-center">
-                <span className="text-gray-400 mx-0.5">/</span>
+              <div className="ml-2 flex items-center">
+                <span className="text-gray-400 mx-1">/</span>
                 <h1 className="text-sm font-medium text-gray-900 truncate max-w-[100px] sm:max-w-none">{pageTitle}</h1>
               </div>
             )}
@@ -126,7 +129,7 @@ const Navbar = ({ pageTitle }: NavbarProps) => {
           
           <SearchBar isMobile={isMobile} isTablet={isTablet} />
           
-          <div className="flex items-center space-x-0.5 sm:space-x-1">
+          <div className="flex items-center space-x-1 sm:space-x-2">
             <CreateContentButton />
             <MessagesButton unreadMessages={unreadMessages} />
             <NotificationBell />

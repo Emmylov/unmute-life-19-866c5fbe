@@ -52,11 +52,11 @@ const AppLayout = ({ children, pageTitle }: AppLayoutProps) => {
     <div className="min-h-screen bg-gray-50 flex flex-col w-full">
       {!isReelsPage && <Navbar pageTitle={pageTitle} />}
       
-      <div className={`flex flex-grow ${isReelsPage ? '' : 'pt-1'}`}>
+      <div className={`flex flex-grow ${isReelsPage ? '' : 'pt-2'}`}>
         {!isMobile && <Sidebar />}
         
-        <main className={`flex-1 ${showMobileNav ? 'pb-20' : 'pb-0'} overflow-x-hidden`}>
-          <div className={`h-full ${isReelsPage ? 'p-0 max-w-none' : 'px-3 md:px-4 lg:px-5'}`}>
+        <main className={`flex-1 ${showMobileNav ? 'pb-20' : 'pb-6'} overflow-x-hidden`}>
+          <div className={`h-full ${isReelsPage ? 'p-0 max-w-none' : 'px-3 md:px-4 lg:px-5 pt-2'}`}>
             {children}
           </div>
         </main>

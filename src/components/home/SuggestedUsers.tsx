@@ -16,45 +16,59 @@ const SuggestedUsers = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
-  const { toggleFollow, loadingFollowState, isFollowing, checkFollowStatus } = useSocialActions();
+  const { toggleFollow, loadingFollowState } = useSocialActions();
 
   useEffect(() => {
+    let isMounted = true;
+    
     const fetchSuggestedUsers = async () => {
-      if (!user) return;
+      if (!user) {
+        if (isMounted) {
+          setLoading(false);
+          setUsers([]);
+        }
+        return;
+      }
       
       try {
-        setLoading(true);
+        if (isMounted) setLoading(true);
         
-        // Get 5 random users that are not the current user
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("id, username, full_name, avatar")
-          .neq("id", user.id)
-          .order("created_at", { ascending: false })
-          .limit(5);
-        
-        if (error) throw error;
-        
-        // Check if current user is following these users
-        if (data) {
-          const usersWithFollowStatus = await Promise.all(
-            data.map(async (suggestedUser) => {
-              const isUserFollowing = await checkFollowStatus(suggestedUser.id);
-              return { ...suggestedUser, isFollowing: isUserFollowing };
-            })
-          );
+        // Fetch users with error handling
+        try {
+          const { data, error } = await supabase
+            .from("profiles")
+            .select("id, username, full_name, avatar")
+            .neq("id", user.id)
+            .order("created_at", { ascending: false })
+            .limit(5);
           
-          setUsers(usersWithFollowStatus);
+          if (error) throw error;
+        
+          if (data && isMounted) {
+            // Set follow status as false initially to avoid flickering
+            const usersWithInitialFollowStatus = data.map((suggestedUser) => ({
+              ...suggestedUser, 
+              isFollowing: false
+            }));
+            
+            setUsers(usersWithInitialFollowStatus);
+          }
+        } catch (error) {
+          console.error("Error fetching suggested users:", error);
+          // Set empty array in case of error
+          if (isMounted) setUsers([]);
         }
-      } catch (error) {
-        console.error("Error fetching suggested users:", error);
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
     
     fetchSuggestedUsers();
-  }, [user, checkFollowStatus]);
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [user]);
   
   const handleFollow = async (userId: string) => {
     if (!user) {
@@ -141,7 +155,7 @@ const SuggestedUsers = () => {
                 onClick={() => handleFollow(suggestedUser.id)}
                 disabled={loadingFollowState[suggestedUser.id]}
               >
-                {suggestedUser.isFollowing ? "Following" : "Follow"}
+                {loadingFollowState[suggestedUser.id] ? "..." : suggestedUser.isFollowing ? "Following" : "Follow"}
               </Button>
             </div>
           ))}

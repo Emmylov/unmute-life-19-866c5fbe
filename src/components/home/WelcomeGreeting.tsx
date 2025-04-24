@@ -6,8 +6,7 @@ import { motion } from "framer-motion";
 
 const WelcomeGreeting = () => {
   const { user, profile } = useAuth();
-  const [greeting, setGreeting] = useState("Welcome back!");
-  const [loading, setLoading] = useState(true);
+  const [greeting, setGreeting] = useState("");
 
   useEffect(() => {
     const getTimeBasedGreeting = () => {
@@ -33,8 +32,8 @@ const WelcomeGreeting = () => {
       }
     };
     
+    // Set greeting immediately with default text
     setGreeting(personalizedGreeting());
-    setLoading(false);
   }, [profile]);
 
   return (
@@ -44,22 +43,16 @@ const WelcomeGreeting = () => {
       transition={{ duration: 0.5 }}
       className="mb-4"
     >
-      {loading ? (
-        <div className="h-8 flex items-center">
-          <div className="text-sm text-gray-500">Loading welcome message...</div>
-        </div>
-      ) : (
-        <Card className="bg-gradient-to-r from-purple-50 to-pink-50 border-none shadow-sm overflow-hidden">
-          <CardContent className="p-4">
-            <h2 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-              {greeting}
-            </h2>
-            <p className="text-gray-600 text-sm mt-1">
-              What would you like to share today?
-            </p>
-          </CardContent>
-        </Card>
-      )}
+      <Card className="bg-gradient-to-r from-purple-50 to-pink-50 border-none shadow-sm overflow-hidden">
+        <CardContent className="p-4">
+          <h2 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+            {greeting || "Welcome back!"}
+          </h2>
+          <p className="text-gray-600 text-sm mt-1">
+            What would you like to share today?
+          </p>
+        </CardContent>
+      </Card>
     </motion.div>
   );
 };

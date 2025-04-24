@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Menu, X } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Link } from "react-router-dom";
@@ -37,8 +37,10 @@ const HamburgerMenu = () => {
         <div className="flex flex-col h-full">
           <div className="p-4 border-b">
             <div className="flex items-center">
-              <img src="/logo.svg" alt="Unmute Logo" className="h-8 w-8 mr-2" />
-              <span className="text-xl font-bold">Unmute</span>
+              <div className="h-8 w-8 mr-2 bg-gradient-to-r from-unmute-purple to-unmute-pink rounded-md flex items-center justify-center text-white font-bold">
+                U
+              </div>
+              <span className="text-xl font-bold bg-gradient-to-r from-unmute-purple to-unmute-pink bg-clip-text text-transparent">Unmute</span>
             </div>
           </div>
           
@@ -47,7 +49,7 @@ const HamburgerMenu = () => {
               <div className="flex items-center">
                 <Avatar className="h-10 w-10 mr-3">
                   <AvatarImage src={profile.avatar || ''} />
-                  <AvatarFallback>
+                  <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-500">
                     {profile.username?.[0]?.toUpperCase() || 'U'}
                   </AvatarFallback>
                 </Avatar>

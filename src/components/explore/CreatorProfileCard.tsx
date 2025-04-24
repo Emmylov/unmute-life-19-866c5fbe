@@ -20,24 +20,35 @@ const CreatorProfileCard = ({ creator }: CreatorProfileCardProps) => {
   const { user } = useAuth();
   const { toggleFollow, checkFollowStatus, loadingFollowState } = useSocialActions();
   const [isFollowing, setIsFollowing] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);  // Changed to false initially
 
   useEffect(() => {
+    let isMounted = true;
+    
     const checkIsFollowing = async () => {
       if (!user) return;
       
       try {
-        setLoading(true);
-        const following = await checkFollowStatus(creator.id);
-        setIsFollowing(following);
-      } catch (error) {
-        console.error("Error checking follow status:", error);
+        if (isMounted) setLoading(true);
+        
+        // Add error handling for network issues
+        try {
+          const following = await checkFollowStatus(creator.id);
+          if (isMounted) setIsFollowing(following);
+        } catch (error) {
+          console.error("Error checking follow status:", error);
+          // Don't update state if there's an error
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
     
     checkIsFollowing();
+    
+    return () => {
+      isMounted = false;
+    };
   }, [user, creator.id, checkFollowStatus]);
 
   const handleFollowToggle = async () => {
@@ -74,7 +85,7 @@ const CreatorProfileCard = ({ creator }: CreatorProfileCardProps) => {
         onClick={handleFollowToggle}
         disabled={loading || loadingFollowState[creator.id]}
       >
-        {isFollowing ? "Following" : "Follow"}
+        {loading ? "Loading..." : isFollowing ? "Following" : "Follow"}
       </Button>
     </motion.div>
   );
