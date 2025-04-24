@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import HomeHeader from "@/components/home/HomeHeader";
 import CreatePost from "@/components/home/CreatePost";
@@ -16,6 +16,7 @@ const Home = () => {
   const { user, profile } = useAuth();
   const [posts, setPosts] = React.useState<any[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [activeTab, setActiveTab] = useState("for-you");
 
   useEffect(() => {
     const loadPosts = async () => {
@@ -35,6 +36,27 @@ const Home = () => {
     loadPosts();
   }, [user]);
 
+  const handlePostCreated = () => {
+    // Refresh posts after a new post is created
+    if (user) {
+      getFeedPosts(user.id).then(fetchedPosts => {
+        setPosts(fetchedPosts || []);
+      }).catch(error => {
+        console.error("Error refreshing posts:", error);
+      });
+    }
+  };
+
+  const handleTabChange = (tabValue: string) => {
+    setActiveTab(tabValue);
+    // Here you would typically fetch different posts based on the selected tab
+    // For now, let's just set loading state to simulate this
+    setIsLoading(true);
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 500);
+  };
+
   return (
     <AppLayout>
       <SEO
@@ -49,8 +71,8 @@ const Home = () => {
         <div className="flex-1 space-y-6">
           <HomeHeader />
           <StoryFeed profile={profile} />
-          <CreatePost />
-          <FilterBar />
+          <CreatePost profile={profile} onPostCreated={handlePostCreated} />
+          <FilterBar activeTab={activeTab} onTabChange={handleTabChange} />
           
           {isLoading ? (
             // Loading skeletons
@@ -89,7 +111,7 @@ const Home = () => {
           )}
         </div>
         
-        <HomeRightSidebar />
+        <HomeRightSidebar profile={profile} />
       </div>
     </AppLayout>
   );
