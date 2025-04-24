@@ -7,6 +7,7 @@ import PostCard from "@/components/home/PostCard";
 import FilterBar from "@/components/home/FilterBar";
 import HomeRightSidebar from "@/components/home/HomeRightSidebar";
 import StoryFeed from "@/components/stories/StoryFeed";
+import WelcomeGreeting from "@/components/home/WelcomeGreeting";
 import { getFeedPosts } from "@/services/post-service";
 import { useAuth } from "@/contexts/AuthContext";
 import SEO from "@/components/shared/SEO";
@@ -70,6 +71,7 @@ const Home = () => {
       <div className="flex flex-col-reverse md:flex-row gap-6">
         <div className="flex-1 space-y-6">
           <HomeHeader />
+          <WelcomeGreeting />
           <StoryFeed profile={profile} />
           <CreatePost profile={profile} onPostCreated={handlePostCreated} />
           <FilterBar activeTab={activeTab} onTabChange={handleTabChange} />

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useIsMobile, useIsTablet } from "@/hooks/use-responsive";
@@ -5,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 // Import refactored components
-import MobileMenu from "./navbar/MobileMenu";
+import HamburgerMenu from "./navbar/HamburgerMenu";
 import SearchBar from "./navbar/SearchBar";
 import CreateContentButton from "./navbar/CreateContentButton";
 import MessagesButton from "./navbar/MessagesButton";
@@ -109,17 +110,7 @@ const Navbar = ({ pageTitle }: NavbarProps) => {
       <div className="max-w-7xl mx-auto px-1 sm:px-2 lg:px-3">
         <div className="flex items-center justify-between h-10 md:h-12">
           <div className="flex items-center">
-            {isMobile && (
-              <MobileMenu
-                isMobileMenuOpen={isMobileMenuOpen}
-                setIsMobileMenuOpen={setIsMobileMenuOpen}
-                profile={profile}
-                user={user}
-                handleSignOut={handleSignOut}
-                getInitials={getInitials}
-                getAvatarFallbackColor={getAvatarFallbackColor}
-              />
-            )}
+            <HamburgerMenu />
             
             <Link to="/home" className="flex items-center">
               <span className="text-base font-bold bg-gradient-to-r from-unmute-purple to-unmute-pink bg-clip-text text-transparent">Unmute</span>
