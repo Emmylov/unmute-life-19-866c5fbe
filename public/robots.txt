@@ -1,16 +1,8 @@
 
 User-agent: *
 Allow: /
-
-# Sitemap
 Sitemap: https://unmutelife.online/sitemap.xml
 
-# Main Pages
-Allow: /onboarding
-Allow: /home
-Allow: /explore
-Allow: /wellness
-
-# Disallow sensitive routes
-Disallow: /api/
-Disallow: /admin/
+# Disallow paths that should not be indexed
+Disallow: /auth
+Disallow: /settings

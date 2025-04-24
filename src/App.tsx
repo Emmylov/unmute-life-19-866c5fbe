@@ -32,6 +32,7 @@ import MemoryMatch from "@/pages/games/MemoryMatch";
 import BubblePop from "@/pages/games/BubblePop";
 import WordScramble from "@/pages/games/WordScramble";
 import Music from "@/pages/Music";
+import Store from "@/pages/Store"; // Import our new Store page
 
 function App() {
   // User interaction tracking
@@ -86,6 +87,7 @@ function App() {
                   <Route path="/games/bubble-pop" element={<BubblePop />} />
                   <Route path="/games/word-scramble" element={<WordScramble />} />
                   <Route path="/music" element={<Music />} />
+                  <Route path="/store" element={<Store />} /> {/* Add the new Store route */}
                 </Route>
 
                 <Route path="*" element={<NotFound />} />

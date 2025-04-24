@@ -1,138 +1,111 @@
-
-import React, { useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import {
-  Avatar,
-  AvatarImage,
-  AvatarFallback
-} from "@/components/ui/avatar";
-import { useAuth } from "@/contexts/AuthContext";
+import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
-  Home,
-  Compass,
-  Users,
-  Film,
-  MessageSquare,
-  Bell,
-  HeartPulse,
-  Bookmark,
-  Pencil,
-  UserPlus,
-  ActivitySquare,
+  Home, 
+  Compass, 
+  Users, 
+  Film, 
+  MessageCircle, 
+  Bell, 
+  User, 
+  Heart, 
+  Bookmark, 
+  PenSquare, 
+  UserPlus, 
+  Sparkles, 
   Settings,
-  LogOut,
-  Music,
-  Gamepad2,
-  Menu
-} from "lucide-react";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+  ShoppingBag
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
-const Sidebar = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const { user, profile, signOut } = useAuth();
+interface SidebarProps {
+  className?: string;
+}
+
+const Sidebar = ({ className }: SidebarProps) => {
   const location = useLocation();
-  const navigate = useNavigate();
-  const pathname = location.pathname;
+  const { user, profile } = useAuth();
 
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-      navigate('/auth');
-    } catch (error) {
-      console.error("Sign out failed:", error);
-    }
-  };
-
-  const navigationLinks = [
-    { icon: <Home className="h-5 w-5 shrink-0" />, label: "Home", path: "/home" },
-    { icon: <Compass className="h-5 w-5 shrink-0" />, label: "Explore", path: "/explore" },
-    { icon: <Film className="h-5 w-5 shrink-0" />, label: "Reels", path: "/reels" },
-    { icon: <Users className="h-5 w-5 shrink-0" />, label: "Communities", path: "/communities" },
-    { icon: <MessageSquare className="h-5 w-5 shrink-0" />, label: "Chat", path: "/chat" },
-    { icon: <Bell className="h-5 w-5 shrink-0" />, label: "Notifications", path: "/notifications" },
-    { icon: <HeartPulse className="h-5 w-5 shrink-0" />, label: "Wellness", path: "/wellness" },
-    { icon: <Bookmark className="h-5 w-5 shrink-0" />, label: "Saved", path: "/saved" },
-    { icon: <Pencil className="h-5 w-5 shrink-0" />, label: "Content Creator", path: "/content-creator" },
-    { icon: <UserPlus className="h-5 w-5 shrink-0" />, label: "Create Collab", path: "/create-collab" },
-    { icon: <ActivitySquare className="h-5 w-5 shrink-0" />, label: "Vibe Check", path: "/vibe-check" },
-    { icon: <Gamepad2 className="h-5 w-5 shrink-0" />, label: "Games", path: "/games" },
-    { icon: <Music className="h-5 w-5 shrink-0" />, label: "Music", path: "/music" },
-    { icon: <Settings className="h-5 w-5 shrink-0" />, label: "Settings", path: "/settings" },
+  const navItems = [
+    { name: 'Home', path: '/home', icon: Home },
+    { name: 'Explore', path: '/explore', icon: Compass },
+    { name: 'Communities', path: '/communities', icon: Users },
+    { name: 'Reels', path: '/reels', icon: Film },
+    { name: 'Chat', path: '/chat', icon: MessageCircle },
+    { name: 'Notifications', path: '/notifications', icon: Bell },
+    { name: 'Profile', path: '/profile', icon: User },
+    { name: 'Wellness', path: '/wellness', icon: Heart },
+    { name: 'Saved', path: '/saved', icon: Bookmark },
+    { name: 'Content Creator', path: '/content-creator', icon: PenSquare },
+    { name: 'Create Collab', path: '/create-collab', icon: UserPlus },
+    { name: 'Vibe Check', path: '/vibe-check', icon: Sparkles },
+    { name: 'Store', path: '/store', icon: ShoppingBag },
+    { name: 'Settings', path: '/settings', icon: Settings },
   ];
 
-  const getInitials = (name: string) => {
-    if (!name) return "U";
-    return name
-      .split(' ')
-      .map(part => part[0])
-      .join('')
-      .toUpperCase()
-      .substring(0, 2);
-  };
-
   return (
-    <Sheet open={isOpen} onOpenChange={setIsOpen}>
-      <SheetTrigger asChild>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="relative flex items-center justify-center p-0 h-8 w-8 hover:bg-gray-100 rounded-full fixed left-4 top-3 z-50"
-        >
-          <Menu className="h-5 w-5 text-gray-600" />
-          <span className="sr-only">Toggle navigation</span>
-        </Button>
-      </SheetTrigger>
-      <SheetContent side="left" className="p-0 w-[280px] sm:w-[350px]">
-        <SheetHeader className="px-4 py-3 border-b">
-          <SheetTitle>
-            <span className="text-xl font-bold bg-gradient-to-r from-unmute-purple to-unmute-pink bg-clip-text text-transparent">
-              Unmute
-            </span>
-          </SheetTitle>
-        </SheetHeader>
-        <div className="flex flex-col h-full overflow-y-auto p-3">
-          {profile && (
-            <div className="px-4 py-3 mb-2 flex items-center">
-              <Avatar className="h-10 w-10 mr-3">
-                <AvatarImage src={profile?.avatar} alt={profile?.username || "User"} />
-                <AvatarFallback className="bg-primary/20">{getInitials(profile?.username || "User")}</AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="text-sm font-medium truncate">{profile?.username || profile?.full_name || "User"}</p>
-                <p className="text-xs text-muted-foreground truncate">@{profile?.username || "username"}</p>
-              </div>
+    <div className={cn("flex flex-col h-full py-4 border-r", className)}>
+      <div className="px-4 mb-6">
+        <Link to="/home" className="flex items-center">
+          <img src="/logo.svg" alt="Unmute Logo" className="h-8 w-8" />
+          <span className="ml-2 text-xl font-bold">Unmute</span>
+        </Link>
+      </div>
+
+      <nav className="flex-1 overflow-y-auto">
+        <ul className="space-y-1">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = location.pathname === item.path;
+            
+            return (
+              <li key={item.name}>
+                <TooltipProvider delayDuration={300}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Link
+                        to={item.path}
+                        className={cn(
+                          "flex items-center gap-4 px-4 py-3 rounded-lg transition-colors",
+                          isActive 
+                            ? "bg-primary/10 text-primary" 
+                            : "hover:bg-gray-100 dark:hover:bg-gray-800"
+                        )}
+                      >
+                        <Icon className="w-5 h-5" />
+                        <span className="text-sm font-medium">{item.name}</span>
+                      </Link>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">
+                      {item.name}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+
+      <div className="mt-auto px-4">
+        {profile && (
+          <Button variant="ghost" className="w-full justify-start px-2 py-6">
+            <Avatar className="h-8 w-8 mr-2">
+              <AvatarImage src={profile.avatar || ''} />
+              <AvatarFallback>{profile.username?.[0]?.toUpperCase() || 'U'}</AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col items-start">
+              <span className="text-sm font-medium">{profile.full_name || profile.username}</span>
+              <span className="text-xs text-gray-500">@{profile.username}</span>
             </div>
-          )}
-
-          <nav className="space-y-1 mt-2">
-            {navigationLinks.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                onClick={() => setIsOpen(false)}
-                className={`flex items-center p-2 rounded-md transition-colors ${
-                  pathname === item.path
-                    ? "bg-primary/10 text-primary font-medium"
-                    : "text-gray-700 hover:bg-gray-100"
-                }`}
-              >
-                {item.icon}
-                <span className="ml-2 text-sm">{item.label}</span>
-              </Link>
-            ))}
-          </nav>
-
-          <button 
-            onClick={handleSignOut}
-            className="flex items-center p-2 mt-auto text-left rounded-md text-destructive hover:bg-destructive/10"
-          >
-            <LogOut className="h-5 w-5 shrink-0" />
-            <span className="ml-2 text-sm">Sign Out</span>
-          </button>
-        </div>
-      </SheetContent>
-    </Sheet>
+          </Button>
+        )}
+      </div>
+    </div>
   );
 };
 
