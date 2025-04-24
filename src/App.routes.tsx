@@ -24,7 +24,7 @@ const Auth = lazy(() => import("./pages/Auth"));
 
 // Game pages
 const MemoryMatch = lazy(() => import("./pages/games/MemoryMatch"));
-const Games = lazy(() => import("./pages/games/Games"));
+const Games = lazy(() => import("./pages/Games")); // Fixed path here
 
 // App routes configuration
 export const routes = [
