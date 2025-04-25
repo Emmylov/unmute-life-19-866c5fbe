@@ -77,7 +77,7 @@ const Sidebar = ({
   return <div className={cn("flex flex-col h-full py-4 border-r", className)}>
       <div className="px-4 mb-6">
         <Link to="/home" className="flex items-center">
-          <img alt="Unmute Logo" className="h-8 w-8" src="/lovable-uploads/59d4e15d-6148-4f79-952f-15ce269ffcb8.png" />
+          <img alt="Unmute Logo" className="h-8 w-8" src="/lovable-uploads/2b21ead2-5b9e-4f26-b7af-2ce155a837f9.png" />
           <span className="ml-2 text-xl font-bold">Unmute</span>
         </Link>
       </div>
