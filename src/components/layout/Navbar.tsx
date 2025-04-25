@@ -9,6 +9,8 @@ import NotificationBell from "@/components/notifications/NotificationBell";
 import UserProfileDropdown from "./navbar/UserProfileDropdown";
 import { useIsMobile, useIsTablet } from "@/hooks/use-responsive";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { getInitials, getAvatarFallbackColor } from "@/lib/utils";
 
 interface NavbarProps {
   pageTitle?: string;
@@ -17,6 +19,11 @@ interface NavbarProps {
 const Navbar = ({ pageTitle }: NavbarProps) => {
   const isMobile = useIsMobile();
   const isTablet = useIsTablet();
+  const { user, profile, signOut } = useAuth();
+  
+  const handleSignOut = async () => {
+    await signOut();
+  };
   
   return (
     <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-gray-100">
@@ -48,7 +55,14 @@ const Navbar = ({ pageTitle }: NavbarProps) => {
             <CreateContentButton />
             <MessagesButton unreadMessages={0} />
             <NotificationBell />
-            <UserProfileDropdown />
+            <UserProfileDropdown 
+              profile={profile} 
+              user={user} 
+              unreadMessages={0} 
+              handleSignOut={handleSignOut}
+              getInitials={getInitials} 
+              getAvatarFallbackColor={getAvatarFallbackColor}
+            />
           </div>
         </div>
       </div>
