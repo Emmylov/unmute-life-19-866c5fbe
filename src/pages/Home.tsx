@@ -112,7 +112,9 @@ const Home = () => {
           )}
         </div>
         
-        <HomeRightSidebar profile={profile} />
+        <div className="w-full md:w-80">
+          <HomeRightSidebar profile={profile} />
+        </div>
       </div>
     </AppLayout>
   );

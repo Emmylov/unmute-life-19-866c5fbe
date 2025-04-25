@@ -4,14 +4,14 @@ import { Card, CardContent } from "@/components/ui/card";
 
 const TrendingTopics = () => {
   return (
-    <Card className="shadow-sm border-none overflow-hidden rounded-xl">
-      <CardContent className="p-4">
-        <h3 className="text-lg font-semibold mb-3">Trending Topics</h3>
-        <div className="flex flex-wrap gap-2">
+    <Card className="shadow-sm border-none overflow-hidden rounded-lg">
+      <CardContent className="p-3">
+        <h3 className="text-base font-semibold mb-2">Trending Topics</h3>
+        <div className="flex flex-wrap gap-1.5">
           {["#climateaction", "#mentalhealth", "#techtrends", "#creativity", "#musiclife"].map((topic) => (
             <div 
               key={topic} 
-              className="bg-dream-mist px-3 py-1.5 rounded-full text-xs font-medium text-primary/80 cursor-pointer hover:bg-primary/10 transition-colors"
+              className="bg-dream-mist px-2 py-1 rounded-full text-xs font-medium text-primary/80 cursor-pointer hover:bg-primary/10 transition-colors"
             >
               {topic}
             </div>
