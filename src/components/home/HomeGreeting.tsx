@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Link } from "react-router-dom";
-import { Sparkles, Activity, Heart } from "lucide-react";
+import { Sparkles, Activity } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface HomeGreetingProps {
@@ -26,46 +26,34 @@ const HomeGreeting: React.FC<HomeGreetingProps> = ({ username }) => {
 
   return (
     <motion.div 
-      className="bg-gradient-to-r from-dream-mist to-white/80 rounded-xl p-6 shadow-md border border-white/40 relative overflow-hidden"
+      className="bg-gradient-to-r from-dream-mist to-white/80 rounded-xl p-4 shadow-sm border border-white/40 relative overflow-hidden"
       initial={{ opacity: 0, y: -5 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
     >
-      <div className="absolute -right-12 -top-12 w-36 h-36 bg-unmute-purple/5 rounded-full blur-2xl" />
-      <div className="absolute -left-8 -bottom-8 w-28 h-28 bg-unmute-pink/5 rounded-full blur-xl" />
-      
       <div className="relative">
-        <div className="flex items-center mb-3">
-          <motion.div
-            initial={{ scale: 0.8 }}
-            animate={{ scale: 1 }}
-            transition={{ duration: 0.3, delay: 0.2 }}
-          >
-            <Heart className="h-5 w-5 mr-2 text-cosmic-crush" />
-          </motion.div>
-          <h2 className="text-2xl font-semibold bg-gradient-to-r from-unmute-purple to-unmute-pink bg-clip-text text-transparent">
-            Hello, {username || "Beautiful Soul"}! 
-          </h2>
-        </div>
+        <h2 className="text-lg font-semibold bg-gradient-to-r from-unmute-purple to-unmute-pink bg-clip-text text-transparent mb-2">
+          Hello, {username || "Beautiful Soul"}
+        </h2>
         
-        <p className="text-gray-600 italic mb-4 font-medium">
+        <p className="text-xs text-gray-600 italic mb-3">
           "{randomAffirmation}"
         </p>
         
         <div className="flex flex-wrap gap-2">
           <Link 
             to="/reels" 
-            className="flex items-center gap-2 bg-gradient-to-r from-primary/80 to-primary text-white px-4 py-2 rounded-full hover:opacity-90 transition-all shadow-sm"
+            className="flex items-center gap-1 bg-primary/10 text-primary px-3 py-1 rounded-full hover:bg-primary/20 transition-all text-xs"
           >
-            <Sparkles className="h-4 w-4" />
+            <Sparkles className="h-3 w-3 mr-1" />
             Explore Reels
           </Link>
           <Link 
             to="/vibe-check" 
-            className="flex items-center gap-2 bg-gradient-to-r from-cosmic-crush to-unmute-pink text-white px-4 py-2 rounded-full hover:opacity-90 transition-all shadow-sm"
+            className="flex items-center gap-1 bg-cosmic-crush/10 text-cosmic-crush px-3 py-1 rounded-full hover:bg-cosmic-crush/20 transition-all text-xs"
           >
-            <Activity className="h-4 w-4" />
-            Do a Vibe Check
+            <Activity className="h-3 w-3 mr-1" />
+            Vibe Check
           </Link>
         </div>
       </div>
@@ -74,3 +62,4 @@ const HomeGreeting: React.FC<HomeGreetingProps> = ({ username }) => {
 };
 
 export default HomeGreeting;
+

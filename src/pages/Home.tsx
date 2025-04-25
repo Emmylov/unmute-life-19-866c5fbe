@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import HomeHeader from "@/components/home/HomeHeader";
@@ -7,7 +6,7 @@ import PostCard from "@/components/home/PostCard";
 import FilterBar from "@/components/home/FilterBar";
 import HomeRightSidebar from "@/components/home/HomeRightSidebar";
 import StoryFeed from "@/components/stories/StoryFeed";
-import WelcomeGreeting from "@/components/home/WelcomeGreeting";
+import HomeGreeting from "@/components/home/HomeGreeting";
 import { getFeedPosts } from "@/services/post-service";
 import { useAuth } from "@/contexts/AuthContext";
 import SEO from "@/components/shared/SEO";
@@ -68,10 +67,10 @@ const Home = () => {
 
       <StoreSidebarItem />
 
-      <div className="flex flex-col-reverse md:flex-row gap-6">
-        <div className="flex-1 space-y-6">
+      <div className="flex flex-col-reverse md:flex-row gap-4">
+        <div className="flex-1 space-y-4">
           <HomeHeader />
-          <WelcomeGreeting />
+          <HomeGreeting username={profile?.username} />
           <StoryFeed profile={profile} />
           <CreatePost profile={profile} onPostCreated={handlePostCreated} />
           <FilterBar activeTab={activeTab} onTabChange={handleTabChange} />
