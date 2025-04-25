@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import SearchBar from "./navbar/SearchBar";
@@ -11,7 +10,7 @@ import { getInitials, getAvatarFallbackColor } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
-import { Sidebar } from "./Sidebar";
+import Sidebar from "./Sidebar";
 
 interface NavbarProps {
   pageTitle?: string;
