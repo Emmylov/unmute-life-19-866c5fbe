@@ -11,6 +11,7 @@ import { getFeedPosts } from "@/services/post-service";
 import { useAuth } from "@/contexts/AuthContext";
 import SEO from "@/components/shared/SEO";
 import StoreSidebarItem from "@/components/store/StoreSidebarItem";
+import { motion } from "framer-motion";
 
 const Home = () => {
   const { user, profile } = useAuth();
@@ -37,7 +38,6 @@ const Home = () => {
   }, [user]);
 
   const handlePostCreated = () => {
-    // Refresh posts after a new post is created
     if (user) {
       getFeedPosts(user.id).then(fetchedPosts => {
         setPosts(fetchedPosts || []);
@@ -49,12 +49,26 @@ const Home = () => {
 
   const handleTabChange = (tabValue: string) => {
     setActiveTab(tabValue);
-    // Here you would typically fetch different posts based on the selected tab
-    // For now, let's just set loading state to simulate this
     setIsLoading(true);
     setTimeout(() => {
       setIsLoading(false);
     }, 500);
+  };
+
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.3
+      }
+    }
+  };
+
+  const item = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0 }
   };
 
   return (
@@ -67,19 +81,42 @@ const Home = () => {
 
       <StoreSidebarItem />
 
-      <div className="flex flex-col-reverse md:flex-row gap-4">
-        <div className="flex-1 space-y-4">
-          <HomeHeader />
-          <HomeGreeting username={profile?.username} />
-          <StoryFeed profile={profile} />
-          <CreatePost profile={profile} onPostCreated={handlePostCreated} />
-          <FilterBar activeTab={activeTab} onTabChange={handleTabChange} />
+      <div className="flex flex-col-reverse md:flex-row gap-4 relative">
+        <motion.div 
+          className="flex-1 space-y-4"
+          variants={container}
+          initial="hidden"
+          animate="show"
+        >
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-b from-dream-mist/30 to-transparent pointer-events-none" />
+            <motion.div variants={item}>
+              <HomeHeader />
+            </motion.div>
+          </div>
+
+          <motion.div variants={item}>
+            <HomeGreeting username={profile?.username} />
+          </motion.div>
+
+          <motion.div variants={item} className="relative overflow-hidden rounded-xl">
+            <div className="absolute inset-0 bg-gradient-to-r from-dream-mist/20 via-transparent to-dream-mist/20 pointer-events-none" />
+            <StoryFeed profile={profile} />
+          </motion.div>
+
+          <motion.div variants={item}>
+            <CreatePost profile={profile} onPostCreated={handlePostCreated} />
+          </motion.div>
+
+          <motion.div variants={item}>
+            <FilterBar activeTab={activeTab} onTabChange={handleTabChange} />
+          </motion.div>
           
           {isLoading ? (
-            // Loading skeletons
-            <div className="space-y-4">
+            <motion.div variants={item} className="space-y-4">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 w-full">
+                <div key={i} className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 w-full relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-dream-mist/5 to-transparent animate-shimmer" />
                   <div className="flex items-center space-x-4">
                     <div className="h-12 w-12 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse"></div>
                     <div className="space-y-2 flex-1">
@@ -95,22 +132,35 @@ const Home = () => {
                   <div className="mt-4 h-60 bg-gray-200 dark:bg-gray-700 animate-pulse rounded"></div>
                 </div>
               ))}
-            </div>
+            </motion.div>
           ) : posts.length > 0 ? (
-            <div className="space-y-4">
+            <motion.div variants={item} className="space-y-4">
               {posts.map((post) => (
-                <PostCard key={post.id} post={post} />
+                <motion.div
+                  key={post.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                  whileHover={{ scale: 1.01 }}
+                  className="transform transition-all duration-300 hover:shadow-lg"
+                >
+                  <PostCard post={post} />
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           ) : (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-8 text-center">
-              <h3 className="text-xl font-semibold mb-2">No Posts Yet</h3>
-              <p className="text-gray-500 dark:text-gray-400">
+            <motion.div 
+              variants={item}
+              className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 text-center relative overflow-hidden"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-dream-mist/30 to-transparent pointer-events-none" />
+              <h3 className="text-xl font-semibold mb-2 relative z-10">No Posts Yet</h3>
+              <p className="text-gray-500 dark:text-gray-400 relative z-10">
                 Follow more people or create your first post to get started!
               </p>
-            </div>
+            </motion.div>
           )}
-        </div>
+        </motion.div>
         
         <div className="w-full md:w-80">
           <HomeRightSidebar profile={profile} />
