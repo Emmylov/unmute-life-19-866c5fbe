@@ -1,7 +1,6 @@
 
 import React, { ReactNode } from "react";
 import Navbar from "@/components/layout/Navbar";
-import Sidebar from "@/components/layout/Sidebar";
 import { useIsMobile } from "@/hooks/use-responsive";
 import { useLocation } from "react-router-dom";
 
@@ -20,9 +19,7 @@ const AppLayout = ({ children, pageTitle }: AppLayoutProps) => {
     <div className="min-h-screen bg-gray-50 flex flex-col w-full">
       {!isReelsPage && <Navbar pageTitle={pageTitle} />}
       
-      <div className={`flex flex-grow ${isReelsPage ? '' : 'pt-2'}`}>
-        {!isMobile && <Sidebar className="hidden md:block" />}
-        
+      <div className={`flex flex-grow ${isReelsPage ? '' : 'pt-2'}`}>        
         <main className={`flex-1 ${showMobileNav ? 'pb-20' : 'pb-6'} overflow-x-hidden`}>
           <div className={`h-full ${isReelsPage ? 'p-0 max-w-none' : 'px-3 md:px-4 lg:px-5 pt-2'}`}>
             {children}
