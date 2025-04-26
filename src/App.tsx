@@ -71,9 +71,11 @@ function App() {
                   <Route path="/explore" element={<Explore />} />
                   <Route path="/communities" element={<Communities />} />
                   <Route path="/reels" element={<Reels />} />
+                  <Route path="/users" element={<Users />} />
                   <Route path="/chat" element={<Chat />} />
                   <Route path="/notifications" element={<Notifications />} />
                   <Route path="/profile" element={<Profile />} />
+                  <Route path="/profile/:username" element={<Profile />} />
                   <Route path="/wellness" element={<Wellness />} />
                   <Route path="/wellness-plus" element={<WellnessPlus />} />
                   <Route path="/saved" element={<Saved />} />
@@ -87,7 +89,7 @@ function App() {
                   <Route path="/games/bubble-pop" element={<BubblePop />} />
                   <Route path="/games/word-scramble" element={<WordScramble />} />
                   <Route path="/music" element={<Music />} />
-                  <Route path="/store" element={<Store />} /> {/* Add the new Store route */}
+                  <Route path="/store" element={<Store />} />
                 </Route>
 
                 <Route path="*" element={<NotFound />} />

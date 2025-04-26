@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -25,6 +26,10 @@ const Sidebar = ({
     name: 'Explore',
     path: '/explore',
     icon: Compass
+  }, {
+    name: 'Users',
+    path: '/users',
+    icon: Users
   }, {
     name: 'Communities',
     path: '/communities',

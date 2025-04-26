@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -84,28 +85,36 @@ export const useSocialActions = () => {
     
     try {
       // Check if already liked
-      const { data: existingLike } = await supabase
+      const { data: existingLike, error: checkError } = await supabase
         .from("post_likes")
         .select("*")
         .eq("post_id", postId)
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle();
+      
+      if (checkError) {
+        throw checkError;
+      }
       
       if (existingLike) {
         // Unlike
-        await supabase
+        const { error: deleteError } = await supabase
           .from("post_likes")
           .delete()
           .eq("post_id", postId)
           .eq("user_id", user.id);
         
+        if (deleteError) throw deleteError;
+        
         toast.success("Post unliked");
         return false;
       } else {
         // Like
-        await supabase
+        const { error: insertError } = await supabase
           .from("post_likes")
           .insert({ post_id: postId, user_id: user.id });
+        
+        if (insertError) throw insertError;
         
         toast.success("Post liked");
         return true;
@@ -118,6 +127,100 @@ export const useSocialActions = () => {
       setIsLiking(prev => ({ ...prev, [postId]: false }));
     }
   };
+
+  // Like a reel
+  const toggleLikeReel = async (reelId: string) => {
+    if (!user) {
+      toast.error("You must be logged in to like reels");
+      return false;
+    }
+    
+    setIsLiking(prev => ({ ...prev, [reelId]: true }));
+    
+    try {
+      // Check if already liked
+      const { data: existingLike, error: checkError } = await supabase
+        .from("reel_likes")
+        .select("*")
+        .eq("reel_id", reelId)
+        .eq("user_id", user.id)
+        .maybeSingle();
+      
+      if (checkError) {
+        throw checkError;
+      }
+      
+      if (existingLike) {
+        // Unlike
+        const { error: deleteError } = await supabase
+          .from("reel_likes")
+          .delete()
+          .eq("reel_id", reelId)
+          .eq("user_id", user.id);
+        
+        if (deleteError) throw deleteError;
+        
+        toast.success("Reel unliked");
+        return false;
+      } else {
+        // Like
+        const { error: insertError } = await supabase
+          .from("reel_likes")
+          .insert({ reel_id: reelId, user_id: user.id });
+        
+        if (insertError) throw insertError;
+        
+        toast.success("Reel liked");
+        return true;
+      }
+    } catch (error) {
+      console.error("Error toggling like on reel:", error);
+      toast.error("Failed to update like status");
+      return false;
+    } finally {
+      setIsLiking(prev => ({ ...prev, [reelId]: false }));
+    }
+  };
+  
+  // Check if post is liked
+  const checkPostLikeStatus = async (postId: string) => {
+    if (!user) return false;
+    
+    try {
+      const { data, error } = await supabase
+        .from("post_likes")
+        .select("*")
+        .eq("post_id", postId)
+        .eq("user_id", user.id)
+        .maybeSingle();
+        
+      if (error) throw error;
+      return !!data;
+    } catch (error) {
+      console.error("Error checking post like status:", error);
+      return false;
+    }
+  };
+  
+  // Check if reel is liked
+  const checkReelLikeStatus = async (reelId: string) => {
+    if (!user) return false;
+    
+    try {
+      const { data, error } = await supabase
+        .from("reel_likes")
+        .select("*")
+        .eq("reel_id", reelId)
+        .eq("user_id", user.id)
+        .maybeSingle();
+        
+      if (error) throw error;
+      return !!data;
+    } catch (error) {
+      console.error("Error checking reel like status:", error);
+      return false;
+    }
+  };
   
   return {
     isFollowing,
@@ -125,6 +228,9 @@ export const useSocialActions = () => {
     checkFollowStatus,
     toggleFollow,
     toggleLikePost,
+    toggleLikeReel,
+    checkPostLikeStatus,
+    checkReelLikeStatus,
     isLiking
   };
 };
