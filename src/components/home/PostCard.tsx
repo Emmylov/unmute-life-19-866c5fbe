@@ -124,7 +124,7 @@ const PostCard = ({ post }: any) => {
           <form onSubmit={handleSubmitComment} className="mt-3">
             <div className="flex items-center">
               <Avatar className="h-7 w-7 mr-2">
-                <AvatarImage src={user?.avatar || ''} alt="User" />
+                <AvatarImage src={user?.avatar_url || ''} alt="User" />
                 <AvatarFallback>{(user && user.email) ? user.email[0].toUpperCase() : 'U'}</AvatarFallback>
               </Avatar>
               <input
