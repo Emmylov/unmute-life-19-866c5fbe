@@ -4,28 +4,11 @@ import StoryItem from "./StoryItem";
 import { PlusCircle } from "lucide-react";
 import StoryModal from "./StoryModal";
 import { toast } from "sonner";
-import { fetchStoriesWithProfiles } from "@/integrations/supabase/story-functions";
+import { fetchStoriesWithProfiles, Story } from "@/integrations/supabase/story-functions";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface StoryFeedProps {
   profile: any;
-}
-
-// Define the Story type to match our database schema
-interface Story {
-  id: string;
-  user_id: string;
-  media_url: string;
-  caption?: string;
-  mood?: string;
-  created_at: string;
-  storage_path?: string;
-  profiles?: {
-    id: string;
-    username?: string;
-    full_name?: string;
-    avatar?: string;
-  };
 }
 
 const StoryFeed = ({ profile }: StoryFeedProps) => {
@@ -40,7 +23,16 @@ const StoryFeed = ({ profile }: StoryFeedProps) => {
       setLoading(true);
       setError(null);
       const fetchedStories = await fetchStoriesWithProfiles();
-      setStories(fetchedStories || []);
+      
+      if (!fetchedStories || fetchedStories.length === 0) {
+        console.log("No stories available or error fetching stories");
+        // Instead of setting error, just set empty array
+        setStories([]);
+        return;
+      }
+      
+      console.log("Successfully fetched stories:", fetchedStories.length);
+      setStories(fetchedStories);
     } catch (error) {
       console.error("Error fetching stories:", error);
       setError("Could not load stories");
@@ -90,17 +82,9 @@ const StoryFeed = ({ profile }: StoryFeedProps) => {
           ))
         ) : (
           // Empty state with placeholder stories
-          Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="flex flex-col items-center opacity-60">
-              <div className="w-16 h-16 rounded-full bg-dream-mist p-[2px] flex items-center justify-center">
-                <div className="w-full h-full rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center text-gray-400/50">
-                </div>
-              </div>
-              <span className="text-xs mt-1 truncate w-16 text-center font-medium text-gray-400">
-                {i === 0 ? "First" : i === 1 ? "Add" : i === 2 ? "Your" : i === 3 ? "Own" : "Story"}
-              </span>
-            </div>
-          ))
+          <div className="flex flex-col items-center justify-center px-4 py-2">
+            <span className="text-sm text-gray-500">No stories yet. Be the first to create one!</span>
+          </div>
         )}
       </div>
 

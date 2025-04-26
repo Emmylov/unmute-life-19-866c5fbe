@@ -84,6 +84,60 @@ export const useSocialActions = () => {
     }
   }, [user]);
 
+  // Check if a post exists in any post table
+  const checkPostExists = useCallback(async (postId: string): Promise<boolean> => {
+    try {
+      // Check in main posts table
+      const { data: mainPost, error: mainPostError } = await supabase
+        .from('posts')
+        .select('id')
+        .eq('id', postId)
+        .maybeSingle();
+          
+      if (!mainPostError && mainPost) {
+        return true;
+      }
+      
+      // Check in posts_text table
+      const { data: textPost, error: textPostError } = await supabase
+        .from('posts_text')
+        .select('id')
+        .eq('id', postId)
+        .maybeSingle();
+          
+      if (!textPostError && textPost) {
+        return true;
+      }
+      
+      // Check in posts_images table
+      const { data: imagePost, error: imagePostError } = await supabase
+        .from('posts_images')
+        .select('id')
+        .eq('id', postId)
+        .maybeSingle();
+          
+      if (!imagePostError && imagePost) {
+        return true;
+      }
+      
+      // Check in posts_memes table
+      const { data: memePost, error: memePostError } = await supabase
+        .from('posts_memes')
+        .select('id')
+        .eq('id', postId)
+        .maybeSingle();
+          
+      if (!memePostError && memePost) {
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Error checking post existence:', error);
+      return false;
+    }
+  }, []);
+
   // Toggle like on a post
   const toggleLikePost = useCallback(async (postId: string): Promise<boolean> => {
     if (!user) {
@@ -94,49 +148,11 @@ export const useSocialActions = () => {
     try {
       setIsLiking(prev => ({ ...prev, [postId]: true }));
       
-      // First check if post exists to avoid foreign key constraint errors
-      let postExists = false;
-      
-      // Check in multiple post tables (posts, posts_text, posts_images)
-      try {
-        // Try main posts table first
-        const { data: mainPost, error: mainPostError } = await supabase
-          .from('posts')
-          .select('id')
-          .eq('id', postId)
-          .maybeSingle();
-          
-        if (!mainPostError && mainPost) {
-          postExists = true;
-        } else {
-          // Try posts_text table
-          const { data: textPost, error: textPostError } = await supabase
-            .from('posts_text')
-            .select('id')
-            .eq('id', postId)
-            .maybeSingle();
-            
-          if (!textPostError && textPost) {
-            postExists = true;
-          } else {
-            // Try posts_images table
-            const { data: imagePost, error: imagePostError } = await supabase
-              .from('posts_images')
-              .select('id')
-              .eq('id', postId)
-              .maybeSingle();
-              
-            if (!imagePostError && imagePost) {
-              postExists = true;
-            }
-          }
-        }
-      } catch (checkErr) {
-        console.error('Error checking post existence:', checkErr);
-      }
+      // First check if post exists
+      const postExists = await checkPostExists(postId);
       
       if (!postExists) {
-        console.error('Post does not exist:', postId);
+        console.log('Post does not exist:', postId);
         toast.error('This post is no longer available');
         return false;
       }
@@ -179,7 +195,7 @@ export const useSocialActions = () => {
         return true;
       }
     } catch (error: any) {
-      // Provide more specific error feedback
+      // Provide specific error message
       if (error.message && error.message.includes('foreign key constraint')) {
         toast.error('Cannot like this post - it may have been deleted');
       } else {
@@ -190,7 +206,7 @@ export const useSocialActions = () => {
     } finally {
       setIsLiking(prev => ({ ...prev, [postId]: false }));
     }
-  }, [user]);
+  }, [user, checkPostExists]);
 
   // Check if a post is liked
   const checkPostLikeStatus = useCallback(async (postId: string): Promise<boolean> => {
@@ -218,6 +234,7 @@ export const useSocialActions = () => {
     toggleLikePost,
     checkPostLikeStatus,
     loadingFollowState,
-    isLiking
+    isLiking,
+    checkPostExists
   };
 };

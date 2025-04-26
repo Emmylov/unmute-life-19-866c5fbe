@@ -22,9 +22,11 @@ export interface Story {
 // Function to fetch stories with profiles data
 export const fetchStoriesWithProfiles = async (): Promise<Story[]> => {
   try {
+    console.log("Fetching stories with profiles...");
+    
     // First fetch stories
-    const { data: storiesData, error: storiesError } = await (supabase
-      .from('stories') as any)
+    const { data: storiesData, error: storiesError } = await supabase
+      .from('stories')
       .select('*')
       .order('created_at', { ascending: false })
       .limit(10);
@@ -39,12 +41,13 @@ export const fetchStoriesWithProfiles = async (): Promise<Story[]> => {
       return [];
     }
     
-    console.log("Fetched stories:", storiesData);
+    console.log("Fetched stories:", storiesData.length);
     
     // Get unique user IDs
     const userIds = [...new Set(storiesData.map((story: any) => story.user_id))] as string[];
     
     if (userIds.length === 0) {
+      console.log("No user IDs found in stories");
       return storiesData;
     }
     
@@ -61,9 +64,16 @@ export const fetchStoriesWithProfiles = async (): Promise<Story[]> => {
         return storiesData;
       }
       
+      if (!profilesData || profilesData.length === 0) {
+        console.log("No profiles found for user IDs");
+        return storiesData;
+      }
+      
+      console.log("Fetched profiles:", profilesData.length);
+      
       // Merge profiles with stories
       const storiesWithProfiles = storiesData.map((story: any) => {
-        const userProfile = profilesData?.find(profile => profile.id === story.user_id);
+        const userProfile = profilesData.find(profile => profile.id === story.user_id);
         return {
           ...story,
           profiles: userProfile || undefined
@@ -106,8 +116,8 @@ export const createStory = async (
                    mediaUrl.match(/\.(mp3|wav|ogg|m4a|aac)$/i) !== null ||
                    (!isVideo && mediaUrl.endsWith(".webm"));
     
-    const { data, error } = await (supabase
-      .from('stories') as any)
+    const { data, error } = await supabase
+      .from('stories')
       .insert({
         user_id: userId,
         media_url: mediaUrl,
@@ -130,5 +140,37 @@ export const createStory = async (
     console.error("Error in createStory:", error);
     toast.error("Failed to create your story. Please try again.");
     throw error;
+  }
+};
+
+// Function to view a story
+export const viewStory = async (storyId: string, userId: string): Promise<boolean> => {
+  try {
+    // This is a placeholder for story viewing functionality
+    // You would typically implement logic to:
+    // 1. Record that this user has viewed this story
+    // 2. Update any relevant counters or statistics
+    
+    console.log(`User ${userId} viewed story ${storyId}`);
+    
+    // Return true if the view was successfully recorded
+    return true;
+  } catch (error) {
+    console.error("Error viewing story:", error);
+    return false;
+  }
+};
+
+// Function to check if a user has viewed a story
+export const hasViewedStory = async (storyId: string, userId: string): Promise<boolean> => {
+  try {
+    // This is a placeholder for checking if a user has viewed a story
+    // You would implement proper logic based on your database schema
+    
+    // For demonstration purposes, always return false to show unviewed stories
+    return false;
+  } catch (error) {
+    console.error("Error checking story view status:", error);
+    return false;
   }
 };
