@@ -22,8 +22,15 @@ const PostCard = ({ post }: any) => {
   const [isLiked, setIsLiked] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [comment, setComment] = useState('');
+  const [isValidPost, setIsValidPost] = useState(true);
 
   useEffect(() => {
+    // Check if post has valid data
+    if (!post?.id) {
+      setIsValidPost(false);
+      return;
+    }
+    
     // Check if post is already liked
     const checkLikeStatus = async () => {
       if (user && post?.id) {
@@ -77,28 +84,37 @@ const PostCard = ({ post }: any) => {
     }
   };
 
+  if (!isValidPost) {
+    return null; // Don't render invalid posts
+  }
+
   if (!post) {
     return <div className="w-full p-4 rounded-lg bg-gray-100 dark:bg-gray-800">Post data unavailable</div>;
   }
 
+  // Use fallback values if properties are missing
+  const profileUsername = post.profile?.username || post.profiles?.username || 'anonymous';
+  const profileAvatar = post.profile?.avatar || post.profiles?.avatar;
+  const profileFullName = post.profile?.full_name || post.profiles?.full_name || profileUsername;
+  
   return (
     <Card className="w-full overflow-hidden">
       <div className="flex items-start gap-3 p-4">
-        <Link to={`/profile/${post.profile?.username || post.user_id}`}>
+        <Link to={`/profile/${profileUsername || post.user_id}`}>
           <Avatar className="h-8 w-8">
-            <AvatarImage src={post.profile?.avatar} alt={post.profile?.username} />
-            <AvatarFallback>{post.profile?.username?.[0]?.toUpperCase() || 'U'}</AvatarFallback>
+            <AvatarImage src={profileAvatar} alt={profileUsername} />
+            <AvatarFallback>{profileUsername?.[0]?.toUpperCase() || 'U'}</AvatarFallback>
           </Avatar>
         </Link>
         <div className="flex-1">
           <div className="flex items-center justify-between">
             <div>
-              <Link to={`/profile/${post.profile?.username || post.user_id}`}>
-                <p className="text-sm font-medium leading-none">{post.profile?.full_name || post.profile?.username}</p>
+              <Link to={`/profile/${profileUsername || post.user_id}`}>
+                <p className="text-sm font-medium leading-none">{profileFullName}</p>
               </Link>
-              <Link to={`/profile/${post.profile?.username || post.user_id}`}>
+              <Link to={`/profile/${profileUsername || post.user_id}`}>
                 <p className="text-sm text-gray-500">
-                  @{post.profile?.username} · {formatTimeAgo(post.created_at)}
+                  @{profileUsername} · {formatTimeAgo(post.created_at)}
                 </p>
               </Link>
             </div>
@@ -106,7 +122,7 @@ const PostCard = ({ post }: any) => {
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </div>
-          <p className="text-sm mt-1">{post.content}</p>
+          <p className="text-sm mt-1">{post.content || post.body}</p>
         </div>
       </div>
 

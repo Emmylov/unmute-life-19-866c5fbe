@@ -95,15 +95,49 @@ export const useSocialActions = () => {
       setIsLiking(prev => ({ ...prev, [postId]: true }));
       
       // First check if post exists to avoid foreign key constraint errors
-      const { data: postExists, error: postCheckError } = await supabase
-        .from('posts')
-        .select('id')
-        .eq('id', postId)
-        .single();
-        
-      if (postCheckError || !postExists) {
+      let postExists = false;
+      
+      // Check in multiple post tables (posts, posts_text, posts_images)
+      try {
+        // Try main posts table first
+        const { data: mainPost, error: mainPostError } = await supabase
+          .from('posts')
+          .select('id')
+          .eq('id', postId)
+          .maybeSingle();
+          
+        if (!mainPostError && mainPost) {
+          postExists = true;
+        } else {
+          // Try posts_text table
+          const { data: textPost, error: textPostError } = await supabase
+            .from('posts_text')
+            .select('id')
+            .eq('id', postId)
+            .maybeSingle();
+            
+          if (!textPostError && textPost) {
+            postExists = true;
+          } else {
+            // Try posts_images table
+            const { data: imagePost, error: imagePostError } = await supabase
+              .from('posts_images')
+              .select('id')
+              .eq('id', postId)
+              .maybeSingle();
+              
+            if (!imagePostError && imagePost) {
+              postExists = true;
+            }
+          }
+        }
+      } catch (checkErr) {
+        console.error('Error checking post existence:', checkErr);
+      }
+      
+      if (!postExists) {
         console.error('Post does not exist:', postId);
-        toast.error('The post you are trying to like does not exist');
+        toast.error('This post is no longer available');
         return false;
       }
       
@@ -137,12 +171,20 @@ export const useSocialActions = () => {
             post_id: postId
           });
           
-        if (likeError) throw likeError;
+        if (likeError) {
+          console.error('Like error details:', likeError);
+          throw likeError;
+        }
         
         return true;
       }
     } catch (error: any) {
-      toast.error('Failed to update like status');
+      // Provide more specific error feedback
+      if (error.message && error.message.includes('foreign key constraint')) {
+        toast.error('Cannot like this post - it may have been deleted');
+      } else {
+        toast.error('Failed to update like status');
+      }
       console.error('Error toggling like:', error);
       return false;
     } finally {
