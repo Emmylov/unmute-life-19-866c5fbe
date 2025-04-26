@@ -1,8 +1,16 @@
+
 import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Session, User } from '@supabase/supabase-js';
+import { Session, User as SupabaseUser } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 import { setupSessionRefresh, getUserProfile } from '@/services/auth-service';
+
+// Extend the Supabase User type with our custom properties
+interface User extends SupabaseUser {
+  avatar_url?: string;
+  username?: string;
+  full_name?: string;
+}
 
 interface AuthContextType {
   session: Session | null;
