@@ -32,15 +32,18 @@ const StoryFeed = ({ profile }: StoryFeedProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [stories, setStories] = useState<Story[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
 
   const fetchStories = async () => {
     try {
       setLoading(true);
+      setError(null);
       const fetchedStories = await fetchStoriesWithProfiles();
-      setStories(fetchedStories);
+      setStories(fetchedStories || []);
     } catch (error) {
       console.error("Error fetching stories:", error);
+      setError("Could not load stories");
     } finally {
       setLoading(false);
     }
@@ -78,6 +81,8 @@ const StoryFeed = ({ profile }: StoryFeedProps) => {
               <div className="w-10 h-2 bg-gray-200 dark:bg-gray-700 rounded mt-1"></div>
             </div>
           ))
+        ) : error ? (
+          <div className="text-sm text-red-500 px-2">{error}</div>
         ) : stories.length > 0 ? (
           // Stories list
           stories.map((story) => (

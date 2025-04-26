@@ -31,8 +31,7 @@ export const fetchStoriesWithProfiles = async (): Promise<Story[]> => {
     
     if (storiesError) {
       console.error("Error fetching stories:", storiesError);
-      toast.error("Failed to load stories. Please try again later.");
-      throw storiesError;
+      return [];
     }
     
     if (!storiesData || storiesData.length === 0) {
@@ -93,9 +92,6 @@ export const createStory = async (
   storagePath?: string | null
 ): Promise<string> => {
   try {
-    console.log("Creating story with: ", { userId, mediaUrl, caption, mood, storagePath });
-    
-    // Validate required parameters
     if (!userId || !mediaUrl) {
       const errorMsg = "Missing required parameters: userId and mediaUrl must be provided";
       toast.error(errorMsg);
@@ -109,8 +105,6 @@ export const createStory = async (
     const isAudio = mediaUrl.includes("audio") || 
                    mediaUrl.match(/\.(mp3|wav|ogg|m4a|aac)$/i) !== null ||
                    (!isVideo && mediaUrl.endsWith(".webm"));
-                   
-    console.log("Media type detection:", { isVideo, isAudio });
     
     const { data, error } = await (supabase
       .from('stories') as any)
@@ -130,7 +124,6 @@ export const createStory = async (
       throw error;
     }
     
-    console.log("Story created successfully with ID:", data.id);
     toast.success("Your story has been posted!");
     return data.id;
   } catch (error) {

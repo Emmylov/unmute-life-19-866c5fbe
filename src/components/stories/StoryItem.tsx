@@ -15,7 +15,7 @@ const StoryItem = ({ story }: StoryItemProps) => {
   // Determine if this is the current user's story
   const isCurrentUser = user?.id === story.user_id;
   
-  // Get profile info
+  // Get profile info with proper fallback handling
   const username = isCurrentUser 
     ? 'Your story'
     : story.profiles?.username || 'User';
