@@ -26,14 +26,18 @@ const PostCard = ({ post }: any) => {
   useEffect(() => {
     // Check if post is already liked
     const checkLikeStatus = async () => {
-      if (user) {
-        const liked = await checkPostLikeStatus(post.id);
-        setIsLiked(liked);
+      if (user && post?.id) {
+        try {
+          const liked = await checkPostLikeStatus(post.id);
+          setIsLiked(liked);
+        } catch (error) {
+          console.error("Error checking like status:", error);
+        }
       }
     };
     
     checkLikeStatus();
-  }, [post.id, user, checkPostLikeStatus]);
+  }, [post?.id, user, checkPostLikeStatus]);
 
   const handleLikeClick = async () => {
     if (!user) {
@@ -41,8 +45,17 @@ const PostCard = ({ post }: any) => {
       return;
     }
     
-    const result = await toggleLikePost(post.id);
-    setIsLiked(result);
+    if (!post?.id) {
+      toast.error("Invalid post data");
+      return;
+    }
+    
+    try {
+      const result = await toggleLikePost(post.id);
+      setIsLiked(result);
+    } catch (error) {
+      console.error("Error liking post:", error);
+    }
   };
   
   const handleShare = () => {
@@ -53,15 +66,20 @@ const PostCard = ({ post }: any) => {
     toast.info("Saving posts will be available soon!");
   };
   
-  const handleSubmitComment = (e: any) => {
+  const handleSubmitComment = (e: React.FormEvent) => {
     e.preventDefault();
     if (comment.trim() !== '') {
       // Handle comment submission logic here
       console.log('Comment submitted:', comment);
+      toast.info("Comments will be available soon!");
       setComment('');
       setShowComments(true); // Show comments after submitting
     }
   };
+
+  if (!post) {
+    return <div className="w-full p-4 rounded-lg bg-gray-100 dark:bg-gray-800">Post data unavailable</div>;
+  }
 
   return (
     <Card className="w-full overflow-hidden">
@@ -100,17 +118,38 @@ const PostCard = ({ post }: any) => {
 
       <div className="flex justify-between items-center p-4">
         <div className="flex items-center space-x-4 text-gray-500">
-          <Button variant="ghost" size="icon" onClick={handleLikeClick} disabled={isLiking[post.id]}>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={handleLikeClick} 
+            disabled={isLiking[post.id]}
+            aria-label={isLiked ? "Unlike post" : "Like post"}
+          >
             <Heart className={cn("h-5 w-5", isLiked && "text-red-500")} fill={isLiked ? 'red' : 'none'} />
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => setShowComments(!showComments)}>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => setShowComments(!showComments)}
+            aria-label={showComments ? "Hide comments" : "Show comments"}
+          >
             <MessageCircle className="h-5 w-5" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={handleShare}>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={handleShare}
+            aria-label="Share post"
+          >
             <Share className="h-5 w-5" />
           </Button>
         </div>
-        <Button variant="ghost" size="icon" onClick={handleSave}>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={handleSave}
+          aria-label="Save post"
+        >
           <Bookmark className="h-5 w-5" />
         </Button>
       </div>

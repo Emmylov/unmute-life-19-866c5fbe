@@ -3,9 +3,9 @@ import React, { useState, useEffect } from "react";
 import StoryItem from "./StoryItem";
 import { PlusCircle } from "lucide-react";
 import StoryModal from "./StoryModal";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { fetchStoriesWithProfiles } from "@/integrations/supabase/story-functions";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface StoryFeedProps {
   profile: any;
@@ -29,10 +29,10 @@ interface Story {
 }
 
 const StoryFeed = ({ profile }: StoryFeedProps) => {
-  const { toast } = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [stories, setStories] = useState<Story[]>([]);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
 
   const fetchStories = async () => {
     try {
@@ -41,11 +41,6 @@ const StoryFeed = ({ profile }: StoryFeedProps) => {
       setStories(fetchedStories);
     } catch (error) {
       console.error("Error fetching stories:", error);
-      toast({
-        title: "Error",
-        description: "Could not load stories. Please try again later.",
-        variant: "destructive"
-      });
     } finally {
       setLoading(false);
     }
@@ -55,10 +50,18 @@ const StoryFeed = ({ profile }: StoryFeedProps) => {
     fetchStories();
   }, []);
 
+  const handleOpenModal = () => {
+    if (!user) {
+      toast.error("Please log in to create a story");
+      return;
+    }
+    setIsModalOpen(true);
+  };
+
   return (
     <div className="overflow-x-auto py-2 -mx-2 px-2 scrollbar-hide">
       <div className="flex space-x-4">
-        <div className="flex flex-col items-center cursor-pointer" onClick={() => setIsModalOpen(true)}>
+        <div className="flex flex-col items-center cursor-pointer" onClick={handleOpenModal}>
           <div className="w-16 h-16 rounded-full bg-primary/10 p-[2px] shadow-md">
             <div className="w-full h-full rounded-full flex items-center justify-center bg-white dark:bg-gray-800">
               <PlusCircle className="h-7 w-7 text-primary" />
@@ -103,16 +106,7 @@ const StoryFeed = ({ profile }: StoryFeedProps) => {
           onSuccess={fetchStories}
           profile={profile}
         />
-      ) : isModalOpen && (
-        <>
-          {toast({
-            title: "Login Required",
-            description: "Please log in to create a story",
-            variant: "destructive"
-          })}
-          {setIsModalOpen(false)}
-        </>
-      )}
+      ) : null}
     </div>
   );
 };

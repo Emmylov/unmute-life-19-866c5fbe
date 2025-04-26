@@ -45,36 +45,42 @@ export const fetchStoriesWithProfiles = async (): Promise<Story[]> => {
     // Get unique user IDs
     const userIds = [...new Set(storiesData.map((story: any) => story.user_id))] as string[];
     
-    // Fetch profiles for those user IDs
-    const { data: profilesData, error: profilesError } = await supabase
-      .from('profiles')
-      .select('id, username, full_name, avatar')
-      .in('id', userIds);
-    
-    if (profilesError) {
-      console.error("Error fetching profiles:", profilesError);
-      toast.error("Failed to load user profiles for stories");
-      // Still return stories without profile data
-      return storiesData.map((story: any) => ({
-        ...story,
-        profiles: undefined
-      }));
+    if (userIds.length === 0) {
+      return storiesData;
     }
     
-    // Merge profiles with stories
-    const storiesWithProfiles = storiesData.map((story: any) => {
-      const userProfile = profilesData?.find(profile => profile.id === story.user_id);
-      return {
-        ...story,
-        profiles: userProfile || undefined
-      };
-    });
-    
-    return storiesWithProfiles;
+    try {
+      // Fetch profiles for those user IDs
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, username, full_name, avatar')
+        .in('id', userIds);
+      
+      if (profilesError) {
+        console.error("Error fetching profiles:", profilesError);
+        // Still return stories without profile data
+        return storiesData;
+      }
+      
+      // Merge profiles with stories
+      const storiesWithProfiles = storiesData.map((story: any) => {
+        const userProfile = profilesData?.find(profile => profile.id === story.user_id);
+        return {
+          ...story,
+          profiles: userProfile || undefined
+        };
+      });
+      
+      return storiesWithProfiles;
+    } catch (profileError) {
+      console.error("Error processing profiles for stories:", profileError);
+      // Return stories without profile data if profile fetch fails
+      return storiesData;
+    }
   } catch (error) {
     console.error("Error in fetchStoriesWithProfiles:", error);
-    toast.error("Something went wrong while loading stories");
-    return []; // Return empty array instead of throwing to prevent UI crashes
+    // Return empty array instead of throwing to prevent UI crashes
+    return [];
   }
 };
 
