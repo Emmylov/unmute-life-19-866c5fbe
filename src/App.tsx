@@ -13,6 +13,7 @@ import Home from "@/pages/Home";
 import Explore from "@/pages/Explore";
 import Communities from "@/pages/Communities";
 import Reels from "@/pages/Reels";
+import UsersPage from "@/pages/Users"; // Fixed import name
 import Chat from "@/pages/Chat";
 import Notifications from "@/pages/Notifications";
 import Profile from "@/pages/Profile";
@@ -32,7 +33,7 @@ import MemoryMatch from "@/pages/games/MemoryMatch";
 import BubblePop from "@/pages/games/BubblePop";
 import WordScramble from "@/pages/games/WordScramble";
 import Music from "@/pages/Music";
-import Store from "@/pages/Store"; // Import our new Store page
+import Store from "@/pages/Store";
 
 function App() {
   // User interaction tracking
@@ -71,7 +72,7 @@ function App() {
                   <Route path="/explore" element={<Explore />} />
                   <Route path="/communities" element={<Communities />} />
                   <Route path="/reels" element={<Reels />} />
-                  <Route path="/users" element={<Users />} />
+                  <Route path="/users" element={<UsersPage />} />
                   <Route path="/chat" element={<Chat />} />
                   <Route path="/notifications" element={<Notifications />} />
                   <Route path="/profile" element={<Profile />} />

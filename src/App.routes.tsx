@@ -18,6 +18,7 @@ const Store = lazy(() => import("./pages/Store"));
 const VibeCheck = lazy(() => import("./pages/VibeCheck"));
 const CreateCollab = lazy(() => import("./pages/CreateCollab"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
+const UsersPage = lazy(() => import("./pages/Users"));
 
 // Auth pages
 const Auth = lazy(() => import("./pages/Auth"));
@@ -107,5 +108,9 @@ export const routes = [
   {
     path: "/games/memory-match",
     element: <MemoryMatch />,
+  },
+  {
+    path: "/users",
+    element: <UsersPage />,
   },
 ];

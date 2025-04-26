@@ -5,12 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Search, UserPlus, Users, Sparkles } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Users, UserPlus, Sparkles } from "lucide-react";
 import { useSocialActions } from "@/hooks/use-social-actions";
-import { getInitials, getAvatarFallbackColor } from "@/lib/utils";
 import AppLayout from "@/components/layout/AppLayout";
 import UserCard from "@/components/users/UserCard";
 import UserGrid from "@/components/users/UserGrid";
@@ -31,7 +27,7 @@ const item = {
   show: { opacity: 1, y: 0 }
 };
 
-const Users = () => {
+const UsersPage = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [featuredUsers, setFeaturedUsers] = useState<any[]>([]);
   const [trendingUsers, setTrendingUsers] = useState<any[]>([]);
@@ -136,7 +132,7 @@ const Users = () => {
             </motion.p>
             
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 placeholder="Search users..."
                 className="pl-10 bg-white/80 backdrop-blur-sm"
@@ -215,4 +211,4 @@ const Users = () => {
   );
 };
 
-export default Users;
+export default UsersPage;
