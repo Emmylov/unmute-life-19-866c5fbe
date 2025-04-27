@@ -74,7 +74,7 @@ export const useSocialActions = () => {
     }
   }, []);
   
-  // Check if a post is liked
+  // Check if a post is liked - MOVED BEFORE toggleLikePost
   const checkPostLikeStatus = useCallback(async (postId: string): Promise<boolean> => {
     if (!user) return false;
     
@@ -94,62 +94,7 @@ export const useSocialActions = () => {
     }
   }, [user]);
   
-  // Toggle following a user
-  const toggleFollow = useCallback(async (userId: string): Promise<boolean> => {
-    if (!user) {
-      toast.error('Please sign in to follow users');
-      return false;
-    }
-    
-    try {
-      setLoadingFollowState(prev => ({ ...prev, [userId]: true }));
-      
-      // Check if already following
-      const { data, error: checkError } = await supabase
-        .from('user_follows')
-        .select('*')
-        .eq('follower_id', user.id)
-        .eq('following_id', userId)
-        .maybeSingle();
-        
-      if (checkError) throw checkError;
-      
-      if (data) {
-        // Unfollow
-        const { error: unfollowError } = await supabase
-          .from('user_follows')
-          .delete()
-          .eq('follower_id', user.id)
-          .eq('following_id', userId);
-          
-        if (unfollowError) throw unfollowError;
-        
-        toast.success('Unfollowed user');
-        return false;
-      } else {
-        // Follow
-        const { error: followError } = await supabase
-          .from('user_follows')
-          .insert({
-            follower_id: user.id,
-            following_id: userId
-          });
-          
-        if (followError) throw followError;
-        
-        toast.success('Following user');
-        return true;
-      }
-    } catch (error: any) {
-      toast.error('Error updating follow status');
-      console.error('Error toggling follow:', error);
-      return false;
-    } finally {
-      setLoadingFollowState(prev => ({ ...prev, [userId]: false }));
-    }
-  }, [user]);
-  
-  // Check if following a user
+  // Check if following a user - MOVED BEFORE toggleFollow
   const checkFollowStatus = useCallback(async (userId: string): Promise<boolean> => {
     if (!user) return false;
     
@@ -239,6 +184,61 @@ export const useSocialActions = () => {
       setIsLiking(prev => ({ ...prev, [postId]: false }));
     }
   }, [user, checkPostExists]);
+  
+  // Toggle following a user
+  const toggleFollow = useCallback(async (userId: string): Promise<boolean> => {
+    if (!user) {
+      toast.error('Please sign in to follow users');
+      return false;
+    }
+    
+    try {
+      setLoadingFollowState(prev => ({ ...prev, [userId]: true }));
+      
+      // Check if already following
+      const { data, error: checkError } = await supabase
+        .from('user_follows')
+        .select('*')
+        .eq('follower_id', user.id)
+        .eq('following_id', userId)
+        .maybeSingle();
+        
+      if (checkError) throw checkError;
+      
+      if (data) {
+        // Unfollow
+        const { error: unfollowError } = await supabase
+          .from('user_follows')
+          .delete()
+          .eq('follower_id', user.id)
+          .eq('following_id', userId);
+          
+        if (unfollowError) throw unfollowError;
+        
+        toast.success('Unfollowed user');
+        return false;
+      } else {
+        // Follow
+        const { error: followError } = await supabase
+          .from('user_follows')
+          .insert({
+            follower_id: user.id,
+            following_id: userId
+          });
+          
+        if (followError) throw followError;
+        
+        toast.success('Following user');
+        return true;
+      }
+    } catch (error: any) {
+      toast.error('Error updating follow status');
+      console.error('Error toggling follow:', error);
+      return false;
+    } finally {
+      setLoadingFollowState(prev => ({ ...prev, [userId]: false }));
+    }
+  }, [user]);
 
   return {
     toggleFollow,

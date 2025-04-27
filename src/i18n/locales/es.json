@@ -32,7 +32,9 @@
       "postUnavailable": "Datos de la publicación no disponibles"
     },
     "success": {
-      "commentAdded": "Comentario añadido"
+      "commentAdded": "Comentario añadido",
+      "following": "Siguiendo al usuario",
+      "unfollowed": "Has dejado de seguir al usuario"
     }
   },
   "auth": {
