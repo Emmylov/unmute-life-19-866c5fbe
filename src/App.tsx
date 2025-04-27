@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'sonner';
@@ -6,6 +5,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { TutorialProvider } from '@/contexts/TutorialContext';
 import TutorialOverlay from '@/components/tutorial/TutorialOverlay';
 import { HelmetProvider } from 'react-helmet-async';
+import '@/i18n/config';
 
 import Index from "@/pages/Index";
 import Auth from "@/pages/Auth";
@@ -13,7 +13,7 @@ import Home from "@/pages/Home";
 import Explore from "@/pages/Explore";
 import Communities from "@/pages/Communities";
 import Reels from "@/pages/Reels";
-import UsersPage from "@/pages/Users"; // Fixed import name
+import UsersPage from "@/pages/Users";
 import Chat from "@/pages/Chat";
 import Notifications from "@/pages/Notifications";
 import Profile from "@/pages/Profile";
@@ -36,7 +36,6 @@ import Music from "@/pages/Music";
 import Store from "@/pages/Store";
 
 function App() {
-  // User interaction tracking
   React.useEffect(() => {
     const handleInteraction = () => {
       document.documentElement.setAttribute('data-user-interacted', 'true');
@@ -96,7 +95,6 @@ function App() {
                 <Route path="*" element={<NotFound />} />
               </Routes>
               
-              {/* Tutorial overlay */}
               <TutorialOverlay />
             </TutorialProvider>
             <Toaster position="top-right" closeButton richColors />

@@ -1,0 +1,25 @@
+
+{
+  "common": {
+    "welcome": "Welcome to Unmute",
+    "explore": "Explore",
+    "create": "Create",
+    "settings": "Settings",
+    "profile": "Profile",
+    "notifications": "Notifications",
+    "messages": "Messages",
+    "search": "Search"
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot Password?"
+  },
+  "home": {
+    "feed": "Your Feed",
+    "trending": "Trending",
+    "suggested": "Suggested Users"
+  }
+}

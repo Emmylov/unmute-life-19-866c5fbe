@@ -1,82 +1,70 @@
-
 import React from "react";
-import { Link } from "react-router-dom";
-import { LogOut } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import EarlyAccessBadge from "@/components/badges/EarlyAccessBadge";
-import OGBadge from "@/components/badges/OGBadge";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { useToast } from "@/components/ui/use-toast";
+import { useIsDesktop } from "@/hooks/use-responsive";
+import { LogOut, Settings, User } from "lucide-react";
+import LanguageSwitcher from "../LanguageSwitcher";
 
-interface UserProfileDropdownProps {
-  profile: any;
-  user: any;
-  unreadMessages: number;
-  handleSignOut: () => void;
-  getInitials: (name?: string) => string;
-  getAvatarFallbackColor: (userId?: string) => string;
-}
+const UserProfileDropdown = () => {
+  const { user, profile, signOut } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const isDesktop = useIsDesktop();
 
-const UserProfileDropdown = ({
-  profile,
-  user,
-  unreadMessages,
-  handleSignOut,
-  getInitials,
-  getAvatarFallbackColor
-}: UserProfileDropdownProps) => {
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      navigate("/auth");
+      toast({
+        title: "Signed out",
+        description: "You have been successfully signed out.",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Sign out failed",
+        description: "There was an error signing you out. Please try again.",
+      });
+    }
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Avatar className="h-6 w-6 md:h-7 md:w-7 cursor-pointer ring-1 ring-white hover:ring-unmute-purple/20 transition-all">
-          <AvatarImage 
-            src={profile?.avatar || ''} 
-            alt={profile?.username || user?.email || 'User'}
-          />
-          <AvatarFallback className={`${getAvatarFallbackColor(user?.id)} text-white text-xs`}>
-            {profile?.username 
-              ? getInitials(profile.username)
-              : profile?.full_name 
-                ? getInitials(profile.full_name)
-                : user?.email
-                  ? getInitials(user.email)
-                  : "U"
-            }
-          </AvatarFallback>
-        </Avatar>
+        <button className="rounded-full border-2 border-transparent hover:border-unmute-purple/30 transition-colors">
+          <Avatar className="h-7 w-7">
+            <AvatarImage src={profile?.avatar || ""} alt={profile?.full_name || "Avatar"} />
+            <AvatarFallback>{profile?.full_name?.charAt(0).toUpperCase() || "U"}</AvatarFallback>
+          </Avatar>
+        </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56 glass-card">
-        <DropdownMenuLabel className="flex items-center justify-between flex-wrap gap-2">
-          My Account
-          <div className="flex items-center gap-2">
-            <OGBadge className="ml-2" />
-            <EarlyAccessBadge className="ml-2" />
-          </div>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link to="/profile" className="cursor-pointer">Profile</Link>
+      <DropdownMenuContent className="w-56" align="end">
+        <DropdownMenuItem onClick={() => navigate('/profile')}>
+          <User className="h-4 w-4 mr-2" />
+          Profile
         </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link to="/create" className="cursor-pointer">Create Content</Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link to="/chat" className="cursor-pointer">Messages {unreadMessages > 0 && `(${unreadMessages})`}</Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link to="/settings" className="cursor-pointer">Settings</Link>
+        <DropdownMenuItem onClick={() => navigate('/settings')}>
+          <Settings className="h-4 w-4 mr-2" />
+          Settings
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleSignOut} className="text-destructive cursor-pointer">
+        <DropdownMenuItem onClick={handleSignOut}>
           <LogOut className="h-4 w-4 mr-2" />
-          Sign out
+          Sign Out
         </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <div className="px-2 py-2">
+          <LanguageSwitcher />
+        </div>
       </DropdownMenuContent>
     </DropdownMenu>
   );
