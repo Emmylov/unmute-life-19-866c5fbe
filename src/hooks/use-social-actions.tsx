@@ -87,18 +87,7 @@ export const useSocialActions = () => {
   // Check if a post exists in any post table
   const checkPostExists = useCallback(async (postId: string): Promise<boolean> => {
     try {
-      // Check in main posts table
-      const { data: mainPost, error: mainPostError } = await supabase
-        .from('posts')
-        .select('id')
-        .eq('id', postId)
-        .maybeSingle();
-          
-      if (!mainPostError && mainPost) {
-        return true;
-      }
-      
-      // Check in posts_text table
+      // Check in posts_text table first (most common)
       const { data: textPost, error: textPostError } = await supabase
         .from('posts_text')
         .select('id')
@@ -131,6 +120,28 @@ export const useSocialActions = () => {
         return true;
       }
       
+      // Check in posts_reels table
+      const { data: reelPost, error: reelPostError } = await supabase
+        .from('posts_reels')
+        .select('id')
+        .eq('id', postId)
+        .maybeSingle();
+          
+      if (!reelPostError && reelPost) {
+        return true;
+      }
+      
+      // Finally check in the main posts table
+      const { data: mainPost, error: mainPostError } = await supabase
+        .from('posts')
+        .select('id')
+        .eq('id', postId)
+        .maybeSingle();
+          
+      if (!mainPostError && mainPost) {
+        return true;
+      }
+      
       return false;
     } catch (error) {
       console.error('Error checking post existence:', error);
@@ -157,43 +168,58 @@ export const useSocialActions = () => {
         return false;
       }
       
-      // Check if already liked
-      const { data, error: checkError } = await supabase
-        .from('post_likes')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('post_id', postId)
-        .maybeSingle();
-        
-      if (checkError) throw checkError;
+      // Use a custom function to add the like without foreign key constraint
+      const functionResponse = await supabase.rpc('like_post', { 
+        p_post_id: postId,
+        p_user_id: user.id,
+        p_created_at: new Date().toISOString()
+      });
       
-      if (data) {
-        // Unlike
-        const { error: unlikeError } = await supabase
+      if (functionResponse.error) {
+        console.error('Function error:', functionResponse.error);
+        
+        // Fallback to direct insert/delete if function fails
+        // Check if already liked
+        const { data, error: checkError } = await supabase
           .from('post_likes')
-          .delete()
+          .select('*')
           .eq('user_id', user.id)
-          .eq('post_id', postId);
+          .eq('post_id', postId)
+          .maybeSingle();
           
-        if (unlikeError) throw unlikeError;
+        if (checkError) throw checkError;
         
-        return false;
-      } else {
-        // Like
-        const { error: likeError } = await supabase
-          .from('post_likes')
-          .insert({
-            user_id: user.id,
-            post_id: postId
-          });
+        if (data) {
+          // Unlike
+          const { error: unlikeError } = await supabase
+            .from('post_likes')
+            .delete()
+            .eq('user_id', user.id)
+            .eq('post_id', postId);
+            
+          if (unlikeError) throw unlikeError;
           
-        if (likeError) {
-          console.error('Like error details:', likeError);
-          throw likeError;
+          return false;
+        } else {
+          // Like
+          const { error: likeError } = await supabase
+            .from('post_likes')
+            .insert({
+              user_id: user.id,
+              post_id: postId
+            });
+            
+          if (likeError) {
+            console.error('Like error details:', likeError);
+            throw likeError;
+          }
+          
+          return true;
         }
-        
-        return true;
       }
+      
+      // Check the new like state after function call
+      return await checkPostLikeStatus(postId);
     } catch (error: any) {
       // Provide specific error message
       if (error.message && error.message.includes('foreign key constraint')) {
@@ -206,7 +232,7 @@ export const useSocialActions = () => {
     } finally {
       setIsLiking(prev => ({ ...prev, [postId]: false }));
     }
-  }, [user, checkPostExists]);
+  }, [user, checkPostExists, checkPostLikeStatus]);
 
   // Check if a post is liked
   const checkPostLikeStatus = useCallback(async (postId: string): Promise<boolean> => {

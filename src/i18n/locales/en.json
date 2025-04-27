@@ -1,3 +1,4 @@
+
 {
   "common": {
     "welcome": "Welcome to Unmute",
@@ -13,9 +14,14 @@
     "showComments": "Show comments",
     "hideComments": "Hide comments",
     "comments": "Comments",
+    "commentsDescription": "Join the conversation by adding your comment below.",
     "noComments": "No comments yet. Be the first!",
     "addComment": "Add a comment...",
     "post": "Post",
+    "comingSoon": {
+      "share": "Sharing will be available soon!",
+      "save": "Saving posts will be available soon!"
+    },
     "error": {
       "loadingComments": "Failed to load comments",
       "invalidPost": "Invalid post data",
@@ -35,7 +41,8 @@
     "signOut": "Sign Out",
     "email": "Email",
     "password": "Password",
-    "forgotPassword": "Forgot Password?"
+    "forgotPassword": "Forgot Password?",
+    "signInRequired": "Please sign in to continue"
   },
   "home": {
     "feed": "Your Feed",

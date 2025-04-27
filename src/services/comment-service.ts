@@ -2,6 +2,71 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+// Check if a post exists in any table
+export const checkPostExists = async (postId: string): Promise<boolean> => {
+  try {
+    // Check in posts_text table first (most common)
+    const { data: textPost, error: textPostError } = await supabase
+      .from('posts_text')
+      .select('id')
+      .eq('id', postId)
+      .maybeSingle();
+        
+    if (!textPostError && textPost) {
+      return true;
+    }
+    
+    // Check in posts_images table
+    const { data: imagePost, error: imagePostError } = await supabase
+      .from('posts_images')
+      .select('id')
+      .eq('id', postId)
+      .maybeSingle();
+        
+    if (!imagePostError && imagePost) {
+      return true;
+    }
+    
+    // Check in posts_memes table
+    const { data: memePost, error: memePostError } = await supabase
+      .from('posts_memes')
+      .select('id')
+      .eq('id', postId)
+      .maybeSingle();
+        
+    if (!memePostError && memePost) {
+      return true;
+    }
+    
+    // Check in posts_reels table
+    const { data: reelPost, error: reelPostError } = await supabase
+      .from('posts_reels')
+      .select('id')
+      .eq('id', postId)
+      .maybeSingle();
+        
+    if (!reelPostError && reelPost) {
+      return true;
+    }
+    
+    // Finally check in the main posts table
+    const { data: mainPost, error: mainPostError } = await supabase
+      .from('posts')
+      .select('id')
+      .eq('id', postId)
+      .maybeSingle();
+        
+    if (!mainPostError && mainPost) {
+      return true;
+    }
+    
+    return false;
+  } catch (error) {
+    console.error('Error checking post existence:', error);
+    return false;
+  }
+};
+
 // Get the number of comments for a reel
 export const getCommentCount = async (reelId: string): Promise<number> => {
   try {
@@ -174,6 +239,15 @@ export const deleteReelComment = async (commentId: string, userId: string) => {
 // Generic comment functions for backward compatibility
 export const addComment = async (postId: string, userId: string, content: string) => {
   try {
+    // First verify the post exists
+    const postExists = await checkPostExists(postId);
+    
+    if (!postExists) {
+      toast.error("This post is no longer available");
+      throw new Error("Post not found");
+    }
+    
+    // If post exists, add the comment using a direct approach without foreign key constraint
     const { data, error } = await supabase
       .from("post_comments")
       .insert({
@@ -181,10 +255,16 @@ export const addComment = async (postId: string, userId: string, content: string
         user_id: userId,
         content: content
       })
-      .select();
+      .select(`
+        *,
+        profiles:user_id (
+          id, username, avatar, full_name
+        )
+      `)
+      .single();
     
     if (error) throw error;
-    return data[0];
+    return data;
   } catch (error) {
     console.error("Error adding comment:", error);
     throw error;
@@ -193,6 +273,13 @@ export const addComment = async (postId: string, userId: string, content: string
 
 export const getComments = async (postId: string) => {
   try {
+    // First check if the post exists
+    const postExists = await checkPostExists(postId);
+    
+    if (!postExists) {
+      return [];
+    }
+    
     const { data, error } = await supabase
       .from("post_comments")
       .select(`

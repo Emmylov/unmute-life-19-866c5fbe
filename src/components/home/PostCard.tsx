@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
@@ -10,7 +11,7 @@ import { useSocialActions } from "@/hooks/use-social-actions";
 import { cn, formatTimeAgo } from "@/lib/utils";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { addComment, getComments } from "@/services/comment-service";
 import { useTranslation } from "react-i18next";
 
@@ -46,12 +47,25 @@ const PostCard = ({ post }: PostCardProps) => {
       }
     };
     
+    const verifyPostExists = async () => {
+      if (post?.id) {
+        try {
+          const exists = await checkPostExists(post.id);
+          setIsValidPost(exists);
+        } catch (error) {
+          console.error("Error checking if post exists:", error);
+          setIsValidPost(false);
+        }
+      }
+    };
+    
     checkLikeStatus();
+    verifyPostExists();
     
     if (showComments) {
       fetchComments();
     }
-  }, [post?.id, user, checkPostLikeStatus, showComments]);
+  }, [post?.id, user, checkPostLikeStatus, showComments, checkPostExists]);
 
   const fetchComments = async () => {
     if (!post?.id) return;
@@ -121,11 +135,11 @@ const PostCard = ({ post }: PostCardProps) => {
   };
 
   const handleShare = () => {
-    toast.info("Sharing will be available soon!");
+    toast.info(t('common.comingSoon.share', 'Sharing will be available soon!'));
   };
   
   const handleSave = () => {
-    toast.info("Saving posts will be available soon!");
+    toast.info(t('common.comingSoon.save', 'Saving posts will be available soon!'));
   };
 
   if (!isValidPost) {
@@ -218,9 +232,10 @@ const PostCard = ({ post }: PostCardProps) => {
 
         <Dialog open={showComments} onOpenChange={setShowComments}>
           <DialogContent className="sm:max-w-[425px]">
+            <DialogTitle>{t('common.comments', 'Comments')}</DialogTitle>
+            <DialogDescription>{t('common.commentsDescription', 'Join the conversation by adding your comment below.')}</DialogDescription>
+            
             <div className="space-y-4 max-h-[60vh] overflow-y-auto p-4">
-              <h3 className="text-lg font-semibold">{t('common.comments', 'Comments')}</h3>
-              
               {isLoading ? (
                 <div className="space-y-4">
                   {[1, 2, 3].map((i) => (

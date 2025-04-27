@@ -1,3 +1,4 @@
+
 {
   "common": {
     "welcome": "Bienvenue sur Unmute",
@@ -13,9 +14,14 @@
     "showComments": "Afficher les commentaires",
     "hideComments": "Masquer les commentaires",
     "comments": "Commentaires",
+    "commentsDescription": "Rejoignez la conversation en ajoutant votre commentaire ci-dessous.",
     "noComments": "Pas encore de commentaires. Soyez le premier !",
     "addComment": "Ajouter un commentaire...",
     "post": "Publier",
+    "comingSoon": {
+      "share": "Le partage sera bientôt disponible !",
+      "save": "L'enregistrement des publications sera bientôt disponible !"
+    },
     "error": {
       "loadingComments": "Échec du chargement des commentaires",
       "invalidPost": "Données de publication invalides",
@@ -35,7 +41,8 @@
     "signOut": "Se Déconnecter",
     "email": "Email",
     "password": "Mot de passe",
-    "forgotPassword": "Mot de passe oublié ?"
+    "forgotPassword": "Mot de passe oublié ?",
+    "signInRequired": "Veuillez vous connecter pour continuer"
   },
   "home": {
     "feed": "Votre Fil",
