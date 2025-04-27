@@ -1,3 +1,4 @@
+
 import React from "react";
 import {
   DropdownMenu,
@@ -13,21 +14,43 @@ import { useToast } from "@/components/ui/use-toast";
 import { useIsDesktop } from "@/hooks/use-responsive";
 import { LogOut, Settings, User } from "lucide-react";
 import LanguageSwitcher from "../LanguageSwitcher";
+import { useTranslation } from "react-i18next";
 
-const UserProfileDropdown = () => {
-  const { user, profile, signOut } = useAuth();
+// Properly define the interface for the component props
+interface UserProfileDropdownProps {
+  profile?: any;
+  user?: any;
+  unreadMessages?: number;
+  handleSignOut?: () => Promise<void>;
+  getInitials?: (name?: string) => string;
+  getAvatarFallbackColor?: (userId?: string) => string;
+}
+
+const UserProfileDropdown = (props: UserProfileDropdownProps = {}) => {
+  // Use props or fallback to context values for backward compatibility
+  const authContext = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const isDesktop = useIsDesktop();
+  const { t } = useTranslation();
 
+  // Use props with fallback to context values
+  const user = props.user || authContext.user;
+  const profile = props.profile || authContext.profile;
+  
+  // Use provided handleSignOut or fallback to our own implementation
   const handleSignOut = async () => {
     try {
-      await signOut();
-      navigate("/auth");
-      toast({
-        title: "Signed out",
-        description: "You have been successfully signed out.",
-      });
+      if (props.handleSignOut) {
+        await props.handleSignOut();
+      } else {
+        await authContext.signOut();
+        navigate("/auth");
+        toast({
+          title: "Signed out",
+          description: "You have been successfully signed out.",
+        });
+      }
     } catch (error) {
       toast({
         variant: "destructive",
@@ -43,23 +66,27 @@ const UserProfileDropdown = () => {
         <button className="rounded-full border-2 border-transparent hover:border-unmute-purple/30 transition-colors">
           <Avatar className="h-7 w-7">
             <AvatarImage src={profile?.avatar || ""} alt={profile?.full_name || "Avatar"} />
-            <AvatarFallback>{profile?.full_name?.charAt(0).toUpperCase() || "U"}</AvatarFallback>
+            <AvatarFallback>
+              {props.getInitials 
+                ? props.getInitials(profile?.full_name) 
+                : profile?.full_name?.charAt(0).toUpperCase() || "U"}
+            </AvatarFallback>
           </Avatar>
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end">
         <DropdownMenuItem onClick={() => navigate('/profile')}>
           <User className="h-4 w-4 mr-2" />
-          Profile
+          {t('common.profile')}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => navigate('/settings')}>
           <Settings className="h-4 w-4 mr-2" />
-          Settings
+          {t('common.settings')}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut}>
           <LogOut className="h-4 w-4 mr-2" />
-          Sign Out
+          {t('auth.signOut', 'Sign Out')}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <div className="px-2 py-2">

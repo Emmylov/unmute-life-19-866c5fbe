@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import SearchBar from "./navbar/SearchBar";
@@ -11,23 +12,23 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
 import Sidebar from "./Sidebar";
+
 interface NavbarProps {
   pageTitle?: string;
 }
+
 const Navbar = ({
   pageTitle
 }: NavbarProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const isMobile = useIsMobile();
   const isTablet = useIsTablet();
-  const {
-    user,
-    profile,
-    signOut
-  } = useAuth();
+  const { user, profile, signOut } = useAuth();
+  
   const handleSignOut = async () => {
     await signOut();
   };
+  
   return <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-gray-100">
       <div className="max-w-7xl mx-auto px-3">
         <div className="flex items-center justify-between h-14">
@@ -62,10 +63,11 @@ const Navbar = ({
           <div className="flex items-center space-x-2">
             <MessagesButton unreadMessages={0} />
             <NotificationBell />
-            <UserProfileDropdown profile={profile} user={user} unreadMessages={0} handleSignOut={handleSignOut} getInitials={getInitials} getAvatarFallbackColor={getAvatarFallbackColor} />
+            <UserProfileDropdown />
           </div>
         </div>
       </div>
     </header>;
 };
+
 export default Navbar;

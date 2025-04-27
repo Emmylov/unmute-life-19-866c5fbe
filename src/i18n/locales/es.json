@@ -13,6 +13,7 @@
   "auth": {
     "signIn": "Iniciar Sesión",
     "signUp": "Registrarse",
+    "signOut": "Cerrar Sesión",
     "email": "Correo",
     "password": "Contraseña",
     "forgotPassword": "¿Olvidaste tu contraseña?"

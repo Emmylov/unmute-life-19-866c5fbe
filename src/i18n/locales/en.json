@@ -13,6 +13,7 @@
   "auth": {
     "signIn": "Sign In",
     "signUp": "Sign Up",
+    "signOut": "Sign Out",
     "email": "Email",
     "password": "Password",
     "forgotPassword": "Forgot Password?"

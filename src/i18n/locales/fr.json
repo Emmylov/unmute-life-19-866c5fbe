@@ -13,6 +13,7 @@
   "auth": {
     "signIn": "Se Connecter",
     "signUp": "S'inscrire",
+    "signOut": "Se Déconnecter",
     "email": "Email",
     "password": "Mot de passe",
     "forgotPassword": "Mot de passe oublié ?"
