@@ -32,7 +32,9 @@
       "postUnavailable": "Post data unavailable"
     },
     "success": {
-      "commentAdded": "Comment added"
+      "commentAdded": "Comment added",
+      "following": "Following user",
+      "unfollowed": "Unfollowed user" 
     }
   },
   "auth": {
