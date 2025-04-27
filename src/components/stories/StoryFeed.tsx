@@ -16,6 +16,7 @@ const StoryFeed = ({ profile }: StoryFeedProps) => {
   const [stories, setStories] = useState<Story[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentStoryIndex, setCurrentStoryIndex] = useState<number | null>(null);
   const { user } = useAuth();
 
   const fetchStories = async () => {
@@ -53,6 +54,23 @@ const StoryFeed = ({ profile }: StoryFeedProps) => {
     setIsModalOpen(true);
   };
 
+  const handleViewStory = (index: number) => {
+    setCurrentStoryIndex(index);
+    // Logic for tracking viewed stories could be added here
+  };
+
+  const handleNextStory = () => {
+    if (currentStoryIndex !== null && currentStoryIndex < stories.length - 1) {
+      setCurrentStoryIndex(currentStoryIndex + 1);
+    }
+  };
+
+  const handlePreviousStory = () => {
+    if (currentStoryIndex !== null && currentStoryIndex > 0) {
+      setCurrentStoryIndex(currentStoryIndex - 1);
+    }
+  };
+
   return (
     <div className="overflow-x-auto py-2 -mx-2 px-2 scrollbar-hide">
       <div className="flex space-x-4">
@@ -77,8 +95,16 @@ const StoryFeed = ({ profile }: StoryFeedProps) => {
           <div className="text-sm text-red-500 px-2">{error}</div>
         ) : stories.length > 0 ? (
           // Stories list
-          stories.map((story) => (
-            <StoryItem key={story.id} story={story} />
+          stories.map((story, index) => (
+            <StoryItem 
+              key={story.id} 
+              story={story}
+              onView={() => handleViewStory(index)}
+              onNavigateNext={handleNextStory}
+              onNavigatePrevious={handlePreviousStory}
+              hasNext={index < stories.length - 1}
+              hasPrevious={index > 0}
+            />
           ))
         ) : (
           // Empty state with placeholder stories

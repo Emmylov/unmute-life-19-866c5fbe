@@ -17,6 +17,7 @@ export interface Story {
     full_name?: string;
     avatar?: string;
   };
+  viewed?: boolean;
 }
 
 // Function to fetch stories with profiles data
@@ -29,7 +30,7 @@ export const fetchStoriesWithProfiles = async (): Promise<Story[]> => {
       .from('stories')
       .select('*')
       .order('created_at', { ascending: false })
-      .limit(10);
+      .limit(20);
     
     if (storiesError) {
       console.error("Error fetching stories:", storiesError);
@@ -146,14 +147,32 @@ export const createStory = async (
 // Function to view a story
 export const viewStory = async (storyId: string, userId: string): Promise<boolean> => {
   try {
-    // This is a placeholder for story viewing functionality
-    // You would typically implement logic to:
-    // 1. Record that this user has viewed this story
-    // 2. Update any relevant counters or statistics
+    if (!storyId || !userId) {
+      console.error("Missing storyId or userId in viewStory");
+      return false;
+    }
     
+    // Insert a record into story_views table if you have one
+    // This is commented out since we don't have this table yet
+    // You can uncomment and implement this when you create the story_views table
+    /*
+    const { error } = await supabase
+      .from('story_views')
+      .insert({
+        story_id: storyId,
+        user_id: userId,
+        viewed_at: new Date().toISOString()
+      });
+    
+    if (error) {
+      console.error("Error recording story view:", error);
+      return false;
+    }
+    */
+    
+    // For now, just log the view
     console.log(`User ${userId} viewed story ${storyId}`);
     
-    // Return true if the view was successfully recorded
     return true;
   } catch (error) {
     console.error("Error viewing story:", error);
