@@ -1,4 +1,3 @@
-
 {
   "common": {
     "welcome": "Welcome to Unmute",
@@ -8,7 +7,27 @@
     "profile": "Profile",
     "notifications": "Notifications",
     "messages": "Messages",
-    "search": "Search"
+    "search": "Search",
+    "like": "Like post",
+    "unlike": "Unlike post",
+    "showComments": "Show comments",
+    "hideComments": "Hide comments",
+    "comments": "Comments",
+    "noComments": "No comments yet. Be the first!",
+    "addComment": "Add a comment...",
+    "post": "Post",
+    "error": {
+      "loadingComments": "Failed to load comments",
+      "invalidPost": "Invalid post data",
+      "postDeleted": "This post is no longer available",
+      "likePost": "Failed to update like status",
+      "emptyComment": "Comment cannot be empty",
+      "addComment": "Failed to add comment",
+      "postUnavailable": "Post data unavailable"
+    },
+    "success": {
+      "commentAdded": "Comment added"
+    }
   },
   "auth": {
     "signIn": "Sign In",

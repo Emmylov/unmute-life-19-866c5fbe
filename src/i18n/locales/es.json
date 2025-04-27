@@ -1,4 +1,3 @@
-
 {
   "common": {
     "welcome": "Bienvenido a Unmute",
@@ -8,7 +7,27 @@
     "profile": "Perfil",
     "notifications": "Notificaciones",
     "messages": "Mensajes",
-    "search": "Buscar"
+    "search": "Buscar",
+    "like": "Me gusta",
+    "unlike": "Ya no me gusta",
+    "showComments": "Mostrar comentarios",
+    "hideComments": "Ocultar comentarios",
+    "comments": "Comentarios",
+    "noComments": "Aún no hay comentarios. ¡Sé el primero!",
+    "addComment": "Añade un comentario...",
+    "post": "Publicar",
+    "error": {
+      "loadingComments": "Error al cargar los comentarios",
+      "invalidPost": "Datos de publicación inválidos",
+      "postDeleted": "Esta publicación ya no está disponible",
+      "likePost": "Error al actualizar el estado de me gusta",
+      "emptyComment": "El comentario no puede estar vacío",
+      "addComment": "Error al añadir el comentario",
+      "postUnavailable": "Datos de la publicación no disponibles"
+    },
+    "success": {
+      "commentAdded": "Comentario añadido"
+    }
   },
   "auth": {
     "signIn": "Iniciar Sesión",
