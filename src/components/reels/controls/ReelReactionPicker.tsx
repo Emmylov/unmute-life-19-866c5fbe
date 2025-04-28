@@ -4,18 +4,18 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Heart } from "lucide-react";
 
 interface ReelReactionPickerProps {
-  onSelectReaction: (reaction: string) => void;
-  selectedReaction: string | null;
-  liked: boolean;
+  isOpen: boolean;
+  onClose: () => void;
+  selectedEmotion: string | null;
+  onSelect: (reaction: string) => void;
 }
 
 const ReelReactionPicker: React.FC<ReelReactionPickerProps> = ({
-  onSelectReaction,
-  selectedReaction,
-  liked
+  isOpen,
+  onClose,
+  selectedEmotion,
+  onSelect
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
-
   const reactions = [
     { name: 'Love', emoji: '❤️' },
     { name: 'Laugh', emoji: '😂' },
@@ -27,37 +27,33 @@ const ReelReactionPicker: React.FC<ReelReactionPickerProps> = ({
     { name: 'Mind Blown', emoji: '🤯' },
   ];
 
-  const toggleReactions = () => {
-    setIsOpen(!isOpen);
-  };
-
   const handleReactionSelect = (reaction: string) => {
-    onSelectReaction(reaction);
-    setIsOpen(false);
+    onSelect(reaction);
+    onClose();
   };
 
   return (
     <div className="relative">
       <motion.button
-        onClick={toggleReactions}
-        className={`w-12 h-12 rounded-full ${liked || selectedReaction ? "bg-pink-500/20" : "bg-black/20"} backdrop-blur-md flex items-center justify-center transition-colors`}
+        onClick={() => isOpen ? onClose() : onSelect(selectedEmotion || 'Love')}
+        className={`w-12 h-12 rounded-full ${selectedEmotion ? "bg-pink-500/20" : "bg-black/20"} backdrop-blur-md flex items-center justify-center transition-colors`}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
       >
-        {selectedReaction ? (
+        {selectedEmotion ? (
           <span className="text-2xl">
-            {reactions.find(r => r.name === selectedReaction)?.emoji || '❤️'}
+            {reactions.find(r => r.name === selectedEmotion)?.emoji || '❤️'}
           </span>
         ) : (
           <Heart 
             className="w-6 h-6" 
-            fill={liked ? "#ec4899" : "none"} 
-            stroke={liked ? "#ec4899" : "white"} 
+            fill="none" 
+            stroke="white" 
           />
         )}
       </motion.button>
       <span className={`text-xs mt-1 text-white/80 block text-center`}>
-        {selectedReaction || (liked ? "Liked" : "Like")}
+        {selectedEmotion || "Like"}
       </span>
 
       {/* Reaction Picker Popup */}
@@ -75,7 +71,7 @@ const ReelReactionPicker: React.FC<ReelReactionPickerProps> = ({
                 <motion.button
                   key={reaction.name}
                   onClick={() => handleReactionSelect(reaction.name)}
-                  className={`w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors ${selectedReaction === reaction.name ? 'bg-white/20' : ''}`}
+                  className={`w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors ${selectedEmotion === reaction.name ? 'bg-white/20' : ''}`}
                   whileHover={{ scale: 1.2 }}
                   whileTap={{ scale: 0.9 }}
                 >

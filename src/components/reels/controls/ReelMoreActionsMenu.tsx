@@ -1,7 +1,7 @@
 
 import React from "react";
 import { MoreHorizontal, Flag, VolumeX, Download, Send, Copy, Ban } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,20 +12,28 @@ import {
 import { toast } from "sonner";
 
 interface ReelMoreActionsMenuProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onShare: () => void;
+  shareData: { title: string; text: string; url: string };
+  reelId: string;
   onReport?: () => void;
   onMuteUser?: () => void;
   onDownload?: () => void;
   onCopyLink?: () => void;
-  onSendTo?: () => void;
   onNotInterested?: () => void;
 }
 
 const ReelMoreActionsMenu: React.FC<ReelMoreActionsMenuProps> = ({
+  isOpen,
+  onClose,
+  onShare,
+  shareData,
+  reelId,
   onReport,
   onMuteUser,
   onDownload,
   onCopyLink,
-  onSendTo,
   onNotInterested
 }) => {
   // Default handlers that show toast messages
@@ -34,6 +42,7 @@ const ReelMoreActionsMenu: React.FC<ReelMoreActionsMenuProps> = ({
       onReport();
     } else {
       toast.info("Content reported. Thank you for helping keep our community safe.");
+      onClose();
     }
   };
 
@@ -42,6 +51,7 @@ const ReelMoreActionsMenu: React.FC<ReelMoreActionsMenuProps> = ({
       onMuteUser();
     } else {
       toast.success("You won't see posts from this user anymore.");
+      onClose();
     }
   };
 
@@ -50,6 +60,7 @@ const ReelMoreActionsMenu: React.FC<ReelMoreActionsMenuProps> = ({
       onDownload();
     } else {
       toast.info("Download started");
+      onClose();
     }
   };
 
@@ -57,17 +68,15 @@ const ReelMoreActionsMenu: React.FC<ReelMoreActionsMenuProps> = ({
     if (onCopyLink) {
       onCopyLink();
     } else {
-      navigator.clipboard.writeText(window.location.href);
+      navigator.clipboard.writeText(shareData.url || window.location.href);
       toast.success("Link copied to clipboard!");
+      onClose();
     }
   };
 
   const handleSendTo = () => {
-    if (onSendTo) {
-      onSendTo();
-    } else {
-      toast.info("Share dialog would open here");
-    }
+    onShare();
+    onClose();
   };
 
   const handleNotInterested = () => {
@@ -75,16 +84,22 @@ const ReelMoreActionsMenu: React.FC<ReelMoreActionsMenuProps> = ({
       onNotInterested();
     } else {
       toast.success("We'll show you less content like this");
+      onClose();
     }
   };
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DropdownMenuTrigger asChild>
         <motion.button
           className="w-11 h-11 rounded-full bg-black/20 backdrop-blur-md flex items-center justify-center text-white hover:bg-black/40"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (!isOpen) onClose();
+          }}
         >
           <MoreHorizontal className="w-5 h-5" />
         </motion.button>
