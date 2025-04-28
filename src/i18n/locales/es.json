@@ -33,12 +33,16 @@
       "addComment": "Error al añadir el comentario",
       "postUnavailable": "Datos de la publicación no disponibles",
       "followStatus": "Error al actualizar el estado de seguimiento",
-      "postNotFound": "Es posible que esta publicación haya sido eliminada"
+      "postNotFound": "Es posible que esta publicación haya sido eliminada",
+      "networkError": "Problema de conexión de red",
+      "tryAgainLater": "Por favor, comprueba tu conexión e inténtalo de nuevo más tarde",
+      "feedError": "Error al cargar tu feed"
     },
     "success": {
       "commentAdded": "Comentario añadido",
       "following": "Siguiendo al usuario",
-      "unfollowed": "Has dejado de seguir al usuario"
+      "unfollowed": "Has dejado de seguir al usuario",
+      "postCreated": "¡Publicación creada con éxito!"
     }
   },
   "auth": {

@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Link } from "react-router-dom";
-import { Heart, MessageCircle, Share, Bookmark, MoreHorizontal } from "lucide-react";
+import { Heart, MessageCircle, Share, Bookmark, MoreHorizontal, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSocialActions } from "@/hooks/use-social-actions";
@@ -13,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { addComment, getComments } from "@/services/comment-service";
 import { useTranslation } from "react-i18next";
+import { checkUnifiedPostExists, getUnifiedPostComments, addUnifiedPostComment, checkUnifiedPostLikeStatus, toggleUnifiedPostLike, getUnifiedPostLikes } from "@/services/unified-post-service";
 
 interface PostCardProps {
   post: any;
@@ -28,24 +30,49 @@ const PostCard = ({ post }: PostCardProps) => {
   const [isValidPost, setIsValidPost] = useState(true);
   const [comments, setComments] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isUsingUnifiedTable, setIsUsingUnifiedTable] = useState(false);
   const { t } = useTranslation();
   
+  // Initial validation - if post is completely invalid, don't render anything
   if (!post || !post.id) {
-    console.log("Skipping invalid post:", post);
     return null;
   }
 
   useEffect(() => {
-    if (!post?.id) {
-      setIsValidPost(false);
-      return;
-    }
-    
-    const fetchPostData = async () => {
-      if (user && post?.id) {
+    const validatePost = async () => {
+      if (!post?.id) {
+        setIsValidPost(false);
+        return;
+      }
+      
+      try {
+        // Try unified posts first
+        const unifiedPostExists = await checkUnifiedPostExists(post.id);
+        
+        if (unifiedPostExists) {
+          setIsUsingUnifiedTable(true);
+          setIsValidPost(true);
+          
+          if (user) {
+            // Get like status using unified tables
+            try {
+              const liked = await checkUnifiedPostLikeStatus(post.id, user.id);
+              setIsLiked(liked);
+              
+              const count = await getUnifiedPostLikes(post.id);
+              setLikesCount(count);
+            } catch (likeError) {
+              console.error("Error fetching unified post like data:", likeError);
+            }
+          }
+          
+          return;
+        }
+        
+        // Fall back to legacy implementation
         try {
-          const exists = await checkPostExists(post.id);
-          if (!exists) {
+          const legacyPostExists = await checkPostExists(post.id);
+          if (!legacyPostExists) {
             console.log(`Post ${post.id} no longer exists`);
             setIsValidPost(false);
             return;
@@ -53,26 +80,31 @@ const PostCard = ({ post }: PostCardProps) => {
           
           setIsValidPost(true);
           
-          try {
-            const liked = await checkPostLikeStatus(post.id);
-            setIsLiked(liked);
-            
-            const count = await getPostLikesCount(post.id);
-            setLikesCount(count);
-          } catch (dataError) {
-            console.error("Error fetching post data:", dataError);
-            setIsValidPost(true);
+          if (user) {
+            try {
+              const liked = await checkPostLikeStatus(post.id);
+              setIsLiked(liked);
+              
+              const count = await getPostLikesCount(post.id);
+              setLikesCount(count);
+            } catch (likeError) {
+              console.error("Error fetching post like data:", likeError);
+            }
           }
-        } catch (error) {
-          console.error("Error checking if post exists:", error);
+        } catch (legacyError) {
+          console.error("Error checking if post exists:", legacyError);
           setIsValidPost(false);
         }
+      } catch (error) {
+        console.error("Error validating post:", error);
+        setIsValidPost(false);
       }
     };
     
-    fetchPostData();
+    validatePost();
     
-    if (showComments) {
+    // Load comments if dialog is open and post is valid
+    if (showComments && isValidPost) {
       fetchComments();
     }
   }, [post?.id, user, checkPostLikeStatus, showComments, checkPostExists, getPostLikesCount]);
@@ -82,7 +114,14 @@ const PostCard = ({ post }: PostCardProps) => {
     
     setIsLoading(true);
     try {
-      const fetchedComments = await getComments(post.id);
+      let fetchedComments: any[] = [];
+      
+      if (isUsingUnifiedTable) {
+        fetchedComments = await getUnifiedPostComments(post.id);
+      } else {
+        fetchedComments = await getComments(post.id);
+      }
+      
       setComments(fetchedComments);
     } catch (error) {
       console.error("Error fetching comments:", error);
@@ -103,19 +142,38 @@ const PostCard = ({ post }: PostCardProps) => {
     }
     
     const previousLiked = isLiked;
+    // Optimistic UI update
     setIsLiked(!isLiked);
-    setLikesCount(prevCount => previousLiked ? prevCount - 1 : prevCount + 1);
+    setLikesCount(prevCount => previousLiked ? Math.max(0, prevCount - 1) : prevCount + 1);
     
     try {
-      const result = await toggleLikePost(post.id);
-      if (result !== !previousLiked) {
-        setIsLiked(result);
-        setLikesCount(await getPostLikesCount(post.id));
+      let result: boolean;
+      
+      if (isUsingUnifiedTable) {
+        result = await toggleUnifiedPostLike(post.id, user.id);
+        if (result !== !previousLiked) {
+          setIsLiked(result);
+          setLikesCount(await getUnifiedPostLikes(post.id));
+        }
+      } else {
+        result = await toggleLikePost(post.id);
+        if (result !== !previousLiked) {
+          setIsLiked(result);
+          setLikesCount(await getPostLikesCount(post.id));
+        }
       }
     } catch (error) {
+      // Revert optimistic updates on error
       setIsLiked(previousLiked);
-      setLikesCount(await getPostLikesCount(post.id));
+      
+      if (isUsingUnifiedTable) {
+        setLikesCount(await getUnifiedPostLikes(post.id));
+      } else {
+        setLikesCount(await getPostLikesCount(post.id));
+      }
+      
       console.error("Error liking post:", error);
+      toast.error(t('common.error.likePost', 'Failed to update like status'));
     }
   };
   
@@ -136,7 +194,14 @@ const PostCard = ({ post }: PostCardProps) => {
     }
     
     try {
-      const newComment = await addComment(post.id, user.id, comment.trim());
+      let newComment;
+      
+      if (isUsingUnifiedTable) {
+        newComment = await addUnifiedPostComment(post.id, user.id, comment.trim());
+      } else {
+        newComment = await addComment(post.id, user.id, comment.trim());
+      }
+      
       if (newComment) {
         setComments([newComment, ...comments]);
         setComment('');
@@ -156,17 +221,24 @@ const PostCard = ({ post }: PostCardProps) => {
     toast.info(t('common.comingSoon.save', 'Saving posts will be available soon!'));
   };
 
+  // If post is invalid after validation, display a subtle message instead of the post
   if (!isValidPost) {
-    return null;
+    return (
+      <Card className="w-full overflow-hidden bg-gray-50 dark:bg-gray-800/50 text-gray-500">
+        <div className="p-4 flex items-center justify-center">
+          <AlertCircle className="h-5 w-5 mr-2 text-gray-400" />
+          <p>{t('common.error.postNotFound', 'This post may have been removed')}</p>
+        </div>
+      </Card>
+    );
   }
 
-  if (!post) {
-    return null;
-  }
-
+  // Extract post data
   const profileUsername = post.profile?.username || post.profiles?.username || 'anonymous';
   const profileAvatar = post.profile?.avatar || post.profiles?.avatar;
   const profileFullName = post.profile?.full_name || post.profiles?.full_name || profileUsername;
+  const postContent = post.content || post.body;
+  const postImageUrl = post.image_url || (post.image_urls && post.image_urls.length > 0 ? post.image_urls[0] : null);
   
   return (
     <>
@@ -194,13 +266,13 @@ const PostCard = ({ post }: PostCardProps) => {
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </div>
-            <p className="text-sm mt-1">{post.content || post.body}</p>
+            <p className="text-sm mt-1">{postContent}</p>
           </div>
         </div>
 
-        {post.image_url && (
+        {postImageUrl && (
           <Skeleton className="w-full aspect-video rounded-none" >
-            <img src={post.image_url} alt="Post Image" className="w-full aspect-video object-cover" />
+            <img src={postImageUrl} alt="Post Image" className="w-full aspect-video object-cover" />
           </Skeleton>
         )}
 

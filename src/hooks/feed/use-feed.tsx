@@ -1,9 +1,9 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { getFeedPosts } from '@/services/post-service';
 import { getCurrentUser } from '@/services/auth-service';
 import { toast } from 'sonner';
+import { getUnifiedFeedPosts } from '@/services/unified-post-service';
 
 interface UseFeedProps {
   limit?: number;
@@ -48,11 +48,36 @@ export const useFeed = ({ limit = 10, type = 'personalized', refreshTrigger }: U
         // Continue without user - will use general feed
       }
       
-      // Fetch general posts first as most reliable approach
+      // If user exists, try the unified posts approach first
+      if (currentUser) {
+        try {
+          const unifiedPosts = await getUnifiedFeedPosts(currentUser.id, limit);
+          
+          if (unifiedPosts && unifiedPosts.length > 0) {
+            // Validate posts to ensure they're valid
+            const validPosts = unifiedPosts.filter(post => post && post.id && post.user_id);
+            
+            setPosts(validPosts);
+            setHasFetchedData(true);
+            setLoading(false);
+            return;
+          }
+        } catch (err) {
+          console.error("Error with unified feed:", err);
+          
+          if (err instanceof Error && err.message.includes('Failed to fetch')) {
+            console.error('Network error when fetching unified posts:', err);
+            setNetworkError(true);
+            throw err;
+          }
+        }
+      }
+      
+      // Try to fetch from general posts table as fallback
       try {
         const { data: generalPosts, error: generalError } = await supabase
           .from('posts')
-          .select('*')
+          .select('*, profiles(*)')
           .order('created_at', { ascending: false })
           .limit(limit);
           
@@ -64,77 +89,17 @@ export const useFeed = ({ limit = 10, type = 'personalized', refreshTrigger }: U
           setPosts(validPosts);
           setHasFetchedData(true);
           setLoading(false);
-          
-          // Try to fetch user profiles separately for these posts
-          const userIds = [...new Set(validPosts.map(post => post.user_id))];
-          if (userIds.length > 0) {
-            try {
-              const { data: profilesData, error: profilesError } = await supabase
-                .from("profiles")
-                .select("id, username, avatar, full_name")
-                .in("id", userIds);
-                
-              if (profilesError) {
-                console.error("Error fetching profiles:", profilesError);
-              } else if (profilesData && profilesData.length > 0) {
-                // Create a map of profiles for easy lookup
-                const profileMap = new Map();
-                profilesData.forEach(profile => {
-                  profileMap.set(profile.id, profile);
-                });
-                
-                // Merge post data with profile data
-                const postsWithProfiles = validPosts.map(post => {
-                  const userProfile = profileMap.get(post.user_id);
-                  return {
-                    ...post,
-                    profiles: userProfile || null
-                  };
-                });
-                
-                setPosts(postsWithProfiles);
-              }
-            } catch (profileError) {
-              console.error("Error fetching profiles:", profileError);
-              // We already have posts, so don't set an error state
-            }
-          }
-          
           return;
         }
       } catch (err) {
         console.error('Error with general posts query:', err);
-        // Continue to other approaches
       }
       
-      // If user exists, try the personalized feed
-      if (currentUser) {
-        try {
-          const feedPosts = await getFeedPosts(currentUser.id, limit);
-          if (feedPosts && feedPosts.length > 0) {
-            // Filter out invalid posts
-            const validPosts = feedPosts.filter(post => post && post.id && post.user_id);
-            setPosts(validPosts);
-            setHasFetchedData(true);
-            return;
-          }
-        } catch (err) {
-          console.error("Error with primary feed query:", err);
-          
-          if (err instanceof Error && err.message.includes('Failed to fetch')) {
-            console.error('Network error when fetching feed posts:', err);
-            setNetworkError(true);
-            throw err;
-          }
-        }
-      }
-      
-      // Try posts_text table as a fallback
+      // Try posts_text table as another fallback
       try {
-        console.log("Using text posts fallback query");
         const { data: textPosts, error: textError } = await supabase
           .from('posts_text')
-          .select('id, body, title, created_at, user_id, emoji_mood, tags')
+          .select('*, profiles(*)')
           .order('created_at', { ascending: false })
           .limit(limit);
           
@@ -152,41 +117,7 @@ export const useFeed = ({ limit = 10, type = 'personalized', refreshTrigger }: U
           
           setPosts(formattedPosts);
           setHasFetchedData(true);
-          
-          // Try to fetch user profiles for these posts
-          const userIds = [...new Set(validPosts.map(post => post.user_id))];
-          if (userIds.length > 0) {
-            try {
-              const { data: profilesData, error: profilesError } = await supabase
-                .from("profiles")
-                .select("id, username, avatar, full_name")
-                .in("id", userIds);
-                
-              if (profilesError) {
-                console.error("Error fetching profiles for text posts:", profilesError);
-              } else if (profilesData && profilesData.length > 0) {
-                // Create a map of profiles for easy lookup
-                const profileMap = new Map();
-                profilesData.forEach(profile => {
-                  profileMap.set(profile.id, profile);
-                });
-                
-                // Merge post data with profile data
-                const postsWithProfiles = formattedPosts.map(post => {
-                  const userProfile = profileMap.get(post.user_id);
-                  return {
-                    ...post,
-                    profiles: userProfile || null
-                  };
-                });
-                
-                setPosts(postsWithProfiles);
-              }
-            } catch (profileError) {
-              console.error("Error fetching profiles for text posts:", profileError);
-            }
-          }
-          
+          setLoading(false);
           return;
         }
       } catch (textErr) {
@@ -196,6 +127,7 @@ export const useFeed = ({ limit = 10, type = 'personalized', refreshTrigger }: U
       // If all else fails, set empty posts
       console.log("No posts found from any source");
       setPosts([]);
+      setLoading(false);
       
     } catch (err) {
       console.error('Error fetching feed:', err);
@@ -211,7 +143,7 @@ export const useFeed = ({ limit = 10, type = 'personalized', refreshTrigger }: U
           description: 'Please try refreshing the page.'
         });
       }
-    } finally {
+      
       setLoading(false);
       
       // Reset attempt counter after successful load or on final attempt

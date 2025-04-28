@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import HomeHeader from "@/components/home/HomeHeader";
@@ -7,65 +8,46 @@ import FilterBar from "@/components/home/FilterBar";
 import HomeRightSidebar from "@/components/home/HomeRightSidebar";
 import StoryFeed from "@/components/stories/StoryFeed";
 import HomeGreeting from "@/components/home/HomeGreeting";
-import { getFeedPosts } from "@/services/post-service";
 import { useAuth } from "@/contexts/AuthContext";
 import SEO from "@/components/shared/SEO";
 import StoreSidebarItem from "@/components/store/StoreSidebarItem";
 import { motion } from "framer-motion";
+import { useFeed } from "@/hooks/feed/use-feed";
+import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 const Home = () => {
   const { user, profile } = useAuth();
-  const [posts, setPosts] = React.useState<any[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
   const [activeTab, setActiveTab] = useState("for-you");
+  const { t } = useTranslation();
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  
+  // Use our improved feed hook
+  const { posts, loading: isLoading, error, refresh, networkError } = useFeed({
+    type: activeTab === "for-you" ? "personalized" : activeTab === "trending" ? "trending" : "following",
+    refreshTrigger
+  });
 
-  useEffect(() => {
-    const loadPosts = async () => {
-      try {
-        setIsLoading(true);
-        if (user) {
-          const fetchedPosts = await getFeedPosts(user.id);
-          const validPosts = Array.isArray(fetchedPosts) 
-            ? fetchedPosts.filter(post => {
-                return post && post.id && post.user_id; 
-              })
-            : [];
-          setPosts(validPosts);
-        }
-      } catch (error) {
-        console.error("Error loading posts:", error);
-        setPosts([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadPosts();
-  }, [user]);
-
+  // Handle refresh after post creation
   const handlePostCreated = () => {
-    if (user) {
-      getFeedPosts(user.id)
-        .then(fetchedPosts => {
-          const validPosts = Array.isArray(fetchedPosts) 
-            ? fetchedPosts.filter(post => post && post.id && post.user_id)
-            : [];
-          setPosts(validPosts);
-        })
-        .catch(error => {
-          console.error("Error refreshing posts:", error);
-        });
-    }
+    refresh();
+    toast.success("Post created successfully!");
   };
 
   const handleTabChange = (tabValue: string) => {
     setActiveTab(tabValue);
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 500);
   };
 
+  // Display network error only once
+  useEffect(() => {
+    if (networkError) {
+      toast.error(t('common.error.networkError', 'Network connection issue'), {
+        description: t('common.error.tryAgainLater', 'Please check your connection and try again later')
+      });
+    }
+  }, [networkError, t]);
+
+  // Animation configurations
   const container = {
     hidden: { opacity: 0 },
     show: {

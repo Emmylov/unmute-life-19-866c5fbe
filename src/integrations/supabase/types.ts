@@ -731,6 +731,141 @@ export type Database = {
         }
         Relationships: []
       }
+      unified_post_comments: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          is_deleted: boolean | null
+          post_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          is_deleted?: boolean | null
+          post_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          is_deleted?: boolean | null
+          post_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "unified_post_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "unified_posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "unified_post_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "v_active_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      unified_post_likes: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "unified_post_likes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "unified_posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "unified_post_likes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "v_active_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      unified_posts: {
+        Row: {
+          caption: string | null
+          content: string | null
+          created_at: string
+          deleted_at: string | null
+          emoji_mood: string | null
+          id: string
+          image_urls: string[] | null
+          is_deleted: boolean | null
+          post_type: string
+          tags: string[] | null
+          title: string | null
+          updated_at: string
+          user_id: string
+          video_url: string | null
+          visibility: string
+        }
+        Insert: {
+          caption?: string | null
+          content?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          emoji_mood?: string | null
+          id?: string
+          image_urls?: string[] | null
+          is_deleted?: boolean | null
+          post_type: string
+          tags?: string[] | null
+          title?: string | null
+          updated_at?: string
+          user_id: string
+          video_url?: string | null
+          visibility?: string
+        }
+        Update: {
+          caption?: string | null
+          content?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          emoji_mood?: string | null
+          id?: string
+          image_urls?: string[] | null
+          is_deleted?: boolean | null
+          post_type?: string
+          tags?: string[] | null
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+          video_url?: string | null
+          visibility?: string
+        }
+        Relationships: []
+      }
       user_analytics: {
         Row: {
           created_at: string | null
@@ -936,9 +1071,82 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      v_active_posts: {
+        Row: {
+          caption: string | null
+          content: string | null
+          created_at: string | null
+          deleted_at: string | null
+          emoji_mood: string | null
+          id: string | null
+          image_urls: string[] | null
+          is_deleted: boolean | null
+          post_type: string | null
+          tags: string[] | null
+          title: string | null
+          updated_at: string | null
+          user_id: string | null
+          video_url: string | null
+          visibility: string | null
+        }
+        Insert: {
+          caption?: string | null
+          content?: string | null
+          created_at?: string | null
+          deleted_at?: string | null
+          emoji_mood?: string | null
+          id?: string | null
+          image_urls?: string[] | null
+          is_deleted?: boolean | null
+          post_type?: string | null
+          tags?: string[] | null
+          title?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          video_url?: string | null
+          visibility?: string | null
+        }
+        Update: {
+          caption?: string | null
+          content?: string | null
+          created_at?: string | null
+          deleted_at?: string | null
+          emoji_mood?: string | null
+          id?: string | null
+          image_urls?: string[] | null
+          is_deleted?: boolean | null
+          post_type?: string | null
+          tags?: string[] | null
+          title?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          video_url?: string | null
+          visibility?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      get_feed_posts: {
+        Args: { user_uuid: string; post_limit?: number }
+        Returns: {
+          caption: string | null
+          content: string | null
+          created_at: string
+          deleted_at: string | null
+          emoji_mood: string | null
+          id: string
+          image_urls: string[] | null
+          is_deleted: boolean | null
+          post_type: string
+          tags: string[] | null
+          title: string | null
+          updated_at: string
+          user_id: string
+          video_url: string | null
+          visibility: string
+        }[]
+      }
       is_reel_reposted: {
         Args: { p_reel_id: string; p_user_id: string }
         Returns: boolean
@@ -972,6 +1180,10 @@ export type Database = {
       }
       save_reel: {
         Args: { p_reel_id: string; p_user_id: string; p_created_at: string }
+        Returns: undefined
+      }
+      soft_delete_post: {
+        Args: { post_id: string }
         Returns: undefined
       }
       unsave_reel: {

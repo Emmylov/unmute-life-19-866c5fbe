@@ -33,12 +33,16 @@
       "addComment": "Failed to add comment",
       "postUnavailable": "Post data unavailable",
       "followStatus": "Error updating follow status",
-      "postNotFound": "This post may have been removed"
+      "postNotFound": "This post may have been removed",
+      "networkError": "Network connection issue",
+      "tryAgainLater": "Please check your connection and try again later",
+      "feedError": "Error loading your feed"
     },
     "success": {
       "commentAdded": "Comment added",
       "following": "Following user",
-      "unfollowed": "Unfollowed user" 
+      "unfollowed": "Unfollowed user",
+      "postCreated": "Post created successfully!"
     }
   },
   "auth": {
