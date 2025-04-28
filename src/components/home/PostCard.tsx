@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
@@ -30,6 +29,11 @@ const PostCard = ({ post }: PostCardProps) => {
   const [comments, setComments] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { t } = useTranslation();
+  
+  if (!post || !post.id) {
+    console.log("Skipping invalid post:", post);
+    return null;
+  }
 
   useEffect(() => {
     if (!post?.id) {
@@ -40,19 +44,27 @@ const PostCard = ({ post }: PostCardProps) => {
     const fetchPostData = async () => {
       if (user && post?.id) {
         try {
-          // Check like status
-          const liked = await checkPostLikeStatus(post.id);
-          setIsLiked(liked);
-          
-          // Get likes count
-          const count = await getPostLikesCount(post.id);
-          setLikesCount(count);
-          
-          // Verify post exists
           const exists = await checkPostExists(post.id);
-          setIsValidPost(exists);
+          if (!exists) {
+            console.log(`Post ${post.id} no longer exists`);
+            setIsValidPost(false);
+            return;
+          }
+          
+          setIsValidPost(true);
+          
+          try {
+            const liked = await checkPostLikeStatus(post.id);
+            setIsLiked(liked);
+            
+            const count = await getPostLikesCount(post.id);
+            setLikesCount(count);
+          } catch (dataError) {
+            console.error("Error fetching post data:", dataError);
+            setIsValidPost(true);
+          }
         } catch (error) {
-          console.error("Error fetching post data:", error);
+          console.error("Error checking if post exists:", error);
           setIsValidPost(false);
         }
       }
@@ -66,7 +78,7 @@ const PostCard = ({ post }: PostCardProps) => {
   }, [post?.id, user, checkPostLikeStatus, showComments, checkPostExists, getPostLikesCount]);
 
   const fetchComments = async () => {
-    if (!post?.id) return;
+    if (!post?.id || !isValidPost) return;
     
     setIsLoading(true);
     try {
@@ -74,7 +86,7 @@ const PostCard = ({ post }: PostCardProps) => {
       setComments(fetchedComments);
     } catch (error) {
       console.error("Error fetching comments:", error);
-      toast.error(t('common.error.loadingComments', 'Failed to load comments'));
+      setComments([]);
     } finally {
       setIsLoading(false);
     }
@@ -86,29 +98,24 @@ const PostCard = ({ post }: PostCardProps) => {
       return;
     }
     
-    if (!post?.id) {
-      toast.error(t('common.error.invalidPost', 'Invalid post data'));
+    if (!post?.id || !isValidPost) {
       return;
     }
     
-    // Optimistic UI update
     const previousLiked = isLiked;
     setIsLiked(!isLiked);
     setLikesCount(prevCount => previousLiked ? prevCount - 1 : prevCount + 1);
     
     try {
       const result = await toggleLikePost(post.id);
-      // In case the server response is different from what we expected
       if (result !== !previousLiked) {
         setIsLiked(result);
         setLikesCount(await getPostLikesCount(post.id));
       }
     } catch (error) {
-      // Revert optimistic update on error
       setIsLiked(previousLiked);
       setLikesCount(await getPostLikesCount(post.id));
       console.error("Error liking post:", error);
-      toast.error(t('common.error.likePost', 'Failed to update like status'));
     }
   };
   
@@ -121,6 +128,10 @@ const PostCard = ({ post }: PostCardProps) => {
     
     if (!comment.trim()) {
       toast.error(t('common.error.emptyComment', 'Comment cannot be empty'));
+      return;
+    }
+    
+    if (!post?.id || !isValidPost) {
       return;
     }
     
@@ -150,9 +161,7 @@ const PostCard = ({ post }: PostCardProps) => {
   }
 
   if (!post) {
-    return <div className="w-full p-4 rounded-lg bg-gray-100 dark:bg-gray-800">
-      {t('common.error.postUnavailable', 'Post data unavailable')}
-    </div>;
+    return null;
   }
 
   const profileUsername = post.profile?.username || post.profiles?.username || 'anonymous';

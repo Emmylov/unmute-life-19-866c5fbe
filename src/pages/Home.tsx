@@ -25,10 +25,16 @@ const Home = () => {
         setIsLoading(true);
         if (user) {
           const fetchedPosts = await getFeedPosts(user.id);
-          setPosts(fetchedPosts || []);
+          const validPosts = Array.isArray(fetchedPosts) 
+            ? fetchedPosts.filter(post => {
+                return post && post.id && post.user_id; 
+              })
+            : [];
+          setPosts(validPosts);
         }
       } catch (error) {
         console.error("Error loading posts:", error);
+        setPosts([]);
       } finally {
         setIsLoading(false);
       }
@@ -39,11 +45,16 @@ const Home = () => {
 
   const handlePostCreated = () => {
     if (user) {
-      getFeedPosts(user.id).then(fetchedPosts => {
-        setPosts(fetchedPosts || []);
-      }).catch(error => {
-        console.error("Error refreshing posts:", error);
-      });
+      getFeedPosts(user.id)
+        .then(fetchedPosts => {
+          const validPosts = Array.isArray(fetchedPosts) 
+            ? fetchedPosts.filter(post => post && post.id && post.user_id)
+            : [];
+          setPosts(validPosts);
+        })
+        .catch(error => {
+          console.error("Error refreshing posts:", error);
+        });
     }
   };
 

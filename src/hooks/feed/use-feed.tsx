@@ -59,12 +59,14 @@ export const useFeed = ({ limit = 10, type = 'personalized', refreshTrigger }: U
         if (generalError) {
           console.error('Error with general posts query:', generalError);
         } else if (generalPosts && generalPosts.length > 0) {
-          setPosts(generalPosts);
+          // Filter out any potentially invalid posts
+          const validPosts = generalPosts.filter(post => post && post.id && post.user_id);
+          setPosts(validPosts);
           setHasFetchedData(true);
           setLoading(false);
           
           // Try to fetch user profiles separately for these posts
-          const userIds = [...new Set(generalPosts.map(post => post.user_id))];
+          const userIds = [...new Set(validPosts.map(post => post.user_id))];
           if (userIds.length > 0) {
             try {
               const { data: profilesData, error: profilesError } = await supabase
@@ -82,7 +84,7 @@ export const useFeed = ({ limit = 10, type = 'personalized', refreshTrigger }: U
                 });
                 
                 // Merge post data with profile data
-                const postsWithProfiles = generalPosts.map(post => {
+                const postsWithProfiles = validPosts.map(post => {
                   const userProfile = profileMap.get(post.user_id);
                   return {
                     ...post,
@@ -110,7 +112,9 @@ export const useFeed = ({ limit = 10, type = 'personalized', refreshTrigger }: U
         try {
           const feedPosts = await getFeedPosts(currentUser.id, limit);
           if (feedPosts && feedPosts.length > 0) {
-            setPosts(feedPosts);
+            // Filter out invalid posts
+            const validPosts = feedPosts.filter(post => post && post.id && post.user_id);
+            setPosts(validPosts);
             setHasFetchedData(true);
             return;
           }
@@ -137,8 +141,11 @@ export const useFeed = ({ limit = 10, type = 'personalized', refreshTrigger }: U
         if (textError) {
           console.error('Error with text posts query:', textError);
         } else if (textPosts && textPosts.length > 0) {
+          // Filter out invalid posts
+          const validPosts = textPosts.filter(post => post && post.id && post.user_id);
+          
           // Transform posts to ensure they have a content field
-          const formattedPosts = textPosts.map(post => ({
+          const formattedPosts = validPosts.map(post => ({
             ...post,
             content: post.body || ''
           }));
@@ -147,7 +154,7 @@ export const useFeed = ({ limit = 10, type = 'personalized', refreshTrigger }: U
           setHasFetchedData(true);
           
           // Try to fetch user profiles for these posts
-          const userIds = [...new Set(textPosts.map(post => post.user_id))];
+          const userIds = [...new Set(validPosts.map(post => post.user_id))];
           if (userIds.length > 0) {
             try {
               const { data: profilesData, error: profilesError } = await supabase

@@ -32,7 +32,8 @@
       "emptyComment": "El comentario no puede estar vacío",
       "addComment": "Error al añadir el comentario",
       "postUnavailable": "Datos de la publicación no disponibles",
-      "followStatus": "Error al actualizar el estado de seguimiento"
+      "followStatus": "Error al actualizar el estado de seguimiento",
+      "postNotFound": "Es posible que esta publicación haya sido eliminada"
     },
     "success": {
       "commentAdded": "Comentario añadido",

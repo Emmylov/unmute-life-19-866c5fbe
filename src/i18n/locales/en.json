@@ -32,7 +32,8 @@
       "emptyComment": "Comment cannot be empty",
       "addComment": "Failed to add comment",
       "postUnavailable": "Post data unavailable",
-      "followStatus": "Error updating follow status"
+      "followStatus": "Error updating follow status",
+      "postNotFound": "This post may have been removed"
     },
     "success": {
       "commentAdded": "Comment added",
