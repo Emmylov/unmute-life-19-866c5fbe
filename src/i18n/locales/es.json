@@ -26,10 +26,13 @@
       "loadingComments": "Error al cargar los comentarios",
       "invalidPost": "Datos de publicación inválidos",
       "postDeleted": "Esta publicación ya no está disponible",
+      "reelDeleted": "Este reel ya no está disponible",
       "likePost": "Error al actualizar el estado de me gusta",
+      "likeReel": "Error al actualizar el estado de me gusta",
       "emptyComment": "El comentario no puede estar vacío",
       "addComment": "Error al añadir el comentario",
-      "postUnavailable": "Datos de la publicación no disponibles"
+      "postUnavailable": "Datos de la publicación no disponibles",
+      "followStatus": "Error al actualizar el estado de seguimiento"
     },
     "success": {
       "commentAdded": "Comentario añadido",

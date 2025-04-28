@@ -26,10 +26,13 @@
       "loadingComments": "Échec du chargement des commentaires",
       "invalidPost": "Données de publication invalides",
       "postDeleted": "Cette publication n'est plus disponible",
+      "reelDeleted": "Ce reel n'est plus disponible",
       "likePost": "Échec de la mise à jour du statut j'aime",
+      "likeReel": "Échec de la mise à jour du statut j'aime",
       "emptyComment": "Le commentaire ne peut pas être vide",
       "addComment": "Échec de l'ajout du commentaire",
-      "postUnavailable": "Données de publication indisponibles"
+      "postUnavailable": "Données de publication indisponibles",
+      "followStatus": "Erreur lors de la mise à jour du statut de suivi"
     },
     "success": {
       "commentAdded": "Commentaire ajouté",

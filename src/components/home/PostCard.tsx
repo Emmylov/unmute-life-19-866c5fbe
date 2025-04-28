@@ -21,8 +21,9 @@ interface PostCardProps {
 
 const PostCard = ({ post }: PostCardProps) => {
   const { user } = useAuth();
-  const { toggleLikePost, checkPostLikeStatus, isLiking, checkPostExists } = useSocialActions();
+  const { toggleLikePost, checkPostLikeStatus, isLiking, checkPostExists, getPostLikesCount } = useSocialActions();
   const [isLiked, setIsLiked] = useState(false);
+  const [likesCount, setLikesCount] = useState(0);
   const [showComments, setShowComments] = useState(false);
   const [comment, setComment] = useState('');
   const [isValidPost, setIsValidPost] = useState(true);
@@ -36,36 +37,33 @@ const PostCard = ({ post }: PostCardProps) => {
       return;
     }
     
-    const checkLikeStatus = async () => {
+    const fetchPostData = async () => {
       if (user && post?.id) {
         try {
+          // Check like status
           const liked = await checkPostLikeStatus(post.id);
           setIsLiked(liked);
-        } catch (error) {
-          console.error("Error checking like status:", error);
-        }
-      }
-    };
-    
-    const verifyPostExists = async () => {
-      if (post?.id) {
-        try {
+          
+          // Get likes count
+          const count = await getPostLikesCount(post.id);
+          setLikesCount(count);
+          
+          // Verify post exists
           const exists = await checkPostExists(post.id);
           setIsValidPost(exists);
         } catch (error) {
-          console.error("Error checking if post exists:", error);
+          console.error("Error fetching post data:", error);
           setIsValidPost(false);
         }
       }
     };
     
-    checkLikeStatus();
-    verifyPostExists();
+    fetchPostData();
     
     if (showComments) {
       fetchComments();
     }
-  }, [post?.id, user, checkPostLikeStatus, showComments, checkPostExists]);
+  }, [post?.id, user, checkPostLikeStatus, showComments, checkPostExists, getPostLikesCount]);
 
   const fetchComments = async () => {
     if (!post?.id) return;
@@ -93,17 +91,22 @@ const PostCard = ({ post }: PostCardProps) => {
       return;
     }
     
-    const exists = await checkPostExists(post.id);
-    if (!exists) {
-      toast.error(t('common.error.postDeleted', 'This post is no longer available'));
-      setIsValidPost(false);
-      return;
-    }
+    // Optimistic UI update
+    const previousLiked = isLiked;
+    setIsLiked(!isLiked);
+    setLikesCount(prevCount => previousLiked ? prevCount - 1 : prevCount + 1);
     
     try {
       const result = await toggleLikePost(post.id);
-      setIsLiked(result);
+      // In case the server response is different from what we expected
+      if (result !== !previousLiked) {
+        setIsLiked(result);
+        setLikesCount(await getPostLikesCount(post.id));
+      }
     } catch (error) {
+      // Revert optimistic update on error
+      setIsLiked(previousLiked);
+      setLikesCount(await getPostLikesCount(post.id));
       console.error("Error liking post:", error);
       toast.error(t('common.error.likePost', 'Failed to update like status'));
     }
@@ -194,23 +197,29 @@ const PostCard = ({ post }: PostCardProps) => {
 
         <div className="flex justify-between items-center p-4">
           <div className="flex items-center space-x-4 text-gray-500">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={handleLikeClick} 
-              disabled={isLiking[post.id]}
-              aria-label={isLiked ? t('common.unlike', 'Unlike post') : t('common.like', 'Like post')}
-            >
-              <Heart className={cn("h-5 w-5", isLiked && "text-red-500")} fill={isLiked ? 'red' : 'none'} />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={() => setShowComments(!showComments)}
-              aria-label={showComments ? t('common.hideComments', 'Hide comments') : t('common.showComments', 'Show comments')}
-            >
-              <MessageCircle className="h-5 w-5" />
-            </Button>
+            <div className="flex items-center">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={handleLikeClick} 
+                disabled={isLiking[post.id]}
+                aria-label={isLiked ? t('common.unlike', 'Unlike post') : t('common.like', 'Like post')}
+              >
+                <Heart className={cn("h-5 w-5", isLiked && "text-red-500")} fill={isLiked ? 'red' : 'none'} />
+              </Button>
+              <span className="text-sm">{likesCount > 0 ? likesCount : ''}</span>
+            </div>
+            <div className="flex items-center">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setShowComments(!showComments)}
+                aria-label={showComments ? t('common.hideComments', 'Hide comments') : t('common.showComments', 'Show comments')}
+              >
+                <MessageCircle className="h-5 w-5" />
+              </Button>
+              <span className="text-sm">{comments.length > 0 ? comments.length : ''}</span>
+            </div>
             <Button 
               variant="ghost" 
               size="icon" 

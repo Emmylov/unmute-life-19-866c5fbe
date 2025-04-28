@@ -1,38 +1,35 @@
 
-import React, { useState } from "react";
-import { MessageCircle, Repeat, Bookmark, Share2 } from "lucide-react";
+import React from "react";
+import { Heart, MessageCircle, Share2, Bookmark, MoreHorizontal } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import ReelActionButton from "./ReelActionButton";
-import ReelMoreActionsMenu from "./ReelMoreActionsMenu";
 import ReelReactionPicker from "./ReelReactionPicker";
-import { toast } from "sonner";
-import ReelCommentModal from "../ReelCommentModal";
-import { useIsMobile } from "@/hooks/use-responsive";
+import { Button } from "@/components/ui/button";
+import ReelMoreActionsMenu from "./ReelMoreActionsMenu";
+import ReelSideActions from "./ReelSideActions";
 
 interface ReelActionsProps {
   reelId: string;
   liked: boolean;
+  likesCount: number;
   saved: boolean;
-  commentCount?: number;
+  commentCount: number;
   onLike: () => void;
   onSave: () => void;
-  onRepost?: () => void;
-  onShare?: () => void;
-  shareData?: {
-    title: string;
-    text: string;
-    url: string;
-  };
+  onRepost: () => void;
+  onShare: () => void;
+  shareData: { title: string; text: string; url: string };
   selectedEmotion: string | null;
   onEmotionSelect: (emotion: string) => void;
 }
 
-const ReelActions = ({ 
-  reelId, 
-  liked, 
-  saved, 
-  commentCount = 0,
-  onLike, 
+const ReelActions = ({
+  reelId,
+  liked,
+  likesCount,
+  saved,
+  commentCount,
+  onLike,
   onSave,
   onRepost,
   onShare,
@@ -40,145 +37,83 @@ const ReelActions = ({
   selectedEmotion,
   onEmotionSelect
 }: ReelActionsProps) => {
-  const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
-  const isMobile = useIsMobile();
-  
-  const handleShare = async () => {
-    if (!shareData) return;
-    
-    try {
-      if (navigator.share) {
-        await navigator.share(shareData);
-        toast.success("Shared successfully!");
-      } else {
-        // Fallback for browsers that don't support Web Share API
-        await navigator.clipboard.writeText(shareData.url);
-        toast.success("Link copied to clipboard!");
-      }
-    } catch (error) {
-      console.error("Error sharing:", error);
-      if ((error as Error).name !== 'AbortError') {
-        toast.error("Failed to share");
-      }
-    }
-    
-    // Call the callback if provided
-    if (onShare) onShare();
-  };
+  const [showReactionPicker, setShowReactionPicker] = React.useState(false);
+  const [showMoreMenu, setShowMoreMenu] = React.useState(false);
 
-  const handleOpenComments = () => {
-    setIsCommentModalOpen(true);
-  };
-
-  const handleRepost = () => {
-    if (onRepost) {
-      onRepost();
-    } else {
-      toast.info("Repost functionality coming soon!");
-    }
-  };
-
-  // Use different spacing based on screen size
-  const buttonSpacingClass = isMobile ? "space-y-4" : "space-y-6";
-  const containerPosition = isMobile ? "right-3" : "right-5";
-
-  // Animation variants
-  const container = {
-    hidden: { opacity: 0, x: 20 },
-    show: {
-      opacity: 1,
-      x: 0,
-      transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.3
-      }
-    }
-  };
-  
-  const item = {
-    hidden: { opacity: 0, x: 20 },
-    show: { opacity: 1, x: 0 }
+  // Animation for the heart
+  const heartVariants = {
+    liked: { 
+      scale: [1, 1.5, 1],
+      transition: { duration: 0.4 }
+    },
+    unliked: { scale: 1 }
   };
 
   return (
-    <>
-      <motion.div 
-        className={`absolute bottom-24 ${containerPosition} flex flex-col ${buttonSpacingClass} pointer-events-auto z-20`}
-        variants={container}
-        initial="hidden"
-        animate="show"
-      >
-        {/* Enhanced Reaction Picker */}
-        <motion.div 
-          variants={item}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-        >
-          <ReelReactionPicker
-            onSelectReaction={onEmotionSelect}
-            selectedReaction={selectedEmotion}
-            liked={liked}
+    <div className="absolute right-0 bottom-0 z-20 flex flex-col items-center px-2 py-10">
+      {/* Main vertical action buttons */}
+      <div className="flex flex-col items-center space-y-6">
+        <motion.div className="relative flex flex-col items-center">
+          <motion.button
+            className={cn(
+              "flex flex-col items-center justify-center w-12 h-12 rounded-full",
+              liked ? "bg-pink-500/20" : "bg-white/10 backdrop-blur-md"
+            )}
+            onClick={onLike}
+            variants={heartVariants}
+            animate={liked ? "liked" : "unliked"}
+            whileTap={{ scale: 0.9 }}
+          >
+            <Heart
+              className={cn(
+                "w-6 h-6 transition-colors duration-300",
+                liked ? "text-pink-500" : "text-white"
+              )}
+              fill={liked ? "#ec4899" : "none"}
+            />
+          </motion.button>
+          <span className="text-xs mt-1 text-white">
+            {likesCount > 0 ? likesCount.toLocaleString() : ''}
+          </span>
+          
+          <ReelReactionPicker 
+            isOpen={showReactionPicker}
+            onClose={() => setShowReactionPicker(false)}
+            selectedEmotion={selectedEmotion}
+            onSelect={onEmotionSelect}
           />
         </motion.div>
-        
-        {/* Comment button */}
-        <motion.div 
-          variants={item}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-        >
-          <ReelActionButton 
-            icon={MessageCircle} 
-            label={commentCount > 0 ? `${commentCount}` : "Comment"}
-            onClick={handleOpenComments}
-            isMobile={isMobile}
-            badge={commentCount > 0 ? commentCount : undefined}
-          />
-        </motion.div>
-        
-        {/* Save button */}
-        <motion.div 
-          variants={item}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-        >
-          <ReelActionButton 
-            icon={Bookmark} 
-            label={saved ? "Saved" : "Save"}
-            isActive={saved}
-            activeColor="text-blue-400 fill-blue-400"
-            onClick={onSave}
-            isMobile={isMobile}
-          />
-        </motion.div>
-        
-        {/* "More" dropdown menu for additional actions */}
-        <motion.div
-          variants={item}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          className="flex flex-col items-center"
-        >
-          <ReelMoreActionsMenu 
-            onCopyLink={() => {
-              if (shareData) {
-                navigator.clipboard.writeText(shareData.url);
-                toast.success("Link copied to clipboard!");
-              }
-            }}
-            onSendTo={handleShare}
-          />
-          <span className="text-xs mt-1 text-white/80">More</span>
-        </motion.div>
-      </motion.div>
-
-      {/* Comment modal */}
-      <ReelCommentModal
-        reelId={reelId}
-        isOpen={isCommentModalOpen}
-        onClose={() => setIsCommentModalOpen(false)}
+      </div>
+      
+      {/* Side actions (comments, save, share) */}
+      <ReelSideActions 
+        commentCount={commentCount}
+        saved={saved}
+        onOpenUnmuteThread={() => {}}
+        onRepost={onRepost}
+        onToggleSave={onSave}
       />
-    </>
+      
+      {/* More actions menu */}
+      <div className="absolute top-0 right-2">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="text-white hover:bg-white/20"
+          onClick={() => setShowMoreMenu(true)}
+        >
+          <MoreHorizontal className="w-5 h-5" />
+        </Button>
+        
+        <ReelMoreActionsMenu 
+          isOpen={showMoreMenu}
+          onClose={() => setShowMoreMenu(false)}
+          onShare={onShare}
+          shareData={shareData}
+          reelId={reelId}
+        />
+      </div>
+    </div>
   );
 };
 

@@ -13,12 +13,11 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { getCommentCount } from "@/services/comment-service";
 import { 
-  checkReelLikeStatus, 
-  toggleReelLike, 
   checkReelSaveStatus, 
   toggleReelSave,
   repostReel
 } from "@/services/reel-service";
+import { useSocialActions } from "@/hooks/use-social-actions";
 import { ReelWithUser } from "@/types/reels";
 
 interface ReelViewProps {
@@ -44,6 +43,7 @@ const ReelView = ({
 }: ReelViewProps) => {
   const [isPlaying, setIsPlaying] = useState(true);
   const [liked, setLiked] = useState(false);
+  const [likesCount, setLikesCount] = useState(0);
   const [saved, setSaved] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [commentCount, setCommentCount] = useState(0);
@@ -52,6 +52,7 @@ const ReelView = ({
   const controls = useAnimation();
   const { reel, user } = reelWithUser;
   const { user: currentUser } = useAuth();
+  const { toggleLikeReel, checkReelLikeStatus, getReelLikesCount, isLiking } = useSocialActions();
 
   const getGradient = () => {
     switch(reel.mood_vibe) {
@@ -76,8 +77,11 @@ const ReelView = ({
         const count = await getCommentCount(reel.id);
         setCommentCount(count || 0);
         
-        const isLiked = await checkReelLikeStatus(reel.id, currentUser.id);
+        const isLiked = await checkReelLikeStatus(reel.id);
         setLiked(isLiked);
+        
+        const likesCount = await getReelLikesCount(reel.id);
+        setLikesCount(likesCount);
         
         const isSaved = await checkReelSaveStatus(reel.id, currentUser.id);
         setSaved(isSaved);
@@ -91,7 +95,7 @@ const ReelView = ({
     // Reset state when reel changes
     setIsPlaying(true);
     setSelectedEmotion(null);
-  }, [reel.id, currentUser]);
+  }, [reel.id, currentUser, checkReelLikeStatus, getReelLikesCount]);
 
   const togglePlay = () => {
     setIsPlaying(!isPlaying);
@@ -128,21 +132,31 @@ const ReelView = ({
       return;
     }
     
+    // Optimistic UI update
+    const previousLiked = liked;
+    setLiked(!liked);
+    setLikesCount(prevCount => previousLiked ? prevCount - 1 : prevCount + 1);
+    
     try {
-      const result = await toggleReelLike(reel.id, currentUser.id);
-      setLiked(result);
+      const result = await toggleLikeReel(reel.id);
+      
+      // In case the server response is different from what we expected
+      if (result !== !previousLiked) {
+        setLiked(result);
+        setLikesCount(await getReelLikesCount(reel.id));
+      }
       
       if (result) {
-        toast.success("Reel liked!");
         controls.start({
           scale: [1, 1.2, 1],
           opacity: [1, 1, 0],
           transition: { duration: 0.8 }
         });
-      } else {
-        toast.success("Reel unliked!");
       }
     } catch (error) {
+      // Revert optimistic update on error
+      setLiked(previousLiked);
+      setLikesCount(await getReelLikesCount(reel.id));
       console.error("Error toggling like:", error);
       toast.error("Failed to update like status");
     }
@@ -237,7 +251,7 @@ const ReelView = ({
   };
 
   const handleDoubleTap = () => {
-    if (!liked) {
+    if (!liked && !isLiking[reel.id]) {
       handleToggleLike();
     }
   };
@@ -296,6 +310,7 @@ const ReelView = ({
         <ReelActions 
           reelId={reel.id}
           liked={liked}
+          likesCount={likesCount}
           saved={saved}
           commentCount={commentCount}
           onLike={handleToggleLike}

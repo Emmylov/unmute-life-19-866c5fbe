@@ -26,10 +26,13 @@
       "loadingComments": "Failed to load comments",
       "invalidPost": "Invalid post data",
       "postDeleted": "This post is no longer available",
+      "reelDeleted": "This reel is no longer available",
       "likePost": "Failed to update like status",
+      "likeReel": "Failed to update like status",
       "emptyComment": "Comment cannot be empty",
       "addComment": "Failed to add comment",
-      "postUnavailable": "Post data unavailable"
+      "postUnavailable": "Post data unavailable",
+      "followStatus": "Error updating follow status"
     },
     "success": {
       "commentAdded": "Comment added",

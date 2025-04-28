@@ -3,11 +3,13 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 export const useSocialActions = () => {
   const { user } = useAuth();
   const [loadingFollowState, setLoadingFollowState] = useState<Record<string, boolean>>({});
   const [isLiking, setIsLiking] = useState<Record<string, boolean>>({});
+  const { t } = useTranslation();
   
   // Check if a post exists in any post table
   const checkPostExists = useCallback(async (postId: string): Promise<boolean> => {
@@ -73,8 +75,8 @@ export const useSocialActions = () => {
       return false;
     }
   }, []);
-  
-  // Check if a post is liked - MOVED BEFORE toggleLikePost
+
+  // Check if a post is liked by the current user
   const checkPostLikeStatus = useCallback(async (postId: string): Promise<boolean> => {
     if (!user) return false;
     
@@ -94,7 +96,59 @@ export const useSocialActions = () => {
     }
   }, [user]);
   
-  // Check if following a user - MOVED BEFORE toggleFollow
+  // Check if a reel is liked by the current user  
+  const checkReelLikeStatus = useCallback(async (reelId: string): Promise<boolean> => {
+    if (!user) return false;
+    
+    try {
+      const { data, error } = await supabase
+        .from('reel_likes')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('reel_id', reelId)
+        .maybeSingle();
+        
+      if (error) throw error;
+      return !!data;
+    } catch (error) {
+      console.error('Error checking reel like status:', error);
+      return false;
+    }
+  }, [user]);
+  
+  // Get total number of likes for a post
+  const getPostLikesCount = useCallback(async (postId: string): Promise<number> => {
+    try {
+      const { count, error } = await supabase
+        .from('post_likes')
+        .select('*', { count: 'exact', head: true })
+        .eq('post_id', postId);
+      
+      if (error) throw error;
+      return count || 0;
+    } catch (error) {
+      console.error('Error getting post likes count:', error);
+      return 0;
+    }
+  }, []);
+  
+  // Get total number of likes for a reel
+  const getReelLikesCount = useCallback(async (reelId: string): Promise<number> => {
+    try {
+      const { count, error } = await supabase
+        .from('reel_likes')
+        .select('*', { count: 'exact', head: true })
+        .eq('reel_id', reelId);
+      
+      if (error) throw error;
+      return count || 0;
+    } catch (error) {
+      console.error('Error getting reel likes count:', error);
+      return 0;
+    }
+  }, []);
+  
+  // Check if following a user
   const checkFollowStatus = useCallback(async (userId: string): Promise<boolean> => {
     if (!user) return false;
     
@@ -117,7 +171,7 @@ export const useSocialActions = () => {
   // Toggle like on a post
   const toggleLikePost = useCallback(async (postId: string): Promise<boolean> => {
     if (!user) {
-      toast.error('Please sign in to like posts');
+      toast.error(t('auth.signInRequired', 'Please sign in to like posts'));
       return false;
     }
     
@@ -129,23 +183,15 @@ export const useSocialActions = () => {
       
       if (!postExists) {
         console.log('Post does not exist:', postId);
-        toast.error('This post is no longer available');
+        toast.error(t('common.error.postDeleted', 'This post is no longer available'));
         return false;
       }
       
-      // Manually handle like/unlike without the RPC function
       // Check if already liked
-      const { data, error: checkError } = await supabase
-        .from('post_likes')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('post_id', postId)
-        .maybeSingle();
-        
-      if (checkError) throw checkError;
+      const isLiked = await checkPostLikeStatus(postId);
       
-      if (data) {
-        // Unlike
+      if (isLiked) {
+        // Unlike - delete from post_likes
         const { error: unlikeError } = await supabase
           .from('post_likes')
           .delete()
@@ -156,7 +202,7 @@ export const useSocialActions = () => {
         
         return false;
       } else {
-        // Like
+        // Like - insert into post_likes
         const { error: likeError } = await supabase
           .from('post_likes')
           .insert({
@@ -174,21 +220,74 @@ export const useSocialActions = () => {
     } catch (error: any) {
       // Provide specific error message
       if (error.message && error.message.includes('foreign key constraint')) {
-        toast.error('Cannot like this post - it may have been deleted');
+        toast.error(t('common.error.postDeleted', 'Cannot like this post - it may have been deleted'));
       } else {
-        toast.error('Failed to update like status');
+        toast.error(t('common.error.likePost', 'Failed to update like status'));
       }
       console.error('Error toggling like:', error);
       return false;
     } finally {
       setIsLiking(prev => ({ ...prev, [postId]: false }));
     }
-  }, [user, checkPostExists]);
+  }, [user, checkPostExists, checkPostLikeStatus, t]);
+  
+  // Toggle like on a reel
+  const toggleLikeReel = useCallback(async (reelId: string): Promise<boolean> => {
+    if (!user) {
+      toast.error(t('auth.signInRequired', 'Please sign in to like reels'));
+      return false;
+    }
+    
+    try {
+      setIsLiking(prev => ({ ...prev, [reelId]: true }));
+      
+      // Check if already liked
+      const isLiked = await checkReelLikeStatus(reelId);
+      
+      if (isLiked) {
+        // Unlike - delete from reel_likes
+        const { error: unlikeError } = await supabase
+          .from('reel_likes')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('reel_id', reelId);
+          
+        if (unlikeError) throw unlikeError;
+        
+        return false;
+      } else {
+        // Like - insert into reel_likes
+        const { error: likeError } = await supabase
+          .from('reel_likes')
+          .insert({
+            user_id: user.id,
+            reel_id: reelId
+          });
+          
+        if (likeError) {
+          console.error('Like error details:', likeError);
+          throw likeError;
+        }
+        
+        return true;
+      }
+    } catch (error: any) {
+      if (error.message && error.message.includes('foreign key constraint')) {
+        toast.error(t('common.error.reelDeleted', 'Cannot like this reel - it may have been deleted'));
+      } else {
+        toast.error(t('common.error.likeReel', 'Failed to update like status'));
+      }
+      console.error('Error toggling reel like:', error);
+      return false;
+    } finally {
+      setIsLiking(prev => ({ ...prev, [reelId]: false }));
+    }
+  }, [user, checkReelLikeStatus, t]);
   
   // Toggle following a user
   const toggleFollow = useCallback(async (userId: string): Promise<boolean> => {
     if (!user) {
-      toast.error('Please sign in to follow users');
+      toast.error(t('auth.signInRequired', 'Please sign in to follow users'));
       return false;
     }
     
@@ -215,7 +314,7 @@ export const useSocialActions = () => {
           
         if (unfollowError) throw unfollowError;
         
-        toast.success('Unfollowed user');
+        toast.success(t('common.success.unfollowed', 'Unfollowed user'));
         return false;
       } else {
         // Follow
@@ -228,23 +327,27 @@ export const useSocialActions = () => {
           
         if (followError) throw followError;
         
-        toast.success('Following user');
+        toast.success(t('common.success.following', 'Following user'));
         return true;
       }
     } catch (error: any) {
-      toast.error('Error updating follow status');
+      toast.error(t('common.error.followStatus', 'Error updating follow status'));
       console.error('Error toggling follow:', error);
       return false;
     } finally {
       setLoadingFollowState(prev => ({ ...prev, [userId]: false }));
     }
-  }, [user]);
+  }, [user, t]);
 
   return {
     toggleFollow,
     checkFollowStatus,
     toggleLikePost,
+    toggleLikeReel,
     checkPostLikeStatus,
+    checkReelLikeStatus,
+    getPostLikesCount,
+    getReelLikesCount,
     loadingFollowState,
     isLiking,
     checkPostExists
