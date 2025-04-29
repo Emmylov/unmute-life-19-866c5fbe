@@ -40,16 +40,15 @@ export const getUnifiedFeedPosts = async (
       }));
     }
 
-    // Fallback to standard query with cache control
+    // Fallback to standard query with cache control - Fixed the relationship query syntax
     let query = supabase
       .from('unified_posts')
       .select(`
         *,
-        profiles(id, username, avatar, full_name)
+        profiles!unified_posts_user_id_fkey(id, username, avatar, full_name)
       `)
       .eq('is_deleted', false)
       .eq('visibility', 'public')
-      .or(`user_id.eq.${userId},user_id.in.(${getFollowingQuery(userId)})`)
       .order('created_at', { ascending: false })
       .limit(limit);
       
@@ -60,8 +59,44 @@ export const getUnifiedFeedPosts = async (
     }
     
     const { data: queryPosts, error: queryError } = await query;
+    
+    if (queryError) {
+      console.error("Error with unified posts query:", queryError);
       
-    if (queryError) throw queryError;
+      // Fallback to simpler query without the relationship
+      const { data: simplePosts, error: simpleError } = await supabase
+        .from('unified_posts')
+        .select('*')
+        .eq('is_deleted', false)
+        .eq('visibility', 'public')
+        .order('created_at', { ascending: false })
+        .limit(limit);
+        
+      if (simpleError) throw simpleError;
+      
+      // If we got posts, fetch profiles separately
+      if (simplePosts && simplePosts.length > 0) {
+        const userIds = [...new Set(simplePosts.map(post => post.user_id))];
+        const { data: profilesData } = await supabase
+          .from("profiles")
+          .select("id, username, avatar, full_name")
+          .in("id", userIds);
+          
+        const profileMap = new Map();
+        if (profilesData) {
+          profilesData.forEach(profile => {
+            profileMap.set(profile.id, profile);
+          });
+        }
+        
+        return simplePosts.map(post => ({
+          ...post,
+          profiles: profileMap.get(post.user_id) || null
+        }));
+      }
+      
+      return [];
+    }
     
     return queryPosts || [];
   } catch (error) {
@@ -119,11 +154,25 @@ export const createUnifiedTextPost = async (
         emoji_mood: emojiMood,
         visibility: 'public'
       })
-      .select(`*, profiles(*)`)
-      .single();
+      .select();
     
     if (error) throw error;
-    return data;
+    
+    // Fetch the profile separately since we had relationship issues
+    if (data && data.length > 0) {
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("id, username, avatar, full_name")
+        .eq("id", userId)
+        .single();
+        
+      return {
+        ...data[0],
+        profiles: profileData || null
+      };
+    }
+    
+    return data?.[0];
   } catch (error) {
     console.error("Error creating unified text post:", error);
     throw error;

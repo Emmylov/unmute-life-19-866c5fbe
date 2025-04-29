@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { getCurrentUser } from '@/services/auth-service';
 import { toast } from 'sonner';
 import { getUnifiedFeedPosts } from '@/services/unified-post-service';
+import { getFeedPosts } from '@/services/post-service';
 
 interface UseFeedProps {
   limit?: number;
@@ -48,10 +49,12 @@ export const useFeed = ({ limit = 10, type = 'personalized', refreshTrigger }: U
         // Continue without user - will use general feed
       }
       
-      // If user exists, try the unified posts approach first
+      let fetchedPosts: any[] = [];
+      
+      // If user exists, try multiple approaches to fetch posts
       if (currentUser) {
         try {
-          // Use a smaller cache time when forcing refresh
+          // Approach 1: Use unified posts service
           const unifiedPosts = await getUnifiedFeedPosts(
             currentUser.id, 
             limit,
@@ -60,67 +63,84 @@ export const useFeed = ({ limit = 10, type = 'personalized', refreshTrigger }: U
           
           if (unifiedPosts && unifiedPosts.length > 0) {
             // Validate posts to ensure they're valid
-            const validPosts = unifiedPosts.filter(post => post && post.id && post.user_id);
-            
-            setPosts(validPosts);
-            setHasFetchedData(true);
-            setLoading(false);
-            return;
+            fetchedPosts = unifiedPosts.filter(post => post && post.id && post.user_id);
           }
-        } catch (err) {
-          console.error("Error with unified feed:", err);
+        } catch (unifiedErr) {
+          console.error("Error with unified feed:", unifiedErr);
           
-          if (err instanceof Error && err.message.includes('Failed to fetch')) {
-            console.error('Network error when fetching unified posts:', err);
+          if (unifiedErr instanceof Error && unifiedErr.message.includes('Failed to fetch')) {
             setNetworkError(true);
-            throw err;
+          }
+          
+          // Continue with other approaches
+        }
+        
+        // If no posts from unified service, try the legacy approach
+        if (fetchedPosts.length === 0) {
+          try {
+            const legacyPosts = await getFeedPosts(currentUser.id, limit);
+            if (legacyPosts && legacyPosts.length > 0) {
+              fetchedPosts = legacyPosts;
+            }
+          } catch (legacyErr) {
+            console.error("Error with legacy feed:", legacyErr);
           }
         }
       }
       
-      // Try to fetch from general posts table as fallback
-      try {
-        const { data: generalPosts, error: generalError } = await supabase
-          .from('posts')
-          .select('*, profiles(*)')
-          .order('created_at', { ascending: false })
-          .limit(limit);
-          
-        if (generalError) {
-          console.error('Error with general posts query:', generalError);
-        } else if (generalPosts && generalPosts.length > 0) {
-          // Filter out any potentially invalid posts
-          const validPosts = generalPosts.filter(post => post && post.id && post.user_id);
-          setPosts(validPosts);
-          setHasFetchedData(true);
-          setLoading(false);
-          return;
-        }
-      } catch (err) {
-        console.error('Error with general posts query:', err);
+      // If we have posts, set them and mark as fetched
+      if (fetchedPosts.length > 0) {
+        setPosts(fetchedPosts);
+        setHasFetchedData(true);
+        setLoading(false);
+        return;
       }
       
-      // Try posts_text table as another fallback
+      // Last resort: fetch from posts_text directly
       try {
         const { data: textPosts, error: textError } = await supabase
           .from('posts_text')
-          .select('*, profiles(*)')
+          .select(`
+            id, 
+            user_id,
+            created_at,
+            body,
+            title,
+            emoji_mood,
+            tags
+          `)
           .order('created_at', { ascending: false })
           .limit(limit);
           
         if (textError) {
           console.error('Error with text posts query:', textError);
         } else if (textPosts && textPosts.length > 0) {
-          // Filter out invalid posts
-          const validPosts = textPosts.filter(post => post && post.id && post.user_id);
+          // Get unique user IDs to fetch profiles
+          const userIds = [...new Set(textPosts.map(post => post.user_id))];
           
-          // Transform posts to ensure they have a content field
-          const formattedPosts = validPosts.map(post => ({
+          // Fetch profiles separately
+          const { data: profilesData } = await supabase
+            .from("profiles")
+            .select("id, username, avatar, full_name")
+            .in("id", userIds);
+            
+          // Create a map of profiles
+          const profileMap = new Map();
+          if (profilesData) {
+            profilesData.forEach(profile => {
+              profileMap.set(profile.id, profile);
+            });
+          }
+          
+          // Combine posts with profiles
+          const formattedTextPosts = textPosts.map(post => ({
             ...post,
-            content: post.body || ''
+            content: post.body || '',
+            post_type: 'text',
+            profiles: profileMap.get(post.user_id) || null
           }));
           
-          setPosts(formattedPosts);
+          setPosts(formattedTextPosts);
           setHasFetchedData(true);
           setLoading(false);
           return;
@@ -133,6 +153,7 @@ export const useFeed = ({ limit = 10, type = 'personalized', refreshTrigger }: U
       console.log("No posts found from any source");
       setPosts([]);
       setLoading(false);
+      setHasFetchedData(true);
       
     } catch (err) {
       console.error('Error fetching feed:', err);

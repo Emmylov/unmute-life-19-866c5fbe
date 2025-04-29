@@ -55,14 +55,14 @@ const ProfileReactions = ({ profileId, profileName }: ProfileReactionsProps) => 
       <p className="text-sm text-gray-600 mb-2">
         React to {profileName.split(' ')[0]}'s vibe today:
       </p>
-      <div className="flex space-x-4">
+      <div className="flex space-x-4 justify-around">
         <AnimatePresence>
           {emojis.map((item) => (
             <motion.button
               key={item.emoji}
               whileHover={{ scale: 1.2 }}
               whileTap={{ scale: 0.9 }}
-              className="relative"
+              className="relative group"
               onClick={() => triggerEmojiAnimation(item.emoji)}
             >
               <span className="text-2xl transition-transform">
@@ -86,7 +86,7 @@ const ProfileReactions = ({ profileId, profileName }: ProfileReactionsProps) => 
               
               {/* Tooltip on hover */}
               <motion.div 
-                className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-black/80 text-white text-xs px-2 py-1 rounded opacity-0 pointer-events-none"
+                className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-black/80 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none z-50"
                 initial={{ opacity: 0 }}
                 whileHover={{ opacity: 1 }}
               >
