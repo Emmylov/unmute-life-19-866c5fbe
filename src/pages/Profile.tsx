@@ -10,7 +10,6 @@ import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { 
   fetchUserProfile, 
-  addProfileReaction,
   toggleFollowUser
 } from "@/integrations/supabase/profile-functions";
 import { Dialog, DialogContent, DialogTitle, DialogHeader } from "@/components/ui/dialog";
@@ -18,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import OGBadge from "@/components/badges/OGBadge";
+import ProfileReactions from "@/components/profile/ProfileReactions";
 
 const fadeIn = {
   hidden: { opacity: 0, y: 10 },
@@ -34,7 +34,6 @@ const Profile = () => {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isOwnProfile, setIsOwnProfile] = useState(false);
-  const [activeEmoji, setActiveEmoji] = useState<string | null>(null);
   const [isFollowing, setIsFollowing] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -62,36 +61,6 @@ const Profile = () => {
       });
     }
   }, [profile]);
-  
-  const triggerEmojiAnimation = async (emoji: string) => {
-    if (!currentUser) {
-      toast({
-        title: "You need to sign in",
-        description: "Create an account to react to profiles",
-        variant: "default"
-      });
-      return;
-    }
-    
-    setActiveEmoji(emoji);
-    setTimeout(() => setActiveEmoji(null), 1000);
-    
-    try {
-      await addProfileReaction(
-        currentUser.id,
-        profile.id,
-        emoji
-      );
-      
-      toast({
-        title: "Reaction sent!",
-        description: `You reacted with ${emoji}`,
-        variant: "default"
-      });
-    } catch (error) {
-      console.error("Error saving reaction:", error);
-    }
-  };
   
   useEffect(() => {
     const getSession = async () => {
@@ -467,23 +436,10 @@ const Profile = () => {
             </div>
           </div>
           
-          <Card className="p-3 mb-6">
-            <p className="text-sm text-gray-600 mb-2">
-              React to {(profile.full_name || profile.username).split(' ')[0]}'s vibe today:
-            </p>
-            <div className="flex space-x-4">
-              {["😍", "🔥", "🤯", "🥹", "👏", "💪"].map((emoji) => (
-                <motion.button
-                  key={emoji}
-                  whileTap={{ scale: 1.5 }}
-                  className={`text-2xl transition-transform ${activeEmoji === emoji ? 'scale-150' : ''}`}
-                  onClick={() => triggerEmojiAnimation(emoji)}
-                >
-                  {emoji}
-                </motion.button>
-              ))}
-            </div>
-          </Card>
+          <ProfileReactions 
+            profileId={profile.id} 
+            profileName={profile.full_name || profile.username}
+          />
         </motion.div>
       </div>
       
