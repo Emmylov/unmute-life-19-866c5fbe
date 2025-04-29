@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Image as ImageIcon, Smile, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { createPost } from "@/services/post-service";
+import { createTextPost } from "@/services/post-service";
 import { toast } from "sonner";
 import MoodSelector from "@/components/home/MoodSelector";
 import { createUnifiedTextPost } from "@/services/unified-post-service";
@@ -56,10 +56,7 @@ const CreatePost = ({ profile, onPostCreated }: CreatePostProps) => {
       }
       
       // Legacy post creation as fallback
-      await createPost({
-        user_id: user.id,
-        content: postText.trim()
-      });
+      await createTextPost(user.id, postText.trim(), undefined, undefined, moodEmoji || undefined);
       
       setPostText("");
       setMoodEmoji("");
@@ -141,8 +138,7 @@ const CreatePost = ({ profile, onPostCreated }: CreatePostProps) => {
             
             {showMoodPicker && (
               <MoodSelector 
-                onMoodSelect={handleMoodSelected} 
-                onClose={() => setShowMoodPicker(false)} 
+                onSelect={handleMoodSelected}
               />
             )}
           </div>
