@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import HomeHeader from "@/components/home/HomeHeader";
 import CreatePost from "@/components/home/CreatePost";
@@ -23,16 +23,18 @@ const Home = () => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   
   // Use our improved feed hook
-  const { posts, loading: isLoading, error, refresh, networkError } = useFeed({
+  const { posts, loading: isLoading, error, refresh, networkError, hasFetchedData } = useFeed({
     type: activeTab === "for-you" ? "personalized" : activeTab === "trending" ? "trending" : "following",
     refreshTrigger
   });
 
   // Handle refresh after post creation
-  const handlePostCreated = () => {
-    refresh();
-    toast.success("Post created successfully!");
-  };
+  const handlePostCreated = useCallback(() => {
+    // Immediately refresh the feed when a post is created
+    refresh().then(() => {
+      toast.success(t('common.success.postCreated', "Post created successfully!"));
+    });
+  }, [refresh, t]);
 
   const handleTabChange = (tabValue: string) => {
     setActiveTab(tabValue);
@@ -147,10 +149,22 @@ const Home = () => {
               className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 text-center relative overflow-hidden"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-dream-mist/30 to-transparent pointer-events-none" />
-              <h3 className="text-xl font-semibold mb-2 relative z-10">No Posts Yet</h3>
+              <h3 className="text-xl font-semibold mb-2 relative z-10">
+                {hasFetchedData ? 'No Posts Yet' : 'Unable to load posts'}
+              </h3>
               <p className="text-gray-500 dark:text-gray-400 relative z-10">
-                Follow more people or create your first post to get started!
+                {hasFetchedData ? 
+                  'Follow more people or create your first post to get started!' :
+                  'There was a problem loading your feed. Please try refreshing.'}
               </p>
+              {!hasFetchedData && (
+                <button 
+                  onClick={() => refresh()} 
+                  className="mt-4 px-4 py-2 bg-unmute-purple text-white rounded-md hover:bg-unmute-purple/90 transition-colors"
+                >
+                  Try Again
+                </button>
+              )}
             </motion.div>
           )}
         </motion.div>

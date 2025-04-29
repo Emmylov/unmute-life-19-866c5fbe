@@ -1,10 +1,16 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 /**
  * Get posts for the user's feed from the unified_posts table
+ * @param userId The user's ID
+ * @param limit Number of posts to fetch
+ * @param options Optional fetch options
  */
-export const getUnifiedFeedPosts = async (userId: string, limit: number = 20) => {
+export const getUnifiedFeedPosts = async (
+  userId: string, 
+  limit: number = 20, 
+  options?: { cache?: 'default' | 'no-cache' }
+) => {
   try {
     // Try using the get_feed_posts function first
     const { data: functionPosts, error: functionError } = await supabase
@@ -34,8 +40,8 @@ export const getUnifiedFeedPosts = async (userId: string, limit: number = 20) =>
       }));
     }
 
-    // Fallback to standard query
-    const { data: queryPosts, error: queryError } = await supabase
+    // Fallback to standard query with cache control
+    let query = supabase
       .from('unified_posts')
       .select(`
         *,
@@ -46,6 +52,14 @@ export const getUnifiedFeedPosts = async (userId: string, limit: number = 20) =>
       .or(`user_id.eq.${userId},user_id.in.(${getFollowingQuery(userId)})`)
       .order('created_at', { ascending: false })
       .limit(limit);
+      
+    // If options specify no cache, add a timestamp to force fresh data
+    if (options?.cache === 'no-cache') {
+      // Add a timestamp to query to bypass cache
+      query = query.filter('updated_at', 'lt', new Date().toISOString());
+    }
+    
+    const { data: queryPosts, error: queryError } = await query;
       
     if (queryError) throw queryError;
     

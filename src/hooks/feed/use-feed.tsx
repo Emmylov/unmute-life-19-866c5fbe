@@ -21,13 +21,13 @@ export const useFeed = ({ limit = 10, type = 'personalized', refreshTrigger }: U
   const maxAttempts = 3;
   const [hasFetchedData, setHasFetchedData] = useState(false);
 
-  const fetchFeed = useCallback(async () => {
+  const fetchFeed = useCallback(async (forceRefresh = false) => {
     setLoading(true);
     setError(null);
     setNetworkError(false);
     
-    // Don't try more than 3 times in quick succession
-    if (attemptsRef.current >= maxAttempts) {
+    // Don't try more than 3 times in quick succession unless forced
+    if (attemptsRef.current >= maxAttempts && !forceRefresh) {
       console.log("Maximum fetch attempts reached, waiting before trying again");
       setTimeout(() => {
         attemptsRef.current = 0;
@@ -51,7 +51,12 @@ export const useFeed = ({ limit = 10, type = 'personalized', refreshTrigger }: U
       // If user exists, try the unified posts approach first
       if (currentUser) {
         try {
-          const unifiedPosts = await getUnifiedFeedPosts(currentUser.id, limit);
+          // Use a smaller cache time when forcing refresh
+          const unifiedPosts = await getUnifiedFeedPosts(
+            currentUser.id, 
+            limit,
+            forceRefresh ? { cache: 'no-cache' } : undefined
+          );
           
           if (unifiedPosts && unifiedPosts.length > 0) {
             // Validate posts to ensure they're valid
@@ -167,12 +172,12 @@ export const useFeed = ({ limit = 10, type = 'personalized', refreshTrigger }: U
     }
   }, [networkError, fetchFeed]);
 
-  // Refresh function that can be called manually
+  // Refresh function that can be called manually - now with force refresh option
   const refresh = useCallback(() => {
     console.log("Refreshing feed...");
     refreshCountRef.current += 1;
     attemptsRef.current = 0; // Reset attempts on manual refresh
-    fetchFeed();
+    return fetchFeed(true); // Force refresh to bypass cache
   }, [fetchFeed]);
 
   // Initial fetch

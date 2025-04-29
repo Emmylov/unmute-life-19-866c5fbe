@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { UserPlus } from "lucide-react";
+import { UserPlus, Heart, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -11,13 +11,15 @@ import { useSocialActions } from "@/hooks/use-social-actions";
 import { getInitials } from "@/lib/utils";
 import { toast } from "sonner";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { motion, AnimatePresence } from "framer-motion";
 
 const SuggestedUsers = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const { toggleFollow, loadingFollowState } = useSocialActions();
-
+  const [reactionStates, setReactionStates] = useState<Record<string, boolean>>({});
+  
   useEffect(() => {
     let isMounted = true;
     
@@ -45,13 +47,21 @@ const SuggestedUsers = () => {
           if (error) throw error;
         
           if (data && isMounted) {
-            // Set follow status as false initially to avoid flickering
-            const usersWithInitialFollowStatus = data.map((suggestedUser) => ({
-              ...suggestedUser, 
-              isFollowing: false
+            // Load follow states from localStorage for UI persistence
+            const usersWithFollowStatus = await Promise.all(data.map(async (suggestedUser) => {
+              const localStorageKey = `follow_${user.id}_${suggestedUser.id}`;
+              const savedFollowState = localStorage.getItem(localStorageKey);
+              
+              // Initialize with localStorage value if available
+              const initialFollowState = savedFollowState === 'true';
+              
+              return {
+                ...suggestedUser, 
+                isFollowing: initialFollowState
+              };
             }));
             
-            setUsers(usersWithInitialFollowStatus);
+            setUsers(usersWithFollowStatus);
           }
         } catch (error) {
           console.error("Error fetching suggested users:", error);
@@ -76,17 +86,61 @@ const SuggestedUsers = () => {
       return;
     }
     
+    // Get current follow state before changing it
+    const currentUser = users.find(u => u.id === userId);
+    if (!currentUser) return;
+    
+    const previousFollowState = currentUser.isFollowing;
+    
+    // Update local state immediately (optimistic update)
+    setUsers(users.map(suggestedUser => 
+      suggestedUser.id === userId 
+        ? { ...suggestedUser, isFollowing: !previousFollowState } 
+        : suggestedUser
+    ));
+    
+    // Store in localStorage for persistence
+    const localStorageKey = `follow_${user.id}_${userId}`;
+    localStorage.setItem(localStorageKey, (!previousFollowState).toString());
+    
+    // Show reaction animation
+    setReactionStates(prev => ({
+      ...prev,
+      [userId]: true
+    }));
+    
+    // Hide reaction after 1 second
+    setTimeout(() => {
+      setReactionStates(prev => ({
+        ...prev,
+        [userId]: false
+      }));
+    }, 1000);
+    
     try {
       const result = await toggleFollow(userId);
       
-      // Update local state
+      // Update with server result
       setUsers(users.map(suggestedUser => 
         suggestedUser.id === userId 
           ? { ...suggestedUser, isFollowing: result } 
           : suggestedUser
       ));
+      
+      // Update localStorage with server result
+      localStorage.setItem(localStorageKey, result.toString());
     } catch (error) {
       console.error("Error following user:", error);
+      
+      // Revert to previous state if error
+      setUsers(users.map(suggestedUser => 
+        suggestedUser.id === userId 
+          ? { ...suggestedUser, isFollowing: previousFollowState } 
+          : suggestedUser
+      ));
+      
+      // Update localStorage with previous state
+      localStorage.setItem(localStorageKey, previousFollowState.toString());
     }
   };
 
@@ -129,7 +183,25 @@ const SuggestedUsers = () => {
         
         <div className="space-y-3">
           {users.map((suggestedUser) => (
-            <div key={suggestedUser.id} className="flex items-center justify-between">
+            <div key={suggestedUser.id} className="flex items-center justify-between relative">
+              <AnimatePresence>
+                {reactionStates[suggestedUser.id] && (
+                  <motion.div 
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1.5, opacity: 1 }}
+                    exit={{ scale: 0, opacity: 0 }}
+                    transition={{ duration: 0.5 }}
+                    className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10"
+                  >
+                    {suggestedUser.isFollowing ? (
+                      <Check className="text-green-500 h-8 w-8" />
+                    ) : (
+                      <Heart className="text-red-500 h-8 w-8" />
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              
               <Link 
                 to={`/profile/${suggestedUser.username || suggestedUser.id}`} 
                 className="flex items-center"
