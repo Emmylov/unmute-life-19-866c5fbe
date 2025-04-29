@@ -45,7 +45,7 @@ export const getUnifiedFeedPosts = async (
       .from('unified_posts')
       .select(`
         *,
-        profiles:user_id (id, username, avatar, full_name)
+        profiles(id, username, avatar, full_name)
       `)
       .eq('is_deleted', false)
       .eq('visibility', 'public')
@@ -100,7 +100,13 @@ export const checkUnifiedPostExists = async (postId: string): Promise<boolean> =
 /**
  * Create a new text post in the unified_posts table
  */
-export const createUnifiedTextPost = async (userId: string, content: string, title?: string, tags?: string[], emojiMood?: string) => {
+export const createUnifiedTextPost = async (
+  userId: string, 
+  content: string, 
+  title?: string, 
+  tags?: string[], 
+  emojiMood?: string
+) => {
   try {
     const { data, error } = await supabase
       .from("unified_posts")
@@ -113,7 +119,7 @@ export const createUnifiedTextPost = async (userId: string, content: string, tit
         emoji_mood: emojiMood,
         visibility: 'public'
       })
-      .select(`*, profiles:user_id (*)`)
+      .select(`*, profiles(*)`)
       .single();
     
     if (error) throw error;
@@ -139,7 +145,7 @@ export const createUnifiedImagePost = async (userId: string, imageUrls: string[]
         tags,
         visibility: 'public'
       })
-      .select(`*, profiles:user_id (*)`)
+      .select(`*, profiles(*)`)
       .single();
     
     if (error) throw error;

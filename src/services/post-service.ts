@@ -34,17 +34,23 @@ export const createImagePost = async (userId: string, imageFiles: File[], captio
 };
 
 // Create a new text post
-export const createTextPost = async (userId: string, body: string, title?: string, tags?: string[], emojiMood?: string) => {
+export const createTextPost = async (params: { 
+  user_id: string, 
+  body: string, 
+  title?: string, 
+  tags?: string[], 
+  emoji_mood?: string 
+}) => {
   try {
     // Insert the post into the database
     const { data, error } = await supabase
       .from("posts_text")
       .insert({
-        user_id: userId,
-        title,
-        body,
-        tags,
-        emoji_mood: emojiMood
+        user_id: params.user_id,
+        title: params.title,
+        body: params.body,
+        tags: params.tags,
+        emoji_mood: params.emoji_mood
       })
       .select()
       .single();

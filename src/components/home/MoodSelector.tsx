@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 
 interface MoodSelectorProps {
   onSelect: (mood: string) => void;
+  onClose: () => void;
 }
 
-const MoodSelector = ({ onSelect }: MoodSelectorProps) => {
+const MoodSelector = ({ onSelect, onClose }: MoodSelectorProps) => {
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   
   const moods = [
@@ -32,9 +33,9 @@ const MoodSelector = ({ onSelect }: MoodSelectorProps) => {
         {moods.map((mood) => (
           <Button 
             key={mood.name}
-            variant={selectedMood === mood.name ? "default" : "outline"}
+            variant={selectedMood === mood.emoji ? "default" : "outline"}
             className="flex flex-col items-center py-2 h-auto"
-            onClick={() => handleMoodSelect(mood.name)}
+            onClick={() => handleMoodSelect(mood.emoji)}
           >
             <span className="text-xl mb-1">{mood.emoji}</span>
             <span className="text-xs line-clamp-1">{mood.name}</span>
