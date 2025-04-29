@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 /**
@@ -100,7 +101,14 @@ export const checkUnifiedPostExists = async (postId: string): Promise<boolean> =
 /**
  * Create a new text post in the unified_posts table
  */
-export const createUnifiedTextPost = async (userId: string, content: string, title?: string, tags?: string[], emojiMood?: string) => {
+export const createUnifiedTextPost = async (
+  userId: string, 
+  content: string, 
+  title?: string, 
+  tags?: string[], 
+  emojiMood?: string,
+  visibility: 'public' | 'private' = 'public'
+) => {
   try {
     const { data, error } = await supabase
       .from("unified_posts")
@@ -111,7 +119,7 @@ export const createUnifiedTextPost = async (userId: string, content: string, tit
         content,
         tags,
         emoji_mood: emojiMood,
-        visibility: 'public'
+        visibility
       })
       .select(`*, profiles:user_id (*)`)
       .single();
