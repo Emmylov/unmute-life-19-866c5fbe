@@ -153,7 +153,8 @@ export const useFeed = ({ limit = 10, type = 'personalized', refreshTrigger }: U
             ...post,
             content: post.body || '',
             post_type: 'text',
-            profiles: profileMap.get(post.user_id) || null
+            profiles: profileMap.get(post.user_id) || null,
+            is_deleted: false // Explicitly mark as not deleted since we know they exist
           }));
           
           setPosts(formattedTextPosts);

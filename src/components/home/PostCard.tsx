@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -39,14 +38,25 @@ const PostCard = ({ post }: PostCardProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isUsingUnifiedTable, setIsUsingUnifiedTable] = useState(true);
   const [hasValidated, setHasValidated] = useState(false);
+  const [validationAttempts, setValidationAttempts] = useState(0);
+  const [likeInProgress, setLikeInProgress] = useState(false);
   const { t } = useTranslation();
   
   // Initial validation - if post is completely invalid, don't render anything
   if (!post || !post.id) {
     return null;
   }
+  
+  const postRef = useRef(post.id);
 
   useEffect(() => {
+    // Reset validation when post changes
+    if (postRef.current !== post.id) {
+      postRef.current = post.id;
+      setHasValidated(false);
+      setValidationAttempts(0);
+    }
+    
     const validatePost = async () => {
       if (!post?.id) {
         setIsValidPost(false);
@@ -54,78 +64,101 @@ const PostCard = ({ post }: PostCardProps) => {
         return;
       }
       
+      // Increment validation attempts
+      setValidationAttempts(prev => prev + 1);
+      
       try {
-        // Always try unified posts first - this is our primary table now
-        const unifiedPostExists = await checkUnifiedPostExists(post.id);
-        
-        if (unifiedPostExists) {
-          console.log(`Post ${post.id} exists in unified table`);
-          setIsUsingUnifiedTable(true);
-          setIsValidPost(true);
-          setHasValidated(true);
+        // First try the unified_posts table - our primary source
+        try {
+          const unifiedPostExists = await checkUnifiedPostExists(post.id);
           
-          if (user) {
-            // Get like status using unified tables
-            try {
-              const liked = await checkUnifiedPostLikeStatus(post.id, user.id);
-              setIsLiked(liked);
-              
-              const count = await getUnifiedPostLikes(post.id);
-              setLikesCount(count);
-            } catch (likeError) {
-              console.error("Error fetching unified post like data:", likeError);
+          if (unifiedPostExists) {
+            console.log(`Post ${post.id} exists in unified or legacy tables`);
+            setIsUsingUnifiedTable(true);
+            setIsValidPost(true);
+            setHasValidated(true);
+            
+            if (user) {
+              // Get like status using unified tables
+              try {
+                const liked = await checkUnifiedPostLikeStatus(post.id, user.id);
+                setIsLiked(liked);
+                
+                const count = await getUnifiedPostLikes(post.id);
+                setLikesCount(count);
+              } catch (likeError) {
+                console.error("Error fetching unified post like data:", likeError);
+              }
             }
+            
+            return;
           }
-          
-          return;
+        } catch (unifiedError) {
+          console.warn("Error checking in unified tables:", unifiedError);
         }
         
-        // Fall back to legacy implementation if needed
+        // Fall back to legacy implementation
         try {
           const legacyPostExists = await checkPostExists(post.id);
           
-          if (!legacyPostExists) {
-            console.log(`Post ${post.id} does not exist in either table`);
-            setIsValidPost(false);
+          if (legacyPostExists) {
+            console.log(`Post ${post.id} exists in legacy table`);
+            setIsUsingUnifiedTable(false);
+            setIsValidPost(true);
             setHasValidated(true);
+            
+            if (user) {
+              try {
+                const liked = await checkPostLikeStatus(post.id);
+                setIsLiked(liked);
+                
+                const count = await getPostLikesCount(post.id);
+                setLikesCount(count);
+              } catch (likeError) {
+                console.error("Error fetching post like data:", likeError);
+              }
+            }
             return;
           }
           
-          console.log(`Post ${post.id} exists in legacy table`);
-          setIsUsingUnifiedTable(false);
-          setIsValidPost(true);
+          console.log(`Post ${post.id} does not exist in any table`);
+          setIsValidPost(false);
           setHasValidated(true);
-          
-          if (user) {
-            try {
-              const liked = await checkPostLikeStatus(post.id);
-              setIsLiked(liked);
-              
-              const count = await getPostLikesCount(post.id);
-              setLikesCount(count);
-            } catch (likeError) {
-              console.error("Error fetching post like data:", likeError);
-            }
-          }
         } catch (legacyError) {
           console.error("Error checking if legacy post exists:", legacyError);
-          setIsValidPost(false);
+          
+          // If this is our first attempt, assume the post is valid until we confirm otherwise
+          if (validationAttempts === 1) {
+            console.log(`First validation attempt for ${post.id}, assuming valid for now`);
+            setIsValidPost(true);
+          } else {
+            setIsValidPost(false);
+          }
           setHasValidated(true);
         }
       } catch (error) {
         console.error("Error validating post:", error);
-        setIsValidPost(false);
+        
+        // If this is our first attempt, assume the post is valid until we confirm otherwise
+        if (validationAttempts === 1) {
+          console.log(`First validation attempt for ${post.id}, assuming valid for now`);
+          setIsValidPost(true);
+        } else {
+          setIsValidPost(false);
+        }
         setHasValidated(true);
       }
     };
     
-    validatePost();
+    if (!hasValidated || validationAttempts === 0) {
+      validatePost();
+    }
     
     // Load comments if dialog is open and post is valid
     if (showComments && isValidPost) {
       fetchComments();
     }
-  }, [post?.id, user, checkPostLikeStatus, showComments, checkPostExists, getPostLikesCount]);
+  }, [post?.id, user, checkPostLikeStatus, showComments, checkPostExists, getPostLikesCount, hasValidated, validationAttempts]);
 
   const fetchComments = async () => {
     if (!post?.id || !isValidPost) return;
@@ -159,6 +192,13 @@ const PostCard = ({ post }: PostCardProps) => {
       return;
     }
     
+    if (likeInProgress) {
+      console.log('Like action already in progress, ignoring click');
+      return;
+    }
+    
+    setLikeInProgress(true);
+    
     const previousLiked = isLiked;
     // Optimistic UI update
     setIsLiked(!isLiked);
@@ -170,27 +210,47 @@ const PostCard = ({ post }: PostCardProps) => {
       if (isUsingUnifiedTable) {
         console.log(`Toggling like for unified post ${post.id}`);
         result = await toggleUnifiedPostLike(post.id, user.id);
-        
-        if (result !== !previousLiked) {
-          setIsLiked(result);
-          const newCount = await getUnifiedPostLikes(post.id);
-          setLikesCount(newCount);
-        }
       } else {
         console.log(`Toggling like for legacy post ${post.id}`);
         result = await toggleLikePost(post.id);
+      }
+      
+      // If the result doesn't match our expected state, update accordingly
+      if (result !== !previousLiked) {
+        setIsLiked(result);
         
-        if (result !== !previousLiked) {
-          setIsLiked(result);
-          const newCount = await getPostLikesCount(post.id);
+        try {
+          // Refresh the likes count after toggling
+          const newCount = isUsingUnifiedTable 
+            ? await getUnifiedPostLikes(post.id) 
+            : await getPostLikesCount(post.id);
+          
           setLikesCount(newCount);
+        } catch (countError) {
+          console.error("Error getting updated likes count:", countError);
         }
       }
     } catch (error) {
-      // Revert optimistic updates on error
       console.error("Error liking post:", error);
-      setIsLiked(previousLiked);
       
+      // Check if this is a "post not found" type of error
+      const errorMessage = error instanceof Error ? error.message : '';
+      const isNotFoundError = 
+        errorMessage.includes('not found') || 
+        errorMessage.includes('does not exist') ||
+        errorMessage.includes('violates foreign key constraint');
+      
+      if (isNotFoundError) {
+        // Post may have been deleted, mark as invalid
+        setIsValidPost(false);
+        toast.error(t('common.error.postNotAvailable', 'This post is no longer available'));
+      } else {
+        // Other error, revert optimistic updates
+        setIsLiked(previousLiked);
+        toast.error(t('common.error.likePost', 'Failed to update like status'));
+      }
+      
+      // Refresh the likes count
       try {
         if (isUsingUnifiedTable) {
           const newCount = await getUnifiedPostLikes(post.id);
@@ -202,8 +262,8 @@ const PostCard = ({ post }: PostCardProps) => {
       } catch (countError) {
         console.error("Error getting likes count:", countError);
       }
-      
-      toast.error(t('common.error.likePost', 'Failed to update like status'));
+    } finally {
+      setLikeInProgress(false);
     }
   };
   

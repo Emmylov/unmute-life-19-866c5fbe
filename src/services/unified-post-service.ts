@@ -105,19 +105,50 @@ const getFollowingQuery = (userId: string) => {
 export const checkUnifiedPostExists = async (postId: string): Promise<boolean> => {
   try {
     console.log(`Checking if unified post exists: ${postId}`);
-    const { data, error, count } = await supabase
+    
+    // First try using the unified_posts table
+    const { data: unifiedData, error: unifiedError, count: unifiedCount } = await supabase
       .from('unified_posts')
       .select('id', { count: 'exact', head: true })
       .eq('id', postId)
       .eq('is_deleted', false);
       
-    if (error) {
-      console.error('Error checking unified post existence:', error);
-      return false;
+    if (unifiedError) {
+      console.error('Error checking unified post existence:', unifiedError);
+    } else if (unifiedCount && unifiedCount > 0) {
+      console.log(`Unified post ${postId} exists in unified_posts table`);
+      return true;
     }
     
-    console.log(`Unified post ${postId} exists: ${!!count && count > 0}`);
-    return !!count && count > 0;
+    // If not found in unified_posts, try posts_text table
+    const { data: textData, error: textError, count: textCount } = await supabase
+      .from('posts_text')
+      .select('id', { count: 'exact', head: true })
+      .eq('id', postId);
+      
+    if (textError) {
+      console.error('Error checking text post existence:', textError);
+    } else if (textCount && textCount > 0) {
+      console.log(`Post ${postId} exists in posts_text table`);
+      return true;
+    }
+    
+    // If not found in posts_text, try posts_images table
+    const { data: imageData, error: imageError, count: imageCount } = await supabase
+      .from('posts_images')
+      .select('id', { count: 'exact', head: true })
+      .eq('id', postId);
+      
+    if (imageError) {
+      console.error('Error checking image post existence:', imageError);
+    } else if (imageCount && imageCount > 0) {
+      console.log(`Post ${postId} exists in posts_images table`);
+      return true;
+    }
+    
+    // If not found in any table, return false
+    console.log(`Post ${postId} does not exist in any post table`);
+    return false;
   } catch (error) {
     console.error('Error checking post existence:', error);
     return false;
@@ -292,15 +323,40 @@ export const checkUnifiedPostLikeStatus = async (postId: string, userId: string)
  */
 export const toggleUnifiedPostLike = async (postId: string, userId: string): Promise<boolean> => {
   try {
-    // Check if post exists first
+    // Check if post exists first with our improved check function
     const postExists = await checkUnifiedPostExists(postId);
     if (!postExists) {
       console.log('Post does not exist:', postId);
       return false;
     }
     
-    // Check if already liked
-    const isLiked = await checkUnifiedPostLikeStatus(postId, userId);
+    // Check if already liked using a more resilient query
+    let isLiked = false;
+    try {
+      const { data, error } = await supabase
+        .from('unified_post_likes')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .eq('post_id', postId);
+      
+      isLiked = !!data || false;
+      
+      if (error) {
+        console.warn("Error checking like status using unified_post_likes:", error);
+        // Fall back to post_likes table if needed
+        const { data: legacyData, error: legacyError } = await supabase
+          .from('post_likes')
+          .select('post_id', { head: true })
+          .eq('user_id', userId)
+          .eq('post_id', postId);
+          
+        if (!legacyError) {
+          isLiked = !!legacyData;
+        }
+      }
+    } catch (likeCheckError) {
+      console.error("Error checking like status:", likeCheckError);
+    }
     
     if (isLiked) {
       // Unlike - delete from unified_post_likes
@@ -325,8 +381,21 @@ export const toggleUnifiedPostLike = async (postId: string, userId: string): Pro
         });
         
       if (error) {
-        console.error("Error adding like:", error);
-        throw error;
+        // If there's an error with unified_post_likes, try the post_likes table
+        console.warn("Error adding like to unified_post_likes, trying post_likes:", error);
+        
+        // Try the legacy post_likes table as a fallback
+        const { error: legacyError } = await supabase
+          .from('post_likes')
+          .insert({
+            user_id: userId,
+            post_id: postId
+          });
+          
+        if (legacyError) {
+          console.error("Error adding like to post_likes as well:", legacyError);
+          throw legacyError;
+        }
       }
       return true;
     }
