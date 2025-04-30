@@ -27,6 +27,8 @@ export const useFeed = ({ limit = 10, type = 'personalized', refreshTrigger }: U
     setError(null);
     setNetworkError(false);
     
+    console.log(`Fetching feed (attempt ${attemptsRef.current + 1}/${maxAttempts})${forceRefresh ? ' with force refresh' : ''}`);
+    
     // Don't try more than 3 times in quick succession unless forced
     if (attemptsRef.current >= maxAttempts && !forceRefresh) {
       console.log("Maximum fetch attempts reached, waiting before trying again");
@@ -44,6 +46,7 @@ export const useFeed = ({ limit = 10, type = 'personalized', refreshTrigger }: U
       let currentUser;
       try {
         currentUser = await getCurrentUser();
+        console.log("Current user fetched:", currentUser?.id);
       } catch (err) {
         console.warn('Error getting current user:', err);
         // Continue without user - will use general feed
@@ -55,6 +58,7 @@ export const useFeed = ({ limit = 10, type = 'personalized', refreshTrigger }: U
       if (currentUser) {
         try {
           // Approach 1: Use unified posts service
+          console.log("Fetching unified posts for user:", currentUser.id);
           const unifiedPosts = await getUnifiedFeedPosts(
             currentUser.id, 
             limit,
@@ -62,8 +66,12 @@ export const useFeed = ({ limit = 10, type = 'personalized', refreshTrigger }: U
           );
           
           if (unifiedPosts && unifiedPosts.length > 0) {
+            console.log(`Fetched ${unifiedPosts.length} posts from unified posts service`);
             // Validate posts to ensure they're valid
             fetchedPosts = unifiedPosts.filter(post => post && post.id && post.user_id);
+            console.log(`After validation: ${fetchedPosts.length} valid posts`);
+          } else {
+            console.log("No posts returned from unified posts service");
           }
         } catch (unifiedErr) {
           console.error("Error with unified feed:", unifiedErr);
@@ -78,9 +86,13 @@ export const useFeed = ({ limit = 10, type = 'personalized', refreshTrigger }: U
         // If no posts from unified service, try the legacy approach
         if (fetchedPosts.length === 0) {
           try {
+            console.log("Falling back to legacy feed service");
             const legacyPosts = await getFeedPosts(currentUser.id, limit);
             if (legacyPosts && legacyPosts.length > 0) {
+              console.log(`Fetched ${legacyPosts.length} posts from legacy feed service`);
               fetchedPosts = legacyPosts;
+            } else {
+              console.log("No posts returned from legacy feed service");
             }
           } catch (legacyErr) {
             console.error("Error with legacy feed:", legacyErr);
@@ -90,14 +102,17 @@ export const useFeed = ({ limit = 10, type = 'personalized', refreshTrigger }: U
       
       // If we have posts, set them and mark as fetched
       if (fetchedPosts.length > 0) {
+        console.log(`Setting ${fetchedPosts.length} posts in feed`);
         setPosts(fetchedPosts);
         setHasFetchedData(true);
+        attemptsRef.current = 0; // Reset attempts on success
         setLoading(false);
         return;
       }
       
       // Last resort: fetch from posts_text directly
       try {
+        console.log("Attempting direct query to posts_text table");
         const { data: textPosts, error: textError } = await supabase
           .from('posts_text')
           .select(`
@@ -115,6 +130,7 @@ export const useFeed = ({ limit = 10, type = 'personalized', refreshTrigger }: U
         if (textError) {
           console.error('Error with text posts query:', textError);
         } else if (textPosts && textPosts.length > 0) {
+          console.log(`Fetched ${textPosts.length} posts from posts_text table`);
           // Get unique user IDs to fetch profiles
           const userIds = [...new Set(textPosts.map(post => post.user_id))];
           
@@ -142,6 +158,7 @@ export const useFeed = ({ limit = 10, type = 'personalized', refreshTrigger }: U
           
           setPosts(formattedTextPosts);
           setHasFetchedData(true);
+          attemptsRef.current = 0; // Reset attempts on success
           setLoading(false);
           return;
         }
@@ -195,7 +212,7 @@ export const useFeed = ({ limit = 10, type = 'personalized', refreshTrigger }: U
 
   // Refresh function that can be called manually - now with force refresh option
   const refresh = useCallback(() => {
-    console.log("Refreshing feed...");
+    console.log("Manually refreshing feed...");
     refreshCountRef.current += 1;
     attemptsRef.current = 0; // Reset attempts on manual refresh
     return fetchFeed(true); // Force refresh to bypass cache
@@ -203,6 +220,7 @@ export const useFeed = ({ limit = 10, type = 'personalized', refreshTrigger }: U
 
   // Initial fetch
   useEffect(() => {
+    console.log("Initial feed fetch triggered");
     fetchFeed();
   }, [fetchFeed, refreshTrigger]);
 

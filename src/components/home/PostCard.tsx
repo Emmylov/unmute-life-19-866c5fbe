@@ -14,7 +14,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { addComment, getComments } from "@/services/comment-service";
 import { useTranslation } from "react-i18next";
-import { checkUnifiedPostExists, getUnifiedPostComments, addUnifiedPostComment, checkUnifiedPostLikeStatus, toggleUnifiedPostLike, getUnifiedPostLikes } from "@/services/unified-post-service";
+import { 
+  checkUnifiedPostExists, 
+  getUnifiedPostComments, 
+  addUnifiedPostComment, 
+  checkUnifiedPostLikeStatus, 
+  toggleUnifiedPostLike, 
+  getUnifiedPostLikes 
+} from "@/services/unified-post-service";
 
 interface PostCardProps {
   post: any;
@@ -30,7 +37,8 @@ const PostCard = ({ post }: PostCardProps) => {
   const [isValidPost, setIsValidPost] = useState(true);
   const [comments, setComments] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isUsingUnifiedTable, setIsUsingUnifiedTable] = useState(false);
+  const [isUsingUnifiedTable, setIsUsingUnifiedTable] = useState(true);
+  const [hasValidated, setHasValidated] = useState(false);
   const { t } = useTranslation();
   
   // Initial validation - if post is completely invalid, don't render anything
@@ -42,16 +50,19 @@ const PostCard = ({ post }: PostCardProps) => {
     const validatePost = async () => {
       if (!post?.id) {
         setIsValidPost(false);
+        setHasValidated(true);
         return;
       }
       
       try {
-        // Try unified posts first
+        // Always try unified posts first - this is our primary table now
         const unifiedPostExists = await checkUnifiedPostExists(post.id);
         
         if (unifiedPostExists) {
+          console.log(`Post ${post.id} exists in unified table`);
           setIsUsingUnifiedTable(true);
           setIsValidPost(true);
+          setHasValidated(true);
           
           if (user) {
             // Get like status using unified tables
@@ -69,16 +80,21 @@ const PostCard = ({ post }: PostCardProps) => {
           return;
         }
         
-        // Fall back to legacy implementation
+        // Fall back to legacy implementation if needed
         try {
           const legacyPostExists = await checkPostExists(post.id);
+          
           if (!legacyPostExists) {
-            console.log(`Post ${post.id} no longer exists`);
+            console.log(`Post ${post.id} does not exist in either table`);
             setIsValidPost(false);
+            setHasValidated(true);
             return;
           }
           
+          console.log(`Post ${post.id} exists in legacy table`);
+          setIsUsingUnifiedTable(false);
           setIsValidPost(true);
+          setHasValidated(true);
           
           if (user) {
             try {
@@ -92,12 +108,14 @@ const PostCard = ({ post }: PostCardProps) => {
             }
           }
         } catch (legacyError) {
-          console.error("Error checking if post exists:", legacyError);
+          console.error("Error checking if legacy post exists:", legacyError);
           setIsValidPost(false);
+          setHasValidated(true);
         }
       } catch (error) {
         console.error("Error validating post:", error);
         setIsValidPost(false);
+        setHasValidated(true);
       }
     };
     
@@ -150,29 +168,41 @@ const PostCard = ({ post }: PostCardProps) => {
       let result: boolean;
       
       if (isUsingUnifiedTable) {
+        console.log(`Toggling like for unified post ${post.id}`);
         result = await toggleUnifiedPostLike(post.id, user.id);
+        
         if (result !== !previousLiked) {
           setIsLiked(result);
-          setLikesCount(await getUnifiedPostLikes(post.id));
+          const newCount = await getUnifiedPostLikes(post.id);
+          setLikesCount(newCount);
         }
       } else {
+        console.log(`Toggling like for legacy post ${post.id}`);
         result = await toggleLikePost(post.id);
+        
         if (result !== !previousLiked) {
           setIsLiked(result);
-          setLikesCount(await getPostLikesCount(post.id));
+          const newCount = await getPostLikesCount(post.id);
+          setLikesCount(newCount);
         }
       }
     } catch (error) {
       // Revert optimistic updates on error
+      console.error("Error liking post:", error);
       setIsLiked(previousLiked);
       
-      if (isUsingUnifiedTable) {
-        setLikesCount(await getUnifiedPostLikes(post.id));
-      } else {
-        setLikesCount(await getPostLikesCount(post.id));
+      try {
+        if (isUsingUnifiedTable) {
+          const newCount = await getUnifiedPostLikes(post.id);
+          setLikesCount(newCount);
+        } else {
+          const newCount = await getPostLikesCount(post.id);
+          setLikesCount(newCount);
+        }
+      } catch (countError) {
+        console.error("Error getting likes count:", countError);
       }
       
-      console.error("Error liking post:", error);
       toast.error(t('common.error.likePost', 'Failed to update like status'));
     }
   };
@@ -220,6 +250,33 @@ const PostCard = ({ post }: PostCardProps) => {
   const handleSave = () => {
     toast.info(t('common.comingSoon.save', 'Saving posts will be available soon!'));
   };
+
+  // If still validating, show a loading state
+  if (!hasValidated) {
+    return (
+      <Card className="w-full overflow-hidden p-4">
+        <div className="flex items-center space-x-4">
+          <Skeleton className="h-10 w-10 rounded-full" />
+          <div className="space-y-2 flex-1">
+            <Skeleton className="h-4 w-[200px]" />
+            <Skeleton className="h-3 w-[140px]" />
+          </div>
+        </div>
+        <div className="mt-4 space-y-2">
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-4/5" />
+        </div>
+        <div className="mt-4 flex justify-between">
+          <div className="flex space-x-4">
+            <Skeleton className="h-8 w-8 rounded" />
+            <Skeleton className="h-8 w-8 rounded" />
+            <Skeleton className="h-8 w-8 rounded" />
+          </div>
+          <Skeleton className="h-8 w-8 rounded" />
+        </div>
+      </Card>
+    );
+  }
 
   // If post is invalid after validation, display a subtle message instead of the post
   if (!isValidPost) {

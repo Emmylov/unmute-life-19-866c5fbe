@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 /**
@@ -12,7 +13,7 @@ export const getUnifiedFeedPosts = async (
   options?: { cache?: 'default' | 'no-cache' }
 ) => {
   try {
-    // Try using the get_feed_posts function first
+    // Try using the get_feed_posts function first - most reliable approach
     const { data: functionPosts, error: functionError } = await supabase
       .rpc('get_feed_posts', { 
         user_uuid: userId, 
@@ -20,6 +21,8 @@ export const getUnifiedFeedPosts = async (
       });
       
     if (!functionError && functionPosts && functionPosts.length > 0) {
+      console.log("Successfully fetched posts from get_feed_posts function");
+      
       // Fetch user profiles for these posts
       const userIds = [...new Set(functionPosts.map(post => post.user_id))];
       const { data: profilesData } = await supabase
@@ -38,67 +41,51 @@ export const getUnifiedFeedPosts = async (
         ...post,
         profiles: profileMap.get(post.user_id) || null
       }));
+    } else if (functionError) {
+      console.error("Error using get_feed_posts function:", functionError);
     }
 
-    // Fallback to standard query with cache control - Fixed the relationship query syntax
-    let query = supabase
+    // Fallback to direct query with manual joins
+    console.log("Falling back to direct query for unified posts");
+    const { data: unifiedPosts, error: unifiedError } = await supabase
       .from('unified_posts')
-      .select(`
-        *,
-        profiles!unified_posts_user_id_fkey(id, username, avatar, full_name)
-      `)
+      .select('*')
       .eq('is_deleted', false)
       .eq('visibility', 'public')
       .order('created_at', { ascending: false })
       .limit(limit);
       
-    // If options specify no cache, add a timestamp to force fresh data
-    if (options?.cache === 'no-cache') {
-      // Add a timestamp to query to bypass cache
-      query = query.filter('updated_at', 'lt', new Date().toISOString());
+    if (unifiedError) {
+      console.error("Error fetching unified posts:", unifiedError);
+      throw unifiedError;
     }
     
-    const { data: queryPosts, error: queryError } = await query;
-    
-    if (queryError) {
-      console.error("Error with unified posts query:", queryError);
-      
-      // Fallback to simpler query without the relationship
-      const { data: simplePosts, error: simpleError } = await supabase
-        .from('unified_posts')
-        .select('*')
-        .eq('is_deleted', false)
-        .eq('visibility', 'public')
-        .order('created_at', { ascending: false })
-        .limit(limit);
-        
-      if (simpleError) throw simpleError;
-      
-      // If we got posts, fetch profiles separately
-      if (simplePosts && simplePosts.length > 0) {
-        const userIds = [...new Set(simplePosts.map(post => post.user_id))];
-        const { data: profilesData } = await supabase
-          .from("profiles")
-          .select("id, username, avatar, full_name")
-          .in("id", userIds);
-          
-        const profileMap = new Map();
-        if (profilesData) {
-          profilesData.forEach(profile => {
-            profileMap.set(profile.id, profile);
-          });
-        }
-        
-        return simplePosts.map(post => ({
-          ...post,
-          profiles: profileMap.get(post.user_id) || null
-        }));
-      }
-      
+    if (!unifiedPosts || unifiedPosts.length === 0) {
       return [];
     }
     
-    return queryPosts || [];
+    // Fetch profiles separately
+    const userIds = [...new Set(unifiedPosts.map(post => post.user_id))];
+    const { data: profilesData, error: profilesError } = await supabase
+      .from("profiles")
+      .select("id, username, avatar, full_name")
+      .in("id", userIds);
+      
+    if (profilesError) {
+      console.error("Error fetching profiles:", profilesError);
+    }
+    
+    const profileMap = new Map();
+    if (profilesData) {
+      profilesData.forEach(profile => {
+        profileMap.set(profile.id, profile);
+      });
+    }
+    
+    return unifiedPosts.map(post => ({
+      ...post,
+      profiles: profileMap.get(post.user_id) || null
+    }));
   } catch (error) {
     console.error("Error fetching unified feed posts:", error);
     throw error;
@@ -117,15 +104,20 @@ const getFollowingQuery = (userId: string) => {
  */
 export const checkUnifiedPostExists = async (postId: string): Promise<boolean> => {
   try {
-    const { data, error } = await supabase
+    console.log(`Checking if unified post exists: ${postId}`);
+    const { data, error, count } = await supabase
       .from('unified_posts')
-      .select('id')
+      .select('id', { count: 'exact', head: true })
       .eq('id', postId)
-      .eq('is_deleted', false)
-      .single();
+      .eq('is_deleted', false);
       
-    if (error || !data) return false;
-    return true;
+    if (error) {
+      console.error('Error checking unified post existence:', error);
+      return false;
+    }
+    
+    console.log(`Unified post ${postId} exists: ${!!count && count > 0}`);
+    return !!count && count > 0;
   } catch (error) {
     console.error('Error checking post existence:', error);
     return false;
@@ -194,11 +186,25 @@ export const createUnifiedImagePost = async (userId: string, imageUrls: string[]
         tags,
         visibility: 'public'
       })
-      .select(`*, profiles(*)`)
-      .single();
+      .select();
     
     if (error) throw error;
-    return data;
+    
+    // Fetch the profile separately since we had relationship issues
+    if (data && data.length > 0) {
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("id, username, avatar, full_name")
+        .eq("id", userId)
+        .single();
+        
+      return {
+        ...data[0],
+        profiles: profileData || null
+      };
+    }
+    
+    return data?.[0];
   } catch (error) {
     console.error("Error creating unified image post:", error);
     throw error;
@@ -245,7 +251,11 @@ export const getUnifiedPostLikes = async (postId: string): Promise<number> => {
       .select('*', { count: 'exact', head: true })
       .eq('post_id', postId);
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error getting unified post likes count:', error);
+      return 0;
+    }
+    
     return count || 0;
   } catch (error) {
     console.error('Error getting unified post likes count:', error);
@@ -265,7 +275,11 @@ export const checkUnifiedPostLikeStatus = async (postId: string, userId: string)
       .eq('post_id', postId)
       .maybeSingle();
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error checking unified post like status:', error);
+      return false;
+    }
+    
     return !!data;
   } catch (error) {
     console.error('Error checking unified post like status:', error);
@@ -296,7 +310,10 @@ export const toggleUnifiedPostLike = async (postId: string, userId: string): Pro
         .eq('user_id', userId)
         .eq('post_id', postId);
         
-      if (error) throw error;
+      if (error) {
+        console.error("Error removing like:", error);
+        throw error;
+      }
       return false;
     } else {
       // Like - insert into unified_post_likes
@@ -307,7 +324,10 @@ export const toggleUnifiedPostLike = async (postId: string, userId: string): Pro
           post_id: postId
         });
         
-      if (error) throw error;
+      if (error) {
+        console.error("Error adding like:", error);
+        throw error;
+      }
       return true;
     }
   } catch (error) {
@@ -321,20 +341,48 @@ export const toggleUnifiedPostLike = async (postId: string, userId: string): Pro
  */
 export const getUnifiedPostComments = async (postId: string) => {
   try {
-    const { data, error } = await supabase
+    // First check if the post exists to avoid foreign key errors
+    const postExists = await checkUnifiedPostExists(postId);
+    if (!postExists) {
+      console.log('Post does not exist when fetching comments:', postId);
+      return [];
+    }
+    
+    // Get comments and join with profiles manually
+    const { data: comments, error } = await supabase
       .from("unified_post_comments")
-      .select(`
-        *,
-        profiles:user_id (
-          id, username, avatar, full_name
-        )
-      `)
+      .select('*')
       .eq("post_id", postId)
       .eq("is_deleted", false)
       .order("created_at", { ascending: false });
     
-    if (error) throw error;
-    return data || [];
+    if (error) {
+      console.error("Error getting comments:", error);
+      throw error;
+    }
+    
+    if (!comments || comments.length === 0) {
+      return [];
+    }
+    
+    // Fetch profiles separately
+    const userIds = [...new Set(comments.map(comment => comment.user_id))];
+    const { data: profilesData } = await supabase
+      .from("profiles")
+      .select("id, username, avatar, full_name")
+      .in("id", userIds);
+      
+    const profileMap = new Map();
+    if (profilesData) {
+      profilesData.forEach(profile => {
+        profileMap.set(profile.id, profile);
+      });
+    }
+    
+    return comments.map(comment => ({
+      ...comment,
+      profiles: profileMap.get(comment.user_id) || null
+    }));
   } catch (error) {
     console.error("Error getting unified post comments:", error);
     return [];
@@ -346,6 +394,13 @@ export const getUnifiedPostComments = async (postId: string) => {
  */
 export const addUnifiedPostComment = async (postId: string, userId: string, content: string) => {
   try {
+    // First check if the post exists to avoid foreign key errors
+    const postExists = await checkUnifiedPostExists(postId);
+    if (!postExists) {
+      console.log('Post does not exist when adding comment:', postId);
+      throw new Error("Post does not exist");
+    }
+    
     const { data, error } = await supabase
       .from("unified_post_comments")
       .insert({
@@ -353,16 +408,25 @@ export const addUnifiedPostComment = async (postId: string, userId: string, cont
         user_id: userId,
         content: content
       })
-      .select(`
-        *,
-        profiles:user_id (
-          id, username, avatar, full_name
-        )
-      `)
+      .select('*')
       .single();
     
-    if (error) throw error;
-    return data;
+    if (error) {
+      console.error("Error adding comment:", error);
+      throw error;
+    }
+    
+    // Fetch profile separately
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("id, username, avatar, full_name")
+      .eq("id", userId)
+      .single();
+      
+    return {
+      ...data,
+      profiles: profileData || null
+    };
   } catch (error) {
     console.error("Error adding unified post comment:", error);
     throw error;
