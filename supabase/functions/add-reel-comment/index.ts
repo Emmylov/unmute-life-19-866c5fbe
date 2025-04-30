@@ -14,16 +14,19 @@ serve(async (req) => {
   }
 
   try {
+    console.log("Received request to add-reel-comment function");
     const { reelId, userId, content, createdAt } = await req.json();
 
-    // Input validation
+    console.log("Request data:", { reelId, userId, content, createdAt });
+
     if (!reelId || !userId || !content) {
+      console.error("Missing required parameters");
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: "Missing required fields" 
+        JSON.stringify({
+          success: false,
+          error: "Missing required parameters"
         }),
-        { 
+        {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
@@ -50,6 +53,7 @@ serve(async (req) => {
     }
 
     if (!reelExists) {
+      console.error("Reel not found:", reelId);
       return new Response(
         JSON.stringify({
           success: false,
@@ -62,50 +66,29 @@ serve(async (req) => {
       );
     }
 
-    // Insert the comment using raw SQL to bypass foreign key constraint issues
-    const { data, error } = await supabaseClient.rpc(
-      "insert_reel_comment",
-      {
-        p_reel_id: reelId,
-        p_user_id: userId,
-        p_content: content,
-        p_created_at: createdAt || new Date().toISOString()
-      }
-    );
-
-    if (error) {
-      console.error("Error inserting comment with RPC:", error);
+    // Insert the comment directly
+    const { data: insertedComment, error: insertError } = await supabaseClient
+      .from("reel_comments")
+      .insert({
+        reel_id: reelId,
+        user_id: userId,
+        content: content,
+        created_at: createdAt || new Date().toISOString()
+      })
+      .select('id')
+      .single();
       
-      // Fallback: Try direct insert if RPC fails (may happen if the function doesn't exist yet)
-      const { data: directData, error: directError } = await supabaseClient
-        .from("reel_comments")
-        .insert({
-          reel_id: reelId,
-          user_id: userId,
-          content: content,
-          created_at: createdAt || new Date().toISOString()
-        })
-        .select('id')
-        .single();
-      
-      if (directError) {
-        console.error("Fallback insert failed:", directError);
-        throw directError;
-      }
-      
-      return new Response(
-        JSON.stringify({ 
-          success: true,
-          id: directData.id
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    if (insertError) {
+      console.error("Direct insert error:", insertError);
+      throw insertError;
     }
-
+    
+    console.log("Comment added successfully:", insertedComment);
+    
     return new Response(
       JSON.stringify({ 
         success: true,
-        id: data
+        id: insertedComment.id
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

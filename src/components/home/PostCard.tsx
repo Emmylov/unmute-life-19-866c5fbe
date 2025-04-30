@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Link } from "react-router-dom";
-import { Heart, MessageCircle, Share, Bookmark, MoreHorizontal, AlertCircle } from "lucide-react";
+import { Heart, MessageCircle, Share, Bookmark, MoreHorizontal, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSocialActions } from "@/hooks/use-social-actions";
@@ -36,10 +37,12 @@ const PostCard = ({ post }: PostCardProps) => {
   const [isValidPost, setIsValidPost] = useState(true);
   const [comments, setComments] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingComments, setIsLoadingComments] = useState(false);
   const [isUsingUnifiedTable, setIsUsingUnifiedTable] = useState(true);
   const [hasValidated, setHasValidated] = useState(false);
   const [validationAttempts, setValidationAttempts] = useState(0);
   const [likeInProgress, setLikeInProgress] = useState(false);
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const { t } = useTranslation();
   
   // Initial validation - if post is completely invalid, don't render anything
@@ -48,6 +51,7 @@ const PostCard = ({ post }: PostCardProps) => {
   }
   
   const postRef = useRef(post.id);
+  const commentsRef = useRef<any[]>([]);
 
   useEffect(() => {
     // Reset validation when post changes
@@ -153,18 +157,15 @@ const PostCard = ({ post }: PostCardProps) => {
     if (!hasValidated || validationAttempts === 0) {
       validatePost();
     }
-    
-    // Load comments if dialog is open and post is valid
-    if (showComments && isValidPost) {
-      fetchComments();
-    }
-  }, [post?.id, user, checkPostLikeStatus, showComments, checkPostExists, getPostLikesCount, hasValidated, validationAttempts]);
+  }, [post?.id, user, checkPostLikeStatus, checkPostExists, getPostLikesCount, hasValidated, validationAttempts]);
 
   const fetchComments = async () => {
     if (!post?.id || !isValidPost) return;
     
-    setIsLoading(true);
+    setIsLoadingComments(true);
     try {
+      console.log(`Fetching comments for post ${post.id} using ${isUsingUnifiedTable ? 'unified' : 'legacy'} tables`);
+      
       let fetchedComments: any[] = [];
       
       if (isUsingUnifiedTable) {
@@ -173,14 +174,24 @@ const PostCard = ({ post }: PostCardProps) => {
         fetchedComments = await getComments(post.id);
       }
       
+      console.log(`Fetched ${fetchedComments.length} comments for post ${post.id}`);
       setComments(fetchedComments);
+      commentsRef.current = fetchedComments;
     } catch (error) {
       console.error("Error fetching comments:", error);
       setComments([]);
+      commentsRef.current = [];
     } finally {
-      setIsLoading(false);
+      setIsLoadingComments(false);
     }
   };
+
+  // Load comments when comments dialog is opened
+  useEffect(() => {
+    if (showComments && isValidPost) {
+      fetchComments();
+    }
+  }, [showComments, isValidPost, post?.id]);
 
   const handleLikeClick = async () => {
     if (!user) {
@@ -269,6 +280,7 @@ const PostCard = ({ post }: PostCardProps) => {
   
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (!user) {
       toast.error(t('auth.signInRequired', 'Please sign in to comment'));
       return;
@@ -280,10 +292,14 @@ const PostCard = ({ post }: PostCardProps) => {
     }
     
     if (!post?.id || !isValidPost) {
+      toast.error(t('common.error.postNotAvailable', 'This post is no longer available'));
       return;
     }
     
+    setIsSubmittingComment(true);
     try {
+      console.log(`Submitting comment for post ${post.id}: "${comment.trim()}"`);
+      
       let newComment;
       
       if (isUsingUnifiedTable) {
@@ -292,14 +308,31 @@ const PostCard = ({ post }: PostCardProps) => {
         newComment = await addComment(post.id, user.id, comment.trim());
       }
       
+      console.log("Comment added successfully:", newComment);
+      
       if (newComment) {
-        setComments([newComment, ...comments]);
+        setComments(prev => [newComment, ...prev]);
+        commentsRef.current = [newComment, ...commentsRef.current];
         setComment('');
         toast.success(t('common.success.commentAdded', 'Comment added'));
       }
     } catch (error) {
       console.error("Error adding comment:", error);
-      toast.error(t('common.error.addComment', 'Failed to add comment'));
+      
+      const errorMessage = error instanceof Error ? error.message : '';
+      const isNotFoundError = 
+        errorMessage.includes('not found') || 
+        errorMessage.includes('does not exist') ||
+        errorMessage.includes('Post does not exist');
+      
+      if (isNotFoundError) {
+        toast.error(t('common.error.postNotAvailable', 'This post is no longer available'));
+        setIsValidPost(false);
+      } else {
+        toast.error(t('common.error.addComment', 'Failed to add comment'));
+      }
+    } finally {
+      setIsSubmittingComment(false);
     }
   };
 
@@ -443,7 +476,7 @@ const PostCard = ({ post }: PostCardProps) => {
             <DialogDescription>{t('common.commentsDescription', 'Join the conversation by adding your comment below.')}</DialogDescription>
             
             <div className="space-y-4 max-h-[60vh] overflow-y-auto p-4">
-              {isLoading ? (
+              {isLoadingComments ? (
                 <div className="space-y-4">
                   {[1, 2, 3].map((i) => (
                     <div key={i} className="flex items-start space-x-4">
@@ -482,7 +515,7 @@ const PostCard = ({ post }: PostCardProps) => {
               <div className="flex items-center space-x-2">
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={user?.user_metadata?.avatar_url} />
-                  <AvatarFallback>{user?.email?.[0].toUpperCase()}</AvatarFallback>
+                  <AvatarFallback>{user?.email?.[0].toUpperCase() || 'U'}</AvatarFallback>
                 </Avatar>
                 <input
                   type="text"
@@ -493,9 +526,12 @@ const PostCard = ({ post }: PostCardProps) => {
                 />
                 <Button 
                   type="submit" 
-                  disabled={!comment.trim()}
+                  disabled={isSubmittingComment || !comment.trim()}
                   size="sm"
                 >
+                  {isSubmittingComment ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : null}
                   {t('common.post', 'Post')}
                 </Button>
               </div>

@@ -86,6 +86,7 @@ export const getCommentCount = async (reelId: string): Promise<number> => {
 // Get all comments for a reel
 export const getReelComments = async (reelId: string) => {
   try {
+    console.log("Fetching comments for reel:", reelId);
     const { data, error } = await supabase
       .from("reel_comments")
       .select(`
@@ -97,7 +98,12 @@ export const getReelComments = async (reelId: string) => {
       .eq("reel_id", reelId)
       .order("created_at", { ascending: false });
     
-    if (error) throw error;
+    if (error) {
+      console.error("Error getting reel comments:", error);
+      throw error;
+    }
+    
+    console.log("Retrieved reel comments:", data);
     return data || [];
   } catch (error) {
     console.error("Error getting reel comments:", error);
@@ -137,6 +143,8 @@ export type ReelCommentResponse = CommentWithProfile | BasicComment;
 // Add a comment to a reel
 export const addReelComment = async (reelId: string, userId: string, content: string): Promise<ReelCommentResponse> => {
   try {
+    console.log("Adding comment to reel:", reelId, userId, content);
+    
     // First verify if the reel exists in posts_reels table
     const { data: reelExists } = await supabase
       .from("posts_reels")
@@ -145,73 +153,88 @@ export const addReelComment = async (reelId: string, userId: string, content: st
       .maybeSingle();
       
     if (!reelExists) {
+      console.error("Reel not found:", reelId);
       toast.error("Could not find this reel");
       throw new Error("Reel not found");
     }
     
-    // Use the edge function to add the comment
-    const response = await supabase.functions.invoke<{ id: string, success: boolean }>(
-      'add-reel-comment',
-      {
-        body: { 
-          reelId, 
-          userId,
-          content,
-          createdAt: new Date().toISOString()
-        }
-      }
-    );
-    
-    if (!response.data?.success) {
-      console.error("Error adding reel comment via function:", response.error);
-      
-      // Fallback: Try direct insertion if function fails
-      const { data: directInsert, error: directError } = await supabase
-        .from("reel_comments")
-        .insert({
-          reel_id: reelId,
-          user_id: userId,
-          content: content,
-          created_at: new Date().toISOString()
-        })
-        .select()
-        .single();
-      
-      if (directError) throw directError;
-      
-      // Return basic comment data without profile
-      return { 
-        id: directInsert.id, 
-        user_id: userId, 
-        content, 
-        created_at: directInsert.created_at 
-      };
-    }
-    
-    // Return comment data with additional user profile info
-    const { data: commentWithProfile, error: profileError } = await supabase
+    // Try direct insertion first - this is more reliable
+    const { data: directInsert, error: directError } = await supabase
       .from("reel_comments")
-      .select(`
-        *,
-        profiles:user_id (
-          id, username, avatar, full_name
-        )
-      `)
-      .eq("id", response.data.id)
+      .insert({
+        reel_id: reelId,
+        user_id: userId,
+        content: content,
+        created_at: new Date().toISOString()
+      })
+      .select()
       .single();
     
-    if (profileError) {
-      console.error("Error fetching comment with profile:", profileError);
-      // Return a basic comment object if we can't fetch the profile
-      return { 
-        id: response.data.id, 
-        user_id: userId, 
-        content, 
-        created_at: new Date().toISOString() 
-      };
+    if (directError) {
+      console.error("Direct insertion error:", directError);
+      
+      // Try using the edge function if direct insertion fails
+      const response = await supabase.functions.invoke<{ id: string, success: boolean }>(
+        'add-reel-comment',
+        {
+          body: { 
+            reelId, 
+            userId,
+            content,
+            createdAt: new Date().toISOString()
+          }
+        }
+      );
+      
+      if (!response.data?.success) {
+        console.error("Error adding reel comment via function:", response.error);
+        throw new Error("Failed to add comment");
+      }
+      
+      // If function succeeds, fetch the comment data
+      const { data: commentData, error: fetchError } = await supabase
+        .from("reel_comments")
+        .select(`
+          *,
+          profiles:user_id (
+            id, username, avatar, full_name
+          )
+        `)
+        .eq("id", response.data.id)
+        .single();
+        
+      if (fetchError) {
+        console.error("Error fetching comment after function insertion:", fetchError);
+        // Return basic data
+        return { 
+          id: response.data.id, 
+          user_id: userId, 
+          content, 
+          created_at: new Date().toISOString() 
+        };
+      }
+      
+      return commentData as CommentWithProfile;
     }
     
-    return commentWithProfile as CommentWithProfile;
+    // If direct insertion succeeds, fetch profile data
+    const { data: profileData, error: profileError } = await supabase
+      .from("profiles")
+      .select("id, username, avatar, full_name")
+      .eq("id", userId)
+      .single();
+      
+    if (profileError) {
+      console.error("Error fetching profile for comment:", profileError);
+      // Return without profile data
+      return directInsert;
+    }
+    
+    // Return complete data with profile
+    return {
+      ...directInsert,
+      profiles: profileData
+    } as CommentWithProfile;
   } catch (error) {
     console.error("Error adding reel comment:", error);
     throw error;
@@ -239,6 +262,8 @@ export const deleteReelComment = async (commentId: string, userId: string) => {
 // Generic comment functions for backward compatibility
 export const addComment = async (postId: string, userId: string, content: string) => {
   try {
+    console.log(`Adding comment to post ${postId} by user ${userId}: "${content}"`);
+    
     // First verify the post exists
     const postExists = await checkPostExists(postId);
     
@@ -263,7 +288,12 @@ export const addComment = async (postId: string, userId: string, content: string
       `)
       .single();
     
-    if (error) throw error;
+    if (error) {
+      console.error("Error inserting comment:", error);
+      throw error;
+    }
+    
+    console.log("Comment added successfully:", data);
     return data;
   } catch (error) {
     console.error("Error adding comment:", error);
@@ -273,10 +303,13 @@ export const addComment = async (postId: string, userId: string, content: string
 
 export const getComments = async (postId: string) => {
   try {
+    console.log("Fetching comments for post:", postId);
+    
     // First check if the post exists
     const postExists = await checkPostExists(postId);
     
     if (!postExists) {
+      console.log("Post not found when getting comments:", postId);
       return [];
     }
     
@@ -291,7 +324,12 @@ export const getComments = async (postId: string) => {
       .eq("post_id", postId)
       .order("created_at", { ascending: false });
     
-    if (error) throw error;
+    if (error) {
+      console.error("Error fetching comments:", error);
+      throw error;
+    }
+    
+    console.log("Retrieved comments:", data?.length || 0);
     return data || [];
   } catch (error) {
     console.error("Error getting comments:", error);

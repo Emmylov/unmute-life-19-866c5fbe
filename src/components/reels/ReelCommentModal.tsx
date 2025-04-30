@@ -40,6 +40,7 @@ const ReelCommentModal: React.FC<ReelCommentModalProps> = ({ reelId, isOpen, onC
     setIsLoading(true);
     try {
       const data = await getReelComments(reelId);
+      console.log("Fetched reel comments:", data);
       setComments(data as Comment[]);
     } catch (error) {
       console.error('Error fetching comments:', error);
@@ -70,10 +71,12 @@ const ReelCommentModal: React.FC<ReelCommentModalProps> = ({ reelId, isOpen, onC
     
     setIsSubmitting(true);
     try {
+      console.log("Submitting comment for reel:", reelId, newComment);
       const commentData = await addReelComment(reelId, user.id, newComment);
+      console.log("Comment added successfully:", commentData);
       
       if (commentData) {
-        setComments([commentData as unknown as Comment, ...comments]);
+        setComments(prev => [commentData as unknown as Comment, ...prev]);
         setNewComment('');
         toast.success('Comment added');
       }
@@ -116,12 +119,12 @@ const ReelCommentModal: React.FC<ReelCommentModalProps> = ({ reelId, isOpen, onC
             comments.map((comment) => (
               <div key={comment.id} className="flex space-x-3 group">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={comment.profiles.avatar || undefined} />
-                  <AvatarFallback>{comment.profiles.username?.substring(0, 2).toUpperCase() || 'U'}</AvatarFallback>
+                  <AvatarImage src={comment.profiles?.avatar || undefined} />
+                  <AvatarFallback>{comment.profiles?.username?.substring(0, 2).toUpperCase() || 'U'}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
                   <div className="bg-gray-100 rounded-lg p-3">
-                    <p className="font-medium text-sm">{comment.profiles.username || 'User'}</p>
+                    <p className="font-medium text-sm">{comment.profiles?.username || 'User'}</p>
                     <p className="text-sm">{comment.content}</p>
                   </div>
                   <div className="flex items-center mt-1 text-xs text-gray-500 gap-4">

@@ -463,6 +463,8 @@ export const getUnifiedPostComments = async (postId: string) => {
  */
 export const addUnifiedPostComment = async (postId: string, userId: string, content: string) => {
   try {
+    console.log(`Adding comment to post ${postId} by user ${userId}: "${content}"`);
+    
     // First check if the post exists to avoid foreign key errors
     const postExists = await checkUnifiedPostExists(postId);
     if (!postExists) {
@@ -470,6 +472,7 @@ export const addUnifiedPostComment = async (postId: string, userId: string, cont
       throw new Error("Post does not exist");
     }
     
+    // Insert the comment first
     const { data, error } = await supabase
       .from("unified_post_comments")
       .insert({
@@ -477,23 +480,31 @@ export const addUnifiedPostComment = async (postId: string, userId: string, cont
         user_id: userId,
         content: content
       })
-      .select('*')
-      .single();
+      .select();
     
     if (error) {
       console.error("Error adding comment:", error);
       throw error;
     }
+
+    if (!data || data.length === 0) {
+      console.error("No data returned after comment insertion");
+      throw new Error("Failed to insert comment");
+    }
     
     // Fetch profile separately
-    const { data: profileData } = await supabase
+    const { data: profileData, error: profileError } = await supabase
       .from("profiles")
       .select("id, username, avatar, full_name")
       .eq("id", userId)
       .single();
       
+    if (profileError) {
+      console.error("Error fetching profile for comment:", profileError);
+    }
+    
     return {
-      ...data,
+      ...data[0],
       profiles: profileData || null
     };
   } catch (error) {
