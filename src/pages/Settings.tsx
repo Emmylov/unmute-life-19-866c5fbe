@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -8,6 +7,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { updateUserProfile, updateUserSettings, getUserSettings } from "@/services/settings-service";
+import { Link } from "react-router-dom";
+import { AlertTriangle } from "lucide-react";
 
 const Settings = () => {
   const { toast } = useToast();
@@ -205,10 +206,11 @@ const Settings = () => {
       <h1 className="text-3xl font-bold mb-6">Settings</h1>
       
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 mb-8">
+        <TabsList className="grid w-full grid-cols-4 mb-8">
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="privacy">Privacy</TabsTrigger>
+          <TabsTrigger value="account">Account</TabsTrigger>
         </TabsList>
         
         {/* Profile Settings */}
@@ -417,6 +419,41 @@ const Settings = () => {
             </div>
             
             <Button onClick={handlePrivacySettingsUpdate}>Save Privacy Settings</Button>
+          </div>
+        </TabsContent>
+        
+        {/* Account Settings */}
+        <TabsContent value="account" className="space-y-6">
+          <div className="grid gap-6">
+            <div className="space-y-2">
+              <h2 className="text-xl font-semibold">Account Management</h2>
+              <p className="text-muted-foreground">Manage your account settings and data.</p>
+            </div>
+            
+            <div className="space-y-6">
+              {/* Change Password Section */}
+              <div className="p-6 border border-border rounded-lg bg-card">
+                <h3 className="font-medium text-lg mb-2">Change Password</h3>
+                <p className="text-sm text-muted-foreground mb-4">Update your password regularly to keep your account secure.</p>
+                <Button variant="outline">Change Password</Button>
+              </div>
+              
+              {/* Delete Account Section */}
+              <div className="p-6 border border-destructive/10 rounded-lg bg-destructive/5">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-destructive mt-0.5" />
+                  <div>
+                    <h3 className="font-medium text-lg mb-2 text-destructive">Delete Account</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Permanently delete your account and all your data. This action cannot be undone.
+                    </p>
+                    <Link to="/delete-account">
+                      <Button variant="destructive">Delete Account</Button>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </TabsContent>
       </Tabs>

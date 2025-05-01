@@ -63,32 +63,32 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				// Unmute custom colors - Cosmic Candy palette
+				// Unmute custom colors - Neutral palette
 				unmute: {
 					purple: {
-						light: '#A066F8',
-						DEFAULT: '#A066F8',
-						dark: '#7A4BD5'
+						light: '#5A6ACF',
+						DEFAULT: '#3F4D99',
+						dark: '#2C3875'
 					},
 					pink: {
-						light: '#FF99D6',
-						DEFAULT: '#FF66C4',
-						dark: '#E54EA6'
+						light: '#7A889C',
+						DEFAULT: '#5A6882',
+						dark: '#3D4A66'
 					},
 					blue: {
-						light: '#66AEFF',
-						DEFAULT: '#3F8CFF',
-						dark: '#2A6FD9'
+						light: '#4F7CAC',
+						DEFAULT: '#3A5E89',
+						dark: '#264466'
 					},
 					mint: {
-						light: '#C2FFF4',
-						DEFAULT: '#A2FFEA',
-						dark: '#7BECD8'
+						light: '#7FA99F',
+						DEFAULT: '#5F8A80',
+						dark: '#466B62'
 					},
 					lavender: {
-						light: '#D3A6FF',
-						DEFAULT: '#C084FC',
-						dark: '#A766EB'
+						light: '#8A8AA3',
+						DEFAULT: '#6A6A82',
+						dark: '#4D4D61'
 					}
 				}
 			},

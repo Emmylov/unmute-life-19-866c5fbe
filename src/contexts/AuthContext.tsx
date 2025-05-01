@@ -1,9 +1,9 @@
-
 import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session, User as SupabaseUser } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 import { setupSessionRefresh, getUserProfile } from '@/services/auth-service';
+import { deleteUserAccount } from '@/services/account-service';
 
 // Extend the Supabase User type with our custom properties
 interface User extends SupabaseUser {
@@ -23,6 +23,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   updateProfile: (data: any) => Promise<void>;
   refreshProfile: () => Promise<void>;
+  deleteAccount: (password: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -66,6 +67,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return false;
     }
   }, []);
+
+  const deleteAccount = async (password: string): Promise<boolean> => {
+    if (!user) return false;
+    
+    try {
+      return await deleteUserAccount(user.id, password);
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      toast.error('Failed to delete account');
+      return false;
+    }
+  };
 
   useEffect(() => {
     if (session) {
@@ -240,6 +253,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         signOut,
         updateProfile,
         refreshProfile,
+        deleteAccount,
       }}
     >
       {children}

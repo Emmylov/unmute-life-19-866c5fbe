@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'sonner';
@@ -24,6 +25,7 @@ import ContentCreator from "@/pages/ContentCreator";
 import CreateCollab from "@/pages/CreateCollab";
 import VibeCheck from "@/pages/VibeCheck";
 import Settings from "@/pages/Settings";
+import DeleteAccount from "@/pages/DeleteAccount";
 import Help from "@/pages/Help";
 import NotFound from "@/pages/NotFound";
 import ProtectedLayout from "@/components/layout/ProtectedLayout";
@@ -83,6 +85,7 @@ function App() {
                   <Route path="/create-collab" element={<CreateCollab />} />
                   <Route path="/vibe-check" element={<VibeCheck />} />
                   <Route path="/settings" element={<Settings />} />
+                  <Route path="/delete-account" element={<DeleteAccount />} />
                   <Route path="/help" element={<Help />} />
                   <Route path="/games" element={<Games />} />
                   <Route path="/games/memory-match" element={<MemoryMatch />} />
