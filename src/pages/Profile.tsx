@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -109,7 +108,7 @@ const Profile = () => {
         <div className="container max-w-4xl py-6">
           <ErrorDisplay 
             title="Could not load profile" 
-            description={loadError || "The profile you're looking for doesn't exist"}
+            message={loadError || "The profile you're looking for doesn't exist"}
             action={<Button onClick={() => window.location.reload()}>Retry</Button>}
           />
         </div>
@@ -127,6 +126,7 @@ const Profile = () => {
         <div className="bg-card rounded-xl p-6 shadow-sm">
           {/* Profile Header */}
           <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
+            {/* Avatar section */}
             <div className="relative">
               <Avatar className="h-24 w-24 md:h-32 md:w-32 border-2 border-primary">
                 {profile.avatar ? (
@@ -147,6 +147,7 @@ const Profile = () => {
               )}
             </div>
             
+            {/* Profile info */}
             <div className="flex-1 text-center md:text-left">
               <h1 className="text-2xl font-semibold mb-1">{profile.full_name || profile.username || 'User'}</h1>
               
@@ -198,6 +199,7 @@ const Profile = () => {
               </div>
             </div>
             
+            {/* Action buttons */}
             <div>
               {isCurrentUser ? (
                 <Button variant="outline" className="flex items-center gap-2">
@@ -214,7 +216,7 @@ const Profile = () => {
                     {isFollowing ? "Unfollow" : "Follow"}
                   </Button>
                   
-                  <ProfileReactions userId={profile.id} />
+                  <ProfileReactions profileId={profile.id} profileName={profile.full_name || profile.username || 'User'} />
                 </div>
               )}
             </div>

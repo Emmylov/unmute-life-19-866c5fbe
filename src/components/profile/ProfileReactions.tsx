@@ -5,7 +5,7 @@ import { addProfileReaction } from "@/integrations/supabase/profile-functions";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 
-interface ProfileReactionsProps {
+export interface ProfileReactionsProps {
   profileId: string;
   profileName: string;
 }

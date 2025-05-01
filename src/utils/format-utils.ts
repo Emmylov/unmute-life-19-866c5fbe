@@ -49,3 +49,18 @@ export const formatRelativeTime = (date: Date): string => {
   const diffInYears = Math.floor(diffInMonths / 12);
   return `${diffInYears} year${diffInYears !== 1 ? 's' : ''} ago`;
 };
+
+/**
+ * Format a date in a human-readable format (e.g., "Jan 15, 2023")
+ * @param dateString Date string to format
+ * @returns Formatted date string
+ */
+export const getFormattedDate = (dateString: string | Date): string => {
+  const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+  
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  }).format(date);
+};
