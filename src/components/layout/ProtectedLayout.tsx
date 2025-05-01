@@ -4,7 +4,7 @@ import { Navigate, useLocation, Outlet } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { toast } from "sonner";
-import ErrorDisplay from "@/components/ui/error-display";
+import { ErrorDisplay } from "@/components/ui/error-display";
 import { Button } from "@/components/ui/button";
 import { RefreshCcw } from "lucide-react";
 import { getCurrentUserWithTimeout } from "@/services/auth-service";

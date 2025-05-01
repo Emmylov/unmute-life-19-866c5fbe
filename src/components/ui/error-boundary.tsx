@@ -1,7 +1,7 @@
 
 import React, { Component, ErrorInfo, ReactNode } from "react";
 import { AlertTriangle } from "lucide-react";
-import ErrorDisplay from "./error-display";
+import { ErrorDisplay } from "./error-display";
 
 interface ErrorBoundaryProps {
   children: ReactNode;

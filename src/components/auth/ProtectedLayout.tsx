@@ -1,10 +1,9 @@
-
 import React, { ReactNode, useEffect, useState } from "react";
 import { Navigate, useLocation, Outlet } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { toast } from "sonner";
-import ErrorDisplay from "@/components/ui/error-display";
+import { ErrorDisplay } from "@/components/ui/error-display";
 
 interface ProtectedLayoutProps {
   children?: ReactNode;
