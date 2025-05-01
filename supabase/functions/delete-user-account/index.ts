@@ -8,6 +8,8 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  console.log("Delete user account function called");
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -17,6 +19,7 @@ serve(async (req) => {
     const { userId } = await req.json();
 
     if (!userId) {
+      console.error("Missing userId in request");
       return new Response(
         JSON.stringify({
           success: false,
@@ -29,6 +32,8 @@ serve(async (req) => {
       );
     }
 
+    console.log(`Processing deletion for user: ${userId}`);
+
     // Create Supabase client with service role key
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -36,11 +41,10 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
-    // First, delete all user data
-    // This is a good place to delete user data from all your tables
-    // We'll delete from profiles table as an example
+    console.log("Deleting user profile data");
     
-    // Delete profile data
+    // First, delete all user data
+    // We'll delete from profiles table as an example
     const { error: profileDeleteError } = await supabase
       .from('profiles')
       .delete()
@@ -52,14 +56,18 @@ serve(async (req) => {
     }
 
     // Delete user's posts, comments, etc.
-    // Add more delete operations here as needed
-
+    // We should clean up related data in all tables
+    
+    console.log("Deleting user account");
     // Finally delete the user account
     const { error: deleteUserError } = await supabase.auth.admin.deleteUser(userId);
 
     if (deleteUserError) {
+      console.error("Error deleting user:", deleteUserError);
       throw deleteUserError;
     }
+
+    console.log("User account deleted successfully");
 
     return new Response(
       JSON.stringify({ 
@@ -77,7 +85,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: false,
-        error: error.message 
+        error: error.message || "An unknown error occurred"
       }),
       { 
         status: 500,

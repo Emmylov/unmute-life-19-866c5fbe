@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +15,8 @@ import { useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import AppLayout from "@/components/layout/AppLayout";
 import { Loader2, AlertTriangle } from "lucide-react";
+import { safeAsync } from "@/utils/error-handler";
+import { toast } from "sonner";
 
 const DeleteAccount = () => {
   const { user, deleteAccount } = useAuth();
@@ -41,12 +44,17 @@ const DeleteAccount = () => {
     setError("");
     
     try {
-      const success = await deleteAccount(password);
+      // Using safeAsync to handle potential network errors
+      const { data: success, error: deleteError } = await safeAsync(
+        () => deleteAccount(password),
+        "Failed to delete account"
+      );
       
       if (success) {
+        toast.success("Your account has been successfully deleted");
         navigate("/");
       } else {
-        setError("Failed to delete account. Please check your password and try again.");
+        setError(deleteError?.message || "Failed to delete account. Please check your password and try again.");
       }
     } catch (err) {
       console.error("Error during account deletion:", err);
