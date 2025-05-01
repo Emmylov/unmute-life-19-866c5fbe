@@ -1,719 +1,357 @@
-import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card } from "@/components/ui/card";
+
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { Helmet } from 'react-helmet-async';
+import { fetchUserProfile, checkIsFollowing, toggleFollowUser } from '@/integrations/supabase/profile-functions';
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MapPin, Edit2, MessageCircle, Image, Film, User, Users, Bookmark, Camera } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { motion } from "framer-motion";
-import { useToast } from "@/hooks/use-toast";
-import { 
-  fetchUserProfile, 
-  toggleFollowUser
-} from "@/integrations/supabase/profile-functions";
-import { Dialog, DialogContent, DialogTitle, DialogHeader } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import OGBadge from "@/components/badges/OGBadge";
-import ProfileReactions from "@/components/profile/ProfileReactions";
-
-const fadeIn = {
-  hidden: { opacity: 0, y: 10 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
-};
-
-const scaleIn = {
-  hidden: { opacity: 0, scale: 0.9 },
-  visible: { opacity: 1, scale: 1, transition: { duration: 0.3 } }
-};
+import { UserCircle, Edit, Calendar, Link as LinkIcon, MapPin } from "lucide-react";
+import AppLayout from '@/components/layout/AppLayout';
+import PostCard from '@/components/home/PostCard';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { getFormattedDate } from '@/utils/format-utils';
+import { toast } from "sonner";
+import ProfileReactions from '@/components/profile/ProfileReactions';
+import useFeed from '@/hooks/feed/use-feed';
+import { ErrorDisplay } from '@/components/ui/error-display';
 
 const Profile = () => {
   const { username } = useParams();
+  const { user } = useAuth();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [isOwnProfile, setIsOwnProfile] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [editFormData, setEditFormData] = useState({
-    username: '',
-    full_name: '',
-    bio: '',
-    location: '',
-    website: '',
-  });
-  const [editLoading, setEditLoading] = useState(false);
-  const [posts, setPosts] = useState<any[]>([]);
-  const [reels, setReels] = useState<any[]>([]);
-  const navigate = useNavigate();
-  const { toast } = useToast();
+  const [isCurrentUser, setIsCurrentUser] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   
+  // Use the userId from the profile once loaded for feed
+  const { posts, loading: postsLoading, error: postsError, refresh: refreshPosts, networkError } = 
+    useFeed({ userId: profile?.id, limit: 20 });
+
   useEffect(() => {
-    if (profile) {
-      setEditFormData({
-        username: profile.username || '',
-        full_name: profile.full_name || '',
-        bio: profile.bio || '',
-        location: profile.location || '',
-        website: profile.website || '',
-      });
-    }
-  }, [profile]);
-  
-  useEffect(() => {
-    const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setCurrentUser(session?.user || null);
-    };
-    
-    getSession();
-    
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setCurrentUser(session?.user || null);
-    });
-    
-    return () => subscription.unsubscribe();
-  }, []);
-  
-  useEffect(() => {
-    const fetchProfile = async () => {
+    const loadProfile = async () => {
+      setLoading(true);
+      setLoadError(null);
+      
       try {
-        setLoading(true);
+        // Use username from URL or current user's ID
+        const userId = username || (user ? user.id : null);
         
-        let profileId = username;
-        
-        if (!profileId && currentUser) {
-          profileId = currentUser.id;
-        } else if (!profileId && !currentUser) {
-          navigate('/');
+        if (!userId) {
+          setLoadError("No user specified");
+          setLoading(false);
           return;
         }
         
-        const profileData = await fetchUserProfile(profileId);
+        console.log(`Loading profile for: ${userId}`);
+        const profileData = await fetchUserProfile(userId);
         
-        if (profileData) {
-          setProfile(profileData);
-          
-          setIsOwnProfile(currentUser && profileData.id === currentUser.id);
-          
-          fetchUserContent(profileData.id);
-        } else {
-          toast({
-            title: "Profile not found",
-            description: "The requested profile could not be found",
-            variant: "destructive"
-          });
-          navigate('/home');
+        if (!profileData) {
+          setLoadError("Profile not found");
+          setLoading(false);
+          return;
         }
         
-        setLoading(false);
+        setProfile(profileData);
+        
+        // Check if this is the current user's profile
+        const isOwn = user && (user.id === profileData.id);
+        setIsCurrentUser(isOwn);
+        
+        // Check if the current user is following this profile
+        if (user && !isOwn && profileData.id) {
+          const followStatus = await checkIsFollowing(user.id, profileData.id);
+          setIsFollowing(followStatus);
+        }
       } catch (error) {
-        console.error("Error fetching profile:", error);
+        console.error("Error loading profile:", error);
+        setLoadError("Failed to load profile");
+      } finally {
         setLoading(false);
       }
     };
     
-    if (username || currentUser) {
-      fetchProfile();
-    }
-  }, [username, currentUser, navigate]);
+    loadProfile();
+  }, [username, user]);
   
-  const fetchUserContent = async (userId: string) => {
+  const handleFollowToggle = async () => {
+    if (!user || !profile) return;
+    
     try {
-      const { data: postsData } = await supabase
-        .from('posts')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
+      const newFollowingStatus = await toggleFollowUser(user.id, profile.id);
+      setIsFollowing(newFollowingStatus);
       
-      if (postsData) {
-        setPosts(postsData);
-      }
-      
-      const { data: reelsData } = await supabase
-        .from('reels')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
-      
-      if (reelsData) {
-        setReels(reelsData);
-      }
+      toast.success(newFollowingStatus 
+        ? `You are now following ${profile.username || 'this user'}` 
+        : `You unfollowed ${profile.username || 'this user'}`);
     } catch (error) {
-      console.error("Error fetching user content:", error);
+      console.error("Error toggling follow status:", error);
+      toast.error("Failed to update follow status");
     }
   };
-  
-  const handleSaveProfile = async () => {
-    if (!currentUser) return;
-    
-    try {
-      setEditLoading(true);
-      
-      const { data, error } = await supabase
-        .from('profiles')
-        .update({
-          username: editFormData.username,
-          full_name: editFormData.full_name,
-          bio: editFormData.bio,
-          location: editFormData.location,
-          website: editFormData.website,
-        })
-        .eq('id', currentUser.id)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      
-      setProfile({
-        ...profile,
-        ...data
-      });
-      
-      setEditDialogOpen(false);
-      toast({
-        title: "Profile updated",
-        description: "Your profile has been successfully updated",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error updating profile",
-        description: error.message || "Something went wrong",
-        variant: "destructive"
-      });
-    } finally {
-      setEditLoading(false);
-    }
-  };
-  
-  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!currentUser) return;
-    
-    const file = e.target.files?.[0];
-    if (!file) return;
-    
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}.${fileExt}`;
-      const filePath = `${currentUser.id}/${fileName}`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, file);
-        
-      if (uploadError) throw uploadError;
-      
-      const { data: urlData } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
-      
-      const { data, error } = await supabase
-        .from('profiles')
-        .update({
-          avatar: urlData.publicUrl
-        })
-        .eq('id', currentUser.id)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      
-      setProfile({
-        ...profile,
-        avatar: urlData.publicUrl
-      });
-      
-      toast({
-        title: "Avatar updated",
-        description: "Your profile picture has been updated",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error updating avatar",
-        description: error.message || "Something went wrong",
-        variant: "destructive"
-      });
-    }
-  };
-  
-  const handleFollow = async () => {
-    if (!currentUser) {
-      toast({
-        title: "You need to sign in",
-        description: "Create an account to follow users",
-        variant: "default"
-      });
-      return;
-    }
-    
-    if (isOwnProfile) return;
-    
-    try {
-      const nowFollowing = await toggleFollowUser(currentUser.id, profile.id);
-      
-      setIsFollowing(nowFollowing);
-      
-      setProfile({
-        ...profile,
-        followers: nowFollowing ? (profile.followers || 0) + 1 : (profile.followers || 0) - 1
-      });
-      
-      toast({
-        title: nowFollowing ? "Now following!" : "Unfollowed",
-        description: nowFollowing 
-          ? `You are now following ${profile.full_name || profile.username}`
-          : `You have unfollowed ${profile.full_name || profile.username}`,
-        variant: "default"
-      });
-    } catch (error) {
-      console.error("Error toggling follow:", error);
-      toast({
-        title: "Operation failed",
-        description: "Could not process your request. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
-  
-  const handleMessage = () => {
-    if (!currentUser) {
-      toast({
-        title: "You need to sign in",
-        description: "Create an account to message users",
-        variant: "default"
-      });
-      return;
-    }
-    
-    toast({
-      title: "Coming Soon!",
-      description: "Messaging will be available soon",
-      variant: "default"
-    });
-  };
-  
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-lg text-gray-600">Loading profile...</div>
-      </div>
-    );
-  }
-  
-  if (!profile) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg text-gray-600 text-center">
-          <p className="mb-4">Profile not found</p>
-          <Button onClick={() => navigate('/home')} className="unmute-primary-button">
-            Go to Home
-          </Button>
+      <AppLayout>
+        <div className="container max-w-4xl py-6">
+          <ProfileSkeleton />
         </div>
-      </div>
+      </AppLayout>
     );
   }
-  
-  const postCounts = {
-    posts: profile.posts || posts.length || 0,
-    followers: profile.followers || 0,
-    following: profile.following || 0,
-    communities: profile.communities || 0,
-    reels: profile.reels || reels.length || 0
-  };
+
+  if (loadError || !profile) {
+    return (
+      <AppLayout>
+        <div className="container max-w-4xl py-6">
+          <ErrorDisplay 
+            title="Could not load profile" 
+            description={loadError || "The profile you're looking for doesn't exist"}
+            action={<Button onClick={() => window.location.reload()}>Retry</Button>}
+          />
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
-    <motion.div 
-      initial="hidden" 
-      animate="visible" 
-      variants={fadeIn}
-      className="min-h-screen pb-20"
-    >
-      <div 
-        className={`h-48 bg-gradient-to-r ${profile.theme_color 
-          ? `from-${profile.theme_color}/20 via-unmute-coral/20 to-${profile.theme_color}/20` 
-          : 'from-unmute-purple/20 via-unmute-coral/20 to-unmute-teal/20'} relative`
-        }
-      >
-        {isOwnProfile && (
-          <Button 
-            variant="ghost" 
-            size="icon"
-            className="absolute right-4 bottom-4 bg-white/70 hover:bg-white"
-          >
-            <Image className="h-4 w-4" />
-          </Button>
-        )}
-      </div>
+    <AppLayout>
+      <Helmet>
+        <title>{profile.username ? `${profile.username} | Unmute` : 'Profile | Unmute'}</title>
+      </Helmet>
       
-      <div className="px-4 md:px-8 relative -mt-16 mb-6">
-        <motion.div variants={scaleIn} className="flex flex-col md:flex-row items-start md:items-end">
-          <div className="relative">
-            <Avatar className="w-32 h-32 border-4 border-white bg-white shadow-md">
-              <AvatarImage src={profile.avatar} alt={profile.full_name || profile.username} />
-              <AvatarFallback className={`${profile.theme_color ? `bg-${profile.theme_color}` : 'bg-unmute-purple'} text-white text-4xl`}>
-                {profile.full_name?.charAt(0) || profile.username?.charAt(0) || "U"}
-              </AvatarFallback>
-            </Avatar>
-            
-            {isOwnProfile && (
-              <label
-                htmlFor="avatar-upload"
-                className="absolute right-0 bottom-0 bg-white/70 hover:bg-white rounded-full w-8 h-8 flex items-center justify-center cursor-pointer"
-              >
-                <Camera className="h-4 w-4" />
-                <input
-                  id="avatar-upload"
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleAvatarUpload}
-                />
-              </label>
-            )}
-          </div>
-          
-          <div className="mt-4 md:mt-0 md:ml-auto flex space-x-3">
-            {isOwnProfile ? (
-              <Button className="unmute-secondary-button" onClick={() => setEditDialogOpen(true)}>
-                <Edit2 className="h-4 w-4 mr-2" />
-                Edit Profile
-              </Button>
-            ) : (
-              <>
-                <Button 
-                  className={isFollowing ? "bg-gray-200 text-gray-800 hover:bg-gray-300" : "unmute-primary-button"}
-                  onClick={handleFollow}
-                >
-                  {isFollowing ? "Following" : "Follow"}
-                </Button>
-                <Button variant="outline" onClick={handleMessage}>
-                  <MessageCircle className="h-4 w-4 mr-2" />
-                  Message
-                </Button>
-              </>
-            )}
-          </div>
-        </motion.div>
-        
-        <motion.div variants={fadeIn} className="mt-4">
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold">{profile.full_name || profile.username}</h1>
-            {profile.is_og && <OGBadge />}
-          </div>
-          <p className="text-gray-600 mb-2">@{profile.username}</p>
-          
-          {profile.location && (
-            <p className="flex items-center text-gray-500 text-sm mb-3">
-              <MapPin className="h-3 w-3 mr-1" />
-              {profile.location}
-            </p>
-          )}
-          
-          <p className="text-gray-800 mb-4">{profile.bio}</p>
-          
-          <div className="flex flex-wrap gap-6 text-sm mb-6">
-            <div className="flex flex-col items-center">
-              <span className="font-semibold">{postCounts.posts}</span>
-              <span className="text-gray-600">Posts</span>
-            </div>
-            <div className="flex flex-col items-center">
-              <span className="font-semibold">{postCounts.followers}</span>
-              <span className="text-gray-600">Followers</span>
-            </div>
-            <div className="flex flex-col items-center">
-              <span className="font-semibold">{postCounts.following}</span>
-              <span className="text-gray-600">Following</span>
-            </div>
-            <div className="flex flex-col items-center">
-              <span className="font-semibold">{postCounts.communities}</span>
-              <span className="text-gray-600">Communities</span>
-            </div>
-            <div className="flex flex-col items-center">
-              <span className="font-semibold">{postCounts.reels}</span>
-              <span className="text-gray-600">Reels</span>
-            </div>
-          </div>
-          
-          <ProfileReactions 
-            profileId={profile.id} 
-            profileName={profile.full_name || profile.username}
-          />
-        </motion.div>
-      </div>
-      
-      <Tabs defaultValue="posts" className="px-4 md:px-8">
-        <TabsList className="w-full grid grid-cols-5 mb-8">
-          <TabsTrigger value="posts" className="flex items-center gap-2">
-            <Image className="h-4 w-4" />
-            <span className="hidden md:inline">Posts</span>
-          </TabsTrigger>
-          <TabsTrigger value="reels" className="flex items-center gap-2">
-            <Film className="h-4 w-4" />
-            <span className="hidden md:inline">Reels</span>
-          </TabsTrigger>
-          <TabsTrigger value="about" className="flex items-center gap-2">
-            <User className="h-4 w-4" />
-            <span className="hidden md:inline">About</span>
-          </TabsTrigger>
-          <TabsTrigger value="communities" className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            <span className="hidden md:inline">Communities</span>
-          </TabsTrigger>
-          <TabsTrigger value="saved" className="flex items-center gap-2">
-            <Bookmark className="h-4 w-4" />
-            <span className="hidden md:inline">Saved</span>
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="posts" className="space-y-4">
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-1 md:gap-2">
-            {posts.length > 0 ? posts.map((post, i) => (
-              <motion.div
-                key={post.id}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: i * 0.1 }}
-                className="aspect-square bg-gray-100 rounded-md overflow-hidden"
-              >
+      <div className="container max-w-4xl py-6">
+        <div className="bg-card rounded-xl p-6 shadow-sm">
+          {/* Profile Header */}
+          <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
+            <div className="relative">
+              <Avatar className="h-24 w-24 md:h-32 md:w-32 border-2 border-primary">
+                {profile.avatar ? (
+                  <AvatarImage src={profile.avatar} alt={profile.username || 'Profile'} />
+                ) : (
+                  <AvatarFallback>
+                    <UserCircle className="h-12 w-12 md:h-16 md:w-16 text-muted-foreground" />
+                  </AvatarFallback>
+                )}
+              </Avatar>
+              
+              {/* Theme color indicator */}
+              {profile.theme_color && (
                 <div 
-                  className="w-full h-full flex items-center justify-center"
-                  style={post.image_url ? { backgroundImage: `url(${post.image_url})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
-                >
-                  {!post.image_url && <Image className="h-8 w-8 text-gray-400" />}
-                </div>
-              </motion.div>
-            )) : [...Array(postCounts.posts || 0)].map((_, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: i * 0.1 }}
-                className="aspect-square bg-gray-100 rounded-md overflow-hidden"
-              >
-                <div className="w-full h-full bg-gradient-to-br from-unmute-purple/20 to-unmute-pink/20 flex items-center justify-center text-gray-400">
-                  <Image className="h-8 w-8" />
-                </div>
-              </motion.div>
-            ))}
-          </div>
-          {postCounts.posts === 0 && (
-            <div className="text-center py-8 text-gray-500">
-              No posts yet
+                  className="absolute bottom-0 right-0 h-6 w-6 rounded-full border-2 border-background" 
+                  style={{ backgroundColor: profile.theme_color }}
+                />
+              )}
             </div>
-          )}
-        </TabsContent>
-        
-        <TabsContent value="reels" className="space-y-4">
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-1 md:gap-2">
-            {reels.length > 0 ? reels.map((reel, i) => (
-              <motion.div
-                key={reel.id}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: i * 0.1 }}
-                className="aspect-[9/16] bg-gray-100 rounded-md overflow-hidden"
-              >
-                <div className="w-full h-full flex items-center justify-center text-gray-400">
-                  <Film className="h-8 w-8" />
-                </div>
-              </motion.div>
-            )) : [...Array(postCounts.reels || 0)].map((_, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: i * 0.1 }}
-                className="aspect-[9/16] bg-gray-100 rounded-md overflow-hidden"
-              >
-                <div className="w-full h-full bg-gradient-to-br from-unmute-coral/20 to-unmute-teal/20 flex items-center justify-center text-gray-400">
-                  <Film className="h-8 w-8" />
-                </div>
-              </motion.div>
-            ))}
-          </div>
-          {postCounts.reels === 0 && (
-            <div className="text-center py-8 text-gray-500">
-              No reels yet
-            </div>
-          )}
-        </TabsContent>
-        
-        <TabsContent value="about">
-          <Card className="p-6">
-            <h3 className="text-lg font-semibold mb-4">About {profile.full_name || profile.username}</h3>
             
-            {profile.interests && profile.interests.length > 0 && (
-              <div className="mb-6">
-                <h4 className="text-sm font-medium text-gray-500 mb-2">Passions</h4>
-                <div className="flex flex-wrap gap-2">
-                  {profile.interests.map((interest: string) => (
-                    <span 
-                      key={interest}
-                      className="bg-unmute-purple/10 text-unmute-purple px-3 py-1 rounded-full text-sm"
+            <div className="flex-1 text-center md:text-left">
+              <h1 className="text-2xl font-semibold mb-1">{profile.full_name || profile.username || 'User'}</h1>
+              
+              {profile.username && (
+                <p className="text-muted-foreground mb-4">@{profile.username}</p>
+              )}
+              
+              {profile.bio && (
+                <p className="mb-4 max-w-prose">{profile.bio}</p>
+              )}
+              
+              <div className="flex flex-wrap gap-4 justify-center md:justify-start text-sm text-muted-foreground mb-4">
+                {profile.created_at && (
+                  <div className="flex items-center gap-1">
+                    <Calendar className="h-4 w-4" />
+                    <span>Joined {getFormattedDate(profile.created_at)}</span>
+                  </div>
+                )}
+                
+                {profile.location && (
+                  <div className="flex items-center gap-1">
+                    <MapPin className="h-4 w-4" />
+                    <span>{profile.location}</span>
+                  </div>
+                )}
+                
+                {profile.website && (
+                  <div className="flex items-center gap-1">
+                    <LinkIcon className="h-4 w-4" />
+                    <a 
+                      href={profile.website.startsWith('http') ? profile.website : `https://${profile.website}`} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline"
                     >
-                      {interest}
-                    </span>
-                  ))}
+                      {profile.website.replace(/^https?:\/\//, '')}
+                    </a>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex gap-4 justify-center md:justify-start text-sm mt-2">
+                <div>
+                  <span className="font-semibold">{profile.following || 0}</span> Following
+                </div>
+                <div>
+                  <span className="font-semibold">{profile.followers || 0}</span> Followers
                 </div>
               </div>
+            </div>
+            
+            <div>
+              {isCurrentUser ? (
+                <Button variant="outline" className="flex items-center gap-2">
+                  <Edit className="h-4 w-4" />
+                  <span>Edit Profile</span>
+                </Button>
+              ) : (
+                <div className="space-y-2">
+                  <Button 
+                    onClick={handleFollowToggle}
+                    variant={isFollowing ? "outline" : "default"}
+                    className="w-full"
+                  >
+                    {isFollowing ? "Unfollow" : "Follow"}
+                  </Button>
+                  
+                  <ProfileReactions userId={profile.id} />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+        
+        <Tabs defaultValue="posts" className="mt-6">
+          <TabsList className="w-full grid grid-cols-3 mb-6">
+            <TabsTrigger value="posts">Posts</TabsTrigger>
+            <TabsTrigger value="media">Media</TabsTrigger>
+            <TabsTrigger value="likes">Likes</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="posts" className="space-y-4">
+            {postsLoading ? (
+              <div className="space-y-4">
+                <PostSkeleton />
+                <PostSkeleton />
+              </div>
+            ) : posts && posts.length > 0 ? (
+              <>
+                {/* Retry button if we had network errors */}
+                {networkError && (
+                  <div className="mb-4 text-center">
+                    <Button variant="outline" size="sm" onClick={refreshPosts}>
+                      Retry loading posts
+                    </Button>
+                  </div>
+                )}
+                
+                {posts.map(post => (
+                  <PostCard key={post.id} post={post} />
+                ))}
+              </>
+            ) : (
+              <EmptyState 
+                title="No posts yet"
+                description={
+                  isCurrentUser 
+                    ? "Share your first post with the community!"
+                    : `${profile.username || 'This user'} hasn't posted anything yet.`
+                }
+              />
             )}
             
-            <div className="mb-6">
-              <h4 className="text-sm font-medium text-gray-500 mb-2">Achievements</h4>
-              <div className="flex flex-col space-y-2">
-                {postCounts.followers >= 500 && (
-                  <div className="flex items-center">
-                    <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center mr-3">
-                      <span className="text-purple-500 text-xs">⭐</span>
-                    </div>
-                    <span className="text-sm">500+ Followers</span>
-                  </div>
-                )}
-                {postCounts.posts >= 10 && (
-                  <div className="flex items-center">
-                    <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center mr-3">
-                      <span className="text-green-500 text-xs">🏆</span>
-                    </div>
-                    <span className="text-sm">10+ Posts Created</span>
-                  </div>
-                )}
-                {postCounts.followers < 500 && postCounts.posts < 10 && (
-                  <div className="text-sm text-gray-500">
-                    No achievements yet. Keep engaging with the community!
-                  </div>
-                )}
-              </div>
-            </div>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="communities">
-          {postCounts.communities > 0 ? (
-            <div className="space-y-4">
-              {[...Array(postCounts.communities)].map((_, i) => (
-                <Card key={i} className="p-4 flex items-center">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-unmute-purple/30 to-unmute-teal/30 flex items-center justify-center mr-4">
-                    <Users className="h-6 w-6 text-unmute-purple" />
-                  </div>
-                  <div className="flex-grow">
-                    <h4 className="font-medium">Community {i + 1}</h4>
-                    <p className="text-sm text-gray-500">234 members</p>
-                  </div>
-                  <Button variant="outline" size="sm">Join</Button>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12 text-gray-500">
-              No communities joined yet
-            </div>
-          )}
-        </TabsContent>
-        
-        <TabsContent value="saved">
-          {isOwnProfile ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-1 md:gap-2">
-              {[...Array(5)].map((_, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: i * 0.1 }}
-                  className="aspect-square bg-gray-100 rounded-md overflow-hidden"
-                >
-                  <div className="w-full h-full bg-gradient-to-br from-unmute-teal/20 to-unmute-pink/20 flex items-center justify-center text-gray-400">
-                    <Bookmark className="h-8 w-8" />
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12 text-gray-500">
-              This content is private
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
-      
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Edit Profile</DialogTitle>
-          </DialogHeader>
+            {postsError && !networkError && (
+              <div className="mt-4 p-4 border rounded-lg bg-red-50 text-red-600">
+                <p>Error loading posts. Please try again later.</p>
+              </div>  
+            )}
+          </TabsContent>
           
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
-              <Input
-                id="username"
-                value={editFormData.username}
-                onChange={(e) => setEditFormData({...editFormData, username: e.target.value})}
-                placeholder="username"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="full_name">Full Name</Label>
-              <Input
-                id="full_name"
-                value={editFormData.full_name}
-                onChange={(e) => setEditFormData({...editFormData, full_name: e.target.value})}
-                placeholder="Your full name"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="bio">Bio</Label>
-              <Textarea
-                id="bio"
-                value={editFormData.bio}
-                onChange={(e) => setEditFormData({...editFormData, bio: e.target.value})}
-                placeholder="A short bio about yourself"
-                rows={3}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="location">Location</Label>
-              <Input
-                id="location"
-                value={editFormData.location}
-                onChange={(e) => setEditFormData({...editFormData, location: e.target.value})}
-                placeholder="City, Country"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="website">Website</Label>
-              <Input
-                id="website"
-                value={editFormData.website}
-                onChange={(e) => setEditFormData({...editFormData, website: e.target.value})}
-                placeholder="https://example.com"
-              />
-            </div>
-          </div>
+          <TabsContent value="media">
+            <EmptyState 
+              title="No media yet"
+              description={
+                isCurrentUser 
+                  ? "Share photos and videos with the community!"
+                  : `${profile.username || 'This user'} hasn't shared any media yet.`
+              }
+            />
+          </TabsContent>
           
-          <div className="flex justify-end space-x-2">
-            <Button
-              variant="outline"
-              onClick={() => setEditDialogOpen(false)}
-              disabled={editLoading}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSaveProfile}
-              disabled={editLoading}
-            >
-              {editLoading ? "Saving..." : "Save Changes"}
-            </Button>
+          <TabsContent value="likes">
+            <EmptyState 
+              title="No likes yet"
+              description={
+                isCurrentUser 
+                  ? "Posts you like will appear here."
+                  : `${profile.username || 'This user'} hasn't liked any posts yet.`
+              }
+            />
+          </TabsContent>
+        </Tabs>
+      </div>
+    </AppLayout>
+  );
+};
+
+// Profile skeleton component for loading state
+const ProfileSkeleton = () => {
+  return (
+    <div className="bg-card rounded-xl p-6 shadow-sm">
+      <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
+        <Skeleton className="h-24 w-24 md:h-32 md:w-32 rounded-full" />
+        
+        <div className="flex-1 text-center md:text-left">
+          <Skeleton className="h-8 w-48 mb-2" />
+          <Skeleton className="h-4 w-32 mb-4" />
+          <Skeleton className="h-16 w-full max-w-md mb-4" />
+          
+          <div className="flex gap-4 justify-center md:justify-start">
+            <Skeleton className="h-5 w-24" />
+            <Skeleton className="h-5 w-24" />
           </div>
-        </DialogContent>
-      </Dialog>
-    </motion.div>
+        </div>
+        
+        <div>
+          <Skeleton className="h-10 w-32" />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Post skeleton component for loading state
+const PostSkeleton = () => {
+  return (
+    <div className="bg-card rounded-xl p-6 shadow-sm">
+      <div className="flex gap-4 mb-4">
+        <Skeleton className="h-12 w-12 rounded-full" />
+        <div className="flex-1">
+          <Skeleton className="h-5 w-32 mb-2" />
+          <Skeleton className="h-4 w-24" />
+        </div>
+      </div>
+      <Skeleton className="h-24 w-full mb-4" />
+      <div className="flex gap-4">
+        <Skeleton className="h-8 w-20" />
+        <Skeleton className="h-8 w-20" />
+        <Skeleton className="h-8 w-20" />
+      </div>
+    </div>
+  );
+};
+
+// Empty state component
+const EmptyState = ({ title, description }: { title: string, description: string }) => {
+  return (
+    <div className="empty-state">
+      <div className="empty-state-icon">
+        {/* Icon could be added here */}
+        <span className="text-4xl">📝</span>
+      </div>
+      <h3 className="text-xl font-semibold mb-2">{title}</h3>
+      <p className="text-muted-foreground">{description}</p>
+    </div>
   );
 };
 

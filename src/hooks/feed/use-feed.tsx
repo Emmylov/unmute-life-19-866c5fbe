@@ -10,9 +10,15 @@ interface UseFeedProps {
   limit?: number;
   type?: 'following' | 'trending' | 'personalized';
   refreshTrigger?: any;
+  userId?: string; // Added userId parameter for profile pages
 }
 
-export const useFeed = ({ limit = 10, type = 'personalized', refreshTrigger }: UseFeedProps = {}) => {
+export const useFeed = ({ 
+  limit = 10, 
+  type = 'personalized', 
+  refreshTrigger,
+  userId // Use this for profile pages
+}: UseFeedProps = {}) => {
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -21,13 +27,22 @@ export const useFeed = ({ limit = 10, type = 'personalized', refreshTrigger }: U
   const attemptsRef = useRef(0);
   const maxAttempts = 3;
   const [hasFetchedData, setHasFetchedData] = useState(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const fetchFeed = useCallback(async (forceRefresh = false) => {
+    // Cancel any in-flight request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    // Create new abort controller for this request
+    abortControllerRef.current = new AbortController();
+    
     setLoading(true);
     setError(null);
     setNetworkError(false);
     
-    console.log(`Fetching feed (attempt ${attemptsRef.current + 1}/${maxAttempts})${forceRefresh ? ' with force refresh' : ''}`);
+    console.log(`Fetching feed (attempt ${attemptsRef.current + 1}/${maxAttempts})${forceRefresh ? ' with force refresh' : ''}${userId ? ' for user: ' + userId : ''}`);
     
     // Don't try more than 3 times in quick succession unless forced
     if (attemptsRef.current >= maxAttempts && !forceRefresh) {
@@ -42,30 +57,47 @@ export const useFeed = ({ limit = 10, type = 'personalized', refreshTrigger }: U
     attemptsRef.current += 1;
     
     try {
-      // First try to get the current user
+      // First try to get the current user if userId not provided
       let currentUser;
-      try {
-        currentUser = await getCurrentUser();
-        console.log("Current user fetched:", currentUser?.id);
-      } catch (err) {
-        console.warn('Error getting current user:', err);
-        // Continue without user - will use general feed
+      let targetUserId = userId;
+      
+      if (!targetUserId) {
+        try {
+          currentUser = await getCurrentUser();
+          console.log("Current user fetched:", currentUser?.id);
+          targetUserId = currentUser?.id;
+        } catch (err) {
+          console.warn('Error getting current user:', err);
+          // Continue without user - will use general feed
+        }
       }
       
       let fetchedPosts: any[] = [];
       
+      // Set up a timeout promise
+      const timeoutPromise = new Promise<null>((resolve) => {
+        setTimeout(() => {
+          console.warn('Feed fetch timeout reached');
+          resolve(null);
+        }, 8000); // 8 second timeout
+      });
+      
       // If user exists, try multiple approaches to fetch posts
-      if (currentUser) {
+      if (targetUserId) {
         try {
           // Approach 1: Use unified posts service
-          console.log("Fetching unified posts for user:", currentUser.id);
-          const unifiedPosts = await getUnifiedFeedPosts(
-            currentUser.id, 
+          console.log("Fetching unified posts for user:", targetUserId);
+          
+          const postsPromise = getUnifiedFeedPosts(
+            targetUserId, 
             limit,
             forceRefresh ? { cache: 'no-cache' } : undefined
           );
           
-          if (unifiedPosts && unifiedPosts.length > 0) {
+          // Race against timeout
+          const unifiedPosts = await Promise.race([postsPromise, timeoutPromise]);
+          
+          if (unifiedPosts && Array.isArray(unifiedPosts) && unifiedPosts.length > 0) {
             console.log(`Fetched ${unifiedPosts.length} posts from unified posts service`);
             // Validate posts to ensure they're valid
             fetchedPosts = unifiedPosts.filter(post => post && post.id && post.user_id);
@@ -87,7 +119,7 @@ export const useFeed = ({ limit = 10, type = 'personalized', refreshTrigger }: U
         if (fetchedPosts.length === 0) {
           try {
             console.log("Falling back to legacy feed service");
-            const legacyPosts = await getFeedPosts(currentUser.id, limit);
+            const legacyPosts = await getFeedPosts(targetUserId, limit);
             if (legacyPosts && legacyPosts.length > 0) {
               console.log(`Fetched ${legacyPosts.length} posts from legacy feed service`);
               fetchedPosts = legacyPosts;
@@ -197,7 +229,7 @@ export const useFeed = ({ limit = 10, type = 'personalized', refreshTrigger }: U
         }, 5000);
       }
     }
-  }, [limit, type]);
+  }, [limit, type, userId]); // Added userId to dependencies
 
   // Auto-retry once for network errors with backoff
   useEffect(() => {
@@ -223,6 +255,13 @@ export const useFeed = ({ limit = 10, type = 'personalized', refreshTrigger }: U
   useEffect(() => {
     console.log("Initial feed fetch triggered");
     fetchFeed();
+    
+    return () => {
+      // Cancel any pending request when component unmounts
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, [fetchFeed, refreshTrigger]);
 
   return { 
