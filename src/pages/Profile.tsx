@@ -109,7 +109,7 @@ const Profile = () => {
           <ErrorDisplay 
             title="Could not load profile" 
             message={loadError || "The profile you're looking for doesn't exist"}
-            action={<Button onClick={() => window.location.reload()}>Retry</Button>}
+            onRetry={() => window.location.reload()}
           />
         </div>
       </AppLayout>
