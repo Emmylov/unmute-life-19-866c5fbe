@@ -1,63 +1,70 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 // Check if a post exists in any table
-export const checkPostExists = async (postId: string): Promise<boolean> => {
+export const checkPostExists = async (postId: string, postType: string): Promise<boolean> => {
   try {
-    // Check in posts_text table first (most common)
-    const { data: textPost, error: textPostError } = await supabase
-      .from('posts_text')
-      .select('id')
-      .eq('id', postId)
-      .maybeSingle();
+    switch (postType) {
+      case 'text':
+        const { data: textPost, error: textPostError } = await supabase
+          .from('text_posts')
+          .select('id')
+          .eq('id', postId)
+          .maybeSingle();
         
-    if (!textPostError && textPost) {
-      return true;
-    }
-    
-    // Check in posts_images table
-    const { data: imagePost, error: imagePostError } = await supabase
-      .from('posts_images')
-      .select('id')
-      .eq('id', postId)
-      .maybeSingle();
+        if (!textPostError && textPost) {
+          return true;
+        }
+        break;
+      
+      case 'image':
+        const { data: imagePost, error: imagePostError } = await supabase
+          .from('image_posts')
+          .select('id')
+          .eq('id', postId)
+          .maybeSingle();
         
-    if (!imagePostError && imagePost) {
-      return true;
-    }
-    
-    // Check in posts_memes table
-    const { data: memePost, error: memePostError } = await supabase
-      .from('posts_memes')
-      .select('id')
-      .eq('id', postId)
-      .maybeSingle();
+        if (!imagePostError && imagePost) {
+          return true;
+        }
+        break;
+      
+      case 'meme':
+        const { data: memePost, error: memePostError } = await supabase
+          .from('meme_posts')
+          .select('id')
+          .eq('id', postId)
+          .maybeSingle();
         
-    if (!memePostError && memePost) {
-      return true;
-    }
-    
-    // Check in posts_reels table
-    const { data: reelPost, error: reelPostError } = await supabase
-      .from('posts_reels')
-      .select('id')
-      .eq('id', postId)
-      .maybeSingle();
+        if (!memePostError && memePost) {
+          return true;
+        }
+        break;
+      
+      case 'reel':
+        const { data: reelPost, error: reelPostError } = await supabase
+          .from('reel_posts')
+          .select('id')
+          .eq('id', postId)
+          .maybeSingle();
         
-    if (!reelPostError && reelPost) {
-      return true;
-    }
-    
-    // Finally check in the main posts table
-    const { data: mainPost, error: mainPostError } = await supabase
-      .from('posts')
-      .select('id')
-      .eq('id', postId)
-      .maybeSingle();
+        if (!reelPostError && reelPost) {
+          return true;
+        }
+        break;
+      
+      default:
+        // Check in the main posts table
+        const { data: mainPost, error: mainPostError } = await supabase
+          .from('posts')
+          .select('id')
+          .eq('id', postId)
+          .maybeSingle();
         
-    if (!mainPostError && mainPost) {
-      return true;
+        if (!mainPostError && mainPost) {
+          return true;
+        }
+        break;
     }
     
     return false;
@@ -265,7 +272,7 @@ export const addComment = async (postId: string, userId: string, content: string
     console.log(`Adding comment to post ${postId} by user ${userId}: "${content}"`);
     
     // First verify the post exists
-    const postExists = await checkPostExists(postId);
+    const postExists = await checkPostExists(postId, 'text');
     
     if (!postExists) {
       toast.error("This post is no longer available");
@@ -306,7 +313,7 @@ export const getComments = async (postId: string) => {
     console.log("Fetching comments for post:", postId);
     
     // First check if the post exists
-    const postExists = await checkPostExists(postId);
+    const postExists = await checkPostExists(postId, 'text');
     
     if (!postExists) {
       console.log("Post not found when getting comments:", postId);

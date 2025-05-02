@@ -10,12 +10,14 @@ import {
   checkPostExists 
 } from '@/services/post-service';
 import { supabase } from '@/integrations/supabase/client';
+import { useProfileCounters } from './use-profile-counters';
 
 export const useSocialActions = () => {
   const { user } = useAuth();
   const [loadingFollowState, setLoadingFollowState] = useState<Record<string, boolean>>({});
   const [isLiking, setIsLiking] = useState<Record<string, boolean>>({});
   const { t } = useTranslation();
+  const { incrementProfileCounter, decrementProfileCounter } = useProfileCounters();
   
   // Check if following a user
   const checkFollowStatus = useCallback(async (userId: string): Promise<boolean> => {
@@ -99,18 +101,11 @@ export const useSocialActions = () => {
           
         if (unfollowError) throw unfollowError;
         
-        // Update follower counts using direct update instead of RPC
         // Update followers count for the user being unfollowed
-        await supabase
-          .from('profiles')
-          .update({ followers: supabase.sql`followers - 1` })
-          .eq('id', userId);
+        await decrementProfileCounter(userId, 'followers');
           
         // Update following count for the current user
-        await supabase
-          .from('profiles')
-          .update({ following: supabase.sql`following - 1` })
-          .eq('id', user.id);
+        await decrementProfileCounter(user.id, 'following');
         
         toast.success(t('common.success.unfollowed', 'Unfollowed user'));
         return false;
@@ -125,18 +120,11 @@ export const useSocialActions = () => {
           
         if (followError) throw followError;
         
-        // Update follower counts using direct update instead of RPC
         // Update followers count for the user being followed
-        await supabase
-          .from('profiles')
-          .update({ followers: supabase.sql`followers + 1` })
-          .eq('id', userId);
+        await incrementProfileCounter(userId, 'followers');
           
         // Update following count for the current user
-        await supabase
-          .from('profiles')
-          .update({ following: supabase.sql`following + 1` })
-          .eq('id', user.id);
+        await incrementProfileCounter(user.id, 'following');
         
         toast.success(t('common.success.following', 'Following user'));
         return true;
@@ -148,7 +136,7 @@ export const useSocialActions = () => {
     } finally {
       setLoadingFollowState(prev => ({ ...prev, [userId]: false }));
     }
-  }, [user, t]);
+  }, [user, t, incrementProfileCounter, decrementProfileCounter]);
 
   return {
     toggleFollow,

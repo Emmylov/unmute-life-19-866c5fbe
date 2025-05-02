@@ -13,6 +13,12 @@ export interface Reel {
   created_at: string;
   tags?: string[] | null;
   visibility?: string;
+  audio?: string | null;
+  audio_type?: string | null;
+  audio_url?: string | null;
+  duration?: number | null;
+  original_audio_volume?: number | null;
+  overlay_audio_volume?: number | null;
   profiles?: {
     id: string;
     username: string | null;
@@ -61,6 +67,12 @@ export const useReel = (reelId: string) => {
         created_at: data.created_at,
         tags: data.tags || null,
         visibility: data.visibility,
+        audio: data.audio || null,
+        audio_type: data.audio_type || null,
+        audio_url: data.audio_url || null,
+        duration: data.duration || null,
+        original_audio_volume: data.original_audio_volume || 1,
+        overlay_audio_volume: data.overlay_audio_volume || 0,
         profiles: data.profiles ? createSafeProfile(data.profiles) : null
       };
 

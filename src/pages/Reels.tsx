@@ -53,14 +53,11 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
       setLoading(true);
       console.log('Fetching reels...');
       
-      // Use reel_posts instead of posts_reels as it seems to be the correct table name
       const { data: reelsData, error: reelsError } = await supabase
         .from('reel_posts')
         .select(`
           id, user_id, created_at, video_url, thumbnail_url, caption, 
-          audio, audio_type, audio_url, duration, original_audio_volume, 
-          overlay_audio_volume, tags, allow_comments, allow_duets,
-          profiles:user_id (id, username, avatar, full_name)
+          tags, visibility, profiles:user_id (id, username, avatar, full_name)
         `)
         .order('created_at', { ascending: false })
         .limit(10);
@@ -90,15 +87,15 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
             video_url: item.video_url,
             thumbnail_url: item.thumbnail_url || null,
             caption: item.caption || null,
-            audio: item.audio || null,
-            audio_type: item.audio_type || null,
-            audio_url: item.audio_url || null,
-            duration: item.duration || null,
-            original_audio_volume: item.original_audio_volume || 1,
-            overlay_audio_volume: item.overlay_audio_volume || 0,
+            audio: null,
+            audio_type: null,
+            audio_url: null,
+            duration: null,
+            original_audio_volume: 1,
+            overlay_audio_volume: 0,
             tags: item.tags || [],
-            allow_comments: item.allow_comments !== false,
-            allow_duets: item.allow_duets !== false,
+            allow_comments: true,
+            allow_duets: true,
             vibe_tag: null,
             mood_vibe: null,
           },
@@ -133,14 +130,11 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
     try {
       const lastCreatedAt = reels[reels.length - 1].reel.created_at;
       
-      // Use reel_posts instead of posts_reels
       const { data: reelsData, error: reelsError } = await supabase
         .from('reel_posts')
         .select(`
           id, user_id, created_at, video_url, thumbnail_url, caption, 
-          audio, audio_type, audio_url, duration, original_audio_volume, 
-          overlay_audio_volume, tags, allow_comments, allow_duets,
-          profiles:user_id (id, username, avatar, full_name)
+          tags, visibility, profiles:user_id (id, username, avatar, full_name)
         `)
         .lt('created_at', lastCreatedAt)
         .order('created_at', { ascending: false })
@@ -165,15 +159,15 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
             video_url: item.video_url,
             thumbnail_url: item.thumbnail_url || null,
             caption: item.caption || null,
-            audio: item.audio || null,
-            audio_type: item.audio_type || null,
-            audio_url: item.audio_url || null,
-            duration: item.duration || null,
-            original_audio_volume: item.original_audio_volume || 1,
-            overlay_audio_volume: item.overlay_audio_volume || 0,
+            audio: null,
+            audio_type: null,
+            audio_url: null,
+            duration: null,
+            original_audio_volume: 1,
+            overlay_audio_volume: 0,
             tags: item.tags || [],
-            allow_comments: item.allow_comments !== false,
-            allow_duets: item.allow_duets !== false,
+            allow_comments: true,
+            allow_duets: true,
             vibe_tag: null,
             mood_vibe: null,
           },
