@@ -1,7 +1,5 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from 'uuid';
-import { PostgrestResponse } from "@supabase/supabase-js";
 
 // Helper function to ensure we return one of the valid types
 function getPostTypeString(type: string): "image" | "text" | "reel" | "meme" {
@@ -101,19 +99,100 @@ export interface MemePost extends DatabasePost {
   bottom_text: string;
 }
 
+// Define valid table names for type safety
+const VALID_TABLE_NAMES = {
+  text: 'text_posts',
+  image: 'image_posts',
+  reel: 'reel_posts',
+  meme: 'meme_posts'
+} as const;
+
+// Update the getTableName function to use the valid table names
 export const getTableName = (postType: string): string => {
   switch (postType) {
     case "text":
-      return "text_posts";
+      return VALID_TABLE_NAMES.text;
     case "image":
-      return "image_posts";
+      return VALID_TABLE_NAMES.image;
     case "reel":
-      return "reel_posts";
+      return VALID_TABLE_NAMES.reel;
     case "meme":
-      return "meme_posts";
+      return VALID_TABLE_NAMES.meme;
     default:
-      return "text_posts";
+      return VALID_TABLE_NAMES.text;
   }
+};
+
+// Helper function to safely handle data conversion for different table types
+const safeConvertToPost = (data: any, postType: PostType): Post => {
+  if (!data) {
+    // Return a minimal valid Post if data is missing
+    return {
+      id: '',
+      userId: '',
+      type: postType,
+      createdAt: new Date().toISOString(),
+      user: {
+        id: '',
+        name: null,
+        username: null,
+        avatar: null
+      },
+      stats: {
+        likes: 0,
+        comments: 0,
+        shares: 0
+      }
+    };
+  }
+
+  // Base post properties
+  const post: Post = {
+    id: data.id || '',
+    userId: data.user_id || '',
+    type: postType,
+    createdAt: data.created_at || new Date().toISOString(),
+    user: {
+      id: data.user_id || '',
+      name: null,
+      username: null,
+      avatar: null
+    },
+    stats: {
+      likes: 0,
+      comments: 0,
+      shares: 0
+    }
+  };
+
+  // Add type-specific properties
+  switch (postType) {
+    case 'text':
+      post.title = data.title || null;
+      post.body = data.content || null;
+      post.tags = data.tags || [];
+      break;
+    case 'image':
+      post.body = data.caption || null;
+      post.imageUrl = (data.image_urls && data.image_urls[0]) || null;
+      post.tags = data.tags || [];
+      break;
+    case 'reel':
+      post.body = data.caption || null;
+      post.videoUrl = data.video_url || null;
+      post.thumbnailUrl = data.thumbnail_url || null;
+      post.tags = data.tags || [];
+      post.audioUrl = data.audio_url || null;
+      post.audioType = data.audio_type || null;
+      break;
+    case 'meme':
+      post.title = data.top_text || null;
+      post.body = data.bottom_text || null;
+      post.imageUrl = (data.image_urls && data.image_urls[0]) || null;
+      break;
+  }
+
+  return post;
 };
 
 export const createPost = async (
@@ -271,13 +350,12 @@ export const getPosts = async (
   postType?: string
 ): Promise<Post[]> => {
   try {
-    const tableName = postType ? getTableName(postType) : 'text_posts';
+    const tableName = postType ? getTableName(postType) : VALID_TABLE_NAMES.text;
     
-    let query = supabase.from(tableName)
+    const { data, error } = await supabase
+      .from(tableName)
       .select("*")
       .eq("user_id", userId);
-
-    const { data, error } = await query;
 
     if (error) {
       console.error(`Error fetching ${postType} posts:`, error);
@@ -285,29 +363,7 @@ export const getPosts = async (
     }
 
     // Convert to Post interface
-    return (data || []).map(item => ({
-      id: item.id,
-      userId: item.user_id,
-      type: (postType || 'text') as PostType,
-      title: item.title || null,
-      body: item.content || item.body || null,
-      imageUrl: item.image_url || (item.image_urls && item.image_urls[0]) || null,
-      videoUrl: item.video_url || null,
-      thumbnailUrl: item.thumbnail_url || null,
-      createdAt: item.created_at,
-      user: {
-        id: item.user_id,
-        name: null,
-        username: null,
-        avatar: null
-      },
-      stats: {
-        likes: 0,
-        comments: 0,
-        shares: 0
-      },
-      tags: item.tags || []
-    }));
+    return (data || []).map(item => safeConvertToPost(item, (postType || 'text') as PostType));
   } catch (error) {
     console.error(`Error getting ${postType} posts:`, error);
     return [];
@@ -391,32 +447,7 @@ export const getPost = async (
       return null;
     }
 
-    // Convert to consistent Post interface
-    const post: Post = {
-      id: data.id,
-      userId: data.user_id,
-      type: postType as PostType,
-      title: data.title || null,
-      body: data.content || data.body || null,
-      imageUrl: data.image_url || (data.image_urls && data.image_urls[0]) || null,
-      videoUrl: data.video_url || null,
-      thumbnailUrl: data.thumbnail_url || null,
-      createdAt: data.created_at,
-      user: {
-        id: data.user_id,
-        name: null,
-        username: null,
-        avatar: null
-      },
-      stats: {
-        likes: 0,
-        comments: 0,
-        shares: 0
-      },
-      tags: data.tags || []
-    };
-
-    return post;
+    return safeConvertToPost(data, postType as PostType);
   } catch (error) {
     console.error("Error fetching post:", error);
     return null;

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
@@ -14,7 +13,8 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { FeedPost } from "@/services/post-service";
 import { Textarea } from "@/components/ui/textarea";
 import { useTranslation } from "react-i18next";
-import { addComment, getComments, PostComment, createSafeProfile } from "@/services/content-service";
+import { addComment, getComments, PostComment } from "@/services/content-service";
+import { createSafeProfile } from "@/utils/safe-data-utils";
 
 interface PostCardProps {
   post: FeedPost;

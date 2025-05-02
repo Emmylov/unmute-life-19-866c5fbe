@@ -25,6 +25,9 @@ export {
   getComments
 } from './comment-service';
 
+// Export utility functions
+export { createSafeProfile } from '@/hooks/feed/feed-utils';
+
 // Export PostComment type using export type syntax for compatibility with isolatedModules
 export type { PostComment } from './comment-service';
 
