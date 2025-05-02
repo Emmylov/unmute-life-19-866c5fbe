@@ -13,6 +13,34 @@ export interface Post {
   [key: string]: any;
 }
 
+// Define a safe profile type to handle potential errors
+export interface SafeProfile {
+  id: string;
+  username: string;
+  avatar: string | null;
+  full_name: string;
+}
+
+// Helper function to create a safe profile object from potentially erroneous data
+export function createSafeProfile(profileData: any): SafeProfile {
+  if (!profileData || typeof profileData === 'string' || profileData.error) {
+    // If profileData is invalid, return a default profile
+    return {
+      id: 'unknown',
+      username: 'Anonymous',
+      avatar: null,
+      full_name: 'Anonymous User'
+    };
+  }
+  
+  return {
+    id: profileData.id || 'unknown',
+    username: profileData.username || 'Anonymous',
+    avatar: profileData.avatar || null,
+    full_name: profileData.full_name || 'Anonymous User'
+  };
+}
+
 // This function is kept for backward compatibility but now delegates to the specialized modules
 export async function fetchSupplementalPosts(
   userId: string, 

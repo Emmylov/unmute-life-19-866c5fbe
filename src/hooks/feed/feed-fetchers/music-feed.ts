@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Post } from "../feed-utils";
+import { Post, createSafeProfile } from "../feed-utils";
 import { FeedPost } from "@/services/post-service";
 
 export async function fetchMusicPosts(limit: number = 10, offset: number = 0): Promise<Post[]> {
@@ -9,9 +9,7 @@ export async function fetchMusicPosts(limit: number = 10, offset: number = 0): P
       .from('reel_posts')
       .select(`
         *,
-        profiles:user_id (
-          id, username, avatar, full_name
-        )
+        profiles:user_id (*)
       `)
       .not('audio_url', 'is', null)
       .eq('visibility', 'public')
@@ -29,13 +27,8 @@ export async function fetchMusicPosts(limit: number = 10, offset: number = 0): P
     
     // Transform reels to the common Post format
     return reelPosts.map(post => {
-      // Create a default profile if none exists
-      const userProfile = {
-        id: post.user_id,
-        name: post.profiles?.full_name || 'Anonymous',
-        username: post.profiles?.username || 'user',
-        avatar: post.profiles?.avatar || null
-      };
+      // Create a safe profile with default values for missing or invalid profile data
+      const safeProfile = createSafeProfile(post.profiles);
           
       return {
         id: post.id,
@@ -49,14 +42,19 @@ export async function fetchMusicPosts(limit: number = 10, offset: number = 0): P
         audioType: post.audio_type,
         created_at: post.created_at,
         createdAt: post.created_at,
-        user: userProfile,
+        user: {
+          id: safeProfile.id,
+          name: safeProfile.full_name,
+          username: safeProfile.username,
+          avatar: safeProfile.avatar
+        },
         stats: {
           likes: 0,
           comments: 0,
           shares: 0
         },
         tags: post.tags || []
-      };
+      } as Post;
     });
   } catch (error) {
     console.error('Error fetching music posts:', error);
@@ -70,9 +68,7 @@ export async function fetchMusicFeedPosts(limit: number = 10, offset: number = 0
       .from('reel_posts')
       .select(`
         *,
-        profiles:user_id (
-          id, username, avatar, full_name
-        )
+        profiles:user_id (*)
       `)
       .not('audio_url', 'is', null)
       .eq('visibility', 'public')
@@ -90,13 +86,8 @@ export async function fetchMusicFeedPosts(limit: number = 10, offset: number = 0
     
     // Transform to FeedPost format
     return reelPosts.map(post => {
-      // Create a default profile if none exists
-      const userProfile = post.profiles || { 
-        id: post.user_id, 
-        username: "Anonymous", 
-        avatar: null, 
-        full_name: "Anonymous" 
-      };
+      // Create a safe profile
+      const safeProfile = createSafeProfile(post.profiles);
           
       return {
         id: post.id,
@@ -114,8 +105,8 @@ export async function fetchMusicFeedPosts(limit: number = 10, offset: number = 0
         visibility: post.visibility,
         likes_count: 0,
         comments_count: 0,
-        profiles: userProfile
-      };
+        profiles: safeProfile
+      } as FeedPost;
     });
   } catch (error) {
     console.error('Error fetching music feed posts:', error);

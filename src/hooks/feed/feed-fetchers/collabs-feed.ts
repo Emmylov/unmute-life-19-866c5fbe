@@ -1,9 +1,9 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { FeedPost } from "@/services/post-service";
-import { Post } from "../feed-utils";
+import { Post, createSafeProfile } from "../feed-utils";
 
-export interface CollaborationPost extends FeedPost {
+export interface CollaborationPost extends Omit<FeedPost, 'profiles'> {
   collaboration_type?: string;
   collaborators?: string[];
   profiles?: {
@@ -64,14 +64,10 @@ export async function fetchCollaborativePosts(userId: string): Promise<Collabora
     // Transform image collaborations to FeedPost format
     if (imageCollabs) {
       const formattedPosts = imageCollabs.map(post => {
-        // Create a default profile if none exists
-        const profiles = post.profiles || { 
-          id: post.user_id, 
-          username: "Anonymous", 
-          avatar: null, 
-          full_name: "Anonymous" 
-        };
-          
+        // Create a safe profile
+        const safeProfile = createSafeProfile(post.profiles);
+        
+        // Use the profile data
         return {
           id: post.id,
           user_id: post.user_id,
@@ -87,11 +83,11 @@ export async function fetchCollaborativePosts(userId: string): Promise<Collabora
           visibility: post.visibility,
           likes_count: 0,
           comments_count: 0,
-          profiles: profiles,
+          profiles: safeProfile,
           // Optional collaboration fields
           collaboration_type: 'direct',
           collaborators: []
-        };
+        } as CollaborationPost;
       });
       
       collaborationPosts.push(...formattedPosts);
@@ -100,13 +96,8 @@ export async function fetchCollaborativePosts(userId: string): Promise<Collabora
     // Transform text collaborations to FeedPost format
     if (textCollabs) {
       const formattedPosts = textCollabs.map(post => {
-        // Create a default profile if none exists
-        const profiles = post.profiles || { 
-          id: post.user_id, 
-          username: "Anonymous", 
-          avatar: null, 
-          full_name: "Anonymous" 
-        };
+        // Create a safe profile
+        const safeProfile = createSafeProfile(post.profiles);
         
         return {
           id: post.id,
@@ -123,11 +114,11 @@ export async function fetchCollaborativePosts(userId: string): Promise<Collabora
           visibility: post.visibility,
           likes_count: 0,
           comments_count: 0,
-          profiles: profiles,
+          profiles: safeProfile,
           // Optional collaboration fields
           collaboration_type: 'direct',
           collaborators: []
-        };
+        } as CollaborationPost;
       });
       
       collaborationPosts.push(...formattedPosts);
@@ -136,13 +127,8 @@ export async function fetchCollaborativePosts(userId: string): Promise<Collabora
     // Transform reel collaborations to FeedPost format
     if (reelCollabs) {
       const formattedPosts = reelCollabs.map(post => {
-        // Create a default profile if none exists
-        const profiles = post.profiles || { 
-          id: post.user_id, 
-          username: "Anonymous", 
-          avatar: null, 
-          full_name: "Anonymous" 
-        };
+        // Create a safe profile
+        const safeProfile = createSafeProfile(post.profiles);
         
         return {
           id: post.id,
@@ -160,11 +146,11 @@ export async function fetchCollaborativePosts(userId: string): Promise<Collabora
           visibility: post.visibility,
           likes_count: 0,
           comments_count: 0,
-          profiles: profiles,
+          profiles: safeProfile,
           // Optional collaboration fields
           collaboration_type: 'direct',
           collaborators: []
-        };
+        } as CollaborationPost;
       });
       
       collaborationPosts.push(...formattedPosts);

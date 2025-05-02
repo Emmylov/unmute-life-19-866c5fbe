@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { Post } from "../feed-utils";
+import { Post, createSafeProfile } from "../feed-utils";
 
 export async function fetchPersonalizedFeed(
   userId: string, 
@@ -21,9 +21,7 @@ export async function fetchPersonalizedFeed(
       .from('image_posts')
       .select(`
         *,
-        profiles:user_id (
-          id, username, avatar, full_name
-        )
+        profiles:user_id (*)
       `)
       .eq('visibility', 'public')
       .order('created_at', { ascending: false })
@@ -38,9 +36,7 @@ export async function fetchPersonalizedFeed(
       .from('text_posts')
       .select(`
         *,
-        profiles:user_id (
-          id, username, avatar, full_name
-        )
+        profiles:user_id (*)
       `)
       .eq('visibility', 'public')
       .order('created_at', { ascending: false })
@@ -55,9 +51,7 @@ export async function fetchPersonalizedFeed(
       .from('reel_posts')
       .select(`
         *,
-        profiles:user_id (
-          id, username, avatar, full_name
-        )
+        profiles:user_id (*)
       `)
       .eq('visibility', 'public')
       .order('created_at', { ascending: false })
@@ -73,13 +67,8 @@ export async function fetchPersonalizedFeed(
     // Add image posts
     if (imagePosts) {
       result.push(...imagePosts.map(post => {
-        // Create a default profile if none exists
-        const userProfile = {
-          id: post.user_id,
-          name: post.profiles?.full_name || 'Anonymous',
-          username: post.profiles?.username || 'user',
-          avatar: post.profiles?.avatar || null
-        };
+        // Create a safe profile with default values
+        const safeProfile = createSafeProfile(post.profiles);
             
         return {
           id: post.id,
@@ -91,7 +80,12 @@ export async function fetchPersonalizedFeed(
           caption: post.caption,
           created_at: post.created_at,
           createdAt: post.created_at,
-          user: userProfile,
+          user: {
+            id: safeProfile.id,
+            name: safeProfile.full_name,
+            username: safeProfile.username,
+            avatar: safeProfile.avatar
+          },
           stats: {
             likes: 0,
             comments: 0,
@@ -105,13 +99,8 @@ export async function fetchPersonalizedFeed(
     // Add text posts
     if (textPosts) {
       result.push(...textPosts.map(post => {
-        // Create a default profile if none exists
-        const userProfile = {
-          id: post.user_id,
-          name: post.profiles?.full_name || 'Anonymous',
-          username: post.profiles?.username || 'user',
-          avatar: post.profiles?.avatar || null
-        };
+        // Create a safe profile with default values
+        const safeProfile = createSafeProfile(post.profiles);
             
         return {
           id: post.id,
@@ -123,7 +112,12 @@ export async function fetchPersonalizedFeed(
           emojiMood: post.emoji_mood || null,
           created_at: post.created_at,
           createdAt: post.created_at,
-          user: userProfile,
+          user: {
+            id: safeProfile.id,
+            name: safeProfile.full_name,
+            username: safeProfile.username,
+            avatar: safeProfile.avatar
+          },
           stats: {
             likes: 0,
             comments: 0,
@@ -137,13 +131,8 @@ export async function fetchPersonalizedFeed(
     // Add reel posts
     if (reelPosts) {
       result.push(...reelPosts.map(post => {
-        // Create a default profile if none exists
-        const userProfile = {
-          id: post.user_id,
-          name: post.profiles?.full_name || 'Anonymous',
-          username: post.profiles?.username || 'user',
-          avatar: post.profiles?.avatar || null
-        };
+        // Create a safe profile with default values
+        const safeProfile = createSafeProfile(post.profiles);
             
         return {
           id: post.id,
@@ -156,7 +145,12 @@ export async function fetchPersonalizedFeed(
           thumbnailUrl: post.thumbnail_url || null,
           created_at: post.created_at,
           createdAt: post.created_at,
-          user: userProfile,
+          user: {
+            id: safeProfile.id,
+            name: safeProfile.full_name,
+            username: safeProfile.username,
+            avatar: safeProfile.avatar
+          },
           stats: {
             likes: 0,
             comments: 0,

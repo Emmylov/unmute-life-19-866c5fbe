@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Post } from "../feed-utils";
+import { Post, createSafeProfile } from "../feed-utils";
 
 // Update this function to use the correct table names and handle profiles properly
 export async function fetchFollowingFeed(userId: string, limit: number = 10, offset: number = 0): Promise<Post[]> {
@@ -34,9 +34,7 @@ export async function fetchFollowingFeed(userId: string, limit: number = 10, off
       .from('image_posts')
       .select(`
         *,
-        profiles:user_id (
-          id, username, avatar, full_name
-        )
+        profiles:user_id (*)
       `)
       .in('user_id', followingIds)
       .eq('visibility', 'public')
@@ -51,9 +49,7 @@ export async function fetchFollowingFeed(userId: string, limit: number = 10, off
       .from('text_posts')
       .select(`
         *,
-        profiles:user_id (
-          id, username, avatar, full_name
-        )
+        profiles:user_id (*)
       `)
       .in('user_id', followingIds)
       .eq('visibility', 'public')
@@ -68,9 +64,7 @@ export async function fetchFollowingFeed(userId: string, limit: number = 10, off
       .from('reel_posts')
       .select(`
         *,
-        profiles:user_id (
-          id, username, avatar, full_name
-        )
+        profiles:user_id (*)
       `)
       .in('user_id', followingIds)
       .eq('visibility', 'public')
@@ -87,13 +81,8 @@ export async function fetchFollowingFeed(userId: string, limit: number = 10, off
     // Add image posts
     if (imagePosts) {
       result.push(...imagePosts.map(post => {
-        // Create a default profile if none exists
-        const userProfile = {
-          id: post.user_id,
-          name: post.profiles?.full_name || 'Anonymous',
-          username: post.profiles?.username || 'user',
-          avatar: post.profiles?.avatar || null
-        };
+        // Create a safe profile with default values if profile data is missing or invalid
+        const safeProfile = createSafeProfile(post.profiles);
           
         return {
           id: post.id,
@@ -105,7 +94,12 @@ export async function fetchFollowingFeed(userId: string, limit: number = 10, off
           caption: post.caption,
           created_at: post.created_at,
           createdAt: post.created_at,
-          user: userProfile,
+          user: {
+            id: safeProfile.id,
+            name: safeProfile.full_name,
+            username: safeProfile.username,
+            avatar: safeProfile.avatar
+          },
           stats: {
             likes: 0,
             comments: 0,
@@ -119,13 +113,8 @@ export async function fetchFollowingFeed(userId: string, limit: number = 10, off
     // Add text posts
     if (textPosts) {
       result.push(...textPosts.map(post => {
-        // Create a default profile if none exists
-        const userProfile = {
-          id: post.user_id,
-          name: post.profiles?.full_name || 'Anonymous',
-          username: post.profiles?.username || 'user',
-          avatar: post.profiles?.avatar || null
-        };
+        // Create a safe profile with default values if profile data is missing or invalid
+        const safeProfile = createSafeProfile(post.profiles);
             
         return {
           id: post.id,
@@ -137,7 +126,12 @@ export async function fetchFollowingFeed(userId: string, limit: number = 10, off
           emojiMood: post.emoji_mood || null,
           created_at: post.created_at,
           createdAt: post.created_at,
-          user: userProfile,
+          user: {
+            id: safeProfile.id,
+            name: safeProfile.full_name,
+            username: safeProfile.username,
+            avatar: safeProfile.avatar
+          },
           stats: {
             likes: 0,
             comments: 0,
@@ -151,13 +145,8 @@ export async function fetchFollowingFeed(userId: string, limit: number = 10, off
     // Add reel posts
     if (reelPosts) {
       result.push(...reelPosts.map(post => {
-        // Create a default profile if none exists
-        const userProfile = {
-          id: post.user_id,
-          name: post.profiles?.full_name || 'Anonymous',
-          username: post.profiles?.username || 'user',
-          avatar: post.profiles?.avatar || null
-        };
+        // Create a safe profile with default values if profile data is missing or invalid
+        const safeProfile = createSafeProfile(post.profiles);
             
         return {
           id: post.id,
@@ -170,7 +159,12 @@ export async function fetchFollowingFeed(userId: string, limit: number = 10, off
           thumbnailUrl: post.thumbnail_url || null,
           created_at: post.created_at,
           createdAt: post.created_at,
-          user: userProfile,
+          user: {
+            id: safeProfile.id,
+            name: safeProfile.full_name,
+            username: safeProfile.username,
+            avatar: safeProfile.avatar
+          },
           stats: {
             likes: 0,
             comments: 0,
