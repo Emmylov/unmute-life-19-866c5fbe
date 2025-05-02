@@ -9,11 +9,11 @@ export interface ErrorDisplayProps {
   onRetry?: () => void;
 }
 
-export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ 
+export const ErrorDisplay = ({ 
   title, 
   message, 
   onRetry 
-}) => {
+}: ErrorDisplayProps) => {
   return (
     <div className="w-full p-6 rounded-lg border bg-red-50 border-red-200 text-center flex flex-col items-center">
       <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
@@ -32,3 +32,5 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
     </div>
   );
 };
+
+export default ErrorDisplay;

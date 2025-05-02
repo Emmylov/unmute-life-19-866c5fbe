@@ -51,6 +51,39 @@ export type Database = {
           },
         ]
       }
+      image_posts: {
+        Row: {
+          caption: string | null
+          created_at: string | null
+          id: string
+          image_urls: string[]
+          tags: string[] | null
+          updated_at: string | null
+          user_id: string
+          visibility: string | null
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string | null
+          id?: string
+          image_urls: string[]
+          tags?: string[] | null
+          updated_at?: string | null
+          user_id: string
+          visibility?: string | null
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string | null
+          id?: string
+          image_urls?: string[]
+          tags?: string[] | null
+          updated_at?: string | null
+          user_id?: string
+          visibility?: string | null
+        }
+        Relationships: []
+      }
       interests: {
         Row: {
           category: string
@@ -72,6 +105,42 @@ export type Database = {
           icon?: string
           id?: string
           name?: string
+        }
+        Relationships: []
+      }
+      meme_posts: {
+        Row: {
+          bottom_text: string | null
+          category: string | null
+          created_at: string | null
+          id: string
+          image_url: string
+          top_text: string | null
+          updated_at: string | null
+          user_id: string
+          visibility: string | null
+        }
+        Insert: {
+          bottom_text?: string | null
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          image_url: string
+          top_text?: string | null
+          updated_at?: string | null
+          user_id: string
+          visibility?: string | null
+        }
+        Update: {
+          bottom_text?: string | null
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          image_url?: string
+          top_text?: string | null
+          updated_at?: string | null
+          user_id?: string
+          visibility?: string | null
         }
         Relationships: []
       }
@@ -116,252 +185,55 @@ export type Database = {
           content: string
           created_at: string | null
           id: string
-          post_id: string | null
-          user_id: string | null
+          is_deleted: boolean | null
+          post_id: string
+          post_type: string
+          updated_at: string | null
+          user_id: string
         }
         Insert: {
           content: string
           created_at?: string | null
           id?: string
-          post_id?: string | null
-          user_id?: string | null
+          is_deleted?: boolean | null
+          post_id: string
+          post_type: string
+          updated_at?: string | null
+          user_id: string
         }
         Update: {
           content?: string
           created_at?: string | null
           id?: string
-          post_id?: string | null
-          user_id?: string | null
+          is_deleted?: boolean | null
+          post_id?: string
+          post_type?: string
+          updated_at?: string | null
+          user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "post_comments_post_id_fkey"
-            columns: ["post_id"]
-            isOneToOne: false
-            referencedRelation: "posts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "post_comments_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       post_likes: {
         Row: {
           created_at: string | null
+          id: string
           post_id: string
+          post_type: string
           user_id: string
         }
         Insert: {
           created_at?: string | null
+          id?: string
           post_id: string
+          post_type: string
           user_id: string
         }
         Update: {
           created_at?: string | null
+          id?: string
           post_id?: string
+          post_type?: string
           user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "post_likes_post_id_fkey"
-            columns: ["post_id"]
-            isOneToOne: false
-            referencedRelation: "posts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "post_likes_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      posts: {
-        Row: {
-          cause: string | null
-          content: string
-          created_at: string | null
-          id: string
-          image_url: string | null
-          storage_path: string | null
-          user_id: string | null
-        }
-        Insert: {
-          cause?: string | null
-          content: string
-          created_at?: string | null
-          id?: string
-          image_url?: string | null
-          storage_path?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          cause?: string | null
-          content?: string
-          created_at?: string | null
-          id?: string
-          image_url?: string | null
-          storage_path?: string | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "posts_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      posts_images: {
-        Row: {
-          caption: string | null
-          created_at: string | null
-          id: string
-          image_urls: string[]
-          tags: string[] | null
-          user_id: string
-        }
-        Insert: {
-          caption?: string | null
-          created_at?: string | null
-          id?: string
-          image_urls: string[]
-          tags?: string[] | null
-          user_id: string
-        }
-        Update: {
-          caption?: string | null
-          created_at?: string | null
-          id?: string
-          image_urls?: string[]
-          tags?: string[] | null
-          user_id?: string
-        }
-        Relationships: []
-      }
-      posts_memes: {
-        Row: {
-          bottom_text: string | null
-          category: string | null
-          created_at: string | null
-          id: string
-          image_url: string
-          top_text: string | null
-          user_id: string
-        }
-        Insert: {
-          bottom_text?: string | null
-          category?: string | null
-          created_at?: string | null
-          id?: string
-          image_url: string
-          top_text?: string | null
-          user_id: string
-        }
-        Update: {
-          bottom_text?: string | null
-          category?: string | null
-          created_at?: string | null
-          id?: string
-          image_url?: string
-          top_text?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
-      posts_reels: {
-        Row: {
-          allow_comments: boolean | null
-          allow_duets: boolean | null
-          audio: string | null
-          audio_type: string | null
-          audio_url: string | null
-          caption: string | null
-          created_at: string | null
-          duration: number | null
-          id: string
-          original_audio_volume: number | null
-          overlay_audio_volume: number | null
-          tags: string[] | null
-          thumbnail_url: string | null
-          user_id: string
-          video_url: string
-        }
-        Insert: {
-          allow_comments?: boolean | null
-          allow_duets?: boolean | null
-          audio?: string | null
-          audio_type?: string | null
-          audio_url?: string | null
-          caption?: string | null
-          created_at?: string | null
-          duration?: number | null
-          id?: string
-          original_audio_volume?: number | null
-          overlay_audio_volume?: number | null
-          tags?: string[] | null
-          thumbnail_url?: string | null
-          user_id: string
-          video_url: string
-        }
-        Update: {
-          allow_comments?: boolean | null
-          allow_duets?: boolean | null
-          audio?: string | null
-          audio_type?: string | null
-          audio_url?: string | null
-          caption?: string | null
-          created_at?: string | null
-          duration?: number | null
-          id?: string
-          original_audio_volume?: number | null
-          overlay_audio_volume?: number | null
-          tags?: string[] | null
-          thumbnail_url?: string | null
-          user_id?: string
-          video_url?: string
-        }
-        Relationships: []
-      }
-      posts_text: {
-        Row: {
-          body: string
-          created_at: string | null
-          emoji_mood: string | null
-          id: string
-          tags: string[] | null
-          title: string | null
-          user_id: string
-          visibility: string | null
-        }
-        Insert: {
-          body: string
-          created_at?: string | null
-          emoji_mood?: string | null
-          id?: string
-          tags?: string[] | null
-          title?: string | null
-          user_id: string
-          visibility?: string | null
-        }
-        Update: {
-          body?: string
-          created_at?: string | null
-          emoji_mood?: string | null
-          id?: string
-          tags?: string[] | null
-          title?: string | null
-          user_id?: string
-          visibility?: string | null
         }
         Relationships: []
       }
@@ -536,6 +408,48 @@ export type Database = {
           },
         ]
       }
+      reel_posts: {
+        Row: {
+          audio_type: string | null
+          audio_url: string | null
+          caption: string | null
+          created_at: string | null
+          id: string
+          tags: string[] | null
+          thumbnail_url: string | null
+          updated_at: string | null
+          user_id: string
+          video_url: string
+          visibility: string | null
+        }
+        Insert: {
+          audio_type?: string | null
+          audio_url?: string | null
+          caption?: string | null
+          created_at?: string | null
+          id?: string
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          updated_at?: string | null
+          user_id: string
+          video_url: string
+          visibility?: string | null
+        }
+        Update: {
+          audio_type?: string | null
+          audio_url?: string | null
+          caption?: string | null
+          created_at?: string | null
+          id?: string
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          updated_at?: string | null
+          user_id?: string
+          video_url?: string
+          visibility?: string | null
+        }
+        Relationships: []
+      }
       reels: {
         Row: {
           audio: string | null
@@ -632,15 +546,7 @@ export type Database = {
           reel_id?: string
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "reposted_reels_reel_id_fkey"
-            columns: ["reel_id"]
-            isOneToOne: false
-            referencedRelation: "posts_reels"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       rewards: {
         Row: {
@@ -691,15 +597,7 @@ export type Database = {
           reel_id?: string
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "saved_reels_reel_id_fkey"
-            columns: ["reel_id"]
-            isOneToOne: false
-            referencedRelation: "posts_reels"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       stories: {
         Row: {
@@ -731,138 +629,39 @@ export type Database = {
         }
         Relationships: []
       }
-      unified_post_comments: {
+      text_posts: {
         Row: {
           content: string
-          created_at: string
+          created_at: string | null
+          emoji_mood: string | null
           id: string
-          is_deleted: boolean | null
-          post_id: string
-          updated_at: string
+          tags: string[] | null
+          title: string | null
+          updated_at: string | null
           user_id: string
+          visibility: string | null
         }
         Insert: {
           content: string
-          created_at?: string
+          created_at?: string | null
+          emoji_mood?: string | null
           id?: string
-          is_deleted?: boolean | null
-          post_id: string
-          updated_at?: string
+          tags?: string[] | null
+          title?: string | null
+          updated_at?: string | null
           user_id: string
+          visibility?: string | null
         }
         Update: {
           content?: string
-          created_at?: string
-          id?: string
-          is_deleted?: boolean | null
-          post_id?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "unified_post_comments_post_id_fkey"
-            columns: ["post_id"]
-            isOneToOne: false
-            referencedRelation: "unified_posts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "unified_post_comments_post_id_fkey"
-            columns: ["post_id"]
-            isOneToOne: false
-            referencedRelation: "v_active_posts"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      unified_post_likes: {
-        Row: {
-          created_at: string
-          id: string
-          post_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          post_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          post_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "unified_post_likes_post_id_fkey"
-            columns: ["post_id"]
-            isOneToOne: false
-            referencedRelation: "unified_posts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "unified_post_likes_post_id_fkey"
-            columns: ["post_id"]
-            isOneToOne: false
-            referencedRelation: "v_active_posts"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      unified_posts: {
-        Row: {
-          caption: string | null
-          content: string | null
-          created_at: string
-          deleted_at: string | null
-          emoji_mood: string | null
-          id: string
-          image_urls: string[] | null
-          is_deleted: boolean | null
-          post_type: string
-          tags: string[] | null
-          title: string | null
-          updated_at: string
-          user_id: string
-          video_url: string | null
-          visibility: string
-        }
-        Insert: {
-          caption?: string | null
-          content?: string | null
-          created_at?: string
-          deleted_at?: string | null
+          created_at?: string | null
           emoji_mood?: string | null
           id?: string
-          image_urls?: string[] | null
-          is_deleted?: boolean | null
-          post_type: string
           tags?: string[] | null
           title?: string | null
-          updated_at?: string
-          user_id: string
-          video_url?: string | null
-          visibility?: string
-        }
-        Update: {
-          caption?: string | null
-          content?: string | null
-          created_at?: string
-          deleted_at?: string | null
-          emoji_mood?: string | null
-          id?: string
-          image_urls?: string[] | null
-          is_deleted?: boolean | null
-          post_type?: string
-          tags?: string[] | null
-          title?: string | null
-          updated_at?: string
+          updated_at?: string | null
           user_id?: string
-          video_url?: string | null
-          visibility?: string
+          visibility?: string | null
         }
         Relationships: []
       }
@@ -1071,80 +870,35 @@ export type Database = {
       }
     }
     Views: {
-      v_active_posts: {
-        Row: {
-          caption: string | null
-          content: string | null
-          created_at: string | null
-          deleted_at: string | null
-          emoji_mood: string | null
-          id: string | null
-          image_urls: string[] | null
-          is_deleted: boolean | null
-          post_type: string | null
-          tags: string[] | null
-          title: string | null
-          updated_at: string | null
-          user_id: string | null
-          video_url: string | null
-          visibility: string | null
-        }
-        Insert: {
-          caption?: string | null
-          content?: string | null
-          created_at?: string | null
-          deleted_at?: string | null
-          emoji_mood?: string | null
-          id?: string | null
-          image_urls?: string[] | null
-          is_deleted?: boolean | null
-          post_type?: string | null
-          tags?: string[] | null
-          title?: string | null
-          updated_at?: string | null
-          user_id?: string | null
-          video_url?: string | null
-          visibility?: string | null
-        }
-        Update: {
-          caption?: string | null
-          content?: string | null
-          created_at?: string | null
-          deleted_at?: string | null
-          emoji_mood?: string | null
-          id?: string | null
-          image_urls?: string[] | null
-          is_deleted?: boolean | null
-          post_type?: string | null
-          tags?: string[] | null
-          title?: string | null
-          updated_at?: string | null
-          user_id?: string | null
-          video_url?: string | null
-          visibility?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
+      add_post_comment: {
+        Args: {
+          p_post_id: string
+          p_user_id: string
+          p_content: string
+          p_post_type: string
+        }
+        Returns: Json
+      }
       get_feed_posts: {
         Args: { user_uuid: string; post_limit?: number }
         Returns: {
-          caption: string | null
-          content: string | null
-          created_at: string
-          deleted_at: string | null
-          emoji_mood: string | null
           id: string
-          image_urls: string[] | null
-          is_deleted: boolean | null
-          post_type: string
-          tags: string[] | null
-          title: string | null
-          updated_at: string
           user_id: string
-          video_url: string | null
+          content: string
+          title: string
+          image_urls: string[]
+          video_url: string
+          caption: string
+          tags: string[]
+          emoji_mood: string
+          post_type: string
+          created_at: string
           visibility: string
+          likes_count: number
+          comments_count: number
         }[]
       }
       is_reel_reposted: {
@@ -1186,9 +940,17 @@ export type Database = {
         Args: { post_id: string }
         Returns: undefined
       }
+      toggle_post_like: {
+        Args: { p_post_id: string; p_user_id: string; p_post_type: string }
+        Returns: boolean
+      }
       unsave_reel: {
         Args: { p_reel_id: string; p_user_id: string }
         Returns: undefined
+      }
+      user_has_liked_post: {
+        Args: { p_post_id: string; p_user_id: string; p_post_type: string }
+        Returns: boolean
       }
     }
     Enums: {

@@ -1,286 +1,106 @@
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Link } from "react-router-dom";
-import { Heart, MessageCircle, Share, Bookmark, MoreHorizontal, AlertCircle, Loader2 } from "lucide-react";
+import { Heart, MessageCircle, Share, Bookmark, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSocialActions } from "@/hooks/use-social-actions";
 import { cn, formatTimeAgo } from "@/lib/utils";
 import { toast } from "sonner";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { addComment, getComments } from "@/services/comment-service";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { FeedPost, addComment, getComments, PostComment } from "@/services/post-service";
+import { Textarea } from "@/components/ui/textarea";
 import { useTranslation } from "react-i18next";
-import { 
-  checkUnifiedPostExists, 
-  getUnifiedPostComments, 
-  addUnifiedPostComment, 
-  checkUnifiedPostLikeStatus, 
-  toggleUnifiedPostLike, 
-  getUnifiedPostLikes 
-} from "@/services/unified-post-service";
 
 interface PostCardProps {
-  post: any;
+  post: FeedPost;
 }
 
-const PostCard = ({ post }: PostCardProps) => {
+const PostCard: React.FC<PostCardProps> = ({ post }) => {
   const { user } = useAuth();
-  const { toggleLikePost, checkPostLikeStatus, isLiking, checkPostExists, getPostLikesCount } = useSocialActions();
-  const [isLiked, setIsLiked] = useState(false);
-  const [likesCount, setLikesCount] = useState(0);
+  const { toggleLikePost, hasLikedPost, getPostLikesCount, isLiking } = useSocialActions();
+  const [liked, setLiked] = useState(false);
+  const [likesCount, setLikesCount] = useState(post.likes_count || 0);
   const [showComments, setShowComments] = useState(false);
   const [comment, setComment] = useState('');
-  const [isValidPost, setIsValidPost] = useState(true);
-  const [comments, setComments] = useState<any[]>([]);
+  const [comments, setComments] = useState<PostComment[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
-  const [isUsingUnifiedTable, setIsUsingUnifiedTable] = useState(true);
-  const [hasValidated, setHasValidated] = useState(false);
-  const [validationAttempts, setValidationAttempts] = useState(0);
-  const [likeInProgress, setLikeInProgress] = useState(false);
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const { t } = useTranslation();
   
-  // Initial validation - if post is completely invalid, don't render anything
-  if (!post || !post.id) {
-    return null;
-  }
-  
-  const postRef = useRef(post.id);
-  const commentsRef = useRef<any[]>([]);
-
   useEffect(() => {
-    // Reset validation when post changes
-    if (postRef.current !== post.id) {
-      postRef.current = post.id;
-      setHasValidated(false);
-      setValidationAttempts(0);
-    }
+    // Set initial like count from the post data
+    setLikesCount(post.likes_count || 0);
     
-    const validatePost = async () => {
-      if (!post?.id) {
-        setIsValidPost(false);
-        setHasValidated(true);
-        return;
-      }
-      
-      // Increment validation attempts
-      setValidationAttempts(prev => prev + 1);
-      
-      try {
-        // First try the unified_posts table - our primary source
+    // Check if the current user has liked this post
+    const checkLikeStatus = async () => {
+      if (user && post.id) {
         try {
-          const unifiedPostExists = await checkUnifiedPostExists(post.id);
-          
-          if (unifiedPostExists) {
-            console.log(`Post ${post.id} exists in unified or legacy tables`);
-            setIsUsingUnifiedTable(true);
-            setIsValidPost(true);
-            setHasValidated(true);
-            
-            if (user) {
-              // Get like status using unified tables
-              try {
-                const liked = await checkUnifiedPostLikeStatus(post.id, user.id);
-                setIsLiked(liked);
-                
-                const count = await getUnifiedPostLikes(post.id);
-                setLikesCount(count);
-              } catch (likeError) {
-                console.error("Error fetching unified post like data:", likeError);
-              }
-            }
-            
-            return;
-          }
-        } catch (unifiedError) {
-          console.warn("Error checking in unified tables:", unifiedError);
+          const hasLiked = await hasLikedPost(post.id, user.id, post.post_type);
+          setLiked(hasLiked);
+        } catch (error) {
+          console.error("Error checking like status:", error);
         }
-        
-        // Fall back to legacy implementation
-        try {
-          const legacyPostExists = await checkPostExists(post.id);
-          
-          if (legacyPostExists) {
-            console.log(`Post ${post.id} exists in legacy table`);
-            setIsUsingUnifiedTable(false);
-            setIsValidPost(true);
-            setHasValidated(true);
-            
-            if (user) {
-              try {
-                const liked = await checkPostLikeStatus(post.id);
-                setIsLiked(liked);
-                
-                const count = await getPostLikesCount(post.id);
-                setLikesCount(count);
-              } catch (likeError) {
-                console.error("Error fetching post like data:", likeError);
-              }
-            }
-            return;
-          }
-          
-          console.log(`Post ${post.id} does not exist in any table`);
-          setIsValidPost(false);
-          setHasValidated(true);
-        } catch (legacyError) {
-          console.error("Error checking if legacy post exists:", legacyError);
-          
-          // If this is our first attempt, assume the post is valid until we confirm otherwise
-          if (validationAttempts === 1) {
-            console.log(`First validation attempt for ${post.id}, assuming valid for now`);
-            setIsValidPost(true);
-          } else {
-            setIsValidPost(false);
-          }
-          setHasValidated(true);
-        }
-      } catch (error) {
-        console.error("Error validating post:", error);
-        
-        // If this is our first attempt, assume the post is valid until we confirm otherwise
-        if (validationAttempts === 1) {
-          console.log(`First validation attempt for ${post.id}, assuming valid for now`);
-          setIsValidPost(true);
-        } else {
-          setIsValidPost(false);
-        }
-        setHasValidated(true);
       }
     };
     
-    if (!hasValidated || validationAttempts === 0) {
-      validatePost();
-    }
-  }, [post?.id, user, checkPostLikeStatus, checkPostExists, getPostLikesCount, hasValidated, validationAttempts]);
+    checkLikeStatus();
+  }, [post.id, post.post_type, post.likes_count, user]);
 
-  const fetchComments = async () => {
-    if (!post?.id || !isValidPost) return;
+  const handleLike = async () => {
+    if (!user) {
+      toast.error(t('auth.signInRequired', 'Please sign in to like this post'));
+      return;
+    }
+    
+    try {
+      // Optimistic UI update
+      const prevLikeState = liked;
+      setLiked(!liked);
+      setLikesCount(prevLikeState ? likesCount - 1 : likesCount + 1);
+      
+      // Make API call to toggle like
+      const result = await toggleLikePost(post.id, post.post_type);
+      
+      // If result is different from what we expected, revert the UI
+      if (result !== !prevLikeState) {
+        setLiked(result);
+        const updatedLikesCount = await getPostLikesCount(post.id, post.post_type);
+        setLikesCount(updatedLikesCount);
+      }
+    } catch (error) {
+      console.error("Error toggling like:", error);
+      toast.error(t('common.error.likePost', 'Failed to update like'));
+    }
+  };
+
+  const handleOpenComments = async () => {
+    setShowComments(true);
+    if (comments.length === 0) {
+      await loadComments();
+    }
+  };
+
+  const loadComments = async () => {
+    if (!post.id) return;
     
     setIsLoadingComments(true);
     try {
-      console.log(`Fetching comments for post ${post.id} using ${isUsingUnifiedTable ? 'unified' : 'legacy'} tables`);
-      
-      let fetchedComments: any[] = [];
-      
-      if (isUsingUnifiedTable) {
-        fetchedComments = await getUnifiedPostComments(post.id);
-      } else {
-        fetchedComments = await getComments(post.id);
-      }
-      
-      console.log(`Fetched ${fetchedComments.length} comments for post ${post.id}`);
+      const fetchedComments = await getComments(post.id, post.post_type);
       setComments(fetchedComments);
-      commentsRef.current = fetchedComments;
     } catch (error) {
-      console.error("Error fetching comments:", error);
-      setComments([]);
-      commentsRef.current = [];
+      console.error("Error loading comments:", error);
+      toast.error(t('common.error.loadComments', 'Failed to load comments'));
     } finally {
       setIsLoadingComments(false);
     }
   };
 
-  // Load comments when comments dialog is opened
-  useEffect(() => {
-    if (showComments && isValidPost) {
-      fetchComments();
-    }
-  }, [showComments, isValidPost, post?.id]);
-
-  const handleLikeClick = async () => {
-    if (!user) {
-      toast.error(t('auth.signInRequired', 'Please sign in to like posts'));
-      return;
-    }
-    
-    if (!post?.id || !isValidPost) {
-      return;
-    }
-    
-    if (likeInProgress) {
-      console.log('Like action already in progress, ignoring click');
-      return;
-    }
-    
-    setLikeInProgress(true);
-    
-    const previousLiked = isLiked;
-    // Optimistic UI update
-    setIsLiked(!isLiked);
-    setLikesCount(prevCount => previousLiked ? Math.max(0, prevCount - 1) : prevCount + 1);
-    
-    try {
-      let result: boolean;
-      
-      if (isUsingUnifiedTable) {
-        console.log(`Toggling like for unified post ${post.id}`);
-        result = await toggleUnifiedPostLike(post.id, user.id);
-      } else {
-        console.log(`Toggling like for legacy post ${post.id}`);
-        result = await toggleLikePost(post.id);
-      }
-      
-      // If the result doesn't match our expected state, update accordingly
-      if (result !== !previousLiked) {
-        setIsLiked(result);
-        
-        try {
-          // Refresh the likes count after toggling
-          const newCount = isUsingUnifiedTable 
-            ? await getUnifiedPostLikes(post.id) 
-            : await getPostLikesCount(post.id);
-          
-          setLikesCount(newCount);
-        } catch (countError) {
-          console.error("Error getting updated likes count:", countError);
-        }
-      }
-    } catch (error) {
-      console.error("Error liking post:", error);
-      
-      // Check if this is a "post not found" type of error
-      const errorMessage = error instanceof Error ? error.message : '';
-      const isNotFoundError = 
-        errorMessage.includes('not found') || 
-        errorMessage.includes('does not exist') ||
-        errorMessage.includes('violates foreign key constraint');
-      
-      if (isNotFoundError) {
-        // Post may have been deleted, mark as invalid
-        setIsValidPost(false);
-        toast.error(t('common.error.postNotAvailable', 'This post is no longer available'));
-      } else {
-        // Other error, revert optimistic updates
-        setIsLiked(previousLiked);
-        toast.error(t('common.error.likePost', 'Failed to update like status'));
-      }
-      
-      // Refresh the likes count
-      try {
-        if (isUsingUnifiedTable) {
-          const newCount = await getUnifiedPostLikes(post.id);
-          setLikesCount(newCount);
-        } else {
-          const newCount = await getPostLikesCount(post.id);
-          setLikesCount(newCount);
-        }
-      } catch (countError) {
-        console.error("Error getting likes count:", countError);
-      }
-    } finally {
-      setLikeInProgress(false);
-    }
-  };
-  
-  const handleSubmitComment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handleSubmitComment = async () => {
     if (!user) {
       toast.error(t('auth.signInRequired', 'Please sign in to comment'));
       return;
@@ -291,255 +111,229 @@ const PostCard = ({ post }: PostCardProps) => {
       return;
     }
     
-    if (!post?.id || !isValidPost) {
-      toast.error(t('common.error.postNotAvailable', 'This post is no longer available'));
-      return;
-    }
-    
     setIsSubmittingComment(true);
     try {
-      console.log(`Submitting comment for post ${post.id}: "${comment.trim()}"`);
-      
-      let newComment;
-      
-      if (isUsingUnifiedTable) {
-        newComment = await addUnifiedPostComment(post.id, user.id, comment.trim());
-      } else {
-        newComment = await addComment(post.id, user.id, comment.trim());
-      }
-      
-      console.log("Comment added successfully:", newComment);
-      
+      const newComment = await addComment(post.id, user.id, comment, post.post_type);
       if (newComment) {
         setComments(prev => [newComment, ...prev]);
-        commentsRef.current = [newComment, ...commentsRef.current];
         setComment('');
         toast.success(t('common.success.commentAdded', 'Comment added'));
       }
     } catch (error) {
       console.error("Error adding comment:", error);
-      
-      const errorMessage = error instanceof Error ? error.message : '';
-      const isNotFoundError = 
-        errorMessage.includes('not found') || 
-        errorMessage.includes('does not exist') ||
-        errorMessage.includes('Post does not exist');
-      
-      if (isNotFoundError) {
-        toast.error(t('common.error.postNotAvailable', 'This post is no longer available'));
-        setIsValidPost(false);
-      } else {
-        toast.error(t('common.error.addComment', 'Failed to add comment'));
-      }
+      toast.error(t('common.error.addComment', 'Failed to add comment'));
     } finally {
       setIsSubmittingComment(false);
     }
   };
 
-  const handleShare = () => {
-    toast.info(t('common.comingSoon.share', 'Sharing will be available soon!'));
-  };
-  
-  const handleSave = () => {
-    toast.info(t('common.comingSoon.save', 'Saving posts will be available soon!'));
-  };
-
-  // If still validating, show a loading state
-  if (!hasValidated) {
-    return (
-      <Card className="w-full overflow-hidden p-4">
-        <div className="flex items-center space-x-4">
-          <Skeleton className="h-10 w-10 rounded-full" />
-          <div className="space-y-2 flex-1">
-            <Skeleton className="h-4 w-[200px]" />
-            <Skeleton className="h-3 w-[140px]" />
+  // Render different post content based on type
+  const renderPostContent = () => {
+    switch (post.post_type) {
+      case 'text':
+        return (
+          <div className="mb-4">
+            {post.title && <h2 className="text-xl font-semibold mb-2">{post.title}</h2>}
+            <p className="text-gray-700 dark:text-gray-300 whitespace-pre-line">{post.content}</p>
           </div>
-        </div>
-        <div className="mt-4 space-y-2">
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-4/5" />
-        </div>
-        <div className="mt-4 flex justify-between">
-          <div className="flex space-x-4">
-            <Skeleton className="h-8 w-8 rounded" />
-            <Skeleton className="h-8 w-8 rounded" />
-            <Skeleton className="h-8 w-8 rounded" />
-          </div>
-          <Skeleton className="h-8 w-8 rounded" />
-        </div>
-      </Card>
-    );
-  }
-
-  // If post is invalid after validation, display a subtle message instead of the post
-  if (!isValidPost) {
-    return (
-      <Card className="w-full overflow-hidden bg-gray-50 dark:bg-gray-800/50 text-gray-500">
-        <div className="p-4 flex items-center justify-center">
-          <AlertCircle className="h-5 w-5 mr-2 text-gray-400" />
-          <p>{t('common.error.postNotFound', 'This post may have been removed')}</p>
-        </div>
-      </Card>
-    );
-  }
-
-  // Extract post data
-  const profileUsername = post.profile?.username || post.profiles?.username || 'anonymous';
-  const profileAvatar = post.profile?.avatar || post.profiles?.avatar;
-  const profileFullName = post.profile?.full_name || post.profiles?.full_name || profileUsername;
-  const postContent = post.content || post.body;
-  const postImageUrl = post.image_url || (post.image_urls && post.image_urls.length > 0 ? post.image_urls[0] : null);
-  
-  return (
-    <>
-      <Card className="w-full overflow-hidden">
-        <div className="flex items-start gap-3 p-4">
-          <Link to={`/profile/${profileUsername || post.user_id}`}>
-            <Avatar className="h-8 w-8">
-              <AvatarImage src={profileAvatar} alt={profileUsername} />
-              <AvatarFallback>{profileUsername?.[0]?.toUpperCase() || 'U'}</AvatarFallback>
-            </Avatar>
-          </Link>
-          <div className="flex-1">
-            <div className="flex items-center justify-between">
-              <div>
-                <Link to={`/profile/${profileUsername || post.user_id}`}>
-                  <p className="text-sm font-medium leading-none">{profileFullName}</p>
-                </Link>
-                <Link to={`/profile/${profileUsername || post.user_id}`}>
-                  <p className="text-sm text-gray-500">
-                    @{profileUsername} · {formatTimeAgo(post.created_at)}
-                  </p>
-                </Link>
-              </div>
-              <Button variant="ghost" size="icon">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
+        );
+        
+      case 'image':
+        return (
+          <div className="mb-4">
+            {post.caption && <p className="text-gray-700 dark:text-gray-300 mb-2">{post.caption}</p>}
+            <div className={`grid ${post.image_urls && post.image_urls.length > 1 ? 'grid-cols-2 gap-2' : 'grid-cols-1'}`}>
+              {post.image_urls && post.image_urls.map((url, index) => (
+                <img 
+                  key={index}
+                  src={url}
+                  alt={`Post image ${index + 1}`}
+                  className="w-full h-auto rounded-lg object-cover"
+                  loading="lazy"
+                />
+              ))}
             </div>
-            <p className="text-sm mt-1">{postContent}</p>
           </div>
-        </div>
-
-        {postImageUrl && (
-          <Skeleton className="w-full aspect-video rounded-none" >
-            <img src={postImageUrl} alt="Post Image" className="w-full aspect-video object-cover" />
-          </Skeleton>
-        )}
-
-        <div className="flex justify-between items-center p-4">
-          <div className="flex items-center space-x-4 text-gray-500">
-            <div className="flex items-center">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={handleLikeClick} 
-                disabled={isLiking[post.id]}
-                aria-label={isLiked ? t('common.unlike', 'Unlike post') : t('common.like', 'Like post')}
-              >
-                <Heart className={cn("h-5 w-5", isLiked && "text-red-500")} fill={isLiked ? 'red' : 'none'} />
-              </Button>
-              <span className="text-sm">{likesCount > 0 ? likesCount : ''}</span>
+        );
+        
+      case 'reel':
+        return (
+          <div className="mb-4">
+            {post.caption && <p className="text-gray-700 dark:text-gray-300 mb-2">{post.caption}</p>}
+            <div className="aspect-video rounded-lg overflow-hidden">
+              <video 
+                src={post.video_url || ''}
+                controls
+                preload="metadata"
+                className="w-full h-full object-cover"
+                poster={post.thumbnail_url}
+              />
             </div>
-            <div className="flex items-center">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={() => setShowComments(!showComments)}
-                aria-label={showComments ? t('common.hideComments', 'Hide comments') : t('common.showComments', 'Show comments')}
-              >
-                <MessageCircle className="h-5 w-5" />
-              </Button>
-              <span className="text-sm">{comments.length > 0 ? comments.length : ''}</span>
-            </div>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={handleShare}
-              aria-label="Share post"
-            >
-              <Share className="h-5 w-5" />
-            </Button>
           </div>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={handleSave}
-            aria-label="Save post"
-          >
-            <Bookmark className="h-5 w-5" />
-          </Button>
-        </div>
-
-        <Dialog open={showComments} onOpenChange={setShowComments}>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogTitle>{t('common.comments', 'Comments')}</DialogTitle>
-            <DialogDescription>{t('common.commentsDescription', 'Join the conversation by adding your comment below.')}</DialogDescription>
-            
-            <div className="space-y-4 max-h-[60vh] overflow-y-auto p-4">
-              {isLoadingComments ? (
-                <div className="space-y-4">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="flex items-start space-x-4">
-                      <Skeleton className="h-10 w-10 rounded-full" />
-                      <div className="space-y-2 flex-1">
-                        <Skeleton className="h-4 w-[200px]" />
-                        <Skeleton className="h-4 w-full" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : comments.length > 0 ? (
-                comments.map((comment) => (
-                  <div key={comment.id} className="flex items-start space-x-4">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={comment.profiles?.avatar} alt={comment.profiles?.username} />
-                      <AvatarFallback>{comment.profiles?.username?.[0]?.toUpperCase() || 'U'}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">{comment.profiles?.username}</p>
-                      <p className="text-sm text-gray-500">{comment.content}</p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        {formatTimeAgo(comment.created_at)}
-                      </p>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-center text-gray-500">
-                  {t('common.noComments', 'No comments yet. Be the first!')}
-                </p>
+        );
+        
+      case 'meme':
+        return (
+          <div className="mb-4 relative">
+            <div className="relative">
+              <img 
+                src={post.image_urls?.[0] || ''}
+                alt="Meme"
+                className="w-full h-auto rounded-lg"
+              />
+              {post.title && (
+                <h2 className="absolute top-4 left-0 w-full text-center text-white text-2xl font-bold stroke-text">
+                  {post.title}
+                </h2>
+              )}
+              {post.caption && (
+                <h2 className="absolute bottom-4 left-0 w-full text-center text-white text-2xl font-bold stroke-text">
+                  {post.caption}
+                </h2>
               )}
             </div>
+          </div>
+        );
+        
+      default:
+        return null;
+    }
+  };
 
-            <form onSubmit={handleSubmitComment} className="border-t p-4">
-              <div className="flex items-center space-x-2">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={user?.user_metadata?.avatar_url} />
-                  <AvatarFallback>{user?.email?.[0].toUpperCase() || 'U'}</AvatarFallback>
-                </Avatar>
-                <input
-                  type="text"
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  placeholder={t('common.addComment', 'Add a comment...')}
-                  className="flex-1 bg-gray-100 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-                <Button 
-                  type="submit" 
-                  disabled={isSubmittingComment || !comment.trim()}
-                  size="sm"
-                >
-                  {isSubmittingComment ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  ) : null}
-                  {t('common.post', 'Post')}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      <Card className="overflow-hidden bg-white dark:bg-gray-800 hover:shadow-lg transition-shadow duration-300">
+        {/* Post Header */}
+        <div className="px-4 pt-4 pb-2 flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <Link to={`/profile/${post.user_id}`}>
+              <Avatar className="h-10 w-10 border">
+                <AvatarImage src={post.profiles?.avatar || ''} alt={post.profiles?.username || 'User'} />
+                <AvatarFallback>{(post.profiles?.username || 'U').charAt(0).toUpperCase()}</AvatarFallback>
+              </Avatar>
+            </Link>
+            <div>
+              <Link to={`/profile/${post.user_id}`} className="font-semibold text-sm hover:underline">
+                {post.profiles?.username || 'Anonymous User'}
+              </Link>
+              <p className="text-xs text-gray-500">{formatTimeAgo(post.created_at)}</p>
+            </div>
+          </div>
+          
+          <Button variant="ghost" size="icon">
+            <MoreHorizontal className="h-5 w-5" />
+          </Button>
+        </div>
+        
+        {/* Post Content */}
+        <div className="px-4 py-2">
+          {renderPostContent()}
+        </div>
+        
+        {/* Post tags */}
+        {post.tags && post.tags.length > 0 && (
+          <div className="px-4 pb-2 flex flex-wrap gap-1">
+            {post.tags.map((tag, index) => (
+              <span key={index} className="text-xs text-blue-500 dark:text-blue-400 hover:underline">
+                #{tag}
+              </span>
+            ))}
+          </div>
+        )}
+        
+        {/* Post Actions */}
+        <div className="px-4 py-2 flex items-center justify-between border-t border-gray-100 dark:border-gray-700">
+          <div className="flex items-center gap-6">
+            {/* Like button */}
+            <button
+              onClick={handleLike}
+              disabled={isLiking[post.id]}
+              className={cn(
+                "flex items-center gap-1",
+                liked ? "text-red-500" : "text-gray-500 hover:text-gray-700"
+              )}
+            >
+              <Heart className={cn("h-5 w-5", liked && "fill-current")} />
+              <span className="text-sm">{likesCount > 0 ? likesCount : ''}</span>
+            </button>
+            
+            {/* Comment button */}
+            <button
+              onClick={handleOpenComments}
+              className="flex items-center gap-1 text-gray-500 hover:text-gray-700"
+            >
+              <MessageCircle className="h-5 w-5" />
+              <span className="text-sm">{post.comments_count > 0 ? post.comments_count : ''}</span>
+            </button>
+            
+            {/* Share button */}
+            <button className="flex items-center gap-1 text-gray-500 hover:text-gray-700">
+              <Share className="h-5 w-5" />
+            </button>
+          </div>
+          
+          {/* Save button */}
+          <button className="text-gray-500 hover:text-gray-700">
+            <Bookmark className="h-5 w-5" />
+          </button>
+        </div>
       </Card>
-    </>
+      
+      {/* Comments Dialog */}
+      <Dialog open={showComments} onOpenChange={setShowComments}>
+        <DialogContent className="max-w-md">
+          <DialogTitle>Comments</DialogTitle>
+          
+          {/* Add comment input */}
+          <div className="flex flex-col gap-2">
+            <Textarea
+              placeholder="Add a comment..."
+              value={comment}
+              onChange={e => setComment(e.target.value)}
+              className="min-h-[80px]"
+            />
+            <Button 
+              onClick={handleSubmitComment} 
+              disabled={!comment.trim() || isSubmittingComment}
+              className="self-end"
+            >
+              {isSubmittingComment ? 'Posting...' : 'Post Comment'}
+            </Button>
+          </div>
+          
+          {/* Comments list */}
+          <div className="mt-4 max-h-[300px] overflow-y-auto space-y-4">
+            {isLoadingComments ? (
+              <p className="text-center text-gray-500">Loading comments...</p>
+            ) : comments.length === 0 ? (
+              <p className="text-center text-gray-500">No comments yet. Be the first!</p>
+            ) : (
+              comments.map(comment => (
+                <div key={comment.id} className="flex gap-3">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={comment.profiles?.avatar || ''} />
+                    <AvatarFallback>{(comment.profiles?.username || 'U').charAt(0).toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <div className="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg">
+                      <Link to={`/profile/${comment.user_id}`} className="font-semibold text-sm hover:underline">
+                        {comment.profiles?.username || 'Anonymous User'}
+                      </Link>
+                      <p className="text-sm mt-1">{comment.content}</p>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">{formatTimeAgo(comment.created_at)}</p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </motion.div>
   );
 };
 

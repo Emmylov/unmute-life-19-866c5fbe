@@ -2,17 +2,152 @@
 import { supabase } from "@/integrations/supabase/client";
 import { uploadImage } from "./upload-service";
 import { uploadReelVideo } from "./upload-service";
+import { toast } from "sonner";
+
+// Types for our different post structures
+export type TextPost = {
+  id: string;
+  user_id: string;
+  title?: string;
+  content: string;
+  tags?: string[];
+  emoji_mood?: string;
+  created_at: string;
+  visibility?: string;
+};
+
+export type ImagePost = {
+  id: string;
+  user_id: string;
+  image_urls: string[];
+  caption?: string;
+  tags?: string[];
+  created_at: string;
+  visibility?: string;
+};
+
+export type ReelPost = {
+  id: string;
+  user_id: string;
+  video_url: string;
+  caption?: string;
+  thumbnail_url?: string;
+  audio_url?: string;
+  audio_type?: string;
+  tags?: string[];
+  created_at: string;
+  visibility?: string;
+};
+
+export type MemePost = {
+  id: string;
+  user_id: string;
+  image_url: string;
+  top_text?: string;
+  bottom_text?: string;
+  category?: string;
+  created_at: string;
+  visibility?: string;
+};
+
+export type PostComment = {
+  id: string;
+  post_id: string;
+  user_id: string;
+  content: string;
+  post_type: string;
+  created_at: string;
+  updated_at: string;
+  is_deleted: boolean;
+  profiles?: {
+    id: string;
+    username: string | null;
+    avatar: string | null;
+    full_name: string | null;
+  };
+};
+
+export type PostLike = {
+  id: string;
+  post_id: string;
+  user_id: string;
+  post_type: string;
+  created_at: string;
+};
+
+export type FeedPost = {
+  id: string;
+  user_id: string;
+  content?: string | null;
+  title?: string | null;
+  image_urls?: string[] | null;
+  video_url?: string | null;
+  caption?: string | null;
+  tags?: string[] | null;
+  emoji_mood?: string | null;
+  post_type: 'text' | 'image' | 'reel' | 'meme';
+  created_at: string;
+  visibility?: string;
+  likes_count: number;
+  comments_count: number;
+  profiles?: {
+    id: string;
+    username: string | null;
+    avatar: string | null;
+    full_name: string | null;
+  };
+};
+
+// Create a new text post
+export const createTextPost = async (params: {
+  user_id: string;
+  content: string;
+  title?: string;
+  tags?: string[];
+  emoji_mood?: string;
+  visibility?: string;
+}): Promise<TextPost | null> => {
+  try {
+    const { data, error } = await supabase
+      .from("text_posts")
+      .insert({
+        user_id: params.user_id,
+        content: params.content,
+        title: params.title,
+        tags: params.tags,
+        emoji_mood: params.emoji_mood,
+        visibility: params.visibility || 'public'
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error creating text post:", error);
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error("Exception creating text post:", error);
+    throw error;
+  }
+};
 
 // Create a new image post
-export const createImagePost = async (userId: string, imageFiles: File[], caption?: string, tags?: string[]) => {
+export const createImagePost = async (
+  userId: string,
+  imageFiles: File[],
+  caption?: string,
+  tags?: string[]
+): Promise<ImagePost | null> => {
   try {
     // Upload all images and get their URLs
     const uploadPromises = imageFiles.map(file => uploadImage(file));
     const imageUrls = await Promise.all(uploadPromises);
-    
+
     // Insert the post into the database
     const { data, error } = await supabase
-      .from("posts_images")
+      .from("image_posts")
       .insert({
         user_id: userId,
         image_urls: imageUrls,
@@ -21,82 +156,52 @@ export const createImagePost = async (userId: string, imageFiles: File[], captio
       })
       .select()
       .single();
-    
-    if (error) {
-      throw error;
-    }
-    
-    return data;
-  } catch (error) {
-    console.error("Error creating image post:", error);
-    throw error;
-  }
-};
 
-// Create a new text post
-export const createTextPost = async (params: { 
-  user_id: string, 
-  body: string, 
-  title?: string, 
-  tags?: string[], 
-  emoji_mood?: string 
-}) => {
-  try {
-    // Insert the post into the database
-    const { data, error } = await supabase
-      .from("posts_text")
-      .insert({
-        user_id: params.user_id,
-        title: params.title,
-        body: params.body,
-        tags: params.tags,
-        emoji_mood: params.emoji_mood
-      })
-      .select()
-      .single();
-    
     if (error) {
+      console.error("Error creating image post:", error);
       throw error;
     }
-    
+
     return data;
   } catch (error) {
-    console.error("Error creating text post:", error);
+    console.error("Exception creating image post:", error);
     throw error;
   }
 };
 
 // Create a new reel post
 export const createReelPost = async (
-  userId: string, 
-  videoFile: File, 
-  caption?: string, 
-  tags?: string[], 
-  audioUrl?: string, 
+  userId: string,
+  videoFile: File,
+  caption?: string,
+  tags?: string[],
+  audioUrl?: string,
   audioType: 'original' | 'library' = 'original'
-) => {
+): Promise<ReelPost | null> => {
   try {
     // Upload the video
-    const { videoUrl, storagePath } = await uploadReelVideo(videoFile);
-    
+    const { videoUrl, thumbnailUrl } = await uploadReelVideo(videoFile);
+
     // Insert the reel into the database
     const { data, error } = await supabase
-      .from("posts_reels")
+      .from("reel_posts")
       .insert({
         user_id: userId,
         video_url: videoUrl,
         caption,
         tags,
+        thumbnail_url: thumbnailUrl,
         audio_url: audioUrl,
         audio_type: audioType
       })
       .select()
       .single();
-    
+
     if (error) {
+      console.error("Error creating reel post:", error);
       throw error;
     }
-    
+
     return data;
   } catch (error) {
     console.error("Error creating reel post:", error);
@@ -104,186 +209,342 @@ export const createReelPost = async (
   }
 };
 
-// Fetch posts from a user
-export const getUserPosts = async (userId: string, limit: number = 10, type?: 'images' | 'text' | 'reels') => {
+// Create a new meme post
+export const createMemePost = async (
+  userId: string,
+  imageUrl: string,
+  topText?: string,
+  bottomText?: string,
+  category?: string
+): Promise<MemePost | null> => {
   try {
-    // Determine which table to query based on type
-    let table = '';
-    switch (type) {
-      case 'images':
-        table = 'posts_images';
-        break;
-      case 'text':
-        table = 'posts_text';
-        break;
-      case 'reels':
-        table = 'posts_reels';
-        break;
-      default:
-        // If no type is specified, return images by default
-        table = 'posts_images';
+    const { data, error } = await supabase
+      .from("meme_posts")
+      .insert({
+        user_id: userId,
+        image_url: imageUrl,
+        top_text: topText,
+        bottom_text: bottomText,
+        category
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error creating meme post:", error);
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error("Error creating meme post:", error);
+    throw error;
+  }
+};
+
+// Get feed posts using the Supabase function
+export const getFeedPosts = async (userId: string, limit: number = 20): Promise<FeedPost[]> => {
+  try {
+    // Use the new database function to get feed posts
+    const { data, error } = await supabase
+      .rpc('get_feed_posts', {
+        user_uuid: userId,
+        post_limit: limit
+      });
+
+    if (error) {
+      console.error("Error fetching feed posts:", error);
+      throw error;
+    }
+
+    if (!data) {
+      return [];
+    }
+
+    // Get user profiles for all posts
+    const userIds = [...new Set(data.map(post => post.user_id))];
+    
+    // Fetch all profiles in one query
+    const { data: profilesData, error: profilesError } = await supabase
+      .from("profiles")
+      .select("id, username, avatar, full_name")
+      .in("id", userIds);
+
+    if (profilesError) {
+      console.error("Error fetching profiles:", profilesError);
+    }
+
+    // Create a map for quick profile lookup
+    const profileMap = new Map();
+    if (profilesData) {
+      profilesData.forEach(profile => {
+        profileMap.set(profile.id, profile);
+      });
+    }
+
+    // Combine posts with profiles
+    const postsWithProfiles = data.map(post => ({
+      ...post,
+      profiles: profileMap.get(post.user_id) || null
+    }));
+
+    return postsWithProfiles;
+  } catch (error) {
+    console.error("Exception fetching feed posts:", error);
+    throw error;
+  }
+};
+
+// Get user's posts (can filter by type)
+export const getUserPosts = async (
+  userId: string, 
+  limit: number = 10, 
+  type?: 'text' | 'image' | 'reel' | 'meme'
+): Promise<FeedPost[]> => {
+  try {
+    let posts: any[] = [];
+    
+    // If type is specified, query specific table
+    if (type) {
+      const tableName = `${type}_posts`;
+      const { data, error } = await supabase
+        .from(tableName)
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+      
+      if (error) throw error;
+      
+      if (data) {
+        // Transform to FeedPost format
+        posts = data.map(post => {
+          if (type === 'text') {
+            return {
+              ...post,
+              post_type: 'text',
+              likes_count: 0,
+              comments_count: 0
+            };
+          } else if (type === 'image') {
+            return {
+              ...post,
+              post_type: 'image',
+              likes_count: 0,
+              comments_count: 0
+            };
+          } else if (type === 'reel') {
+            return {
+              ...post,
+              post_type: 'reel',
+              likes_count: 0,
+              comments_count: 0
+            };
+          } else if (type === 'meme') {
+            return {
+              ...post,
+              post_type: 'meme',
+              image_urls: [post.image_url],
+              likes_count: 0,
+              comments_count: 0
+            };
+          }
+          return post;
+        });
+      }
+    } else {
+      // Use the feed posts function if no specific type
+      const { data, error } = await supabase
+        .rpc('get_feed_posts', {
+          user_uuid: userId,
+          post_limit: limit
+        });
+      
+      if (error) throw error;
+      posts = data || [];
     }
     
-    // Fetch the posts
+    // Get user profiles
+    if (posts.length > 0) {
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("id, username, avatar, full_name")
+        .eq("id", userId)
+        .single();
+        
+      // Add profile data to all posts
+      posts = posts.map(post => ({
+        ...post,
+        profiles: profileData || null
+      }));
+    }
+    
+    return posts;
+  } catch (error) {
+    console.error(`Error fetching ${type || 'user'} posts:`, error);
+    return [];
+  }
+};
+
+// Check if a post exists
+export const checkPostExists = async (postId: string, postType: string): Promise<boolean> => {
+  try {
+    const tableName = `${postType}_posts`;
     const { data, error } = await supabase
-      .from(table as any)
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(limit);
+      .from(tableName)
+      .select('id')
+      .eq('id', postId)
+      .maybeSingle();
+      
+    if (error) {
+      console.error(`Error checking if ${postType} post exists:`, error);
+      return false;
+    }
+    
+    return !!data;
+  } catch (error) {
+    console.error('Error checking post existence:', error);
+    return false;
+  }
+};
+
+// Like a post
+export const likePost = async (postId: string, userId: string, postType: string): Promise<boolean> => {
+  try {
+    // Use the database function to toggle the like
+    const { data, error } = await supabase
+      .rpc('toggle_post_like', {
+        p_post_id: postId,
+        p_user_id: userId,
+        p_post_type: postType
+      });
     
     if (error) {
+      console.error("Error toggling post like:", error);
+      throw error;
+    }
+    
+    return data || false;
+  } catch (error) {
+    console.error("Exception toggling post like:", error);
+    throw error;
+  }
+};
+
+// Check if user has liked a post
+export const hasLikedPost = async (postId: string, userId: string, postType: string): Promise<boolean> => {
+  try {
+    // Use the database function to check if post is liked
+    const { data, error } = await supabase
+      .rpc('user_has_liked_post', {
+        p_post_id: postId,
+        p_user_id: userId,
+        p_post_type: postType
+      });
+    
+    if (error) {
+      console.error("Error checking if post is liked:", error);
+      return false;
+    }
+    
+    return data || false;
+  } catch (error) {
+    console.error("Exception checking if post is liked:", error);
+    return false;
+  }
+};
+
+// Get post likes count
+export const getPostLikesCount = async (postId: string, postType: string): Promise<number> => {
+  try {
+    const { count, error } = await supabase
+      .from('post_likes')
+      .select('*', { count: 'exact', head: true })
+      .eq('post_id', postId)
+      .eq('post_type', postType);
+    
+    if (error) {
+      console.error("Error getting post likes count:", error);
+      return 0;
+    }
+    
+    return count || 0;
+  } catch (error) {
+    console.error("Exception getting post likes count:", error);
+    return 0;
+  }
+};
+
+// Add a comment to a post
+export const addComment = async (postId: string, userId: string, content: string, postType: string): Promise<PostComment | null> => {
+  try {
+    // Use the database function to add a comment with profile data
+    const { data, error } = await supabase
+      .rpc('add_post_comment', {
+        p_post_id: postId,
+        p_user_id: userId,
+        p_content: content,
+        p_post_type: postType
+      });
+    
+    if (error) {
+      console.error("Error adding comment:", error);
       throw error;
     }
     
     return data;
   } catch (error) {
-    console.error(`Error fetching ${type || 'user'} posts:`, error);
+    console.error("Exception adding comment:", error);
     throw error;
   }
 };
 
-// Modified: Fetch a feed of posts with proper join handling
-export const getFeedPosts = async (userId: string, limit: number = 20) => {
+// Get comments for a post
+export const getComments = async (postId: string, postType: string): Promise<PostComment[]> => {
   try {
-    // Get the list of users the current user follows
-    let userIds: string[] = [userId]; // Default with just the current user's ID
-    
-    try {
-      const { data, error: followingError } = await supabase
-        .from("user_follows")
-        .select("following_id")
-        .eq("follower_id", userId);
-      
-      if (followingError) {
-        console.error("Error fetching following data:", followingError);
-      } else if (data && data.length > 0) {
-        // Extract the user IDs
-        const followingIds = data.map(item => item.following_id);
-        // Add the following IDs to the user IDs array
-        userIds = [...followingIds, userId];
-      }
-    } catch (followErr) {
-      console.error("Exception when fetching following data:", followErr);
-      // Continue with just the user's own posts
-    }
-    
-    // Use a more reliable approach: fetch posts first, then profiles separately
-    
-    // First fetch posts_images
-    const { data: imagePostsData, error: imagePostsError } = await supabase
-      .from("posts_images")
+    const { data, error } = await supabase
+      .from('post_comments')
       .select(`
-        id, 
-        image_urls,
-        caption,
-        tags,
-        created_at,
-        user_id
+        *,
+        profiles:user_id (
+          id, username, avatar, full_name
+        )
       `)
-      .in("user_id", userIds)
-      .order("created_at", { ascending: false })
-      .limit(Math.ceil(limit / 2));
+      .eq('post_id', postId)
+      .eq('post_type', postType)
+      .eq('is_deleted', false)
+      .order('created_at', { ascending: false });
     
-    if (imagePostsError) {
-      console.error("Error fetching image posts:", imagePostsError);
-      // Continue to try text posts
+    if (error) {
+      console.error("Error getting comments:", error);
+      throw error;
     }
     
-    // Then fetch posts_text
-    const { data: textPostsData, error: textPostsError } = await supabase
-      .from("posts_text")
-      .select(`
-        id, 
-        body,
-        title,
-        emoji_mood,
-        tags,
-        created_at,
-        user_id
-      `)
-      .in("user_id", userIds)
-      .order("created_at", { ascending: false })
-      .limit(Math.ceil(limit / 2));
-    
-    if (textPostsError) {
-      console.error("Error fetching text posts:", textPostsError);
-    }
-    
-    // Combine posts from both sources
-    let allPosts: any[] = [];
-    
-    // Add image posts if available
-    if (imagePostsData && imagePostsData.length > 0) {
-      // Add a post_type field to help identify the source later
-      const formattedImagePosts = imagePostsData.map(post => ({
-        ...post,
-        post_type: 'image'
-      }));
-      allPosts.push(...formattedImagePosts);
-    }
-    
-    // Add text posts if available
-    if (textPostsData && textPostsData.length > 0) {
-      // Normalize the data structure and add post_type
-      const formattedTextPosts = textPostsData.map(post => ({
-        ...post,
-        content: post.body, // Ensure content field exists for compatibility
-        post_type: 'text'
-      }));
-      allPosts.push(...formattedTextPosts);
-    }
-    
-    // If we have posts, sort them by creation date and limit to the requested amount
-    if (allPosts.length > 0) {
-      allPosts.sort((a, b) => {
-        const dateA = new Date(a.created_at).getTime();
-        const dateB = new Date(b.created_at).getTime();
-        return dateB - dateA; // Sort descending (newest first)
-      });
-      
-      // Limit to the requested number of posts
-      if (allPosts.length > limit) {
-        allPosts = allPosts.slice(0, limit);
-      }
-      
-      // Now fetch profiles for all posts at once
-      const uniqueUserIds = [...new Set(allPosts.map(post => post.user_id))];
-      
-      if (uniqueUserIds.length > 0) {
-        try {
-          const { data: profilesData, error: profilesError } = await supabase
-            .from("profiles")
-            .select("id, username, avatar, full_name")
-            .in("id", uniqueUserIds);
-          
-          if (profilesError) {
-            console.error("Error fetching profiles:", profilesError);
-          } else if (profilesData && profilesData.length > 0) {
-            // Create a map of profiles for easy lookup
-            const profileMap = new Map();
-            profilesData.forEach(profile => {
-              profileMap.set(profile.id, profile);
-            });
-            
-            // Merge post data with profile data
-            allPosts = allPosts.map(post => {
-              const userProfile = profileMap.get(post.user_id);
-              return {
-                ...post,
-                profiles: userProfile || null
-              };
-            });
-          }
-        } catch (err) {
-          console.error("Error fetching and mapping user profiles:", err);
-        }
-      }
-    }
-    
-    return allPosts;
+    return data || [];
   } catch (error) {
-    console.error("Error fetching feed posts:", error);
-    throw error;
+    console.error("Exception getting comments:", error);
+    return [];
+  }
+};
+
+// Get comments count for a post
+export const getCommentsCount = async (postId: string, postType: string): Promise<number> => {
+  try {
+    const { count, error } = await supabase
+      .from('post_comments')
+      .select('*', { count: 'exact', head: true })
+      .eq('post_id', postId)
+      .eq('post_type', postType)
+      .eq('is_deleted', false);
+    
+    if (error) {
+      console.error("Error getting comments count:", error);
+      return 0;
+    }
+    
+    return count || 0;
+  } catch (error) {
+    console.error("Exception getting comments count:", error);
+    return 0;
   }
 };
