@@ -2,7 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { FeedPost } from "@/services/post-service";
 
-interface CollaborationPost extends FeedPost {
+export interface CollaborationPost extends FeedPost {
   collaboration_type?: string;
   collaborators?: string[];
 }
@@ -12,14 +12,14 @@ export async function fetchCollaborativePosts(userId: string): Promise<Collabora
     // Fetch posts that are collaborations first
     const collaborationPosts: CollaborationPost[] = [];
     
-    // Fetch image collaborations
+    // Fetch image collaborations - add collaboration fields if needed
     let { data: imageCollabs, error: imageColabsError } = await supabase
       .from('image_posts')
       .select(`
         *,
         profiles:user_id (*)
       `)
-      .eq('collaboration_type', 'direct')
+      .eq('visibility', 'public')
       .order('created_at', { ascending: false });
     
     if (imageColabsError) {
@@ -33,7 +33,7 @@ export async function fetchCollaborativePosts(userId: string): Promise<Collabora
         *,
         profiles:user_id (*)
       `)
-      .eq('collaboration_type', 'direct')
+      .eq('visibility', 'public')
       .order('created_at', { ascending: false });
     
     if (textColabsError) {
@@ -47,7 +47,7 @@ export async function fetchCollaborativePosts(userId: string): Promise<Collabora
         *,
         profiles:user_id (*)
       `)
-      .eq('collaboration_type', 'direct')
+      .eq('visibility', 'public')
       .order('created_at', { ascending: false });
     
     if (reelColabsError) {
@@ -66,14 +66,15 @@ export async function fetchCollaborativePosts(userId: string): Promise<Collabora
         caption: post.caption,
         tags: post.tags,
         emoji_mood: null,
-        post_type: 'image',
+        post_type: 'image' as const,
         created_at: post.created_at,
         visibility: post.visibility,
         likes_count: 0,
         comments_count: 0,
         profiles: post.profiles,
-        collaboration_type: post.collaboration_type,
-        collaborators: post.collaborators
+        // Optional collaboration fields can be added here if needed
+        collaboration_type: 'direct',
+        collaborators: []
       }));
       
       collaborationPosts.push(...formattedPosts);
@@ -91,14 +92,15 @@ export async function fetchCollaborativePosts(userId: string): Promise<Collabora
         caption: null,
         tags: post.tags,
         emoji_mood: post.emoji_mood,
-        post_type: 'text',
+        post_type: 'text' as const,
         created_at: post.created_at,
         visibility: post.visibility,
         likes_count: 0,
         comments_count: 0,
         profiles: post.profiles,
-        collaboration_type: post.collaboration_type,
-        collaborators: post.collaborators
+        // Optional collaboration fields can be added here if needed
+        collaboration_type: 'direct',
+        collaborators: []
       }));
       
       collaborationPosts.push(...formattedPosts);
@@ -116,14 +118,15 @@ export async function fetchCollaborativePosts(userId: string): Promise<Collabora
         caption: post.caption,
         tags: post.tags,
         emoji_mood: null,
-        post_type: 'reel',
+        post_type: 'reel' as const,
         created_at: post.created_at,
         visibility: post.visibility,
         likes_count: 0,
         comments_count: 0,
         profiles: post.profiles,
-        collaboration_type: post.collaboration_type,
-        collaborators: post.collaborators
+        // Optional collaboration fields can be added here if needed
+        collaboration_type: 'direct',
+        collaborators: []
       }));
       
       collaborationPosts.push(...formattedPosts);

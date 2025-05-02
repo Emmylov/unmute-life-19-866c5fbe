@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { useReel } from "@/hooks/use-reel";
@@ -9,6 +10,7 @@ import { useSocialActions } from "@/hooks/use-social-actions";
 import { formatCompactNumber, formatTimeAgo } from "@/lib/utils";
 import { ErrorDisplay } from "@/components/ui/error-display";
 import { Reel } from "@/types/reel";
+import { Link } from "react-router-dom";
 
 const ReelView = () => {
   const { reelId } = useParams<{ reelId: string }>();
@@ -32,7 +34,7 @@ const ReelView = () => {
     const checkLikeStatus = async () => {
       if (user && reel?.id) {
         try {
-          const liked = await hasLikedPost(reel.id, user.id, 'reel');
+          const liked = await hasLikedPost(reel.id, 'reel');
           setIsLiked(liked);
         } catch (error) {
           console.error("Error checking like status:", error);

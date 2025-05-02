@@ -1,117 +1,163 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Post } from "../feed-utils";
-import { PostWithEngagement } from "./types";
-import { rpcCall, toTypedPromise } from "./utils";
 
-export async function fetchTrendingFeed(limit: number, offset: number): Promise<Post[]> {
+export async function fetchTrendingFeed(limit: number = 10, offset: number = 0): Promise<Post[]> {
   try {
-    // Fetch image posts with engagement with proper type annotations
-    const imagePostsWithEngagementPromise = rpcCall<PostWithEngagement[]>(
-      'get_image_posts_with_engagement'
-    );
+    // Fetch posts from different tables
+    // For our implementation, we'll just get the most recent posts across all types
     
-    // Fetch text posts with engagement with proper type annotations
-    const textPostsWithEngagementPromise = rpcCall<PostWithEngagement[]>(
-      'get_text_posts_with_engagement'
-    );
+    // Image posts
+    const { data: imagePosts, error: imageError } = await supabase
+      .from('image_posts')
+      .select(`
+        *,
+        profiles:user_id (
+          id, username, avatar, full_name
+        )
+      `)
+      .eq('visibility', 'public')
+      .order('created_at', { ascending: false })
+      .limit(limit / 3);
     
-    // Fetch reels with engagement with proper type annotations
-    const reelsWithEngagementPromise = rpcCall<PostWithEngagement[]>(
-      'get_reels_with_engagement'
-    );
-    
-    // Wait for all promises to resolve
-    const results = await Promise.all([
-      imagePostsWithEngagementPromise,
-      textPostsWithEngagementPromise,
-      reelsWithEngagementPromise
-    ]);
-    
-    const [imagePostsWithEngagementRes, textPostsWithEngagementRes, reelsWithEngagementRes] = results;
-    
-    let combinedPosts: Post[] = [];
-    
-    if (imagePostsWithEngagementRes.error || textPostsWithEngagementRes.error || reelsWithEngagementRes.error) {
-      // Fallback to regular posts if the RPC functions fail
-      return await fetchTrendingFeedFallback(limit, offset);
-    } else {
-      // Process the engagement data results with proper typing
-      const imagePostsWithEngagement: Post[] = imagePostsWithEngagementRes.data ? 
-        imagePostsWithEngagementRes.data.map((post: PostWithEngagement) => ({ ...post, type: 'image' })) : [];
-      
-      const textPostsWithEngagement: Post[] = textPostsWithEngagementRes.data ?
-        textPostsWithEngagementRes.data.map((post: PostWithEngagement) => ({ ...post, type: 'text' })) : [];
-      
-      const reelsWithEngagement: Post[] = reelsWithEngagementRes.data ?
-        reelsWithEngagementRes.data.map((post: PostWithEngagement) => ({ ...post, type: 'reel' })) : [];
-      
-      combinedPosts = [...imagePostsWithEngagement, ...textPostsWithEngagement, ...reelsWithEngagement];
-      
-      // Sort by engagement score
-      combinedPosts.sort((a: any, b: any) => 
-        ('engagement_score' in b && 'engagement_score' in a) ? 
-          b.engagement_score - a.engagement_score : 0
-      );
+    if (imageError) {
+      console.error('Error fetching image posts:', imageError);
     }
     
-    return combinedPosts.slice(0, limit);
+    // Text posts
+    const { data: textPosts, error: textError } = await supabase
+      .from('text_posts')
+      .select(`
+        *,
+        profiles:user_id (
+          id, username, avatar, full_name
+        )
+      `)
+      .eq('visibility', 'public')
+      .order('created_at', { ascending: false })
+      .limit(limit / 3);
+    
+    if (textError) {
+      console.error('Error fetching text posts:', textError);
+    }
+    
+    // Reel posts
+    const { data: reelPosts, error: reelError } = await supabase
+      .from('reel_posts')
+      .select(`
+        *,
+        profiles:user_id (
+          id, username, avatar, full_name
+        )
+      `)
+      .eq('visibility', 'public')
+      .order('created_at', { ascending: false })
+      .limit(limit / 3);
+    
+    if (reelError) {
+      console.error('Error fetching reel posts:', reelError);
+    }
+    
+    // Transform and combine all posts
+    const result: Post[] = [];
+    
+    // Add image posts
+    if (imagePosts) {
+      result.push(...imagePosts.map(post => ({
+        id: post.id,
+        userId: post.user_id,
+        type: 'image',
+        content: null,
+        imageUrls: post.image_urls,
+        caption: post.caption,
+        createdAt: post.created_at,
+        user: post.profiles ? {
+          id: post.profiles.id,
+          name: post.profiles.full_name || 'Anonymous',
+          username: post.profiles.username || 'user',
+          avatar: post.profiles.avatar || null
+        } : {
+          id: post.user_id,
+          name: 'Anonymous',
+          username: 'user',
+          avatar: null
+        },
+        stats: {
+          likes: 0,
+          comments: 0,
+          shares: 0
+        },
+        tags: post.tags || []
+      })));
+    }
+    
+    // Add text posts
+    if (textPosts) {
+      result.push(...textPosts.map(post => ({
+        id: post.id,
+        userId: post.user_id,
+        type: 'text',
+        content: post.content,
+        title: post.title || null,
+        emojiMood: post.emoji_mood || null,
+        createdAt: post.created_at,
+        user: post.profiles ? {
+          id: post.profiles.id,
+          name: post.profiles.full_name || 'Anonymous',
+          username: post.profiles.username || 'user',
+          avatar: post.profiles.avatar || null
+        } : {
+          id: post.user_id,
+          name: 'Anonymous',
+          username: 'user',
+          avatar: null
+        },
+        stats: {
+          likes: 0,
+          comments: 0,
+          shares: 0
+        },
+        tags: post.tags || []
+      })));
+    }
+    
+    // Add reel posts
+    if (reelPosts) {
+      result.push(...reelPosts.map(post => ({
+        id: post.id,
+        userId: post.user_id,
+        type: 'reel',
+        content: null,
+        videoUrl: post.video_url,
+        caption: post.caption || null,
+        thumbnailUrl: post.thumbnail_url || null,
+        createdAt: post.created_at,
+        user: post.profiles ? {
+          id: post.profiles.id,
+          name: post.profiles.full_name || 'Anonymous',
+          username: post.profiles.username || 'user',
+          avatar: post.profiles.avatar || null
+        } : {
+          id: post.user_id,
+          name: 'Anonymous',
+          username: 'user',
+          avatar: null
+        },
+        stats: {
+          likes: 0,
+          comments: 0,
+          shares: 0
+        },
+        tags: post.tags || []
+      })));
+    }
+    
+    // Sort all posts by creation date, newest first
+    return result.sort((a, b) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    ).slice(offset, offset + limit);
   } catch (error) {
-    console.error("Error fetching trending feed:", error);
-    return [];
-  }
-}
-
-// Fallback function when RPC functions fail
-async function fetchTrendingFeedFallback(limit: number, offset: number): Promise<Post[]> {
-  try {
-    const imagePostsPromise = toTypedPromise<any[]>(
-      supabase
-        .from("posts_images")
-        .select("*, profiles:profiles(*)")
-        .order("created_at", { ascending: false })
-        .range(offset, offset + limit - 1)
-    );
-    
-    const textPostsPromise = toTypedPromise<any[]>(
-      supabase
-        .from("posts_text")
-        .select("*, profiles:profiles(*)")
-        .order("created_at", { ascending: false })
-        .range(offset, offset + limit - 1)
-    );
-    
-    const reelsPostsPromise = toTypedPromise<any[]>(
-      supabase
-        .from("posts_reels")
-        .select("*, profiles:profiles(*)")
-        .order("created_at", { ascending: false })
-        .range(offset, offset + limit - 1)
-    );
-    
-    // Wait for all fallback promises to resolve
-    const [imagePostsRes, textPostsRes, reelsPostsRes] = await Promise.all([
-      imagePostsPromise, 
-      textPostsPromise, 
-      reelsPostsPromise
-    ]);
-    
-    if (imagePostsRes.error) throw imagePostsRes.error;
-    if (textPostsRes.error) throw textPostsRes.error;
-    if (reelsPostsRes.error) throw reelsPostsRes.error;
-    
-    // Process the fallback results
-    const imagePosts: Post[] = imagePostsRes.data ? imagePostsRes.data.map((post: any) => ({ ...post, type: 'image' })) : [];
-    const textPosts: Post[] = textPostsRes.data ? textPostsRes.data.map((post: any) => ({ ...post, type: 'text' })) : [];
-    const reelPosts: Post[] = reelsPostsRes.data ? reelsPostsRes.data.map((post: any) => ({ ...post, type: 'reel' })) : [];
-    
-    const combinedPosts = [...imagePosts, ...textPosts, ...reelPosts];
-    
-    return combinedPosts
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      .slice(0, limit);
-  } catch (error) {
-    console.error("Error in trending feed fallback:", error);
+    console.error('Error fetching trending feed:', error);
     return [];
   }
 }

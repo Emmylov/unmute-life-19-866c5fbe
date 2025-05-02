@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
@@ -165,7 +166,7 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
                 controls
                 preload="metadata"
                 className="w-full h-full object-cover"
-                poster={post.image_urls?.[0] || ''}
+                poster={post.thumbnail_url || post.image_urls?.[0] || ''}
               />
             </div>
           </div>

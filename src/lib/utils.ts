@@ -1,4 +1,3 @@
-
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
  
@@ -82,4 +81,14 @@ export function formatTimeAgo(dateString: string | Date): string {
   
   const diffInYears = Math.floor(diffInMonths / 12);
   return `${diffInYears}y ago`;
+}
+
+/**
+ * Format number to compact representation (e.g., 1.2k, 5.3M)
+ */
+export function formatCompactNumber(num: number): string {
+  if (num === 0) return '0';
+  
+  const formatter = Intl.NumberFormat('en', { notation: 'compact', compactDisplay: 'short' });
+  return formatter.format(num);
 }

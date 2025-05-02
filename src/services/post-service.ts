@@ -83,6 +83,7 @@ export type FeedPost = {
   image_urls?: string[] | null;
   video_url?: string | null;
   caption?: string | null;
+  thumbnail_url?: string | null; // Add thumbnail_url field
   tags?: string[] | null;
   emoji_mood?: string | null;
   post_type: 'text' | 'image' | 'reel' | 'meme';
