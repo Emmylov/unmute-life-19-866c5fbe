@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Heart, MessageCircle, Share, Volume2, VolumeX } from "lucide-react";
 import { useSocialActions } from "@/hooks/use-social-actions";
-import { formatCompactNumber, formatTimeAgo } from "@/lib/utils";
+import { formatTimeAgo, formatCompactNumber } from "@/lib/utils";
 import { ErrorDisplay } from "@/components/ui/error-display";
 import { Reel } from "@/types/reel";
 import { Link } from "react-router-dom";

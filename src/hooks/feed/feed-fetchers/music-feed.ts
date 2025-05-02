@@ -28,34 +28,43 @@ export async function fetchMusicPosts(limit: number = 10, offset: number = 0): P
     }
     
     // Transform reels to the common Post format
-    return reelPosts.map(post => ({
-      id: post.id,
-      userId: post.user_id,
-      type: 'reel',
-      videoUrl: post.video_url,
-      caption: post.caption,
-      thumbnailUrl: post.thumbnail_url,
-      audioUrl: post.audio_url,
-      audioType: post.audio_type,
-      createdAt: post.created_at,
-      user: post.profiles ? {
-        id: post.profiles.id,
-        name: post.profiles.full_name || 'Anonymous',
-        username: post.profiles.username || 'user',
-        avatar: post.profiles.avatar || null
-      } : {
-        id: post.user_id,
-        name: 'Anonymous',
-        username: 'user',
-        avatar: null
-      },
-      stats: {
-        likes: 0,
-        comments: 0,
-        shares: 0
-      },
-      tags: post.tags || []
-    }));
+    return reelPosts.map(post => {
+      // Create a default profile if none exists
+      const userProfile = post.profiles && typeof post.profiles === 'object' 
+        ? {
+            id: post.profiles.id || post.user_id,
+            name: post.profiles.full_name || 'Anonymous',
+            username: post.profiles.username || 'user',
+            avatar: post.profiles.avatar || null
+          }
+        : {
+            id: post.user_id,
+            name: 'Anonymous',
+            username: 'user',
+            avatar: null
+          };
+          
+      return {
+        id: post.id,
+        userId: post.user_id,
+        user_id: post.user_id,
+        type: 'reel',
+        videoUrl: post.video_url,
+        caption: post.caption,
+        thumbnailUrl: post.thumbnail_url,
+        audioUrl: post.audio_url,
+        audioType: post.audio_type,
+        createdAt: post.created_at,
+        created_at: post.created_at,
+        user: userProfile,
+        stats: {
+          likes: 0,
+          comments: 0,
+          shares: 0
+        },
+        tags: post.tags || []
+      };
+    });
   } catch (error) {
     console.error('Error fetching music posts:', error);
     return [];
@@ -87,24 +96,36 @@ export async function fetchMusicFeedPosts(limit: number = 10, offset: number = 0
     }
     
     // Transform to FeedPost format
-    return reelPosts.map(post => ({
-      id: post.id,
-      user_id: post.user_id,
-      content: null,
-      title: null,
-      image_urls: null,
-      video_url: post.video_url,
-      thumbnail_url: post.thumbnail_url,
-      caption: post.caption,
-      tags: post.tags,
-      emoji_mood: null,
-      post_type: 'reel',
-      created_at: post.created_at,
-      visibility: post.visibility,
-      likes_count: 0,
-      comments_count: 0,
-      profiles: post.profiles
-    }));
+    return reelPosts.map(post => {
+      // Create a default profile if none exists
+      const userProfile = post.profiles && typeof post.profiles === 'object' 
+        ? post.profiles
+        : { 
+            id: post.user_id, 
+            username: "Anonymous", 
+            avatar: null, 
+            full_name: "Anonymous" 
+          };
+          
+      return {
+        id: post.id,
+        user_id: post.user_id,
+        content: null,
+        title: null,
+        image_urls: null,
+        video_url: post.video_url,
+        thumbnail_url: post.thumbnail_url,
+        caption: post.caption,
+        tags: post.tags,
+        emoji_mood: null,
+        post_type: 'reel',
+        created_at: post.created_at,
+        visibility: post.visibility,
+        likes_count: 0,
+        comments_count: 0,
+        profiles: userProfile
+      };
+    });
   } catch (error) {
     console.error('Error fetching music feed posts:', error);
     return [];

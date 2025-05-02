@@ -5,8 +5,12 @@ import { supabase } from "@/integrations/supabase/client";
 export interface Post {
   id: string;
   created_at: string;
+  createdAt?: string; // Allow both formats for compatibility
   type?: 'image' | 'text' | 'reel' | 'collab';
-  [key: string]: any; // For additional properties
+  userId?: string; // Allow both user_id and userId
+  user_id?: string;
+  // Additional optional properties for all post types
+  [key: string]: any;
 }
 
 // This function is kept for backward compatibility but now delegates to the specialized modules

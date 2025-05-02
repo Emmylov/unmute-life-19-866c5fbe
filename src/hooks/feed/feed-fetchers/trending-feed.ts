@@ -63,98 +63,125 @@ export async function fetchTrendingFeed(limit: number = 10, offset: number = 0):
     
     // Add image posts
     if (imagePosts) {
-      result.push(...imagePosts.map(post => ({
-        id: post.id,
-        userId: post.user_id,
-        type: 'image',
-        content: null,
-        imageUrls: post.image_urls,
-        caption: post.caption,
-        createdAt: post.created_at,
-        user: post.profiles ? {
-          id: post.profiles.id,
-          name: post.profiles.full_name || 'Anonymous',
-          username: post.profiles.username || 'user',
-          avatar: post.profiles.avatar || null
-        } : {
-          id: post.user_id,
-          name: 'Anonymous',
-          username: 'user',
-          avatar: null
-        },
-        stats: {
-          likes: 0,
-          comments: 0,
-          shares: 0
-        },
-        tags: post.tags || []
-      })));
+      result.push(...imagePosts.map(post => {
+        // Create a default profile if none exists
+        const userProfile = post.profiles && typeof post.profiles === 'object' 
+          ? {
+              id: post.profiles.id || post.user_id,
+              name: post.profiles.full_name || 'Anonymous',
+              username: post.profiles.username || 'user',
+              avatar: post.profiles.avatar || null
+            }
+          : {
+              id: post.user_id,
+              name: 'Anonymous',
+              username: 'user',
+              avatar: null
+            };
+            
+        return {
+          id: post.id,
+          user_id: post.user_id,
+          userId: post.user_id,
+          type: 'image',
+          content: null,
+          imageUrls: post.image_urls,
+          caption: post.caption,
+          created_at: post.created_at,
+          createdAt: post.created_at,
+          user: userProfile,
+          stats: {
+            likes: 0,
+            comments: 0,
+            shares: 0
+          },
+          tags: post.tags || []
+        };
+      }));
     }
     
     // Add text posts
     if (textPosts) {
-      result.push(...textPosts.map(post => ({
-        id: post.id,
-        userId: post.user_id,
-        type: 'text',
-        content: post.content,
-        title: post.title || null,
-        emojiMood: post.emoji_mood || null,
-        createdAt: post.created_at,
-        user: post.profiles ? {
-          id: post.profiles.id,
-          name: post.profiles.full_name || 'Anonymous',
-          username: post.profiles.username || 'user',
-          avatar: post.profiles.avatar || null
-        } : {
-          id: post.user_id,
-          name: 'Anonymous',
-          username: 'user',
-          avatar: null
-        },
-        stats: {
-          likes: 0,
-          comments: 0,
-          shares: 0
-        },
-        tags: post.tags || []
-      })));
+      result.push(...textPosts.map(post => {
+        // Create a default profile if none exists
+        const userProfile = post.profiles && typeof post.profiles === 'object' 
+          ? {
+              id: post.profiles.id || post.user_id,
+              name: post.profiles.full_name || 'Anonymous',
+              username: post.profiles.username || 'user',
+              avatar: post.profiles.avatar || null
+            }
+          : {
+              id: post.user_id,
+              name: 'Anonymous',
+              username: 'user',
+              avatar: null
+            };
+            
+        return {
+          id: post.id,
+          user_id: post.user_id,
+          userId: post.user_id,
+          type: 'text',
+          content: post.content,
+          title: post.title || null,
+          emojiMood: post.emoji_mood || null,
+          created_at: post.created_at,
+          createdAt: post.created_at,
+          user: userProfile,
+          stats: {
+            likes: 0,
+            comments: 0,
+            shares: 0
+          },
+          tags: post.tags || []
+        };
+      }));
     }
     
     // Add reel posts
     if (reelPosts) {
-      result.push(...reelPosts.map(post => ({
-        id: post.id,
-        userId: post.user_id,
-        type: 'reel',
-        content: null,
-        videoUrl: post.video_url,
-        caption: post.caption || null,
-        thumbnailUrl: post.thumbnail_url || null,
-        createdAt: post.created_at,
-        user: post.profiles ? {
-          id: post.profiles.id,
-          name: post.profiles.full_name || 'Anonymous',
-          username: post.profiles.username || 'user',
-          avatar: post.profiles.avatar || null
-        } : {
-          id: post.user_id,
-          name: 'Anonymous',
-          username: 'user',
-          avatar: null
-        },
-        stats: {
-          likes: 0,
-          comments: 0,
-          shares: 0
-        },
-        tags: post.tags || []
-      })));
+      result.push(...reelPosts.map(post => {
+        // Create a default profile if none exists
+        const userProfile = post.profiles && typeof post.profiles === 'object' 
+          ? {
+              id: post.profiles.id || post.user_id,
+              name: post.profiles.full_name || 'Anonymous',
+              username: post.profiles.username || 'user',
+              avatar: post.profiles.avatar || null
+            }
+          : {
+              id: post.user_id,
+              name: 'Anonymous',
+              username: 'user',
+              avatar: null
+            };
+            
+        return {
+          id: post.id,
+          user_id: post.user_id,
+          userId: post.user_id,
+          type: 'reel',
+          content: null,
+          videoUrl: post.video_url,
+          caption: post.caption || null,
+          thumbnailUrl: post.thumbnail_url || null,
+          created_at: post.created_at,
+          createdAt: post.created_at,
+          user: userProfile,
+          stats: {
+            likes: 0,
+            comments: 0,
+            shares: 0
+          },
+          tags: post.tags || []
+        };
+      }));
     }
     
     // Sort all posts by creation date, newest first
     return result.sort((a, b) => 
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     ).slice(offset, offset + limit);
   } catch (error) {
     console.error('Error fetching trending feed:', error);
