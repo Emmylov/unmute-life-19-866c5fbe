@@ -65,25 +65,18 @@ export async function fetchTrendingFeed(limit: number = 10, offset: number = 0):
     if (imagePosts) {
       result.push(...imagePosts.map(post => {
         // Create a default profile if none exists
-        const userProfile = post.profiles && typeof post.profiles === 'object' 
-          ? {
-              id: post.profiles.id || post.user_id,
-              name: post.profiles.full_name || 'Anonymous',
-              username: post.profiles.username || 'user',
-              avatar: post.profiles.avatar || null
-            }
-          : {
-              id: post.user_id,
-              name: 'Anonymous',
-              username: 'user',
-              avatar: null
-            };
+        const userProfile = {
+          id: post.user_id,
+          name: post.profiles?.full_name || 'Anonymous',
+          username: post.profiles?.username || 'user',
+          avatar: post.profiles?.avatar || null
+        };
             
         return {
           id: post.id,
           user_id: post.user_id,
           userId: post.user_id,
-          type: 'image',
+          type: 'image' as const,
           content: null,
           imageUrls: post.image_urls,
           caption: post.caption,
@@ -104,25 +97,18 @@ export async function fetchTrendingFeed(limit: number = 10, offset: number = 0):
     if (textPosts) {
       result.push(...textPosts.map(post => {
         // Create a default profile if none exists
-        const userProfile = post.profiles && typeof post.profiles === 'object' 
-          ? {
-              id: post.profiles.id || post.user_id,
-              name: post.profiles.full_name || 'Anonymous',
-              username: post.profiles.username || 'user',
-              avatar: post.profiles.avatar || null
-            }
-          : {
-              id: post.user_id,
-              name: 'Anonymous',
-              username: 'user',
-              avatar: null
-            };
+        const userProfile = {
+          id: post.user_id,
+          name: post.profiles?.full_name || 'Anonymous',
+          username: post.profiles?.username || 'user',
+          avatar: post.profiles?.avatar || null
+        };
             
         return {
           id: post.id,
           user_id: post.user_id,
           userId: post.user_id,
-          type: 'text',
+          type: 'text' as const,
           content: post.content,
           title: post.title || null,
           emojiMood: post.emoji_mood || null,
@@ -143,25 +129,18 @@ export async function fetchTrendingFeed(limit: number = 10, offset: number = 0):
     if (reelPosts) {
       result.push(...reelPosts.map(post => {
         // Create a default profile if none exists
-        const userProfile = post.profiles && typeof post.profiles === 'object' 
-          ? {
-              id: post.profiles.id || post.user_id,
-              name: post.profiles.full_name || 'Anonymous',
-              username: post.profiles.username || 'user',
-              avatar: post.profiles.avatar || null
-            }
-          : {
-              id: post.user_id,
-              name: 'Anonymous',
-              username: 'user',
-              avatar: null
-            };
+        const userProfile = {
+          id: post.user_id,
+          name: post.profiles?.full_name || 'Anonymous',
+          username: post.profiles?.username || 'user',
+          avatar: post.profiles?.avatar || null
+        };
             
         return {
           id: post.id,
           user_id: post.user_id,
           userId: post.user_id,
-          type: 'reel',
+          type: 'reel' as const,
           content: null,
           videoUrl: post.video_url,
           caption: post.caption || null,

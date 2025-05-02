@@ -65,9 +65,12 @@ export async function fetchCollaborativePosts(userId: string): Promise<Collabora
     if (imageCollabs) {
       const formattedPosts = imageCollabs.map(post => {
         // Create a default profile if none exists
-        const profiles = post.profiles && typeof post.profiles === 'object' 
-          ? post.profiles 
-          : { id: post.user_id, username: "Anonymous", avatar: null, full_name: "Anonymous" };
+        const profiles = post.profiles || { 
+          id: post.user_id, 
+          username: "Anonymous", 
+          avatar: null, 
+          full_name: "Anonymous" 
+        };
           
         return {
           id: post.id,
@@ -98,9 +101,12 @@ export async function fetchCollaborativePosts(userId: string): Promise<Collabora
     if (textCollabs) {
       const formattedPosts = textCollabs.map(post => {
         // Create a default profile if none exists
-        const profiles = post.profiles && typeof post.profiles === 'object' 
-          ? post.profiles 
-          : { id: post.user_id, username: "Anonymous", avatar: null, full_name: "Anonymous" };
+        const profiles = post.profiles || { 
+          id: post.user_id, 
+          username: "Anonymous", 
+          avatar: null, 
+          full_name: "Anonymous" 
+        };
         
         return {
           id: post.id,
@@ -131,9 +137,12 @@ export async function fetchCollaborativePosts(userId: string): Promise<Collabora
     if (reelCollabs) {
       const formattedPosts = reelCollabs.map(post => {
         // Create a default profile if none exists
-        const profiles = post.profiles && typeof post.profiles === 'object' 
-          ? post.profiles 
-          : { id: post.user_id, username: "Anonymous", avatar: null, full_name: "Anonymous" };
+        const profiles = post.profiles || { 
+          id: post.user_id, 
+          username: "Anonymous", 
+          avatar: null, 
+          full_name: "Anonymous" 
+        };
         
         return {
           id: post.id,

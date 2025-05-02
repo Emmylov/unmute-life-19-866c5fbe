@@ -30,32 +30,25 @@ export async function fetchMusicPosts(limit: number = 10, offset: number = 0): P
     // Transform reels to the common Post format
     return reelPosts.map(post => {
       // Create a default profile if none exists
-      const userProfile = post.profiles && typeof post.profiles === 'object' 
-        ? {
-            id: post.profiles.id || post.user_id,
-            name: post.profiles.full_name || 'Anonymous',
-            username: post.profiles.username || 'user',
-            avatar: post.profiles.avatar || null
-          }
-        : {
-            id: post.user_id,
-            name: 'Anonymous',
-            username: 'user',
-            avatar: null
-          };
+      const userProfile = {
+        id: post.user_id,
+        name: post.profiles?.full_name || 'Anonymous',
+        username: post.profiles?.username || 'user',
+        avatar: post.profiles?.avatar || null
+      };
           
       return {
         id: post.id,
         userId: post.user_id,
         user_id: post.user_id,
-        type: 'reel',
+        type: 'reel' as const,
         videoUrl: post.video_url,
         caption: post.caption,
         thumbnailUrl: post.thumbnail_url,
         audioUrl: post.audio_url,
         audioType: post.audio_type,
-        createdAt: post.created_at,
         created_at: post.created_at,
+        createdAt: post.created_at,
         user: userProfile,
         stats: {
           likes: 0,
@@ -98,14 +91,12 @@ export async function fetchMusicFeedPosts(limit: number = 10, offset: number = 0
     // Transform to FeedPost format
     return reelPosts.map(post => {
       // Create a default profile if none exists
-      const userProfile = post.profiles && typeof post.profiles === 'object' 
-        ? post.profiles
-        : { 
-            id: post.user_id, 
-            username: "Anonymous", 
-            avatar: null, 
-            full_name: "Anonymous" 
-          };
+      const userProfile = post.profiles || { 
+        id: post.user_id, 
+        username: "Anonymous", 
+        avatar: null, 
+        full_name: "Anonymous" 
+      };
           
       return {
         id: post.id,

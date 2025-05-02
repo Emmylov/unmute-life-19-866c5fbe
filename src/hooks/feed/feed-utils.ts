@@ -6,7 +6,7 @@ export interface Post {
   id: string;
   created_at: string;
   createdAt?: string; // Allow both formats for compatibility
-  type?: 'image' | 'text' | 'reel' | 'collab';
+  type: 'image' | 'text' | 'reel' | 'collab';
   userId?: string; // Allow both user_id and userId
   user_id?: string;
   // Additional optional properties for all post types
