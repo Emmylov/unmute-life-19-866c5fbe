@@ -124,7 +124,7 @@ const ImagePostTab: React.FC<ImagePostTabProps> = ({ onSuccess }) => {
         layout: layout,
       };
       
-      const { error } = await supabase.from('posts_images').insert(postData);
+      const { error } = await supabase.from('image_posts').insert(postData);
       
       if (error) {
         console.error("Error creating post:", error);

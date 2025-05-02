@@ -159,7 +159,7 @@ const MemePostTab: React.FC<MemePostTabProps> = ({ onSuccess }) => {
         category: category
       };
       
-      const { error: insertError } = await supabase.from('posts_memes').insert(memeData);
+      const { error: insertError } = await supabase.from('meme_posts').insert(memeData);
       
       if (insertError) {
         console.error("Error creating meme post:", insertError);

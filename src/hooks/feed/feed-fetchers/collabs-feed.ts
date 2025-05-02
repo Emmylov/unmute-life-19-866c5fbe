@@ -1,71 +1,140 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Post } from "../feed-utils";
-import { rpcCall, toTypedPromise } from "./utils";
+import { FeedPost } from "@/services/post-service";
 
-export async function fetchCollabsFeed(limit: number, offset: number): Promise<Post[]> {
-  try {
-    // Check if the collabs table exists using a safer approach
-    const { data: hasCollabsData, error: hasCollabsError } = await rpcCall<boolean>('check_table_exists', { table_name: 'collabs' });
-    
-    if (hasCollabsError || !hasCollabsData) {
-      console.log("Collabs table doesn't exist or error checking it, using fallback search");
-      return await searchCollabsInPosts(limit, offset);
-    }
-    
-    // If we reach here, the collabs table exists, but we'll use the fallback search anyway
-    // to avoid TypeScript errors since the table isn't in our type definitions
-    return await searchCollabsInPosts(limit, offset);
-  } catch (error) {
-    console.error("Error fetching collabs feed:", error);
-    return [];
-  }
+interface CollaborationPost extends FeedPost {
+  collaboration_type?: string;
+  collaborators?: string[];
 }
 
-// Helper function to search for collabs in other post types
-async function searchCollabsInPosts(limit: number, offset: number): Promise<Post[]> {
-  const imagePostsPromise = toTypedPromise<any[]>(
-    supabase
-      .from("posts_images")
-      .select("*, profiles:profiles(*)")
-      .or('caption.ilike.%collab%,tags.cs.{collab}')
-      .order("created_at", { ascending: false })
-      .range(offset, offset + limit - 1)
-  );
-  
-  const textPostsPromise = toTypedPromise<any[]>(
-    supabase
-      .from("posts_text")
-      .select("*, profiles:profiles(*)")
-      .or('title.ilike.%collab%,body.ilike.%collab%,tags.cs.{collab}')
-      .order("created_at", { ascending: false })
-      .range(offset, offset + limit - 1)
-  );
-  
-  const reelsPostsPromise = toTypedPromise<any[]>(
-    supabase
-      .from("posts_reels")
-      .select("*, profiles:profiles(*)")
-      .or('caption.ilike.%collab%,tags.cs.{collab}')
-      .order("created_at", { ascending: false })
-      .range(offset, offset + limit - 1)
-  );
-  
-  // Wait for all promises to resolve
-  const [imagePostsRes, textPostsRes, reelsPostsRes] = await Promise.all([
-    imagePostsPromise,
-    textPostsPromise,
-    reelsPostsPromise
-  ]);
-  
-  // Process results
-  const combinedPosts: Post[] = [
-    ...(imagePostsRes.data || []).map((post: any) => ({ ...post, type: 'image' })),
-    ...(textPostsRes.data || []).map((post: any) => ({ ...post, type: 'text' })),
-    ...(reelsPostsRes.data || []).map((post: any) => ({ ...post, type: 'reel' }))
-  ];
-  
-  return combinedPosts
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    .slice(0, limit);
+export async function fetchCollaborativePosts(userId: string): Promise<CollaborationPost[]> {
+  try {
+    // Fetch posts that are collaborations first
+    const collaborationPosts: CollaborationPost[] = [];
+    
+    // Fetch image collaborations
+    let { data: imageCollabs, error: imageColabsError } = await supabase
+      .from('image_posts')
+      .select(`
+        *,
+        profiles:user_id (*)
+      `)
+      .eq('collaboration_type', 'direct')
+      .order('created_at', { ascending: false });
+    
+    if (imageColabsError) {
+      console.error("Error fetching image collaborations:", imageColabsError);
+    }
+    
+    // Fetch text collaborations
+    let { data: textCollabs, error: textColabsError } = await supabase
+      .from('text_posts')
+      .select(`
+        *,
+        profiles:user_id (*)
+      `)
+      .eq('collaboration_type', 'direct')
+      .order('created_at', { ascending: false });
+    
+    if (textColabsError) {
+      console.error("Error fetching text collaborations:", textColabsError);
+    }
+    
+    // Fetch reel collaborations
+    let { data: reelCollabs, error: reelColabsError } = await supabase
+      .from('reel_posts')
+      .select(`
+        *,
+        profiles:user_id (*)
+      `)
+      .eq('collaboration_type', 'direct')
+      .order('created_at', { ascending: false });
+    
+    if (reelColabsError) {
+      console.error("Error fetching reel collaborations:", reelColabsError);
+    }
+    
+    // Transform image collaborations to FeedPost format
+    if (imageCollabs) {
+      const formattedPosts = imageCollabs.map(post => ({
+        id: post.id,
+        user_id: post.user_id,
+        content: null,
+        title: null,
+        image_urls: post.image_urls,
+        video_url: null,
+        caption: post.caption,
+        tags: post.tags,
+        emoji_mood: null,
+        post_type: 'image',
+        created_at: post.created_at,
+        visibility: post.visibility,
+        likes_count: 0,
+        comments_count: 0,
+        profiles: post.profiles,
+        collaboration_type: post.collaboration_type,
+        collaborators: post.collaborators
+      }));
+      
+      collaborationPosts.push(...formattedPosts);
+    }
+    
+    // Transform text collaborations to FeedPost format
+    if (textCollabs) {
+      const formattedPosts = textCollabs.map(post => ({
+        id: post.id,
+        user_id: post.user_id,
+        content: post.content,
+        title: post.title,
+        image_urls: null,
+        video_url: null,
+        caption: null,
+        tags: post.tags,
+        emoji_mood: post.emoji_mood,
+        post_type: 'text',
+        created_at: post.created_at,
+        visibility: post.visibility,
+        likes_count: 0,
+        comments_count: 0,
+        profiles: post.profiles,
+        collaboration_type: post.collaboration_type,
+        collaborators: post.collaborators
+      }));
+      
+      collaborationPosts.push(...formattedPosts);
+    }
+    
+    // Transform reel collaborations to FeedPost format
+    if (reelCollabs) {
+      const formattedPosts = reelCollabs.map(post => ({
+        id: post.id,
+        user_id: post.user_id,
+        content: null,
+        title: null,
+        image_urls: null,
+        video_url: post.video_url,
+        caption: post.caption,
+        tags: post.tags,
+        emoji_mood: null,
+        post_type: 'reel',
+        created_at: post.created_at,
+        visibility: post.visibility,
+        likes_count: 0,
+        comments_count: 0,
+        profiles: post.profiles,
+        collaboration_type: post.collaboration_type,
+        collaborators: post.collaborators
+      }));
+      
+      collaborationPosts.push(...formattedPosts);
+    }
+    
+    // Sort all posts by created_at
+    return collaborationPosts.sort((a, b) => 
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+  } catch (error) {
+    console.error("Error fetching collaborative posts:", error);
+    return [];
+  }
 }

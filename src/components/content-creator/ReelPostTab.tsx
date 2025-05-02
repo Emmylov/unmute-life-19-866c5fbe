@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -307,7 +306,7 @@ const ReelPostTab: React.FC<ReelPostTabProps> = ({ onSuccess }) => {
       console.log("Saving reel data:", reelData);
       
       const { error: insertError } = await supabase
-        .from('posts_reels')
+        .from('reel_posts')
         .insert(reelData);
       
       if (insertError) {

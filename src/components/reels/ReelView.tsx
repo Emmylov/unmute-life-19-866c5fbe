@@ -1,342 +1,163 @@
-
-import React, { useState, useEffect } from "react";
-import { motion, useAnimation, PanInfo } from "framer-motion";
-import ReelVideo from "./controls/ReelVideo";
-import ReelMuteButton from "./controls/ReelMuteButton";
-import ReelNavigation from "./controls/ReelNavigation";
-import ReelControls from "./controls/ReelControls";
-import ReelContent from "./controls/ReelContent";
-import ReelActions from "./controls/ReelActions";
-import ReelEmotionDisplay from "./controls/ReelEmotionDisplay";
-import ReelUnmuteThread from "@/components/reels/ReelUnmuteThread";
-import { toast } from "sonner";
+import React, { useState, useEffect, useRef } from "react";
+import { useParams } from "react-router-dom";
+import { useReel } from "@/hooks/use-reel";
 import { useAuth } from "@/contexts/AuthContext";
-import { getCommentCount } from "@/services/comment-service";
-import { 
-  checkReelSaveStatus, 
-  toggleReelSave,
-  repostReel
-} from "@/services/reel-service";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Heart, MessageCircle, Share, Volume2, VolumeX } from "lucide-react";
 import { useSocialActions } from "@/hooks/use-social-actions";
-import { ReelWithUser } from "@/types/reels";
+import { formatCompactNumber, formatTimeAgo } from "@/lib/utils";
+import { ErrorDisplay } from "@/components/ui/error-display";
+import { Reel } from "@/types/reel";
 
-interface ReelViewProps {
-  reelWithUser: ReelWithUser;
-  onNext: () => void;
-  onPrevious: () => void;
-  onSwipe: (direction: string) => void;
-  hasNext: boolean;
-  hasPrevious: boolean;
-  currentIndex: number;
-  totalReels: number;
-}
-
-const ReelView = ({ 
-  reelWithUser, 
-  onNext, 
-  onPrevious,
-  onSwipe,
-  hasNext,
-  hasPrevious,
-  currentIndex,
-  totalReels
-}: ReelViewProps) => {
-  const [isPlaying, setIsPlaying] = useState(true);
-  const [liked, setLiked] = useState(false);
+const ReelView = () => {
+  const { reelId } = useParams<{ reelId: string }>();
+  const { reel, isLoading, error, refetch } = useReel(reelId || "");
+  const { user } = useAuth();
+  const { toggleFollow, checkFollowStatus, toggleLikePost, hasLikedPost, getPostLikesCount } = useSocialActions();
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(0);
-  const [saved, setSaved] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
-  const [commentCount, setCommentCount] = useState(0);
-  const [isUnmuteThreadOpen, setIsUnmuteThreadOpen] = useState(false);
-  const [selectedEmotion, setSelectedEmotion] = useState<string | null>(null);
-  const controls = useAnimation();
-  const { reel, user } = reelWithUser;
-  const { user: currentUser } = useAuth();
-  const { toggleLikeReel, checkReelLikeStatus, getReelLikesCount, isLiking } = useSocialActions();
+  const videoRef = useRef<HTMLVideoElement>(null);
 
-  const getGradient = () => {
-    switch(reel.mood_vibe) {
-      case 'Uplifting':
-        return 'from-blue-100 via-indigo-100 to-purple-100';
-      case 'Raw':
-        return 'from-gray-100 via-gray-200 to-gray-100';
-      case 'Funny':
-        return 'from-yellow-100 via-orange-50 to-amber-100';
-      case 'Vulnerable':
-        return 'from-pink-50 via-rose-100 to-red-50';
-      default:
-        return 'from-white/40 via-white/60 to-white/40';
+  useEffect(() => {
+    const checkFollowingStatus = async () => {
+      if (user && reel?.user_id) {
+        const following = await checkFollowStatus(reel.user_id);
+        setIsFollowing(following);
+      }
+    };
+
+    const checkLikeStatus = async () => {
+      if (user && reel?.id) {
+        try {
+          const liked = await hasLikedPost(reel.id, user.id, 'reel');
+          setIsLiked(liked);
+        } catch (error) {
+          console.error("Error checking like status:", error);
+        }
+      }
+    };
+
+    const getLikes = async () => {
+      if (reel?.id) {
+        try {
+          const count = await getPostLikesCount(reel.id, 'reel');
+          setLikesCount(count);
+        } catch (error) {
+          console.error("Error getting likes count:", error);
+        }
+      }
+    };
+
+    checkFollowingStatus();
+    checkLikeStatus();
+    getLikes();
+  }, [user, reel, checkFollowStatus, hasLikedPost, getPostLikesCount]);
+
+  const handleFollowToggle = async () => {
+    if (!user || !reel) return;
+
+    try {
+      const result = await toggleFollow(reel.user_id);
+      setIsFollowing(result);
+    } catch (error) {
+      console.error("Error toggling follow:", error);
     }
   };
 
-  useEffect(() => {
-    const fetchReelData = async () => {
-      if (!currentUser) return;
-      
-      try {
-        const count = await getCommentCount(reel.id);
-        setCommentCount(count || 0);
-        
-        const isLiked = await checkReelLikeStatus(reel.id);
-        setLiked(isLiked);
-        
-        const likesCount = await getReelLikesCount(reel.id);
-        setLikesCount(likesCount);
-        
-        const isSaved = await checkReelSaveStatus(reel.id, currentUser.id);
-        setSaved(isSaved);
-      } catch (error) {
-        console.error("Error fetching reel data:", error);
-      }
-    };
-    
-    fetchReelData();
-    
-    // Reset state when reel changes
-    setIsPlaying(true);
-    setSelectedEmotion(null);
-  }, [reel.id, currentUser, checkReelLikeStatus, getReelLikesCount]);
+  const handleLikeToggle = async () => {
+    if (!user || !reel) return;
 
-  const togglePlay = () => {
-    setIsPlaying(!isPlaying);
+    try {
+      // Optimistic UI update
+      setIsLiked(!isLiked);
+      setLikesCount(isLiked ? likesCount - 1 : likesCount + 1);
+      
+      // Make API call
+      const result = await toggleLikePost(reel.id, 'reel');
+      
+      // If result is different from what we expected, revert
+      if (result !== !isLiked) {
+        setIsLiked(result);
+        const count = await getPostLikesCount(reel.id, 'reel');
+        setLikesCount(count);
+      }
+    } catch (error) {
+      console.error("Error toggling like:", error);
+      // Revert on error
+      setIsLiked(!isLiked);
+      setLikesCount(isLiked ? likesCount + 1 : likesCount - 1);
+    }
   };
 
   const toggleMute = () => {
-    setIsMuted(!isMuted);
-  };
-
-  const handleEmotionSelect = (emotion: string) => {
-    if (!currentUser) {
-      toast.error("You must be logged in to react to reels");
-      return;
-    }
-    
-    if (selectedEmotion === emotion) {
-      setSelectedEmotion(null);
-      toast("Reaction removed");
-    } else {
-      setSelectedEmotion(emotion);
-      toast.success(`You reacted: ${emotion}`);
-      
-      controls.start({
-        scale: [1, 1.2, 1],
-        opacity: [1, 1, 0],
-        transition: { duration: 0.8 }
-      });
+    if (videoRef.current) {
+      videoRef.current.muted = !isMuted;
+      setIsMuted(!isMuted);
     }
   };
 
-  const handleToggleLike = async () => {
-    if (!currentUser) {
-      toast.error("You must be logged in to like reels");
-      return;
-    }
-    
-    // Optimistic UI update
-    const previousLiked = liked;
-    setLiked(!liked);
-    setLikesCount(prevCount => previousLiked ? prevCount - 1 : prevCount + 1);
-    
-    try {
-      const result = await toggleLikeReel(reel.id);
-      
-      // In case the server response is different from what we expected
-      if (result !== !previousLiked) {
-        setLiked(result);
-        setLikesCount(await getReelLikesCount(reel.id));
-      }
-      
-      if (result) {
-        controls.start({
-          scale: [1, 1.2, 1],
-          opacity: [1, 1, 0],
-          transition: { duration: 0.8 }
-        });
-      }
-    } catch (error) {
-      // Revert optimistic update on error
-      setLiked(previousLiked);
-      setLikesCount(await getReelLikesCount(reel.id));
-      console.error("Error toggling like:", error);
-      toast.error("Failed to update like status");
-    }
-  };
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-screen">Loading...</div>;
+  }
 
-  const handleToggleSave = async () => {
-    if (!currentUser) {
-      toast.error("You must be logged in to save reels");
-      return;
-    }
-    
-    try {
-      const result = await toggleReelSave(reel.id, currentUser.id);
-      setSaved(result);
-      
-      if (result) {
-        toast.success("Reel saved to your collection");
-      } else {
-        toast.success("Reel removed from saved items");
-      }
-    } catch (error) {
-      console.error("Error toggling save:", error);
-      toast.error("Failed to update save status");
-    }
-  };
-  
-  const handleRepostReel = async () => {
-    if (!currentUser) {
-      toast.error("You must be logged in to repost");
-      return;
-    }
-    
-    try {
-      const result = await repostReel(reel.id, currentUser.id, user.id);
-      
-      if (result) {
-        toast.success("Reel reposted to your profile");
-      }
-    } catch (error) {
-      console.error("Error reposting:", error);
-      toast.error("Failed to repost the reel");
-    }
-  };
-  
-  const handleShare = () => {
-    const shareData = getShareData();
-    
-    try {
-      if (navigator.share) {
-        navigator.share(shareData);
-      } else {
-        navigator.clipboard.writeText(shareData.url);
-        toast.success("Link copied to clipboard!");
-      }
-    } catch (error) {
-      console.error("Error sharing:", error);
-      if ((error as Error).name !== 'AbortError') {
-        toast.error("Failed to share");
-      }
-    }
-  };
-  
-  const getShareData = () => {
-    const username = user?.username || 'User';
-    const caption = reel.caption || 'Check out this reel';
-    const url = window.location.origin + '/reels?reel=' + reel.id;
-    
-    return {
-      title: `${username}'s reel on Unmute Life`,
-      text: caption.length > 50 ? caption.substring(0, 50) + '...' : caption,
-      url: url
-    };
-  };
-
-  const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    const threshold = 50;
-    
-    if (info.offset.y < -threshold && hasNext) {
-      onSwipe("up");
-    } else if (info.offset.y > threshold && hasPrevious) {
-      onSwipe("down");
-    } else if (info.offset.x < -threshold && hasNext) {
-      onSwipe("left");
-    } else if (info.offset.x > threshold && hasPrevious) {
-      onSwipe("right");
-    }
-  };
-
-  const openUnmuteThread = () => {
-    setIsUnmuteThreadOpen(true);
-    setIsPlaying(false);
-  };
-
-  const handleDoubleTap = () => {
-    if (!liked && !isLiking[reel.id]) {
-      handleToggleLike();
-    }
-  };
+  if (error || !reel) {
+    return (
+      <div className="p-4">
+        <ErrorDisplay 
+          title="Failed to load reel" 
+          message={error?.message || "This reel might have been deleted or is unavailable"} 
+          onRetry={refetch}
+        />
+      </div>
+    );
+  }
 
   return (
-    <motion.div 
-      className="relative w-full h-full overflow-hidden"
-      drag="y"
-      dragConstraints={{ top: 0, bottom: 0 }}
-      dragElastic={0.2}
-      onDragEnd={handleDragEnd}
-    >
-      <div className="absolute inset-0 rounded-2xl overflow-hidden shadow-xl">
-        <div className={`absolute inset-0 bg-gradient-to-br ${getGradient()} opacity-20`}></div>
-        
-        <ReelVideo 
-          videoUrl={reel.video_url}
-          thumbnailUrl={reel.thumbnail_url}
-          isPlaying={isPlaying}
-          isMuted={isMuted}
-          currentIndex={currentIndex}
-          onTogglePlay={togglePlay}
-          onDoubleTap={handleDoubleTap}
-        />
-
-        <ReelEmotionDisplay
-          selectedEmotion={selectedEmotion}
-          liked={liked}
-          controls={controls}
-        />
-
-        <ReelNavigation 
-          hasNext={hasNext} 
-          hasPrevious={hasPrevious} 
-        />
-
-        {/* Subtle gradient overlays for better text readability */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/40 pointer-events-none" />
-
-        {/* User controls with improved spacing */}
-        <div className="absolute inset-x-5 top-5">
-          <ReelControls 
-            reelWithUser={reelWithUser}
-            selectedEmotion={selectedEmotion}
-            onEmotionSelect={handleEmotionSelect}
-            openUnmuteThread={openUnmuteThread}
-          />
-        </div>
-
-        {/* Reel content with better spacing and backdrop */}
-        <div className="absolute inset-x-5 bottom-32">
-          <ReelContent reel={reel} />
-        </div>
-
-        {/* Full-featured Actions sidebar with new components */}
-        <ReelActions 
-          reelId={reel.id}
-          liked={liked}
-          likesCount={likesCount}
-          saved={saved}
-          commentCount={commentCount}
-          onLike={handleToggleLike}
-          onSave={handleToggleSave}
-          onRepost={handleRepostReel}
-          onShare={handleShare}
-          shareData={getShareData()}
-          selectedEmotion={selectedEmotion}
-          onEmotionSelect={handleEmotionSelect}
-        />
-
-        {/* Mute button with better positioning */}
-        <div className="absolute bottom-6 right-5">
-          <ReelMuteButton isMuted={isMuted} onToggleMute={toggleMute} />
-        </div>
-      </div>
-
-      <ReelUnmuteThread
-        reelId={reel.id}
-        isOpen={isUnmuteThreadOpen}
-        onClose={() => {
-          setIsUnmuteThreadOpen(false);
-          setIsPlaying(true);
-        }}
+    <div className="relative">
+      <video
+        ref={videoRef}
+        src={reel.video_url}
+        controls
+        muted={isMuted}
+        className="w-full aspect-video rounded-xl"
       />
-    </motion.div>
+      <div className="absolute bottom-4 left-4">
+        <Link to={`/profile/${reel.user_id}`} className="flex items-center gap-2">
+          <Avatar>
+            <AvatarImage src={reel.profiles?.avatar || ""} alt={reel.profiles?.username || "User"} />
+            <AvatarFallback>{reel.profiles?.username?.[0]?.toUpperCase() || "U"}</AvatarFallback>
+          </Avatar>
+          <div>
+            <p className="text-sm font-semibold">{reel.profiles?.username || "Anonymous"}</p>
+            <p className="text-xs text-gray-400">{formatTimeAgo(reel.created_at)}</p>
+          </div>
+        </Link>
+      </div>
+      <div className="absolute top-4 right-4">
+        <Button variant="ghost" size="icon" onClick={toggleMute}>
+          {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+        </Button>
+      </div>
+      <div className="absolute bottom-4 right-4 flex flex-col items-center gap-3">
+        <Button variant="ghost" size="icon" onClick={handleLikeToggle}>
+          <Heart className={`h-6 w-6 ${isLiked ? 'fill-red-500 text-red-500' : 'text-white'}`} />
+          <span className="text-sm">{formatCompactNumber(likesCount)}</span>
+        </Button>
+        <Button variant="ghost" size="icon">
+          <MessageCircle className="h-6 w-6 text-white" />
+          <span className="text-sm">{formatCompactNumber(123)}</span>
+        </Button>
+        <Button variant="ghost" size="icon">
+          <Share className="h-6 w-6 text-white" />
+        </Button>
+        <Button variant="outline" size="sm" onClick={handleFollowToggle}>
+          {isFollowing ? "Unfollow" : "Follow"}
+        </Button>
+      </div>
+    </div>
   );
 };
 

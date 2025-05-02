@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -19,7 +18,7 @@ interface TextPostTabProps {
 
 const TextPostTab: React.FC<TextPostTabProps> = ({ onSuccess }) => {
   const [title, setTitle] = useState("");
-  const [body, setBody] = useState("");
+  const [content, setContent] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [mood, setMood] = useState<string>("");
   const [visibility, setVisibility] = useState("public");
@@ -45,14 +44,14 @@ const TextPostTab: React.FC<TextPostTabProps> = ({ onSuccess }) => {
       const postData = {
         user_id: user.id,
         title,
-        body,
+        content,
         tags,
         visibility: isDraft ? "draft" : visibility,
         created_at: isScheduled && scheduledDate ? scheduledDate : now.toISOString(),
         emoji_mood: selectedEmoji,
       };
       
-      const { error } = await supabase.from('posts_text').insert(postData);
+      const { error } = await supabase.from('text_posts').insert(postData);
       
       if (error) {
         console.error("Error creating post:", error);
@@ -61,7 +60,7 @@ const TextPostTab: React.FC<TextPostTabProps> = ({ onSuccess }) => {
       
       // Reset form
       setTitle("");
-      setBody("");
+      setContent("");
       setTags([]);
       setMood("");
       setSelectedEmoji("");
@@ -102,8 +101,8 @@ const TextPostTab: React.FC<TextPostTabProps> = ({ onSuccess }) => {
             id="body" 
             placeholder="What's on your mind?" 
             className="min-h-[200px] resize-y"
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
           />
         </div>
         
@@ -137,7 +136,7 @@ const TextPostTab: React.FC<TextPostTabProps> = ({ onSuccess }) => {
           <h3 className="font-semibold mb-4">Preview</h3>
           <div className="overflow-hidden rounded-md bg-background p-4 shadow-sm">
             {title && <h4 className="font-semibold mb-2">{title}</h4>}
-            <p className="text-sm text-muted-foreground mb-2">{body || "What's on your mind?"}</p>
+            <p className="text-sm text-muted-foreground mb-2">{content || "What's on your mind?"}</p>
             
             {tags.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-2">
@@ -207,13 +206,13 @@ const TextPostTab: React.FC<TextPostTabProps> = ({ onSuccess }) => {
             <Button 
               variant="outline" 
               onClick={() => handleSubmit(true)}
-              disabled={isSubmitting || !body}
+              disabled={isSubmitting || !content}
             >
               Save as Draft
             </Button>
             <Button 
               onClick={() => handleSubmit(false)}
-              disabled={isSubmitting || !body}
+              disabled={isSubmitting || !content}
               className="relative overflow-hidden"
             >
               {isSubmitting ? (

@@ -58,7 +58,7 @@ const CreatePost = ({ profile, onPostCreated }: CreatePostProps) => {
       // Legacy post creation as fallback
       await createTextPost({
         user_id: user.id,
-        body: postText.trim(),
+        content: postText.trim(),
         emoji_mood: moodEmoji || undefined
       });
       
