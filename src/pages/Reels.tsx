@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ReelView from '@/components/reels/ReelView';
@@ -57,7 +58,9 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
         .from('reel_posts')
         .select(`
           id, user_id, created_at, video_url, thumbnail_url, caption, 
-          tags, visibility, profiles:user_id (id, username, avatar, full_name)
+          tags, visibility, audio, audio_type, audio_url, duration,
+          original_audio_volume, overlay_audio_volume,
+          profiles:user_id (id, username, avatar, full_name)
         `)
         .order('created_at', { ascending: false })
         .limit(10);
@@ -77,7 +80,12 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
       // Map profiles to reels with proper type safety
       const formattedReels: ReelWithUser[] = reelsData.map(item => {
         // Use our helper function to ensure we have a safe profile
-        const userProfile = createSafeProfile(item.profiles);
+        const userProfile = item.profiles ? createSafeProfile(item.profiles) : {
+          id: item.user_id,
+          username: 'Anonymous',
+          avatar: '',
+          full_name: 'Unknown User'
+        };
 
         return {
           reel: {
@@ -87,12 +95,12 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
             video_url: item.video_url,
             thumbnail_url: item.thumbnail_url || null,
             caption: item.caption || null,
-            audio: null,
-            audio_type: null,
-            audio_url: null,
-            duration: null,
-            original_audio_volume: 1,
-            overlay_audio_volume: 0,
+            audio: item.audio || null,
+            audio_type: item.audio_type || null,
+            audio_url: item.audio_url || null,
+            duration: item.duration || null,
+            original_audio_volume: item.original_audio_volume || 1,
+            overlay_audio_volume: item.overlay_audio_volume || 0,
             tags: item.tags || [],
             allow_comments: true,
             allow_duets: true,
@@ -134,7 +142,9 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
         .from('reel_posts')
         .select(`
           id, user_id, created_at, video_url, thumbnail_url, caption, 
-          tags, visibility, profiles:user_id (id, username, avatar, full_name)
+          tags, visibility, audio, audio_type, audio_url, duration,
+          original_audio_volume, overlay_audio_volume,
+          profiles:user_id (id, username, avatar, full_name)
         `)
         .lt('created_at', lastCreatedAt)
         .order('created_at', { ascending: false })
@@ -149,7 +159,12 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
 
       // Map to properly typed ReelWithUser objects
       const formattedReels: ReelWithUser[] = reelsData.map(item => {
-        const userProfile = createSafeProfile(item.profiles);
+        const userProfile = item.profiles ? createSafeProfile(item.profiles) : {
+          id: item.user_id,
+          username: 'Anonymous',
+          avatar: '',
+          full_name: 'Unknown User'
+        };
 
         return {
           reel: {
@@ -159,12 +174,12 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
             video_url: item.video_url,
             thumbnail_url: item.thumbnail_url || null,
             caption: item.caption || null,
-            audio: null,
-            audio_type: null,
-            audio_url: null,
-            duration: null,
-            original_audio_volume: 1,
-            overlay_audio_volume: 0,
+            audio: item.audio || null,
+            audio_type: item.audio_type || null,
+            audio_url: item.audio_url || null,
+            duration: item.duration || null,
+            original_audio_volume: item.original_audio_volume || 1,
+            overlay_audio_volume: item.overlay_audio_volume || 0,
             tags: item.tags || [],
             allow_comments: true,
             allow_duets: true,

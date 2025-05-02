@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -54,17 +55,8 @@ export const checkPostExists = async (postId: string, postType: string): Promise
         break;
       
       default:
-        // Check in the main posts table
-        const { data: mainPost, error: mainPostError } = await supabase
-          .from('posts')
-          .select('id')
-          .eq('id', postId)
-          .maybeSingle();
-        
-        if (!mainPostError && mainPost) {
-          return true;
-        }
-        break;
+        // No need to check in the main posts table as we now use specialized tables
+        return false;
     }
     
     return false;
@@ -152,9 +144,9 @@ export const addReelComment = async (reelId: string, userId: string, content: st
   try {
     console.log("Adding comment to reel:", reelId, userId, content);
     
-    // First verify if the reel exists in posts_reels table
+    // First verify if the reel exists in reel_posts table
     const { data: reelExists } = await supabase
-      .from("posts_reels")
+      .from("reel_posts")
       .select("id")
       .eq("id", reelId)
       .maybeSingle();
@@ -285,7 +277,8 @@ export const addComment = async (postId: string, userId: string, content: string
       .insert({
         post_id: postId,
         user_id: userId,
-        content: content
+        content: content,
+        post_type: 'text' // Add the required post_type field
       })
       .select(`
         *,

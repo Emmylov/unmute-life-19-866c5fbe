@@ -7,10 +7,11 @@ export * from "./personalized-feed";
 export * from "./types";
 export * from "./utils";
 
-// Export the functions directly from their respective files
-import { fetchMusicPosts } from "./music-feed";
-import { fetchCollaborativePosts } from "./collabs-feed";
+// Re-export the main feed fetcher functions with the names expected elsewhere
+// This ensures backward compatibility and simplifies imports
+import { fetchMusicFeedFunc } from "./music-feed";
+import { fetchCollabsFeedFunc } from "./collabs-feed";
 
 // Export with the names expected by other parts of the application
-export const fetchMusicFeed = fetchMusicPosts;
-export const fetchCollabsFeed = fetchCollaborativePosts;
+export const fetchMusicFeed = fetchMusicFeedFunc;
+export const fetchCollabsFeed = fetchCollabsFeedFunc;

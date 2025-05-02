@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { uploadImage } from "./upload-service";
 import { uploadReelVideo } from "./upload-service";
 import { toast } from "sonner";
+import { createSafeProfile } from "@/hooks/feed/feed-utils";
 
 // Types for our different post structures
 export type TextPost = {
@@ -83,7 +84,7 @@ export type FeedPost = {
   image_urls?: string[] | null;
   video_url?: string | null;
   caption?: string | null;
-  thumbnail_url?: string | null; // Add thumbnail_url field
+  thumbnail_url?: string | null;
   tags?: string[] | null;
   emoji_mood?: string | null;
   post_type: 'text' | 'image' | 'reel' | 'meme';
@@ -181,7 +182,10 @@ export const createReelPost = async (
 ): Promise<ReelPost | null> => {
   try {
     // Upload the video
-    const { videoUrl, thumbnailUrl } = await uploadReelVideo(videoFile);
+    const videoData = await uploadReelVideo(videoFile);
+    const videoUrl = videoData.videoUrl;
+    // Ensure we're using the correct property name - thumbnail_url
+    const thumbnailUrl = videoData.thumbnailUrl || null;
 
     // Insert the reel into the database
     const { data, error } = await supabase
@@ -283,11 +287,22 @@ export const getFeedPosts = async (userId: string, limit: number = 20): Promise<
       });
     }
 
-    // Combine posts with profiles
-    const postsWithProfiles = data.map(post => ({
-      ...post,
-      profiles: profileMap.get(post.user_id) || null
-    }));
+    // Combine posts with profiles and ensure proper typing
+    const postsWithProfiles = data.map(post => {
+      // Ensure post_type is one of the allowed values
+      const safePostType = post.post_type === 'text' || 
+                           post.post_type === 'image' || 
+                           post.post_type === 'reel' || 
+                           post.post_type === 'meme' 
+                           ? post.post_type 
+                           : 'text' as const; // Default to 'text' if unknown type
+      
+      return {
+        ...post,
+        post_type: safePostType,
+        profiles: profileMap.get(post.user_id) || null
+      };
+    }) as FeedPost[];
 
     return postsWithProfiles;
   } catch (error) {
@@ -323,34 +338,41 @@ export const getUserPosts = async (
           if (type === 'text') {
             return {
               ...post,
-              post_type: 'text',
+              post_type: 'text' as const,
               likes_count: 0,
               comments_count: 0
             };
           } else if (type === 'image') {
             return {
               ...post,
-              post_type: 'image',
+              post_type: 'image' as const,
               likes_count: 0,
               comments_count: 0
             };
           } else if (type === 'reel') {
             return {
               ...post,
-              post_type: 'reel',
+              post_type: 'reel' as const,
               likes_count: 0,
               comments_count: 0
             };
           } else if (type === 'meme') {
             return {
               ...post,
-              post_type: 'meme',
-              image_urls: [post.image_url],
+              post_type: 'meme' as const,
+              // For memes, convert image_url to image_urls array for consistency
+              image_urls: post.image_url ? [post.image_url] : [],
               likes_count: 0,
               comments_count: 0
             };
           }
-          return post;
+          // This should never happen due to the type constraint, but TypeScript requires it
+          return {
+            ...post,
+            post_type: 'text' as const,
+            likes_count: 0,
+            comments_count: 0
+          };
         });
       }
     } else {
@@ -362,7 +384,19 @@ export const getUserPosts = async (
         });
       
       if (error) throw error;
-      posts = data || [];
+      
+      if (data && data.length > 0) {
+        // Ensure post_type is cast to the correct type
+        posts = data.map(post => ({
+          ...post,
+          post_type: (post.post_type === 'text' || 
+                     post.post_type === 'image' || 
+                     post.post_type === 'reel' || 
+                     post.post_type === 'meme') 
+                     ? post.post_type 
+                     : 'text'
+        })) as FeedPost[];
+      }
     }
     
     // Get user profiles
@@ -380,7 +414,7 @@ export const getUserPosts = async (
       }));
     }
     
-    return posts;
+    return posts as FeedPost[];
   } catch (error) {
     console.error(`Error fetching ${type || 'user'} posts:`, error);
     return [];
