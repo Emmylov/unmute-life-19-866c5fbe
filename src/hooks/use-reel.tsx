@@ -67,13 +67,13 @@ export const useReel = (reelId: string) => {
         created_at: data.created_at,
         tags: data.tags || null,
         visibility: data.visibility || 'public',
-        audio: data.audio || null,
         audio_type: data.audio_type || null,
         audio_url: data.audio_url || null,
-        duration: data.duration || null,
-        // Use default values for possibly missing properties
-        original_audio_volume: data.original_audio_volume || 1,
-        overlay_audio_volume: data.overlay_audio_volume || 0,
+        // Safely handle properties that might not exist in the database schema
+        audio: 'audio' in data ? data.audio : null,
+        duration: 'duration' in data ? data.duration : null,
+        original_audio_volume: 'original_audio_volume' in data ? data.original_audio_volume : 1,
+        overlay_audio_volume: 'overlay_audio_volume' in data ? data.overlay_audio_volume : 0,
         // Handle profiles data safely
         profiles: data.profiles ? createSafeProfile(data.profiles) : null
       };

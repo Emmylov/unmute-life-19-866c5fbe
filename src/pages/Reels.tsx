@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ReelView from '@/components/reels/ReelView';
@@ -59,8 +58,7 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
         .from('reel_posts')
         .select(`
           id, user_id, created_at, video_url, thumbnail_url, caption, 
-          tags, visibility, audio_type, audio_url, duration,
-          original_audio_volume, overlay_audio_volume, audio,
+          tags, visibility, audio_type, audio_url,
           profiles:user_id (id, username, avatar, full_name)
         `)
         .order('created_at', { ascending: false })
@@ -82,28 +80,30 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
       // Map profiles to reels with proper type safety and error handling
       const formattedReels: ReelWithUser[] = reelsData.map(item => {
         // Handle missing or error in profiles data
-        const userProfile = item.profiles ? createSafeProfile(item.profiles) : {
-          id: item.user_id,
-          username: 'Anonymous',
-          avatar: '',
-          full_name: 'Unknown User'
-        };
+        const userProfile = item && typeof item === 'object' && 'profiles' in item && item.profiles
+          ? createSafeProfile(item.profiles)
+          : {
+              id: item && typeof item === 'object' && 'user_id' in item ? item.user_id : 'unknown',
+              username: 'Anonymous',
+              avatar: '',
+              full_name: 'Unknown User'
+            };
 
         return {
           reel: {
-            id: item.id,
-            user_id: item.user_id,
-            created_at: item.created_at,
-            video_url: item.video_url,
-            thumbnail_url: item.thumbnail_url || null,
-            caption: item.caption || null,
-            audio: item.audio || null,
-            audio_type: item.audio_type || null,
-            audio_url: item.audio_url || null,
-            duration: item.duration || null,
-            original_audio_volume: item.original_audio_volume || 1,
-            overlay_audio_volume: item.overlay_audio_volume || 0,
-            tags: item.tags || [],
+            id: item && typeof item === 'object' && 'id' in item ? item.id : 'unknown-id',
+            user_id: item && typeof item === 'object' && 'user_id' in item ? item.user_id : 'unknown-user',
+            created_at: item && typeof item === 'object' && 'created_at' in item ? item.created_at : new Date().toISOString(),
+            video_url: item && typeof item === 'object' && 'video_url' in item ? item.video_url : '',
+            thumbnail_url: item && typeof item === 'object' && 'thumbnail_url' in item ? item.thumbnail_url : null,
+            caption: item && typeof item === 'object' && 'caption' in item ? item.caption : null,
+            audio: null, // These fields may not exist in the database schema
+            audio_type: item && typeof item === 'object' && 'audio_type' in item ? item.audio_type : null,
+            audio_url: item && typeof item === 'object' && 'audio_url' in item ? item.audio_url : null,
+            duration: null, // These fields may not exist in the database schema
+            original_audio_volume: 1, // Default value
+            overlay_audio_volume: 0, // Default value
+            tags: item && typeof item === 'object' && 'tags' in item ? item.tags : [],
             allow_comments: true,
             allow_duets: true,
             vibe_tag: null,
@@ -144,8 +144,7 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
         .from('reel_posts')
         .select(`
           id, user_id, created_at, video_url, thumbnail_url, caption, 
-          tags, visibility, audio_type, audio_url, duration,
-          original_audio_volume, overlay_audio_volume, audio,
+          tags, visibility, audio_type, audio_url,
           profiles:user_id (id, username, avatar, full_name)
         `)
         .lt('created_at', lastCreatedAt)
@@ -161,28 +160,30 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
 
       // Map to properly typed ReelWithUser objects with error handling
       const formattedReels: ReelWithUser[] = reelsData.map(item => {
-        const userProfile = item.profiles ? createSafeProfile(item.profiles) : {
-          id: item.user_id,
-          username: 'Anonymous',
-          avatar: '',
-          full_name: 'Unknown User'
-        };
+        const userProfile = item && typeof item === 'object' && 'profiles' in item && item.profiles
+          ? createSafeProfile(item.profiles)
+          : {
+              id: item && typeof item === 'object' && 'user_id' in item ? item.user_id : 'unknown',
+              username: 'Anonymous',
+              avatar: '',
+              full_name: 'Unknown User'
+            };
 
         return {
           reel: {
-            id: item.id,
-            user_id: item.user_id,
-            created_at: item.created_at,
-            video_url: item.video_url,
-            thumbnail_url: item.thumbnail_url || null,
-            caption: item.caption || null,
-            audio: item.audio || null,
-            audio_type: item.audio_type || null,
-            audio_url: item.audio_url || null,
-            duration: item.duration || null,
-            original_audio_volume: item.original_audio_volume || 1,
-            overlay_audio_volume: item.overlay_audio_volume || 0,
-            tags: item.tags || [],
+            id: item && typeof item === 'object' && 'id' in item ? item.id : 'unknown-id',
+            user_id: item && typeof item === 'object' && 'user_id' in item ? item.user_id : 'unknown-user',
+            created_at: item && typeof item === 'object' && 'created_at' in item ? item.created_at : new Date().toISOString(),
+            video_url: item && typeof item === 'object' && 'video_url' in item ? item.video_url : '',
+            thumbnail_url: item && typeof item === 'object' && 'thumbnail_url' in item ? item.thumbnail_url : null,
+            caption: item && typeof item === 'object' && 'caption' in item ? item.caption : null,
+            audio: null, // These fields may not exist in the database schema
+            audio_type: item && typeof item === 'object' && 'audio_type' in item ? item.audio_type : null,
+            audio_url: item && typeof item === 'object' && 'audio_url' in item ? item.audio_url : null,
+            duration: null, // These fields may not exist in the database schema
+            original_audio_volume: 1, // Default value
+            overlay_audio_volume: 0, // Default value
+            tags: item && typeof item === 'object' && 'tags' in item ? item.tags : [],
             allow_comments: true,
             allow_duets: true,
             vibe_tag: null,

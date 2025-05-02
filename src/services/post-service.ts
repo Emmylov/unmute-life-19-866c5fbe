@@ -101,15 +101,15 @@ export interface MemePost extends DatabasePost {
 export const getTableName = (postType: string): string => {
   switch (postType) {
     case "text":
-      return "posts_text";
+      return "text_posts";
     case "image":
-      return "posts_image";
+      return "image_posts";
     case "reel":
       return "reel_posts";
     case "meme":
-      return "posts_meme";
+      return "meme_posts";
     default:
-      return "posts_text";
+      return "text_posts";
   }
 };
 
@@ -187,6 +187,128 @@ export const createPost = async (
   }
 };
 
+export const createTextPost = async (postData: any): Promise<Post | null> => {
+  try {
+    return await createPost(postData.user_id, 'text', {
+      title: postData.title || '',
+      body: postData.content || postData.body || '',
+      tags: postData.tags || [],
+      emoji_mood: postData.emoji_mood || null,
+      visibility: postData.visibility || 'public'
+    });
+  } catch (error) {
+    console.error("Error creating text post:", error);
+    return null;
+  }
+};
+
+export const createImagePost = async (postData: any): Promise<Post | null> => {
+  try {
+    return await createPost(postData.user_id, 'image', {
+      image_urls: postData.image_urls || [],
+      content: postData.content || postData.caption || '',
+      tags: postData.tags || [],
+      emoji_mood: postData.emoji_mood || null,
+      visibility: postData.visibility || 'public'
+    });
+  } catch (error) {
+    console.error("Error creating image post:", error);
+    return null;
+  }
+};
+
+export const createReelPost = async (postData: any): Promise<Post | null> => {
+  try {
+    return await createPost(postData.user_id, 'reel', {
+      video_url: postData.video_url || postData.videoUrl,
+      caption: postData.caption || '',
+      thumbnail_url: postData.thumbnail_url || postData.thumbnailUrl || null,
+      tags: postData.tags || [],
+      audio: postData.audio || null,
+      audio_url: postData.audio_url || null,
+      audio_type: postData.audio_type || 'original',
+      visibility: postData.visibility || 'public'
+    });
+  } catch (error) {
+    console.error("Error creating reel post:", error);
+    return null;
+  }
+};
+
+export const getUserPosts = getPosts;
+
+export const hasLikedPost = async (postId: string, userId: string, postType: string): Promise<boolean> => {
+  try {
+    const { data, error } = await supabase
+      .from("post_likes")
+      .select("*")
+      .eq("post_id", postId)
+      .eq("user_id", userId)
+      .eq("post_type", postType)
+      .maybeSingle();
+
+    if (error) throw error;
+    return !!data;
+  } catch (error) {
+    console.error("Error checking like status:", error);
+    return false;
+  }
+};
+
+export const getPostLikesCount = async (postId: string, postType: string): Promise<number> => {
+  try {
+    const { count, error } = await supabase
+      .from("post_likes")
+      .select("*", { count: "exact", head: true })
+      .eq("post_id", postId)
+      .eq("post_type", postType);
+
+    if (error) throw error;
+    return count || 0;
+  } catch (error) {
+    console.error("Error getting post likes count:", error);
+    return 0;
+  }
+};
+
+export const checkPostExists = async (postId: string, postType: string): Promise<boolean> => {
+  try {
+    let tableName = '';
+    switch (postType) {
+      case 'text':
+        tableName = 'text_posts';
+        break;
+      case 'image':
+        tableName = 'image_posts';
+        break;
+      case 'meme':
+        tableName = 'meme_posts';
+        break;
+      case 'reel':
+        tableName = 'reel_posts';
+        break;
+      default:
+        tableName = 'text_posts';
+    }
+    
+    const { data, error } = await supabase
+      .from(tableName)
+      .select('id')
+      .eq('id', postId)
+      .maybeSingle();
+    
+    if (error) {
+      console.error(`Error checking post existence in ${tableName}:`, error);
+      return false;
+    }
+    
+    return !!data;
+  } catch (error) {
+    console.error('Error checking post existence:', error);
+    return false;
+  }
+};
+
 export const getPost = async (
   postId: string,
   postType: string
@@ -194,6 +316,7 @@ export const getPost = async (
   try {
     const tableName = getTableName(postType);
 
+    // Type assertion to ensure the result is properly casted
     const { data, error } = await supabase
       .from(tableName)
       .select("*")
@@ -205,7 +328,7 @@ export const getPost = async (
       return null;
     }
 
-    return data as Post;
+    return data as unknown as Post;
   } catch (error) {
     console.error("Error fetching post:", error);
     return null;
@@ -263,11 +386,11 @@ export const deletePost = async (
 export const getAllPosts = async (userId: string): Promise<Post[]> => {
   try {
     const textPostsPromise = supabase
-      .from("posts_text")
+      .from("text_posts")
       .select("*")
       .eq("user_id", userId);
     const imagePostsPromise = supabase
-      .from("posts_image")
+      .from("image_posts")
       .select("*")
       .eq("user_id", userId);
     const reelPostsPromise = supabase
@@ -275,7 +398,7 @@ export const getAllPosts = async (userId: string): Promise<Post[]> => {
       .select("*")
       .eq("user_id", userId);
     const memePostsPromise = supabase
-      .from("posts_meme")
+      .from("meme_posts")
       .select("*")
       .eq("user_id", userId);
 

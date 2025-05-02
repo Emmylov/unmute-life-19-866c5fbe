@@ -7,7 +7,6 @@ export * from "./personalized-feed";
 export * from "./types";
 export * from "./utils";
 
-// Instead of importing and re-exporting non-existent functions,
-// directly export the ones we need with the expected names
-export { fetchMusicPosts as fetchMusicFeed } from "./music-feed";
-export { fetchCollabsFeedPosts as fetchCollabsFeed } from "./collabs-feed";
+// Directly export the functions with the expected names
+export { fetchMusicPosts, fetchMusicFeed } from "./music-feed";
+export { fetchCollabsFeedPosts, fetchCollabsFeed } from "./collabs-feed";

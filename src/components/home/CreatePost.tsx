@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Image as ImageIcon, Smile, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { createTextPost } from "@/services/post-service";
+import { createPost, createTextPost } from "@/services/post-service";
 import { toast } from "sonner";
 import MoodSelector from "@/components/home/MoodSelector";
 import { createUnifiedTextPost } from "@/services/unified-post-service";

@@ -1,9 +1,12 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 // Check if a post exists in any table
-export const checkPostExists = async (postId: string, postType: string): Promise<boolean> => {
+export const checkPostExists = async (postId: string, postTypeParam: string): Promise<boolean> => {
   try {
+    const postType = postTypeParam || 'text'; // Default to text if no type provided
+    
     switch (postType) {
       case 'text':
         const { data: textPost, error: textPostError } = await supabase
@@ -253,13 +256,32 @@ export const deleteReelComment = async (commentId: string, userId: string) => {
   }
 };
 
+// Generic comment types for all post types
+export interface PostComment {
+  id: string;
+  post_id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+  post_type: string;
+  profiles?: {
+    id: string;
+    username: string | null;
+    avatar: string | null;
+    full_name: string | null;
+  };
+}
+
 // Generic comment functions for backward compatibility
-export const addComment = async (postId: string, userId: string, content: string) => {
+export const addComment = async (postId: string, userId: string, content: string, postTypeParam?: string) => {
   try {
     console.log(`Adding comment to post ${postId} by user ${userId}: "${content}"`);
     
+    // Use provided postType or default to 'text'
+    const postType = postTypeParam || 'text';
+    
     // First verify the post exists
-    const postExists = await checkPostExists(postId, postType || 'text');
+    const postExists = await checkPostExists(postId, postType);
     
     if (!postExists) {
       toast.error("This post is no longer available");
@@ -273,7 +295,7 @@ export const addComment = async (postId: string, userId: string, content: string
         post_id: postId,
         user_id: userId,
         content: content,
-        post_type: 'text' // Add the required post_type field
+        post_type: postType
       })
       .select(`
         *,
@@ -296,12 +318,15 @@ export const addComment = async (postId: string, userId: string, content: string
   }
 };
 
-export const getComments = async (postId: string) => {
+export const getComments = async (postId: string, postTypeParam?: string) => {
   try {
     console.log("Fetching comments for post:", postId);
     
+    // Use provided postType or default to 'text'
+    const postType = postTypeParam || 'text';
+    
     // First check if the post exists
-    const postExists = await checkPostExists(postId, postType || 'text');
+    const postExists = await checkPostExists(postId, postType);
     
     if (!postExists) {
       console.log("Post not found when getting comments:", postId);

@@ -11,13 +11,15 @@ export {
   createTextPost,
   createReelPost,
   getUserPosts,
-  getFeedPosts
+  getFeedPosts,
+  createPost
 } from './post-service';
 
 // Comment services
 export {
   addComment,
-  getComments
+  getComments,
+  PostComment
 } from './comment-service';
 
 // Message services

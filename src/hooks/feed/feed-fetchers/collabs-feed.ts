@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Post, createSafeProfile } from "../feed-utils";
 import { FeedPost } from "@/services/post-service";
 
+// Main function to be exported with the name used in index.ts
 export async function fetchCollabsFeedPosts(limit: number = 10, offset: number = 0): Promise<FeedPost[]> {
   try {
     // This is a placeholder implementation - in a real app, you would fetch actual collab posts
@@ -13,3 +14,6 @@ export async function fetchCollabsFeedPosts(limit: number = 10, offset: number =
     return [];
   }
 }
+
+// Export with both function names for compatibility
+export const fetchCollabsFeed = fetchCollabsFeedPosts;
