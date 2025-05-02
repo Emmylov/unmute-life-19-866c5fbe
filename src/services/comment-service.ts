@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { createSafeProfile } from "@/utils/safe-data-utils";
 
@@ -95,4 +96,47 @@ export const getComments = async (
   }
 };
 
-// Additional comment-related functions can be added here
+// Add specific reel comment functions for backward compatibility
+export const addReelComment = async (
+  reelId: string, 
+  userId: string, 
+  content: string
+): Promise<PostComment | null> => {
+  return addComment(reelId, userId, content, 'reel');
+};
+
+export const getReelComments = async (
+  reelId: string
+): Promise<PostComment[]> => {
+  return getComments(reelId, 'reel');
+};
+
+export const deleteComment = async (
+  commentId: string,
+  userId: string
+): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('post_comments')
+      .update({ is_deleted: true })
+      .match({ id: commentId, user_id: userId });
+
+    if (error) {
+      console.error("Error deleting comment:", error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Error deleting comment:", error);
+    return false;
+  }
+};
+
+// Add deleteReelComment for backward compatibility
+export const deleteReelComment = async (
+  commentId: string,
+  userId: string
+): Promise<boolean> => {
+  return deleteComment(commentId, userId);
+};

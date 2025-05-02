@@ -22,14 +22,20 @@ export {
 // Comment services
 export {
   addComment,
-  getComments
+  getComments,
+  deleteComment,
+  // Add reel-specific comment functions
+  addReelComment,
+  getReelComments,
+  deleteReelComment
 } from './comment-service';
 
 // Export utility functions
-export { createSafeProfile } from '@/hooks/feed/feed-utils';
+export { createSafeProfile } from '@/utils/safe-data-utils';
 
 // Export PostComment type using export type syntax for compatibility with isolatedModules
 export type { PostComment } from './comment-service';
+export type { Post } from './post-service';
 
 // Message services
 export {

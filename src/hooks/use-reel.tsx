@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { createSafeProfile } from '@/hooks/feed/feed-utils';
+import { createSafeProfile } from '@/utils/safe-data-utils';
 
 export interface Reel {
   id: string;
@@ -69,12 +69,11 @@ export const useReel = (reelId: string) => {
         visibility: data.visibility || 'public',
         audio_type: data.audio_type || null,
         audio_url: data.audio_url || null,
-        // Safely handle properties that might not exist in the database schema
-        // using optional chaining to avoid accessing properties that don't exist
+        // Handle fields that might not exist in the database schema with safe defaults
         audio: data.audio_url || null, // Fallback to audio_url if audio doesn't exist
-        duration: typeof data.duration !== 'undefined' ? data.duration : null,
-        original_audio_volume: typeof data.original_audio_volume !== 'undefined' ? data.original_audio_volume : 1,
-        overlay_audio_volume: typeof data.overlay_audio_volume !== 'undefined' ? data.overlay_audio_volume : 0,
+        duration: null, // Set default value since this field doesn't exist in the database
+        original_audio_volume: 1, // Set default value since this field doesn't exist in the database 
+        overlay_audio_volume: 0, // Set default value since this field doesn't exist in the database
         // Handle profiles data safely
         profiles: data.profiles ? createSafeProfile(data.profiles) : null
       };

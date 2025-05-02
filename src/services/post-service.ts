@@ -109,18 +109,11 @@ const VALID_TABLE_NAMES = {
 
 // Update the getTableName function to use the valid table names
 export const getTableName = (postType: string): string => {
-  switch (postType) {
-    case "text":
-      return VALID_TABLE_NAMES.text;
-    case "image":
-      return VALID_TABLE_NAMES.image;
-    case "reel":
-      return VALID_TABLE_NAMES.reel;
-    case "meme":
-      return VALID_TABLE_NAMES.meme;
-    default:
-      return VALID_TABLE_NAMES.text;
-  }
+  if (postType === 'text') return VALID_TABLE_NAMES.text;
+  if (postType === 'image') return VALID_TABLE_NAMES.image;
+  if (postType === 'reel') return VALID_TABLE_NAMES.reel;
+  if (postType === 'meme') return VALID_TABLE_NAMES.meme;
+  return VALID_TABLE_NAMES.text; // Default to text
 };
 
 // Helper function to safely handle data conversion for different table types
@@ -165,30 +158,33 @@ const safeConvertToPost = (data: any, postType: PostType): Post => {
     }
   };
 
-  // Add type-specific properties
+  // Add type-specific properties safely
   switch (postType) {
     case 'text':
-      post.title = data.title || null;
-      post.body = data.content || null;
-      post.tags = data.tags || [];
+      if ('title' in data) post.title = data.title || null;
+      if ('content' in data) post.body = data.content || null;
+      if ('body' in data) post.body = data.body || null;
+      if ('tags' in data) post.tags = data.tags || [];
       break;
     case 'image':
-      post.body = data.caption || null;
-      post.imageUrl = (data.image_urls && data.image_urls[0]) || null;
-      post.tags = data.tags || [];
+      if ('caption' in data) post.body = data.caption || null;
+      if ('content' in data) post.body = data.content || null;
+      if ('image_urls' in data) post.imageUrl = (data.image_urls && data.image_urls[0]) || null;
+      if ('tags' in data) post.tags = data.tags || [];
       break;
     case 'reel':
-      post.body = data.caption || null;
-      post.videoUrl = data.video_url || null;
-      post.thumbnailUrl = data.thumbnail_url || null;
-      post.tags = data.tags || [];
-      post.audioUrl = data.audio_url || null;
-      post.audioType = data.audio_type || null;
+      if ('caption' in data) post.body = data.caption || null;
+      if ('video_url' in data) post.videoUrl = data.video_url || null;
+      if ('thumbnail_url' in data) post.thumbnailUrl = data.thumbnail_url || null;
+      if ('tags' in data) post.tags = data.tags || [];
+      if ('audio_url' in data) post.audioUrl = data.audio_url || null;
+      if ('audio_type' in data) post.audioType = data.audio_type || null;
       break;
     case 'meme':
-      post.title = data.top_text || null;
-      post.body = data.bottom_text || null;
-      post.imageUrl = (data.image_urls && data.image_urls[0]) || null;
+      if ('top_text' in data) post.title = data.top_text || null;
+      if ('bottom_text' in data) post.body = data.bottom_text || null;
+      if ('image_urls' in data) post.imageUrl = (data.image_urls && data.image_urls[0]) || null;
+      if ('image_url' in data) post.imageUrl = data.image_url || null;
       break;
   }
 
@@ -255,8 +251,9 @@ export const createPost = async (
         throw new Error("Invalid post type");
     }
 
+    // Use typecasted tableName to ensure type safety
     const { data, error } = await supabase
-      .from(tableName)
+      .from(tableName as any)
       .insert([insertData])
       .select("*")
       .single();
@@ -344,7 +341,7 @@ export const createReelPost = async (postData: any): Promise<Post | null> => {
   }
 };
 
-// Define getPosts function early so it can be exported and referenced
+// Define getPosts function
 export const getPosts = async (
   userId: string,
   postType?: string
@@ -352,8 +349,9 @@ export const getPosts = async (
   try {
     const tableName = postType ? getTableName(postType) : VALID_TABLE_NAMES.text;
     
+    // Use typecasted tableName to ensure type safety
     const { data, error } = await supabase
-      .from(tableName)
+      .from(tableName as any)
       .select("*")
       .eq("user_id", userId);
 
@@ -411,8 +409,9 @@ export const checkPostExists = async (postId: string, postType: string): Promise
   try {
     const tableName = getTableName(postType);
     
+    // Use typecasted tableName to ensure type safety
     const { data, error } = await supabase
-      .from(tableName)
+      .from(tableName as any)
       .select('id')
       .eq('id', postId)
       .maybeSingle();
