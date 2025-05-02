@@ -99,12 +99,18 @@ export const useSocialActions = () => {
           
         if (unfollowError) throw unfollowError;
         
-        // Update follower counts in profiles
-        await supabase.rpc('update_follower_counts', {
-          p_follower_id: user.id,
-          p_following_id: userId,
-          p_is_follow: false
-        }).single();
+        // Update follower counts using direct update instead of RPC
+        // Update followers count for the user being unfollowed
+        await supabase
+          .from('profiles')
+          .update({ followers: supabase.sql`followers - 1` })
+          .eq('id', userId);
+          
+        // Update following count for the current user
+        await supabase
+          .from('profiles')
+          .update({ following: supabase.sql`following - 1` })
+          .eq('id', user.id);
         
         toast.success(t('common.success.unfollowed', 'Unfollowed user'));
         return false;
@@ -119,12 +125,18 @@ export const useSocialActions = () => {
           
         if (followError) throw followError;
         
-        // Update follower counts in profiles
-        await supabase.rpc('update_follower_counts', {
-          p_follower_id: user.id,
-          p_following_id: userId,
-          p_is_follow: true
-        }).single();
+        // Update follower counts using direct update instead of RPC
+        // Update followers count for the user being followed
+        await supabase
+          .from('profiles')
+          .update({ followers: supabase.sql`followers + 1` })
+          .eq('id', userId);
+          
+        // Update following count for the current user
+        await supabase
+          .from('profiles')
+          .update({ following: supabase.sql`following + 1` })
+          .eq('id', user.id);
         
         toast.success(t('common.success.following', 'Following user'));
         return true;

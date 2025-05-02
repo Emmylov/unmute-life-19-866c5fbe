@@ -6,3 +6,7 @@ export * from "./collabs-feed";
 export * from "./personalized-feed";
 export * from "./types";
 export * from "./utils";
+
+// Export the specific functions that are being imported
+export { fetchMusicPosts as fetchMusicFeed } from "./music-feed";
+export { fetchCollaborativePosts as fetchCollabsFeed } from "./collabs-feed";

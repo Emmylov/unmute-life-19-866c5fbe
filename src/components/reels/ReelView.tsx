@@ -10,6 +10,7 @@ import { useSocialActions } from "@/hooks/use-social-actions";
 import { formatTimeAgo } from "@/lib/utils";
 import { ErrorDisplay } from "@/components/ui/error-display";
 import { Link } from "react-router-dom";
+import { ReelWithUser } from "@/types/reels";
 
 // Add missing formatCompactNumber utility function
 const formatCompactNumber = (num: number): string => {
@@ -18,9 +19,30 @@ const formatCompactNumber = (num: number): string => {
   return (num / 1000000).toFixed(1) + 'm';
 };
 
-const ReelView = () => {
+// Update the component to support both single reel mode and feed mode
+interface ReelViewProps {
+  reelWithUser?: ReelWithUser;
+  onNext?: () => void;
+  onPrevious?: () => void;
+  onSwipe?: (direction: string) => void;
+  hasNext?: boolean;
+  hasPrevious?: boolean;
+  currentIndex?: number;
+  totalReels?: number;
+}
+
+const ReelView: React.FC<ReelViewProps> = ({ 
+  reelWithUser,
+  onNext,
+  onPrevious,
+  onSwipe,
+  hasNext,
+  hasPrevious,
+  currentIndex,
+  totalReels
+}) => {
   const { reelId } = useParams<{ reelId: string }>();
-  const { reel, isLoading, error, refetch } = useReel(reelId || "");
+  const { reel: singleReel, isLoading, error, refetch } = useReel(reelId || "");
   const { user } = useAuth();
   const { toggleFollow, checkFollowStatus, toggleLikePost, hasLikedPost, getPostLikesCount } = useSocialActions();
   const [isFollowing, setIsFollowing] = useState(false);
@@ -28,7 +50,11 @@ const ReelView = () => {
   const [likesCount, setLikesCount] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
-
+  
+  // Determine which reel to display (from props or from hook)
+  const reel = reelWithUser ? reelWithUser.reel : singleReel;
+  const userProfile = reelWithUser ? reelWithUser.user : singleReel?.profiles || null;
+  
   useEffect(() => {
     const checkFollowingStatus = async () => {
       if (user && reel?.user_id) {
@@ -108,11 +134,11 @@ const ReelView = () => {
     }
   };
 
-  if (isLoading) {
+  if (isLoading && !reelWithUser) {
     return <div className="flex justify-center items-center h-screen">Loading...</div>;
   }
 
-  if (error || !reel) {
+  if ((error || !reel) && !reelWithUser) {
     return (
       <div className="p-4">
         <ErrorDisplay 
@@ -124,24 +150,28 @@ const ReelView = () => {
     );
   }
 
+  if (!reel && !reelWithUser) {
+    return <div className="flex justify-center items-center h-screen">No reel found</div>;
+  }
+
   return (
     <div className="relative">
       <video
         ref={videoRef}
-        src={reel.video_url}
+        src={reel?.video_url}
         controls
         muted={isMuted}
         className="w-full aspect-video rounded-xl"
       />
       <div className="absolute bottom-4 left-4">
-        <Link to={`/profile/${reel.user_id}`} className="flex items-center gap-2">
+        <Link to={`/profile/${reel?.user_id}`} className="flex items-center gap-2">
           <Avatar>
-            <AvatarImage src={reel.profiles?.avatar || ""} alt={reel.profiles?.username || "User"} />
-            <AvatarFallback>{reel.profiles?.username?.[0]?.toUpperCase() || "U"}</AvatarFallback>
+            <AvatarImage src={userProfile?.avatar || ""} alt={userProfile?.username || "User"} />
+            <AvatarFallback>{userProfile?.username?.[0]?.toUpperCase() || "U"}</AvatarFallback>
           </Avatar>
           <div>
-            <p className="text-sm font-semibold">{reel.profiles?.username || "Anonymous"}</p>
-            <p className="text-xs text-gray-400">{formatTimeAgo(reel.created_at)}</p>
+            <p className="text-sm font-semibold">{userProfile?.username || "Anonymous"}</p>
+            <p className="text-xs text-gray-400">{formatTimeAgo(reel?.created_at || "")}</p>
           </div>
         </Link>
       </div>
@@ -166,6 +196,39 @@ const ReelView = () => {
           {isFollowing ? "Unfollow" : "Follow"}
         </Button>
       </div>
+      
+      {/* Navigation controls for ReelFeed mode */}
+      {onPrevious && onNext && (
+        <div className="absolute top-1/2 transform -translate-y-1/2 w-full flex justify-between px-4 pointer-events-none">
+          {hasPrevious && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="opacity-70 backdrop-blur-sm pointer-events-auto" 
+              onClick={onPrevious}
+            >
+              &lt;
+            </Button>
+          )}
+          {hasNext && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="opacity-70 backdrop-blur-sm pointer-events-auto ml-auto" 
+              onClick={onNext}
+            >
+              &gt;
+            </Button>
+          )}
+        </div>
+      )}
+      
+      {/* Reel counter indicator */}
+      {typeof currentIndex === 'number' && totalReels && (
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-black/30 text-white px-2 py-1 rounded-full text-xs">
+          {currentIndex + 1} / {totalReels}
+        </div>
+      )}
     </div>
   );
 };

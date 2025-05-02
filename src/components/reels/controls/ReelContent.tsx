@@ -47,9 +47,9 @@ const ReelContent: React.FC<ReelContentProps> = ({ reel }) => {
         <ReelCaption caption={reel.caption} />
         
         <ReelAudioInfo 
-          audio={reel.audio} 
-          audioType={reel.audio_type} 
-          audioUrl={reel.audio_url} 
+          audio={reel.audio || undefined} 
+          audioType={reel.audio_type || undefined} 
+          audioUrl={reel.audio_url || undefined} 
         />
         
         {reel.tags && reel.tags.length > 0 && (

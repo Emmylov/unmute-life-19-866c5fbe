@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ReelView from '@/components/reels/ReelView';
@@ -8,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useSwipeable } from 'react-swipeable';
 import { ReelWithUser } from '@/types/reels';
 import { useScreenSize } from '@/hooks/use-responsive';
+import { createSafeProfile } from '@/hooks/feed/feed-utils';
 
 interface ReelsProps {
   initialReelId?: string | null;
@@ -53,13 +53,14 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
       setLoading(true);
       console.log('Fetching reels...');
       
-      // Use a join between posts_reels and profiles tables for better relation handling
+      // Use reel_posts instead of posts_reels as it seems to be the correct table name
       const { data: reelsData, error: reelsError } = await supabase
-        .from('posts_reels')
+        .from('reel_posts')
         .select(`
           id, user_id, created_at, video_url, thumbnail_url, caption, 
           audio, audio_type, audio_url, duration, original_audio_volume, 
-          overlay_audio_volume, tags, allow_comments, allow_duets
+          overlay_audio_volume, tags, allow_comments, allow_duets,
+          profiles:user_id (id, username, avatar, full_name)
         `)
         .order('created_at', { ascending: false })
         .limit(10);
@@ -76,25 +77,10 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
         return;
       }
 
-      // Get profile information for each reel
-      const userIds = reelsData.map(reel => reel.user_id);
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, username, avatar, full_name')
-        .in('id', userIds);
-
-      if (profilesError) {
-        throw profilesError;
-      }
-
-      // Map profiles to reels
+      // Map profiles to reels with proper type safety
       const formattedReels: ReelWithUser[] = reelsData.map(item => {
-        const userProfile = profilesData?.find(profile => profile.id === item.user_id) || {
-          id: item.user_id,
-          username: 'unknown',
-          avatar: null,
-          full_name: 'Unknown User'
-        };
+        // Use our helper function to ensure we have a safe profile
+        const userProfile = createSafeProfile(item.profiles);
 
         return {
           reel: {
@@ -147,13 +133,14 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
     try {
       const lastCreatedAt = reels[reels.length - 1].reel.created_at;
       
-      // Use the same improved query strategy for loading more reels
+      // Use reel_posts instead of posts_reels
       const { data: reelsData, error: reelsError } = await supabase
-        .from('posts_reels')
+        .from('reel_posts')
         .select(`
           id, user_id, created_at, video_url, thumbnail_url, caption, 
           audio, audio_type, audio_url, duration, original_audio_volume, 
-          overlay_audio_volume, tags, allow_comments, allow_duets
+          overlay_audio_volume, tags, allow_comments, allow_duets,
+          profiles:user_id (id, username, avatar, full_name)
         `)
         .lt('created_at', lastCreatedAt)
         .order('created_at', { ascending: false })
@@ -166,24 +153,9 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
         return;
       }
 
-      // Get profile information for each reel
-      const userIds = reelsData.map(reel => reel.user_id);
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, username, avatar, full_name')
-        .in('id', userIds);
-
-      if (profilesError) {
-        throw profilesError;
-      }
-
+      // Map to properly typed ReelWithUser objects
       const formattedReels: ReelWithUser[] = reelsData.map(item => {
-        const userProfile = profilesData?.find(profile => profile.id === item.user_id) || {
-          id: item.user_id,
-          username: 'unknown',
-          avatar: null,
-          full_name: 'Unknown User'
-        };
+        const userProfile = createSafeProfile(item.profiles);
 
         return {
           reel: {

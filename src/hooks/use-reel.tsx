@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { createSafeProfile } from './feed/feed-utils';
 
 export interface Reel {
   id: string;
@@ -49,8 +50,21 @@ export const useReel = (reelId: string) => {
       if (!data) {
         throw new Error('Reel not found');
       }
+      
+      // Create a properly typed safe reel object
+      const safeReel: Reel = {
+        id: data.id,
+        user_id: data.user_id,
+        video_url: data.video_url,
+        caption: data.caption,
+        thumbnail_url: data.thumbnail_url,
+        created_at: data.created_at,
+        tags: data.tags || null,
+        visibility: data.visibility,
+        profiles: data.profiles ? createSafeProfile(data.profiles) : null
+      };
 
-      setReel(data);
+      setReel(safeReel);
     } catch (err) {
       console.error('Error fetching reel:', err);
       setError(err instanceof Error ? err : new Error('Failed to load reel'));
