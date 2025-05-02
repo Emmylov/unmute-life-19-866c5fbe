@@ -7,20 +7,26 @@ export { uploadImage, uploadReelVideo } from './upload-service';
 
 // Post services
 export {
-  createImagePost,
-  createTextPost,
-  createReelPost,
+  createPost,
   getUserPosts,
   getFeedPosts,
-  createPost
+} from './post-service';
+
+// Create specialized post helper functions with backward compatibility
+export {
+  createImagePost,
+  createTextPost,
+  createReelPost
 } from './post-service';
 
 // Comment services
 export {
   addComment,
-  getComments,
-  PostComment
+  getComments
 } from './comment-service';
+
+// Export PostComment type using export type syntax for compatibility with isolatedModules
+export type { PostComment } from './comment-service';
 
 // Message services
 export {

@@ -1,9 +1,10 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from 'uuid';
 import { PostgrestResponse } from "@supabase/supabase-js";
 
 // Helper function to ensure we return one of the valid types
-function getPostTypeString(type: string): string {
+function getPostTypeString(type: string): "image" | "text" | "reel" | "meme" {
   switch(type) {
     case 'image': return 'image';
     case 'text': return 'text';
@@ -52,7 +53,7 @@ export interface FeedPost {
   caption: string | null;
   tags: string[] | null;
   emoji_mood: string | null;
-  post_type: string;
+  post_type: "image" | "text" | "reel" | "meme";
   created_at: string;
   visibility: string;
   likes_count: number;
@@ -88,8 +89,10 @@ export interface ImagePost extends DatabasePost {
 }
 
 export interface ReelPost extends DatabasePost {
-  videoUrl: string;
-  storagePath: string;
+  video_url: string;
+  caption?: string;
+  thumbnail_url?: string;
+  tags?: string[];
 }
 
 export interface MemePost extends DatabasePost {
@@ -136,7 +139,7 @@ export const createPost = async (
         insertData = {
           ...insertData,
           title: postData.title,
-          body: postData.body,
+          content: postData.body || postData.content,
           tags: postData.tags || [],
           emoji_mood: postData.emoji_mood || null,
         };
@@ -145,7 +148,7 @@ export const createPost = async (
         insertData = {
           ...insertData,
           image_urls: postData.image_urls || [],
-          content: postData.content,
+          caption: postData.content || postData.caption,
           tags: postData.tags || [],
           emoji_mood: postData.emoji_mood || null,
         };
@@ -153,14 +156,18 @@ export const createPost = async (
       case "reel":
         insertData = {
           ...insertData,
-          videoUrl: postData.videoUrl,
-          storagePath: postData.storagePath,
+          video_url: postData.video_url || postData.videoUrl,
+          caption: postData.caption || '',
+          thumbnail_url: postData.thumbnail_url || postData.thumbnailUrl || null,
+          tags: postData.tags || [],
+          audio_type: postData.audio_type || 'original',
+          audio_url: postData.audio_url || null,
         };
         break;
       case "meme":
         insertData = {
           ...insertData,
-          image_urls: postData.image_urls || [],
+          image_urls: postData.image_urls || [postData.image_url],
           top_text: postData.top_text,
           bottom_text: postData.bottom_text,
         };
@@ -180,13 +187,36 @@ export const createPost = async (
       throw error;
     }
 
-    return data as Post;
+    // Convert to Post interface as needed by the app
+    const result: Post = {
+      id: data.id,
+      userId: data.user_id,
+      type: postType as PostType,
+      title: data.title || null,
+      body: data.content || data.body || null,
+      createdAt: data.created_at,
+      // Initialize user and stats with defaults
+      user: {
+        id: userId,
+        name: null,
+        username: null,
+        avatar: null
+      },
+      stats: {
+        likes: 0,
+        comments: 0,
+        shares: 0
+      }
+    };
+
+    return result;
   } catch (error) {
     console.error("Error creating post:", error);
     return null;
   }
 };
 
+// Helper functions for creating different post types
 export const createTextPost = async (postData: any): Promise<Post | null> => {
   try {
     return await createPost(postData.user_id, 'text', {
@@ -235,6 +265,56 @@ export const createReelPost = async (postData: any): Promise<Post | null> => {
   }
 };
 
+// Define getPosts function early so it can be exported and referenced
+export const getPosts = async (
+  userId: string,
+  postType?: string
+): Promise<Post[]> => {
+  try {
+    const tableName = postType ? getTableName(postType) : 'text_posts';
+    
+    let query = supabase.from(tableName)
+      .select("*")
+      .eq("user_id", userId);
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error(`Error fetching ${postType} posts:`, error);
+      return [];
+    }
+
+    // Convert to Post interface
+    return (data || []).map(item => ({
+      id: item.id,
+      userId: item.user_id,
+      type: (postType || 'text') as PostType,
+      title: item.title || null,
+      body: item.content || item.body || null,
+      imageUrl: item.image_url || (item.image_urls && item.image_urls[0]) || null,
+      videoUrl: item.video_url || null,
+      thumbnailUrl: item.thumbnail_url || null,
+      createdAt: item.created_at,
+      user: {
+        id: item.user_id,
+        name: null,
+        username: null,
+        avatar: null
+      },
+      stats: {
+        likes: 0,
+        comments: 0,
+        shares: 0
+      },
+      tags: item.tags || []
+    }));
+  } catch (error) {
+    console.error(`Error getting ${postType} posts:`, error);
+    return [];
+  }
+};
+
+// Export getUserPosts as an alias of getPosts for backward compatibility
 export const getUserPosts = getPosts;
 
 export const hasLikedPost = async (postId: string, userId: string, postType: string): Promise<boolean> => {
@@ -273,23 +353,7 @@ export const getPostLikesCount = async (postId: string, postType: string): Promi
 
 export const checkPostExists = async (postId: string, postType: string): Promise<boolean> => {
   try {
-    let tableName = '';
-    switch (postType) {
-      case 'text':
-        tableName = 'text_posts';
-        break;
-      case 'image':
-        tableName = 'image_posts';
-        break;
-      case 'meme':
-        tableName = 'meme_posts';
-        break;
-      case 'reel':
-        tableName = 'reel_posts';
-        break;
-      default:
-        tableName = 'text_posts';
-    }
+    const tableName = getTableName(postType);
     
     const { data, error } = await supabase
       .from(tableName)
@@ -316,7 +380,6 @@ export const getPost = async (
   try {
     const tableName = getTableName(postType);
 
-    // Type assertion to ensure the result is properly casted
     const { data, error } = await supabase
       .from(tableName)
       .select("*")
@@ -328,7 +391,32 @@ export const getPost = async (
       return null;
     }
 
-    return data as unknown as Post;
+    // Convert to consistent Post interface
+    const post: Post = {
+      id: data.id,
+      userId: data.user_id,
+      type: postType as PostType,
+      title: data.title || null,
+      body: data.content || data.body || null,
+      imageUrl: data.image_url || (data.image_urls && data.image_urls[0]) || null,
+      videoUrl: data.video_url || null,
+      thumbnailUrl: data.thumbnail_url || null,
+      createdAt: data.created_at,
+      user: {
+        id: data.user_id,
+        name: null,
+        username: null,
+        avatar: null
+      },
+      stats: {
+        likes: 0,
+        comments: 0,
+        shares: 0
+      },
+      tags: data.tags || []
+    };
+
+    return post;
   } catch (error) {
     console.error("Error fetching post:", error);
     return null;
@@ -355,7 +443,32 @@ export const updatePost = async (
       return null;
     }
 
-    return data as Post;
+    // Convert to consistent Post interface
+    const post: Post = {
+      id: data.id,
+      userId: data.user_id,
+      type: postType as PostType,
+      title: data.title || null,
+      body: data.content || data.body || null,
+      imageUrl: data.image_url || (data.image_urls && data.image_urls[0]) || null,
+      videoUrl: data.video_url || null,
+      thumbnailUrl: data.thumbnail_url || null,
+      createdAt: data.created_at,
+      user: {
+        id: data.user_id,
+        name: null,
+        username: null,
+        avatar: null
+      },
+      stats: {
+        likes: 0,
+        comments: 0,
+        shares: 0
+      },
+      tags: data.tags || []
+    };
+
+    return post;
   } catch (error) {
     console.error("Error updating post:", error);
     return null;
@@ -425,91 +538,95 @@ export const getAllPosts = async (userId: string): Promise<Post[]> => {
       return [];
     }
 
-    const textPosts = textPostsResult.data as TextPost[];
-    const imagePosts = imagePostsResult.data as ImagePost[];
-    const reelPosts = reelPostsResult.data as ReelPost[];
-    const memePosts = memePostsResult.data as MemePost[];
+    // Convert all post types to the common Post interface
+    const textPosts: Post[] = (textPostsResult.data || []).map(post => ({
+      id: post.id,
+      userId: post.user_id,
+      type: 'text' as PostType,
+      title: post.title || null,
+      body: post.content || null,
+      createdAt: post.created_at,
+      user: {
+        id: post.user_id,
+        name: null,
+        username: null,
+        avatar: null
+      },
+      stats: {
+        likes: 0,
+        comments: 0,
+        shares: 0
+      },
+      tags: post.tags || []
+    }));
 
-    const allPosts: Post[] = [
-      ...textPosts.map((post) => ({
-        ...post,
-        type: "text" as const,
-      })),
-      ...imagePosts.map((post) => ({
-        ...post,
-        type: "image" as const,
-      })),
-      ...reelPosts.map((post) => ({
-        ...post,
-        type: "reel" as const,
-      })),
-      ...memePosts.map((post) => ({
-        ...post,
-        type: "meme" as const,
-      })),
-    ];
+    const imagePosts: Post[] = (imagePostsResult.data || []).map(post => ({
+      id: post.id,
+      userId: post.user_id,
+      type: 'image' as PostType,
+      imageUrl: post.image_urls && post.image_urls[0] || null,
+      body: post.caption || null,
+      createdAt: post.created_at,
+      user: {
+        id: post.user_id,
+        name: null,
+        username: null,
+        avatar: null
+      },
+      stats: {
+        likes: 0,
+        comments: 0,
+        shares: 0
+      },
+      tags: post.tags || []
+    }));
 
-    return allPosts;
+    const reelPosts: Post[] = (reelPostsResult.data || []).map(post => ({
+      id: post.id,
+      userId: post.user_id,
+      type: 'reel' as PostType,
+      videoUrl: post.video_url || null,
+      thumbnailUrl: post.thumbnail_url || null,
+      body: post.caption || null,
+      createdAt: post.created_at,
+      user: {
+        id: post.user_id,
+        name: null,
+        username: null,
+        avatar: null
+      },
+      stats: {
+        likes: 0,
+        comments: 0,
+        shares: 0
+      },
+      tags: post.tags || []
+    }));
+
+    const memePosts: Post[] = (memePostsResult.data || []).map(post => ({
+      id: post.id,
+      userId: post.user_id,
+      type: 'meme' as PostType,
+      imageUrl: post.image_url || null,
+      title: post.top_text || null,
+      body: post.bottom_text || null,
+      createdAt: post.created_at,
+      user: {
+        id: post.user_id,
+        name: null,
+        username: null,
+        avatar: null
+      },
+      stats: {
+        likes: 0,
+        comments: 0,
+        shares: 0
+      }
+    }));
+
+    return [...textPosts, ...imagePosts, ...reelPosts, ...memePosts];
   } catch (error) {
     console.error("Error getting all posts:", error);
-    return [];
-  }
-};
-
-export const getPosts = async (
-  userId: string,
-  postType?: string
-): Promise<Post[]> => {
-  try {
-    let query = supabase.from(
-      postType === 'text' ? 'text_posts' :
-      postType === 'image' ? 'image_posts' :
-      postType === 'reel' ? 'reel_posts' :
-      postType === 'meme' ? 'meme_posts' : 'text_posts'
-    ).select("*").eq("user_id", userId);
-
-    const { data, error } = await query;
-
-    if (error) {
-      console.error(`Error fetching ${postType} posts:`, error);
-      return [];
-    }
-
-    // Type assertion based on postType
-    let typedData: Post[];
-    switch (postType) {
-      case "text":
-        typedData = (data as TextPost[]).map((post) => ({
-          ...post,
-          type: "text" as const,
-        }));
-        break;
-      case "image":
-        typedData = (data as ImagePost[]).map((post) => ({
-          ...post,
-          type: "image" as const,
-        }));
-        break;
-      case "reel":
-        typedData = (data as ReelPost[]).map((post) => ({
-          ...post,
-          type: "reel" as const,
-        }));
-        break;
-      case "meme":
-        typedData = (data as MemePost[]).map((post) => ({
-          ...post,
-          type: "meme" as const,
-        }));
-        break;
-      default:
-        typedData = data as Post[];
-        break;
-    }
-
-    return typedData;
-  } catch (error) {
-    console.error(`Error getting ${postType} posts:`, error);
     return [];
   }
 };
@@ -537,9 +654,15 @@ export const getFeedPosts = async (
     // Include the user's own ID in the list
     const allUserIds = [...followedUserIds, userId];
 
-    // Fetch posts from users in the combined list
+    // Use proper table names from getTableName
+    const textTableName = getTableName('text');
+    const imageTableName = getTableName('image');
+    const reelTableName = getTableName('reel');
+    const memeTableName = getTableName('meme');
+
+    // Fetch posts from each table
     const { data: textPosts, error: textError } = await supabase
-      .from('text_posts')
+      .from(textTableName)
       .select(`
         *,
         profiles:user_id (
@@ -555,7 +678,7 @@ export const getFeedPosts = async (
     }
 
     const { data: imagePosts, error: imageError } = await supabase
-      .from('image_posts')
+      .from(imageTableName)
       .select(`
         *,
         profiles:user_id (
@@ -571,7 +694,7 @@ export const getFeedPosts = async (
     }
 
     const { data: reelPosts, error: reelError } = await supabase
-      .from('reel_posts')
+      .from(reelTableName)
       .select(`
         *,
         profiles:user_id (
@@ -587,7 +710,7 @@ export const getFeedPosts = async (
     }
 
     const { data: memePosts, error: memeError } = await supabase
-      .from('meme_posts')
+      .from(memeTableName)
       .select(`
         *,
         profiles:user_id (
@@ -605,37 +728,45 @@ export const getFeedPosts = async (
     // Combine and sort posts
     let combinedPosts: any[] = [];
 
-    if (textPosts) combinedPosts = [...combinedPosts, ...textPosts];
-    if (imagePosts) combinedPosts = [...combinedPosts, ...imagePosts];
-    if (reelPosts) combinedPosts = [...combinedPosts, ...reelPosts];
-    if (memePosts) combinedPosts = [...combinedPosts, ...memePosts];
+    if (textPosts) combinedPosts = [...combinedPosts, ...textPosts.map(post => ({ ...post, post_type: 'text' }))];
+    if (imagePosts) combinedPosts = [...combinedPosts, ...imagePosts.map(post => ({ ...post, post_type: 'image' }))];
+    if (reelPosts) combinedPosts = [...combinedPosts, ...reelPosts.map(post => ({ ...post, post_type: 'reel' }))];
+    if (memePosts) combinedPosts = [...combinedPosts, ...memePosts.map(post => ({ ...post, post_type: 'meme' }))];
 
     combinedPosts.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-    // Transform posts to FeedPost format
+    // Transform posts to FeedPost format with safe type handling
     const feedPosts: FeedPost[] = combinedPosts.map(post => {
+      // Create proper profile fallback
+      const safeProfile = post.profiles ? {
+        id: post.profiles.id || post.user_id,
+        username: post.profiles.username || 'Anonymous',
+        avatar: post.profiles.avatar || '',
+        full_name: post.profiles.full_name || 'Unknown User'
+      } : {
+        id: post.user_id,
+        username: 'Anonymous',
+        avatar: '',
+        full_name: 'Unknown User'
+      };
+
       return {
         id: post.id,
         user_id: post.user_id,
         content: post.body || post.content || null,
         title: post.title || null,
-        image_urls: post.image_urls || null,
+        image_urls: post.image_urls || (post.image_url ? [post.image_url] : null),
         video_url: post.video_url || null,
         thumbnail_url: post.thumbnail_url || null,
         caption: post.caption || null,
         tags: post.tags || null,
         emoji_mood: post.emoji_mood || null,
-        post_type: getPostTypeString(post.post_type) as "image" | "text" | "reel" | "meme",
+        post_type: getPostTypeString(post.post_type),
         created_at: post.created_at,
-        visibility: post.visibility,
+        visibility: post.visibility || 'public',
         likes_count: 0, // Replace with actual likes count if available
         comments_count: 0, // Replace with actual comments count if available
-        profiles: post.profiles || {
-          id: post.user_id,
-          username: 'Anonymous',
-          avatar: '',
-          full_name: 'Unknown User'
-        }
+        profiles: safeProfile
       };
     });
 

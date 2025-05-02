@@ -109,7 +109,7 @@ export const getReelComments = async (reelId: string) => {
 };
 
 // Interface for profile information
-interface Profile {
+export interface Profile {
   id: string;
   username: string | null;
   avatar: string | null;
@@ -269,11 +269,21 @@ export interface PostComment {
     username: string | null;
     avatar: string | null;
     full_name: string | null;
-  };
+  } | null;
 }
 
+// Safe fallback profile for handling error cases
+export const createSafeProfile = (profile: any) => {
+  return {
+    id: profile?.id || '',
+    username: profile?.username || 'Anonymous',
+    avatar: profile?.avatar || null,
+    full_name: profile?.full_name || null
+  };
+};
+
 // Generic comment functions for backward compatibility
-export const addComment = async (postId: string, userId: string, content: string, postTypeParam?: string) => {
+export const addComment = async (postId: string, userId: string, content: string, postTypeParam?: string): Promise<PostComment> => {
   try {
     console.log(`Adding comment to post ${postId} by user ${userId}: "${content}"`);
     
@@ -311,14 +321,29 @@ export const addComment = async (postId: string, userId: string, content: string
     }
     
     console.log("Comment added successfully:", data);
-    return data;
+    
+    // Create a safe comment object with fallback for profiles
+    const safeComment: PostComment = {
+      id: data.id,
+      post_id: data.post_id,
+      user_id: data.user_id,
+      content: data.content,
+      created_at: data.created_at,
+      post_type: data.post_type,
+      // Ensure profile data is safely handled
+      profiles: data.profiles && !('error' in data.profiles) 
+        ? createSafeProfile(data.profiles) 
+        : null
+    };
+    
+    return safeComment;
   } catch (error) {
     console.error("Error adding comment:", error);
     throw error;
   }
 };
 
-export const getComments = async (postId: string, postTypeParam?: string) => {
+export const getComments = async (postId: string, postTypeParam?: string): Promise<PostComment[]> => {
   try {
     console.log("Fetching comments for post:", postId);
     
@@ -350,7 +375,22 @@ export const getComments = async (postId: string, postTypeParam?: string) => {
     }
     
     console.log("Retrieved comments:", data?.length || 0);
-    return data || [];
+    
+    // Map to safe comment objects with fallback for profiles
+    const safeComments: PostComment[] = (data || []).map(comment => ({
+      id: comment.id,
+      post_id: comment.post_id,
+      user_id: comment.user_id,
+      content: comment.content,
+      created_at: comment.created_at,
+      post_type: comment.post_type,
+      // Ensure profile data is safely handled
+      profiles: comment.profiles && !('error' in comment.profiles)
+        ? createSafeProfile(comment.profiles)
+        : null
+    }));
+    
+    return safeComments;
   } catch (error) {
     console.error("Error getting comments:", error);
     return [];

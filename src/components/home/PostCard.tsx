@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
@@ -13,7 +14,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { FeedPost } from "@/services/post-service";
 import { Textarea } from "@/components/ui/textarea";
 import { useTranslation } from "react-i18next";
-import { addComment, getComments, PostComment } from "@/services/comment-service";
+import { addComment, getComments, PostComment, createSafeProfile } from "@/services/content-service";
 
 interface PostCardProps {
   post: FeedPost;
@@ -91,10 +92,13 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
     setIsLoadingComments(true);
     try {
       const fetchedComments = await getComments(post.id, post.post_type);
-      setComments(fetchedComments);
+      // Ensure we have valid comments before setting them
+      const validComments = Array.isArray(fetchedComments) ? fetchedComments : [];
+      setComments(validComments);
     } catch (error) {
       console.error("Error loading comments:", error);
       toast.error(t('common.error.loadComments', 'Failed to load comments'));
+      setComments([]);
     } finally {
       setIsLoadingComments(false);
     }
@@ -114,8 +118,10 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
     setIsSubmittingComment(true);
     try {
       const newComment = await addComment(post.id, user.id, comment, post.post_type);
+      
       if (newComment) {
-        setComments(prev => [newComment, ...prev]);
+        // Make sure we properly handle the new comment
+        setComments(prevComments => [newComment, ...prevComments]);
         setComment('');
         toast.success(t('common.success.commentAdded', 'Comment added'));
       }
