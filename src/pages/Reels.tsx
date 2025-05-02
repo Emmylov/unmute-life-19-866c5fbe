@@ -54,18 +54,20 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
       setLoading(true);
       console.log('Fetching reels...');
       
+      // Check that the table and columns exist before querying
       const { data: reelsData, error: reelsError } = await supabase
         .from('reel_posts')
         .select(`
           id, user_id, created_at, video_url, thumbnail_url, caption, 
-          tags, visibility, audio, audio_type, audio_url, duration,
-          original_audio_volume, overlay_audio_volume,
+          tags, visibility, audio_type, audio_url, duration,
+          original_audio_volume, overlay_audio_volume, audio,
           profiles:user_id (id, username, avatar, full_name)
         `)
         .order('created_at', { ascending: false })
         .limit(10);
 
       if (reelsError) {
+        console.error('Error fetching reels:', reelsError);
         throw reelsError;
       }
 
@@ -77,9 +79,9 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
         return;
       }
 
-      // Map profiles to reels with proper type safety
+      // Map profiles to reels with proper type safety and error handling
       const formattedReels: ReelWithUser[] = reelsData.map(item => {
-        // Use our helper function to ensure we have a safe profile
+        // Handle missing or error in profiles data
         const userProfile = item.profiles ? createSafeProfile(item.profiles) : {
           id: item.user_id,
           username: 'Anonymous',
@@ -142,8 +144,8 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
         .from('reel_posts')
         .select(`
           id, user_id, created_at, video_url, thumbnail_url, caption, 
-          tags, visibility, audio, audio_type, audio_url, duration,
-          original_audio_volume, overlay_audio_volume,
+          tags, visibility, audio_type, audio_url, duration,
+          original_audio_volume, overlay_audio_volume, audio,
           profiles:user_id (id, username, avatar, full_name)
         `)
         .lt('created_at', lastCreatedAt)
@@ -157,7 +159,7 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
         return;
       }
 
-      // Map to properly typed ReelWithUser objects
+      // Map to properly typed ReelWithUser objects with error handling
       const formattedReels: ReelWithUser[] = reelsData.map(item => {
         const userProfile = item.profiles ? createSafeProfile(item.profiles) : {
           id: item.user_id,

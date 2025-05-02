@@ -57,22 +57,24 @@ export const useReel = (reelId: string) => {
         throw new Error('Reel not found');
       }
       
-      // Create a properly typed safe reel object
+      // Create a properly typed safe reel object with default values
       const safeReel: Reel = {
         id: data.id,
         user_id: data.user_id,
         video_url: data.video_url,
-        caption: data.caption,
-        thumbnail_url: data.thumbnail_url,
+        caption: data.caption || null,
+        thumbnail_url: data.thumbnail_url || null,
         created_at: data.created_at,
         tags: data.tags || null,
-        visibility: data.visibility,
+        visibility: data.visibility || 'public',
         audio: data.audio || null,
         audio_type: data.audio_type || null,
         audio_url: data.audio_url || null,
         duration: data.duration || null,
+        // Use default values for possibly missing properties
         original_audio_volume: data.original_audio_volume || 1,
         overlay_audio_volume: data.overlay_audio_volume || 0,
+        // Handle profiles data safely
         profiles: data.profiles ? createSafeProfile(data.profiles) : null
       };
 

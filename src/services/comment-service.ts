@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -53,10 +52,6 @@ export const checkPostExists = async (postId: string, postType: string): Promise
           return true;
         }
         break;
-      
-      default:
-        // No need to check in the main posts table as we now use specialized tables
-        return false;
     }
     
     return false;
@@ -264,7 +259,7 @@ export const addComment = async (postId: string, userId: string, content: string
     console.log(`Adding comment to post ${postId} by user ${userId}: "${content}"`);
     
     // First verify the post exists
-    const postExists = await checkPostExists(postId, 'text');
+    const postExists = await checkPostExists(postId, postType || 'text');
     
     if (!postExists) {
       toast.error("This post is no longer available");
@@ -306,7 +301,7 @@ export const getComments = async (postId: string) => {
     console.log("Fetching comments for post:", postId);
     
     // First check if the post exists
-    const postExists = await checkPostExists(postId, 'text');
+    const postExists = await checkPostExists(postId, postType || 'text');
     
     if (!postExists) {
       console.log("Post not found when getting comments:", postId);
