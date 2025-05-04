@@ -71,12 +71,12 @@ export const useReel = (reelId: string) => {
         visibility: data.visibility || 'public',
         audio_type: data.audio_type || null,
         audio_url: data.audio_url || null,
-        // The following properties might not exist in the database schema,
-        // so we need to check for their existence with optional chaining
-        audio: data.audio || data.audio_url || null, // Use audio_url as fallback
-        duration: typeof data.duration !== 'undefined' ? data.duration : null,
-        original_audio_volume: typeof data.original_audio_volume !== 'undefined' ? data.original_audio_volume : null,
-        overlay_audio_volume: typeof data.overlay_audio_volume !== 'undefined' ? data.overlay_audio_volume : null,
+        // For properties that might not exist in the database schema,
+        // we need to use safe accessors with default values
+        audio: data.audio || data.audio_url || null,
+        duration: data.duration !== undefined ? data.duration : null,
+        original_audio_volume: data.original_audio_volume !== undefined ? data.original_audio_volume : null,
+        overlay_audio_volume: data.overlay_audio_volume !== undefined ? data.overlay_audio_volume : null,
         // Handle profiles data safely
         profiles: data.profiles ? createSafeProfile(data.profiles) : null
       };
