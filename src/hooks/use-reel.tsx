@@ -71,8 +71,7 @@ export const useReel = (reelId: string) => {
         visibility: data.visibility || 'public',
         audio_type: data.audio_type || null,
         audio_url: data.audio_url || null,
-        // For properties that might not exist in the database schema,
-        // we need to use safe accessors with default values
+        // Use optional chaining and nullish coalescing to safely handle properties that might not exist
         audio: data.audio || data.audio_url || null,
         duration: data.duration !== undefined ? data.duration : null,
         original_audio_volume: data.original_audio_volume !== undefined ? data.original_audio_volume : null,

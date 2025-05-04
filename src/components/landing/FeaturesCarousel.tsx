@@ -47,7 +47,7 @@ const FeaturesCarousel = () => {
         
         <Carousel
           className="max-w-5xl mx-auto"
-          onSelect={(index) => setActiveFeature(index)}
+          onSelect={(index: number) => setActiveFeature(index)}
         >
           <CarouselContent>
             {/* Mental Wellness Rooms */}
