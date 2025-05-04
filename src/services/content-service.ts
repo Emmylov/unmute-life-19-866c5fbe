@@ -7,19 +7,16 @@ export { uploadImage, uploadReelVideo } from './upload-service';
 
 // Export necessary functions from post-service
 export {
-  createTextPost as createPost, // Alias createTextPost as createPost for backwards compatibility
   getUserPosts,
   getFeedPosts,
   hasLikedPost,
   getPostLikesCount,
   checkPostExists,
-} from './post-service';
-
-// Create specialized post helper functions with backward compatibility
-export {
-  createImagePost,
   createTextPost,
-  createReelPost
+  createImagePost,
+  createReelPost,
+  createMemePost,
+  createPost,
 } from './post-service';
 
 // Comment services

@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { DatabaseReel } from '@/types/reel';
@@ -146,14 +147,144 @@ export const getUserPosts = async (userId: string, limit = 10, offset = 0) => {
   }
 };
 
-// Add missing hasLikedPost function
-export const hasLikedPost = async (userId: string, postId: string, postType: string) => {
+// Helper function to get all posts by a user
+export const getAllPostsByUser = async (userId: string, limit = 10, offset = 0) => {
   try {
-    const result = await checkIfLiked(userId, postId, postType);
-    return result.isLiked;
+    // Get text posts
+    const { data: textPosts, error: textError } = await supabase
+      .from('text_posts')
+      .select(`
+        *,
+        profiles:user_id (
+          id, username, avatar, full_name
+        )
+      `)
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (textError) throw textError;
+
+    // Get image posts
+    const { data: imagePosts, error: imageError } = await supabase
+      .from('image_posts')
+      .select(`
+        *,
+        profiles:user_id (
+          id, username, avatar, full_name
+        )
+      `)
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (imageError) throw imageError;
+
+    // Get meme posts
+    const { data: memePosts, error: memeError } = await supabase
+      .from('meme_posts')
+      .select(`
+        *,
+        profiles:user_id (
+          id, username, avatar, full_name
+        )
+      `)
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (memeError) throw memeError;
+
+    // Get reel posts
+    const { data: reelPosts, error: reelError } = await supabase
+      .from('reel_posts')
+      .select(`
+        *,
+        profiles:user_id (
+          id, username, avatar, full_name
+        )
+      `)
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (reelError) throw reelError;
+
+    // Return the combined posts
+    return {
+      data: [
+        ...(textPosts || []).map(post => ({ ...post, post_type: 'text_post' })),
+        ...(imagePosts || []).map(post => ({ ...post, post_type: 'image_post' })),
+        ...(memePosts || []).map(post => ({ ...post, post_type: 'meme_post' })),
+        ...(reelPosts || []).map(post => ({ ...post, post_type: 'reel_post' })),
+      ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
+      error: null
+    };
+  } catch (error) {
+    console.error('Error getting all posts by user:', error);
+    return { data: [], error };
+  }
+};
+
+// Add missing hasLikedPost function
+export const hasLikedPost = async (userId: string, postId: string, postType: string): Promise<boolean> => {
+  try {
+    const { data, error } = await supabase
+      .from('post_likes')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('post_id', postId)
+      .eq('post_type', postType)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      throw error;
+    }
+    
+    return !!data;
   } catch (error) {
     console.error('Error checking if post is liked:', error);
     return false;
+  }
+};
+
+// Add missing checkIfLiked function
+export const checkIfLiked = async (userId: string, postId: string, postType: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('post_likes')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('post_id', postId)
+      .eq('post_type', postType)
+      .single();
+    
+    if (error && error.code !== 'PGRST116') {
+      throw error;
+    }
+    
+    return { isLiked: !!data, error: null };
+  } catch (error) {
+    console.error('Error checking if post is liked:', error);
+    return { isLiked: false, error };
+  }
+};
+
+// Add missing getLikeCount function
+export const getLikeCount = async (postId: string, postType: string) => {
+  try {
+    const { count, error } = await supabase
+      .from('post_likes')
+      .select('id', { count: 'exact', head: true })
+      .eq('post_id', postId)
+      .eq('post_type', postType);
+    
+    if (error) throw error;
+    
+    return { count: count || 0, error: null };
+  } catch (error) {
+    console.error('Error getting post like count:', error);
+    return { count: 0, error };
   }
 };
 
@@ -879,124 +1010,11 @@ export const getFeedPosts = async (userId: string, limit: number = 10, offset: n
   }
 };
 
-// Get explore posts (posts from users not followed)
-export const getExplorePosts = async (userId: string, limit: number = 20, offset: number = 0) => {
-  try {
-    // Get user's following list
-    const { data: followingData, error: followingError } = await supabase
-      .from('user_follows')
-      .select('following_id')
-      .eq('follower_id', userId);
-
-    if (followingError) throw followingError;
-
-    // Extract following IDs
-    const followingIds = followingData?.map(follow => follow.following_id) || [];
-    
-    // Include the user's own ID to exclude their posts from explore
-    const excludeIds = [...followingIds, userId];
-
-    // Get text posts from users not followed
-    const { data: textPosts, error: textError } = await supabase
-      .from('text_posts')
-      .select(`
-        *,
-        profiles:user_id (
-          id, username, avatar, full_name
-        )
-      `)
-      .not('user_id', 'in', excludeIds)
-      .order('created_at', { ascending: false })
-      .limit(limit);
-
-    if (textError) throw textError;
-
-    // Get image posts from users not followed
-    const { data: imagePosts, error: imageError } = await supabase
-      .from('image_posts')
-      .select(`
-        *,
-        profiles:user_id (
-          id, username, avatar, full_name
-        )
-      `)
-      .not('user_id', 'in', excludeIds)
-      .order('created_at', { ascending: false })
-      .limit(limit);
-
-    if (imageError) throw imageError;
-
-    // Get meme posts from users not followed
-    const { data: memePosts, error: memeError } = await supabase
-      .from('meme_posts')
-      .select(`
-        *,
-        profiles:user_id (
-          id, username, avatar, full_name
-        )
-      `)
-      .not('user_id', 'in', excludeIds)
-      .order('created_at', { ascending: false })
-      .limit(limit);
-
-    if (memeError) throw memeError;
-
-    // Get reel posts from users not followed
-    const { data: reelPosts, error: reelError } = await supabase
-      .from('reel_posts')
-      .select(`
-        *,
-        profiles:user_id (
-          id, username, avatar, full_name
-        )
-      `)
-      .not('user_id', 'in', excludeIds)
-      .order('created_at', { ascending: false })
-      .limit(limit);
-
-    if (reelError) throw reelError;
-
-    // Process and combine all posts
-    const processedTextPosts = textPosts?.map(post => ({
-      post: { ...post, type: 'text' },
-      user: post.profiles,
-    })) || [];
-
-    const processedImagePosts = imagePosts?.map(post => ({
-      post: { ...post, type: 'image' },
-      user: post.profiles,
-    })) || [];
-
-    const processedMemePosts = memePosts?.map(post => ({
-      post: { ...post, type: 'meme' },
-      user: post.profiles,
-    })) || [];
-
-    const processedReelPosts = reelPosts?.map(post => ({
-      post: { ...post, type: 'reel' },
-      user: post.profiles,
-    })) || [];
-
-    // Combine all posts and sort by created_at
-    const allPosts = [
-      ...processedTextPosts,
-      ...processedImagePosts,
-      ...processedMemePosts,
-      ...processedReelPosts,
-    ].sort((a, b) => new Date(b.post.created_at).getTime() - new Date(a.post.created_at).getTime());
-
-    return { data: allPosts, error: null };
-  } catch (error) {
-    console.error('Error getting explore posts:', error);
-    return { data: null, error };
-  }
-};
-
 // Like a post
 export const likePost = async (userId: string, postId: string, postType: string) => {
   try {
     const { data, error } = await supabase
-      .from('likes')
+      .from('post_likes')
       .insert([
         {
           user_id: userId,
@@ -1005,4 +1023,10 @@ export const likePost = async (userId: string, postId: string, postType: string)
         },
       ]);
 
-    if (error) throw error
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error liking post:', error);
+    return { data: null, error };
+  }
+};

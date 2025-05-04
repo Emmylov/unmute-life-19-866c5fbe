@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect, useRef } from "react";
-import { ArrowDown } from "lucide-react";
+import { ArrowDown, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { motion } from "framer-motion";
 
 const HeroSection = () => {
   const [isVideoLoaded, setIsVideoLoaded] = useState(false);
@@ -43,13 +44,34 @@ const HeroSection = () => {
     }
   };
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { 
+      opacity: 1,
+      transition: {
+        delayChildren: 0.3,
+        staggerChildren: 0.2
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: { 
+      y: 0, 
+      opacity: 1,
+      transition: { duration: 0.5 }
+    }
+  };
+
   return (
-    <section className="relative h-screen flex items-center justify-center overflow-hidden">
-      {/* Video Background */}
-      <div className="absolute inset-0 z-0 bg-black">
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      {/* Video Background with Gradient Overlay */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/60 to-black/80 z-10"></div>
         <video 
           ref={videoRef}
-          className="w-full h-full object-cover opacity-60"
+          className="w-full h-full object-cover"
           playsInline
           loop
           onLoadedData={handleVideoLoaded}
@@ -61,56 +83,100 @@ const HeroSection = () => {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 text-white text-center px-4 max-w-4xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-5xl md:text-7xl font-bold mb-4 relative animate-fade-in">
-            <span className="inline-block">Welcome to </span>
-            <span className="unmute-gradient-text inline-block">Unmute</span>
-            <div className="absolute -right-6 top-0 w-10 h-10">
-              <div className="w-full h-full relative">
-                {[...Array(5)].map((_, i) => (
-                  <div 
-                    key={i} 
-                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white/30 rounded-full animate-wave" 
-                    style={{ 
-                      height: `${60 - i * 10}%`, 
-                      width: `${60 - i * 10}%`, 
-                      animationDelay: `${i * 0.1}s`,
-                      opacity: `${0.8 - i * 0.15}`
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
+      <motion.div 
+        className="relative z-10 text-white text-center px-4 max-w-4xl mx-auto"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        <motion.div variants={itemVariants}>
+          <h1 className="text-5xl md:text-7xl font-bold mb-6">
+            <span className="text-white">Welcome to </span>
+            <span className="text-blue-400">Unmute</span>
           </h1>
-          <h2 className="text-2xl md:text-3xl mb-8 animate-fade-in" style={{ animationDelay: "0.3s" }}>
+          <h2 className="text-2xl md:text-3xl mb-10 text-white/90">
             A Safe Place to Be Loud
           </h2>
-          
-          {/* Voiceover message */}
-          <p className="text-lg md:text-xl mb-8 bg-black/30 p-4 rounded-lg backdrop-blur-sm animate-fade-in" style={{ animationDelay: "0.6s" }}>
+        </motion.div>
+        
+        {/* Message */}
+        <motion.div variants={itemVariants} className="mb-12">
+          <p className="text-lg md:text-xl leading-relaxed bg-black/40 p-5 rounded-xl backdrop-blur-md border border-white/10">
             "You're not too loud. You're not too sensitive. You're not too old. You're not too young. 
             You're just right — and you belong here."
           </p>
-        </div>
+        </motion.div>
         
-        <div className="flex flex-col items-center space-y-6 animate-fade-in" style={{ animationDelay: "0.9s" }}>
+        <motion.div variants={itemVariants} className="flex flex-col items-center space-y-6">
           <Button 
             onClick={scrollToJourneyQuiz}
-            className="bg-gradient-to-r from-unmute-purple to-unmute-pink hover:opacity-90 text-white px-8 py-6 h-auto text-lg rounded-full transition-all group hover:shadow-lg hover:shadow-unmute-purple/25"
+            className="text-white bg-blue-500 hover:bg-blue-600 px-8 py-6 h-auto rounded-full text-lg flex items-center gap-2 shadow-lg shadow-blue-500/30"
             size="lg"
           >
             Start My Journey
-            <ArrowDown className="ml-2 w-5 h-5 group-hover:translate-y-1 transition-transform" />
+            <ArrowDown className="w-5 h-5 animate-bounce" />
           </Button>
           
           <button onClick={toggleMute} className="flex items-center text-sm text-white/80 hover:text-white">
             <span className="mr-2">{isMuted ? "Unmute" : "Mute"} voiceover</span>
-            <div className={`w-8 h-4 rounded-full transition-colors ${isMuted ? 'bg-gray-500' : 'bg-unmute-purple'} relative`}>
+            <div className={`w-8 h-4 rounded-full transition-colors ${isMuted ? 'bg-gray-500' : 'bg-blue-500'} relative`}>
               <div className={`absolute top-0.5 left-0.5 w-3 h-3 rounded-full bg-white transition-transform ${isMuted ? '' : 'translate-x-4'}`}></div>
             </div>
           </button>
-        </div>
+        </motion.div>
+      </motion.div>
+      
+      {/* Floating Testimonials */}
+      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+        <motion.div
+          className="absolute text-white/60 text-sm px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm"
+          style={{ top: '20%', left: '10%' }}
+          animate={{
+            y: [0, -10, 0],
+            opacity: [0.7, 1, 0.7]
+          }}
+          transition={{
+            duration: 5,
+            repeat: Infinity,
+            repeatType: "reverse"
+          }}
+        >
+          "This app saved my relationship with myself."
+        </motion.div>
+        
+        <motion.div
+          className="absolute text-white/60 text-sm px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm"
+          style={{ top: '60%', right: '15%' }}
+          animate={{
+            y: [0, -8, 0],
+            opacity: [0.7, 1, 0.7]
+          }}
+          transition={{
+            duration: 4,
+            delay: 1,
+            repeat: Infinity,
+            repeatType: "reverse"
+          }}
+        >
+          "I cried the first time I used Unmute."
+        </motion.div>
+        
+        <motion.div
+          className="absolute text-white/60 text-sm px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm"
+          style={{ bottom: '25%', left: '20%' }}
+          animate={{
+            y: [0, -12, 0],
+            opacity: [0.7, 1, 0.7]
+          }}
+          transition={{
+            duration: 6,
+            delay: 2,
+            repeat: Infinity,
+            repeatType: "reverse"
+          }}
+        >
+          "I'm 42. And I finally feel seen."
+        </motion.div>
       </div>
       
       {/* Scroll indicator */}
