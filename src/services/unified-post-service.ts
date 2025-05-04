@@ -329,9 +329,8 @@ export const softDeletePost = async (postId: string, postType: string) => {
       throw new Error("Could not determine table name for post deletion");
     }
     
-    // Use type assertion to bypass TypeScript's table name checking
-    // This is needed because we're accepting a dynamic table name as a parameter
-    const { error } = await (supabase as any)
+    // Use normal Supabase query with string literal for table name
+    const { error } = await supabase
       .from(tableName)
       .delete()
       .eq('id', postId);

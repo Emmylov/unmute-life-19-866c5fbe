@@ -46,7 +46,9 @@ export const useReel = (reelId: string) => {
         .from('reel_posts')
         .select(`
           *,
-          profiles:user_id (*)
+          profiles:user_id (
+            id, username, avatar, full_name
+          )
         `)
         .eq('id', reelId)
         .single();
@@ -72,9 +74,9 @@ export const useReel = (reelId: string) => {
         // Handle fields that might not exist in the database schema with safe defaults
         audio: data.audio_url || null, // Fallback to audio_url
         // Handle optional fields with null default values
-        duration: null, // Since this isn't in the standard schema
-        original_audio_volume: null, // Since this isn't in the standard schema
-        overlay_audio_volume: null, // Since this isn't in the standard schema
+        duration: data.duration || null,
+        original_audio_volume: data.original_audio_volume || null,
+        overlay_audio_volume: data.overlay_audio_volume || null,
         // Handle profiles data safely
         profiles: data.profiles ? createSafeProfile(data.profiles) : null
       };
