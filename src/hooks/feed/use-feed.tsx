@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { FeedPost, getFeedPosts } from '@/services/post-service';
+import { FeedPost } from '@/services/post-service';
 
 interface UseFeedProps {
   limit?: number;
@@ -67,10 +67,40 @@ export const useFeed = ({
       }
       
       // Fetch posts with the new service
-      const feedPosts = await getFeedPosts(targetUserId, limit);
-      console.log(`Fetched ${feedPosts.length} posts for feed`);
+      const result = await import('@/services/post-service').then(module => {
+        return module.getFeedPosts(targetUserId, limit);
+      });
       
-      setPosts(feedPosts);
+      if (result && result.data) {
+        console.log(`Fetched ${result.data.length} posts for feed`);
+        
+        // Map the data to FeedPost format
+        const feedPosts = result.data.map((item: any) => {
+          const post = item.post;
+          return {
+            id: post.id,
+            user_id: post.user_id,
+            content: post.content,
+            title: post.title,
+            image_urls: post.image_urls,
+            video_url: post.video_url,
+            caption: post.caption,
+            tags: post.tags,
+            emoji_mood: post.emoji_mood,
+            post_type: post.type,
+            created_at: post.created_at,
+            visibility: post.visibility,
+            likes_count: post.likes_count || 0,
+            comments_count: post.comments_count || 0,
+            profiles: item.user
+          };
+        });
+        
+        setPosts(feedPosts);
+      } else {
+        setPosts([]);
+      }
+      
       setHasFetchedData(true);
       attemptsRef.current = 0; // Reset attempts on success
       setLoading(false);

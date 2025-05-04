@@ -61,6 +61,33 @@ export interface ReelPost {
 
 export type Post = TextPost | ImagePost | MemePost | ReelPost;
 
+// Add the missing FeedPost type
+export interface FeedPost {
+  id: string;
+  user_id: string;
+  content?: string;
+  title?: string;
+  image_urls?: string[];
+  video_url?: string;
+  caption?: string;
+  tags?: string[];
+  emoji_mood?: string;
+  post_type: string;
+  created_at: string;
+  visibility?: string;
+  likes_count?: number;
+  comments_count?: number;
+  profiles?: any;
+}
+
+// Add PostType enum for consistent post type naming
+export enum PostType {
+  TEXT = 'text_post',
+  IMAGE = 'image_post',
+  REEL = 'reel_post',
+  MEME = 'meme_post',
+}
+
 export interface PostWithUser {
   post: Post;
   user: {
@@ -70,6 +97,105 @@ export interface PostWithUser {
     full_name?: string;
   };
 }
+
+// Add missing exports for functions
+export const createPost = async (userId: string, type: string, data: any) => {
+  try {
+    let result;
+    
+    switch(type) {
+      case 'text':
+        result = await createTextPost(userId, data.content, data.title, data.tags, data.allow_comments, data.is_anonymous, data.emoji_mood);
+        break;
+      case 'image':
+        result = await createImagePost(userId, data.image_urls, data.caption, data.tags, data.allow_comments, data.is_anonymous, data.mood_vibe);
+        break;
+      case 'meme':
+        result = await createMemePost(userId, data.image_url, data.caption, data.tags, data.allow_comments, data.is_anonymous, data.mood_vibe);
+        break;
+      case 'reel':
+        result = await createReelPost(
+          userId, 
+          data.video_url, 
+          data.thumbnail_url, 
+          data.caption, 
+          data.audio,
+          data.audio_type,
+          data.audio_url
+        );
+        break;
+      default:
+        throw new Error('Unknown post type');
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('Error creating post:', error);
+    return { data: null, error };
+  }
+};
+
+// Add missing getUserPosts function
+export const getUserPosts = async (userId: string, limit = 10, offset = 0) => {
+  try {
+    const posts = await getAllPostsByUser(userId, limit, offset);
+    return posts;
+  } catch (error) {
+    console.error('Error getting user posts:', error);
+    return { data: [], error };
+  }
+};
+
+// Add missing hasLikedPost function
+export const hasLikedPost = async (userId: string, postId: string, postType: string) => {
+  try {
+    const result = await checkIfLiked(userId, postId, postType);
+    return result.isLiked;
+  } catch (error) {
+    console.error('Error checking if post is liked:', error);
+    return false;
+  }
+};
+
+// Add missing getPostLikesCount function
+export const getPostLikesCount = async (postId: string, postType: string) => {
+  try {
+    const result = await getLikeCount(postId, postType);
+    return result.count || 0;
+  } catch (error) {
+    console.error('Error getting post likes count:', error);
+    return 0;
+  }
+};
+
+// Add missing checkPostExists function
+export const checkPostExists = async (postId: string, postType: string) => {
+  try {
+    let data = null;
+    
+    switch (postType) {
+      case 'text_post':
+        data = await getTextPostById(postId);
+        break;
+      case 'image_post':
+        data = await getImagePostById(postId);
+        break;
+      case 'reel_post':
+        data = await getReelPostById(postId);
+        break;
+      case 'meme_post':
+        data = await getMemePostById(postId);
+        break;
+      default:
+        return false;
+    }
+    
+    return data.data !== null;
+  } catch (error) {
+    console.error('Error checking if post exists:', error);
+    return false;
+  }
+};
 
 // Create a text post
 export const createTextPost = async (
@@ -569,6 +695,7 @@ export const deleteReelPost = async (postId: string) => {
 export const safeConvertToPost = (post: any, postType: string): any => {
   if (!post) return null;
   
+  // Use a switch statement to handle different post types with explicit return types
   switch (postType) {
     case 'text_post':
       return {
@@ -639,12 +766,12 @@ export const safeConvertToPost = (post: any, postType: string): any => {
   }
 };
 
-// Get feed posts (a mix of all post types)
+// Fix the getFeedPosts function that has table name issues
 export const getFeedPosts = async (userId: string, limit: number = 10, offset: number = 0) => {
   try {
-    // Get user's following list
+    // Get user's following list using user_follows table instead of follows
     const { data: followingData, error: followingError } = await supabase
-      .from('follows')
+      .from('user_follows')
       .select('following_id')
       .eq('follower_id', userId);
 
@@ -748,7 +875,7 @@ export const getFeedPosts = async (userId: string, limit: number = 10, offset: n
     return { data: allPosts, error: null };
   } catch (error) {
     console.error('Error getting feed posts:', error);
-    return { data: null, error };
+    return { data: [], error };
   }
 };
 
@@ -757,7 +884,7 @@ export const getExplorePosts = async (userId: string, limit: number = 20, offset
   try {
     // Get user's following list
     const { data: followingData, error: followingError } = await supabase
-      .from('follows')
+      .from('user_follows')
       .select('following_id')
       .eq('follower_id', userId);
 
@@ -878,339 +1005,4 @@ export const likePost = async (userId: string, postId: string, postType: string)
         },
       ]);
 
-    if (error) throw error;
-    return { data, error: null };
-  } catch (error) {
-    console.error('Error liking post:', error);
-    return { data: null, error };
-  }
-};
-
-// Unlike a post
-export const unlikePost = async (userId: string, postId: string, postType: string) => {
-  try {
-    const { data, error } = await supabase
-      .from('likes')
-      .delete()
-      .eq('user_id', userId)
-      .eq('post_id', postId)
-      .eq('post_type', postType);
-
-    if (error) throw error;
-    return { data, error: null };
-  } catch (error) {
-    console.error('Error unliking post:', error);
-    return { data: null, error };
-  }
-};
-
-// Check if a user has liked a post
-export const checkIfLiked = async (userId: string, postId: string, postType: string) => {
-  try {
-    const { data, error } = await supabase
-      .from('likes')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('post_id', postId)
-      .eq('post_type', postType);
-
-    if (error) throw error;
-    return { isLiked: data && data.length > 0, error: null };
-  } catch (error) {
-    console.error('Error checking if post is liked:', error);
-    return { isLiked: false, error };
-  }
-};
-
-// Get like count for a post
-export const getLikeCount = async (postId: string, postType: string) => {
-  try {
-    const { count, error } = await supabase
-      .from('likes')
-      .select('*', { count: 'exact', head: true })
-      .eq('post_id', postId)
-      .eq('post_type', postType);
-
-    if (error) throw error;
-    return { count, error: null };
-  } catch (error) {
-    console.error('Error getting like count:', error);
-    return { count: 0, error };
-  }
-};
-
-// Add a comment to a post
-export const addComment = async (userId: string, postId: string, postType: string, content: string) => {
-  try {
-    const { data, error } = await supabase
-      .from('comments')
-      .insert([
-        {
-          user_id: userId,
-          post_id: postId,
-          post_type: postType,
-          content,
-        },
-      ])
-      .select(`
-        *,
-        profiles:user_id (
-          id, username, avatar, full_name
-        )
-      `);
-
-    if (error) throw error;
-    return { data: data[0], error: null };
-  } catch (error) {
-    console.error('Error adding comment:', error);
-    return { data: null, error };
-  }
-};
-
-// Get comments for a post
-export const getComments = async (postId: string, postType: string) => {
-  try {
-    const { data, error } = await supabase
-      .from('comments')
-      .select(`
-        *,
-        profiles:user_id (
-          id, username, avatar, full_name
-        )
-      `)
-      .eq('post_id', postId)
-      .eq('post_type', postType)
-      .order('created_at', { ascending: true });
-
-    if (error) throw error;
-    return { data, error: null };
-  } catch (error) {
-    console.error('Error getting comments:', error);
-    return { data: null, error };
-  }
-};
-
-// Delete a comment
-export const deleteComment = async (commentId: string) => {
-  try {
-    const { data, error } = await supabase
-      .from('comments')
-      .delete()
-      .eq('id', commentId);
-
-    if (error) throw error;
-    return { data, error: null };
-  } catch (error) {
-    console.error('Error deleting comment:', error);
-    return { data: null, error };
-  }
-};
-
-// Get comment count for a post
-export const getCommentCount = async (postId: string, postType: string) => {
-  try {
-    const { count, error } = await supabase
-      .from('comments')
-      .select('*', { count: 'exact', head: true })
-      .eq('post_id', postId)
-      .eq('post_type', postType);
-
-    if (error) throw error;
-    return { count, error: null };
-  } catch (error) {
-    console.error('Error getting comment count:', error);
-    return { count: 0, error };
-  }
-};
-
-// Save a post
-export const savePost = async (userId: string, postId: string, postType: string) => {
-  try {
-    const { data, error } = await supabase
-      .from('saved_posts')
-      .insert([
-        {
-          user_id: userId,
-          post_id: postId,
-          post_type: postType,
-        },
-      ]);
-
-    if (error) throw error;
-    return { data, error: null };
-  } catch (error) {
-    console.error('Error saving post:', error);
-    return { data: null, error };
-  }
-};
-
-// Unsave a post
-export const unsavePost = async (userId: string, postId: string, postType: string) => {
-  try {
-    const { data, error } = await supabase
-      .from('saved_posts')
-      .delete()
-      .eq('user_id', userId)
-      .eq('post_id', postId)
-      .eq('post_type', postType);
-
-    if (error) throw error;
-    return { data, error: null };
-  } catch (error) {
-    console.error('Error unsaving post:', error);
-    return { data: null, error };
-  }
-};
-
-// Check if a user has saved a post
-export const checkIfSaved = async (userId: string, postId: string, postType: string) => {
-  try {
-    const { data, error } = await supabase
-      .from('saved_posts')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('post_id', postId)
-      .eq('post_type', postType);
-
-    if (error) throw error;
-    return { isSaved: data && data.length > 0, error: null };
-  } catch (error) {
-    console.error('Error checking if post is saved:', error);
-    return { isSaved: false, error };
-  }
-};
-
-// Get saved posts for a user
-export const getSavedPosts = async (userId: string) => {
-  try {
-    const { data: savedData, error: savedError } = await supabase
-      .from('saved_posts')
-      .select('*')
-      .eq('user_id', userId);
-
-    if (savedError) throw savedError;
-
-    // Group saved posts by type
-    const textPostIds: string[] = [];
-    const imagePostIds: string[] = [];
-    const memePostIds: string[] = [];
-    const reelPostIds: string[] = [];
-
-    savedData?.forEach(saved => {
-      if (saved.post_type === 'text') textPostIds.push(saved.post_id);
-      else if (saved.post_type === 'image') imagePostIds.push(saved.post_id);
-      else if (saved.post_type === 'meme') memePostIds.push(saved.post_id);
-      else if (saved.post_type === 'reel') reelPostIds.push(saved.post_id);
-    });
-
-    // Fetch text posts
-    const textPosts = textPostIds.length > 0
-      ? await supabase
-          .from('text_posts')
-          .select(`
-            *,
-            profiles:user_id (
-              id, username, avatar, full_name
-            )
-          `)
-          .in('id', textPostIds)
-      : { data: [] };
-
-    // Fetch image posts
-    const imagePosts = imagePostIds.length > 0
-      ? await supabase
-          .from('image_posts')
-          .select(`
-            *,
-            profiles:user_id (
-              id, username, avatar, full_name
-            )
-          `)
-          .in('id', imagePostIds)
-      : { data: [] };
-
-    // Fetch meme posts
-    const memePosts = memePostIds.length > 0
-      ? await supabase
-          .from('meme_posts')
-          .select(`
-            *,
-            profiles:user_id (
-              id, username, avatar, full_name
-            )
-          `)
-          .in('id', memePostIds)
-      : { data: [] };
-
-    // Fetch reel posts
-    const reelPosts = reelPostIds.length > 0
-      ? await supabase
-          .from('reel_posts')
-          .select(`
-            *,
-            profiles:user_id (
-              id, username, avatar, full_name
-            )
-          `)
-          .in('id', reelPostIds)
-      : { data: [] };
-
-    // Process and combine all posts
-    const processedTextPosts = textPosts.data?.map(post => ({
-      post: { ...post, type: 'text' },
-      user: post.profiles,
-    })) || [];
-
-    const processedImagePosts = imagePosts.data?.map(post => ({
-      post: { ...post, type: 'image' },
-      user: post.profiles,
-    })) || [];
-
-    const processedMemePosts = memePosts.data?.map(post => ({
-      post: { ...post, type: 'meme' },
-      user: post.profiles,
-    })) || [];
-
-    const processedReelPosts = reelPosts.data?.map(post => ({
-      post: { ...post, type: 'reel' },
-      user: post.profiles,
-    })) || [];
-
-    // Combine all posts
-    const allPosts = [
-      ...processedTextPosts,
-      ...processedImagePosts,
-      ...processedMemePosts,
-      ...processedReelPosts,
-    ];
-
-    return { data: allPosts, error: null };
-  } catch (error) {
-    console.error('Error getting saved posts:', error);
-    return { data: null, error };
-  }
-};
-
-// Report a post
-export const reportPost = async (userId: string, postId: string, postType: string, reason: string) => {
-  try {
-    const { data, error } = await supabase
-      .from('reports')
-      .insert([
-        {
-          user_id: userId,
-          post_id: postId,
-          post_type: postType,
-          reason,
-        },
-      ]);
-
-    if (error) throw error;
-    toast.success('Post reported successfully');
-    return { data, error: null };
-  } catch (error) {
-    console.error('Error reporting post:', error);
-    toast.error('Failed to report post');
-    return { data: null, error };
-  }
-};
+    if (error) throw error

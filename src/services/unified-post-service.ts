@@ -3,8 +3,37 @@ import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
 import { DatabaseReel } from '@/types/reels';
 
-// Find the problematic function(s) with string arguments that should be specific types
-// For instance, if there's a function like:
+// Add the missing createUnifiedTextPost function at the top of the file
+export const createUnifiedTextPost = async (
+  userId: string, 
+  content: string,
+  title?: string,
+  tags?: string[],
+  moodEmoji?: string
+) => {
+  try {
+    const postId = uuidv4();
+    
+    const { data, error } = await supabase
+      .from('text_posts')
+      .insert({
+        id: postId,
+        user_id: userId,
+        content,
+        title,
+        tags,
+        emoji_mood: moodEmoji,
+        created_at: new Date().toISOString()
+      })
+      .select();
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error creating text post:', error);
+    return { data: null, error };
+  }
+};
 
 export const softDeletePost = async (postId: string, postType: string) => {
   // Instead of using dynamic table names that could cause type issues:

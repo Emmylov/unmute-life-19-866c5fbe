@@ -11,15 +11,24 @@ export interface SupabaseResponse<T> {
 export type SupabaseQueryFunction<T> = Promise<SupabaseResponse<T>>;
 
 // Define types for the feed fetcher functions
-export type FetchTrendingFeedFunc = (limit: number, offset: number) => Promise<FeedPost[]>;
-export type FetchFollowingFeedFunc = (userId: string, limit: number, offset: number) => Promise<FeedPost[]>;
-export type FetchPersonalizedFeedFunc = (userId: string, interests: string[] | undefined, limit: number, offset: number) => Promise<FeedPost[]>;
-export type FetchMusicFeedFunc = (limit: number, offset: number) => Promise<FeedPost[]>;
-export type FetchCollabsFeedFunc = (limit: number, offset: number) => Promise<FeedPost[]>;
+export type FeedFetcherFunction = (userId: string, limit?: number, offset?: number) => Promise<{
+  posts: FeedPost[];
+  hasMore: boolean;
+  error: Error | null;
+}>;
 
-export interface PostWithEngagement {
-  id: string;
-  user_id: string;
-  created_at: string;
-  [key: string]: any;
+export type FeedPostWithUser = {
+  post: FeedPost;
+  user: {
+    id: string;
+    username?: string | null;
+    avatar?: string | null;
+    full_name?: string | null;
+  };
+};
+
+export interface FeedFetcherResult {
+  posts: FeedPost[];
+  hasMore: boolean;
+  error: Error | null;
 }

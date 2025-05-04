@@ -5,11 +5,14 @@
 // Upload services
 export { uploadImage, uploadReelVideo } from './upload-service';
 
-// Post services
+// Export necessary functions from post-service
 export {
-  createPost,
+  createTextPost as createPost, // Alias createTextPost as createPost for backwards compatibility
   getUserPosts,
   getFeedPosts,
+  hasLikedPost,
+  getPostLikesCount,
+  checkPostExists,
 } from './post-service';
 
 // Create specialized post helper functions with backward compatibility
@@ -25,17 +28,17 @@ export {
   getComments,
   deleteComment,
   // Add reel-specific comment functions
-  addReelComment,
-  getReelComments,
-  deleteReelComment
+  addComment as addReelComment,
+  getComments as getReelComments,
+  deleteComment as deleteReelComment
 } from './comment-service';
 
 // Export utility functions
 export { createSafeProfile } from '@/utils/safe-data-utils';
 
 // Export types using 'export type' syntax for compatibility with isolatedModules
+export type { Post, FeedPost, PostType } from './post-service';
 export type { PostComment } from './comment-service';
-export type { Post } from './post-service';
 
 // Message services
 export {

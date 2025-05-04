@@ -71,11 +71,11 @@ export const useReel = (reelId: string) => {
         visibility: data.visibility || 'public',
         audio_type: data.audio_type || null,
         audio_url: data.audio_url || null,
-        // Use optional chaining and nullish coalescing to safely handle properties that might not exist
+        // Use nullish coalescing for optional properties that might not exist in the data
         audio: data.audio || data.audio_url || null,
-        duration: data.duration !== undefined ? data.duration : null,
-        original_audio_volume: data.original_audio_volume !== undefined ? data.original_audio_volume : null,
-        overlay_audio_volume: data.overlay_audio_volume !== undefined ? data.overlay_audio_volume : null,
+        duration: typeof data.duration !== 'undefined' ? data.duration : null,
+        original_audio_volume: typeof data.original_audio_volume !== 'undefined' ? data.original_audio_volume : null,
+        overlay_audio_volume: typeof data.overlay_audio_volume !== 'undefined' ? data.overlay_audio_volume : null,
         // Handle profiles data safely
         profiles: data.profiles ? createSafeProfile(data.profiles) : null
       };

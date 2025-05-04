@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { Mic, Users, Heart, Headphones } from "lucide-react";
 import {
@@ -40,6 +39,11 @@ const FeaturesCarousel = () => {
     }
   };
 
+  // Fix the type mismatch with onSelect handler
+  const handleCarouselChange = (index: number) => {
+    setActiveFeature(index);
+  };
+
   return (
     <section id="features" className="py-20 bg-white">
       <div className="container mx-auto px-4">
@@ -47,7 +51,7 @@ const FeaturesCarousel = () => {
         
         <Carousel
           className="max-w-5xl mx-auto"
-          onSelect={(index: number) => setActiveFeature(index)}
+          onSelect={handleCarouselChange}
         >
           <CarouselContent>
             {/* Mental Wellness Rooms */}
