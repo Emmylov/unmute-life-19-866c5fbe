@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { createSafeProfile } from "@/utils/safe-data-utils";
-import { FeedPost } from "@/services/post-service";
+import { FeedPost, PostType } from "@/services/post-service";
 
 // Update this function to use the correct table names and handle profiles properly
 export async function fetchFollowingFeed(userId: string, limit: number = 10, offset: number = 0): Promise<FeedPost[]> {
@@ -88,7 +88,7 @@ export async function fetchFollowingFeed(userId: string, limit: number = 10, off
         return {
           id: post.id,
           user_id: post.user_id,
-          post_type: 'image',
+          post_type: 'image' as PostType,
           content: null,
           image_urls: post.image_urls,
           caption: post.caption,
@@ -109,7 +109,7 @@ export async function fetchFollowingFeed(userId: string, limit: number = 10, off
         return {
           id: post.id,
           user_id: post.user_id,
-          post_type: 'text',
+          post_type: 'text' as PostType,
           content: post.content,
           title: post.title || null,
           emoji_mood: post.emoji_mood || null,
@@ -130,7 +130,7 @@ export async function fetchFollowingFeed(userId: string, limit: number = 10, off
         return {
           id: post.id,
           user_id: post.user_id,
-          post_type: 'reel',
+          post_type: 'reel' as PostType,
           content: null,
           video_url: post.video_url,
           caption: post.caption || null,

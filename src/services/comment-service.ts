@@ -1,15 +1,17 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { createSafeProfile } from "@/utils/safe-data-utils";
 
+// Define PostComment interface for typescript 
 export interface PostComment {
   id: string;
   post_id: string;
   user_id: string;
-  content: string;
   created_at: string;
+  updated_at: string;
+  content: string;
   post_type: string;
-  profiles: {
+  is_deleted?: boolean;
+  profiles?: {
     id: string;
     username: string | null;
     avatar: string | null;
@@ -17,22 +19,23 @@ export interface PostComment {
   };
 }
 
-export const addComment = async (
+// Add shared comment functions
+export async function addComment(
   postId: string, 
   userId: string, 
-  content: string,
-  postType: string = 'text'
-): Promise<PostComment | null> => {
+  content: string, 
+  postType: string
+): Promise<PostComment | null> {
   try {
     const { data, error } = await supabase
       .from('post_comments')
       .insert({
         post_id: postId,
         user_id: userId,
-        content: content,
+        content,
         post_type: postType
       })
-      .select('*, profiles:user_id(id, username, avatar, full_name)')
+      .select('*, profiles:user_id(*)')
       .single();
 
     if (error) {
@@ -40,95 +43,49 @@ export const addComment = async (
       return null;
     }
 
-    if (!data || !data.profiles) {
-      console.error("Invalid comment data or missing profiles:", data);
-      return null;
-    }
-
-    // Create a properly typed comment object
-    const comment: PostComment = {
-      id: data.id,
-      post_id: data.post_id,
-      user_id: data.user_id,
-      content: data.content,
-      created_at: data.created_at,
-      post_type: data.post_type,
-      profiles: createSafeProfile(data.profiles)
+    // Transform to expected format with safe profile
+    return {
+      ...data,
+      profiles: data.profiles ? createSafeProfile(data.profiles) : undefined
     };
-
-    return comment;
   } catch (error) {
     console.error("Error adding comment:", error);
     return null;
   }
-};
+}
 
-export const getComments = async (
-  postId: string,
-  postType: string = 'text'
-): Promise<PostComment[]> => {
+export async function getComments(postId: string, postType: string): Promise<PostComment[]> {
   try {
     const { data, error } = await supabase
       .from('post_comments')
-      .select('*, profiles:user_id(id, username, avatar, full_name)')
+      .select('*, profiles:user_id(*)')
       .eq('post_id', postId)
       .eq('post_type', postType)
       .eq('is_deleted', false)
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error("Error getting comments:", error);
+      console.error("Error fetching comments:", error);
       return [];
     }
 
-    if (!data) {
-      return [];
-    }
-
-    // Map database results to properly typed comments
-    return data.map(item => {
-      const profiles = createSafeProfile(item.profiles);
-      
-      return {
-        id: item.id,
-        post_id: item.post_id,
-        user_id: item.user_id,
-        content: item.content,
-        created_at: item.created_at,
-        post_type: item.post_type,
-        profiles: profiles
-      };
-    });
+    // Transform data to ensure profiles are handled safely
+    return (data || []).map(comment => ({
+      ...comment,
+      profiles: comment.profiles ? createSafeProfile(comment.profiles) : undefined
+    }));
   } catch (error) {
-    console.error("Error getting comments:", error);
+    console.error("Error fetching comments:", error);
     return [];
   }
-};
+}
 
-// Add specific reel comment functions for backward compatibility
-export const addReelComment = async (
-  reelId: string, 
-  userId: string, 
-  content: string
-): Promise<PostComment | null> => {
-  return addComment(reelId, userId, content, 'reel');
-};
-
-export const getReelComments = async (
-  reelId: string
-): Promise<PostComment[]> => {
-  return getComments(reelId, 'reel');
-};
-
-export const deleteComment = async (
-  commentId: string,
-  userId: string
-): Promise<boolean> => {
+export async function deleteComment(commentId: string): Promise<boolean> {
   try {
     const { error } = await supabase
       .from('post_comments')
       .update({ is_deleted: true })
-      .match({ id: commentId, user_id: userId });
+      .eq('id', commentId);
 
     if (error) {
       console.error("Error deleting comment:", error);
@@ -140,12 +97,9 @@ export const deleteComment = async (
     console.error("Error deleting comment:", error);
     return false;
   }
-};
+}
 
-// Add deleteReelComment for backward compatibility
-export const deleteReelComment = async (
-  commentId: string,
-  userId: string
-): Promise<boolean> => {
-  return deleteComment(commentId, userId);
-};
+// Add aliases for reel-specific functions for backwards compatibility
+export const addReelComment = addComment;
+export const getReelComments = getComments;
+export const deleteReelComment = deleteComment;

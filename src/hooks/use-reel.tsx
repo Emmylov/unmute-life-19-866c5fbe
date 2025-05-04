@@ -71,9 +71,9 @@ export const useReel = (reelId: string) => {
         audio_url: data.audio_url || null,
         // Handle fields that might not exist in the database schema with safe defaults
         audio: data.audio_url || null, // Fallback to audio_url
-        duration: null, // Default to null
-        original_audio_volume: 1, // Default to 1
-        overlay_audio_volume: 0, // Default to 0
+        duration: data.duration || null, // Default to null
+        original_audio_volume: data.original_audio_volume || 1, // Default to 1
+        overlay_audio_volume: data.overlay_audio_volume || 0, // Default to 0
         // Handle profiles data safely
         profiles: data.profiles ? createSafeProfile(data.profiles) : null
       };

@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from 'uuid';
 
@@ -456,21 +455,17 @@ export const updatePost = async (
       .select("*")
       .single();
 
-    if (error) {
+    if (error || !data) {
       console.error("Error updating post:", error);
       return null;
     }
 
-    // Convert to consistent Post interface with safe type handling
+    // Safely handle the different post types
+    const postTypeEnum = postType as PostType;
     const post: Post = {
       id: data.id,
       userId: data.user_id,
-      type: postType as PostType,
-      title: data.title || data.top_text || null,
-      body: data.content || data.caption || data.bottom_text || null,
-      imageUrl: (data.image_url || (data.image_urls && data.image_urls[0])) || null,
-      videoUrl: data.video_url || null,
-      thumbnailUrl: data.thumbnail_url || null,
+      type: postTypeEnum,
       createdAt: data.created_at,
       user: {
         id: data.user_id,
@@ -482,9 +477,35 @@ export const updatePost = async (
         likes: 0,
         comments: 0,
         shares: 0
-      },
-      tags: data.tags || []
+      }
     };
+
+    // Add type-specific properties safely
+    switch (postTypeEnum) {
+      case 'text':
+        post.title = data.title || null;
+        post.body = data.content || null;
+        break;
+      case 'image':
+        post.body = data.caption || null;
+        post.imageUrl = data.image_urls && data.image_urls[0] || null;
+        break;
+      case 'reel':
+        post.body = data.caption || null;
+        post.videoUrl = data.video_url || null;
+        post.thumbnailUrl = data.thumbnail_url || null;
+        break;
+      case 'meme':
+        post.title = data.top_text || null;
+        post.body = data.bottom_text || null;
+        post.imageUrl = data.image_url || null;
+        break;
+    }
+
+    // Handle tags for all post types that have them
+    if ('tags' in data && Array.isArray(data.tags)) {
+      post.tags = data.tags;
+    }
 
     return post;
   } catch (error) {
@@ -752,10 +773,10 @@ export const getFeedPosts = async (
     // Combine and sort posts
     let combinedPosts: any[] = [];
 
-    if (textPosts) combinedPosts = [...combinedPosts, ...textPosts.map(post => ({ ...post, post_type: 'text' }))];
-    if (imagePosts) combinedPosts = [...combinedPosts, ...imagePosts.map(post => ({ ...post, post_type: 'image' }))];
-    if (reelPosts) combinedPosts = [...combinedPosts, ...reelPosts.map(post => ({ ...post, post_type: 'reel' }))];
-    if (memePosts) combinedPosts = [...combinedPosts, ...memePosts.map(post => ({ ...post, post_type: 'meme' }))];
+    if (textPosts) combinedPosts = [...combinedPosts, ...textPosts.map(post => ({ ...post, post_type: 'text' as PostType }))];
+    if (imagePosts) combinedPosts = [...combinedPosts, ...imagePosts.map(post => ({ ...post, post_type: 'image' as PostType }))];
+    if (reelPosts) combinedPosts = [...combinedPosts, ...reelPosts.map(post => ({ ...post, post_type: 'reel' as PostType }))];
+    if (memePosts) combinedPosts = [...combinedPosts, ...memePosts.map(post => ({ ...post, post_type: 'meme' as PostType }))];
 
     combinedPosts.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 

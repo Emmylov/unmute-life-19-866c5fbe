@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { FeedPost } from "@/services/post-service";
+import { FeedPost, PostType } from "@/services/post-service";
 
 export async function fetchMusicPosts(limit: number = 10, offset: number = 0): Promise<FeedPost[]> {
   try {

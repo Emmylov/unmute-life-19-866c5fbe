@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { createSafeProfile } from "@/utils/safe-data-utils";
-import { FeedPost } from "@/services/post-service";
+import { FeedPost, PostType } from "@/services/post-service";
 
 // Main function to be exported with the name used in index.ts
 export async function fetchCollabsFeedPosts(limit: number = 10, offset: number = 0): Promise<FeedPost[]> {

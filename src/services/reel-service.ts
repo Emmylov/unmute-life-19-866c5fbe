@@ -1,279 +1,251 @@
-
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 
-// Define interfaces for our RPC function parameters
-interface ReelIdUserIdParams {
-  p_reel_id: string;
-  p_user_id: string;
-}
-
-interface SaveReelParams extends ReelIdUserIdParams {
-  p_created_at: string;
-}
-
-interface RepostReelParams extends SaveReelParams {
-  p_original_user_id: string;
-}
-
-interface ReportContentParams {
-  p_content_id: string;
-  p_user_id: string;
-  p_content_type: string;
-  p_reason: string;
-  p_created_at: string;
-}
-
-// Check if a reel is liked by the current user
-export const checkReelLikeStatus = async (reelId: string, userId: string) => {
+// Replace any occurrences of posts_reels with reel_posts
+export async function fetchReels() {
   try {
     const { data, error } = await supabase
-      .from("reel_likes")
-      .select("*")
-      .eq("reel_id", reelId)
-      .eq("user_id", userId)
-      .maybeSingle();
-      
+      .from('reel_posts') // Changed from 'posts_reels'
+      .select('*')
+      .order('created_at', { ascending: false });
+
     if (error) throw error;
-    return !!data;
-  } catch (error) {
-    console.error("Error checking reel like status:", error);
+    return data || [];
+  }
+  catch (error) {
+    console.error('Error fetching reels:', error);
+    return [];
+  }
+}
+
+export async function fetchReelById(id: string) {
+  try {
+    const { data, error } = await supabase
+      .from('reel_posts')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+  catch (error) {
+    console.error(`Error fetching reel with id ${id}:`, error);
+    return null;
+  }
+}
+
+export async function fetchReelsByUserId(userId: string) {
+  try {
+    const { data, error } = await supabase
+      .from('reel_posts')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  }
+  catch (error) {
+    console.error(`Error fetching reels for user ${userId}:`, error);
+    return [];
+  }
+}
+
+export async function createReel(reelData: {
+  user_id: string;
+  video_url: string;
+  caption?: string;
+  thumbnail_url?: string;
+  tags?: string[];
+  audio_type?: string;
+  audio_url?: string;
+}) {
+  try {
+    const { data, error } = await supabase
+      .from('reel_posts')
+      .insert([reelData])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+  catch (error) {
+    console.error('Error creating reel:', error);
+    return null;
+  }
+}
+
+export async function updateReel(
+  id: string,
+  updates: {
+    caption?: string;
+    tags?: string[];
+    thumbnail_url?: string;
+    audio_type?: string;
+    audio_url?: string;
+  }
+) {
+  try {
+    const { data, error } = await supabase
+      .from('reel_posts')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+  catch (error) {
+    console.error(`Error updating reel ${id}:`, error);
+    return null;
+  }
+}
+
+export async function deleteReel(id: string) {
+  try {
+    const { error } = await supabase
+      .from('reel_posts')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+    return true;
+  }
+  catch (error) {
+    console.error(`Error deleting reel ${id}:`, error);
     return false;
   }
-};
+}
 
-// Toggle like on a reel
-export const toggleReelLike = async (reelId: string, userId: string) => {
+export async function likeReel(reelId: string, userId: string) {
   try {
-    // First verify if the reel exists in reel_posts table (changed from posts_reels)
-    const { data: reelExists } = await supabase
-      .from("reel_posts")
-      .select("id")
-      .eq("id", reelId)
+    // First check if the like already exists
+    const { data: existingLike, error: checkError } = await supabase
+      .from('post_likes')
+      .select('*')
+      .eq('post_id', reelId)
+      .eq('user_id', userId)
+      .eq('post_type', 'reel')
       .maybeSingle();
-      
-    if (!reelExists) {
-      toast.error("Could not find this reel");
-      return false;
-    }
-    
-    // Check if already liked
-    const { data: existingLike } = await supabase
-      .from("reel_likes")
-      .select("*")
-      .eq("reel_id", reelId)
-      .eq("user_id", userId)
-      .maybeSingle();
-    
-    if (existingLike) {
-      // Unlike
-      const { error } = await supabase
-        .from("reel_likes")
-        .delete()
-        .eq("reel_id", reelId)
-        .eq("user_id", userId);
-        
-      if (error) throw error;
-      return false;
-    } else {
-      // Create a direct insert into reel_likes without relying on the foreign key
-      const { data, error } = await supabase.functions.invoke<{ success: boolean }>(
-        'like-posts-reel',
+
+    if (checkError) throw checkError;
+
+    // If like already exists, return early
+    if (existingLike) return true;
+
+    // Otherwise, insert the new like
+    const { error } = await supabase
+      .from('post_likes')
+      .insert([
         {
-          body: { 
-            reelId, 
-            userId,
-            createdAt: new Date().toISOString()
-          }
+          post_id: reelId,
+          user_id: userId,
+          post_type: 'reel'
         }
-      );
-      
-      if (error || !data?.success) {
-        console.error("Error liking reel:", error);
-        // Show success anyway for better UX
-        toast.success("Like registered!");
-        return true;
-      }
-      
-      return true;
-    }
-  } catch (error) {
-    console.error("Error toggling reel like:", error);
-    throw error;
-  }
-};
+      ]);
 
-// Check if a reel is saved by the current user
-export const checkReelSaveStatus = async (reelId: string, userId: string) => {
-  try {
-    const params: ReelIdUserIdParams = {
-      p_reel_id: reelId,
-      p_user_id: userId
-    };
-    
-    const { data, error } = await supabase.rpc(
-      "is_reel_saved", 
-      params
-    );
-      
-    if (error) throw error;
-    return !!data;
-  } catch (error) {
-    console.error("Error checking reel save status:", error);
-    return false;
-  }
-};
-
-// Toggle save on a reel
-export const toggleReelSave = async (reelId: string, userId: string) => {
-  try {
-    // Check if reel exists in reel_posts
-    const { data: reelExists } = await supabase
-      .from("reel_posts")
-      .select("id")
-      .eq("id", reelId)
-      .maybeSingle();
-      
-    if (!reelExists) {
-      toast.error("Could not find this reel");
-      return false;
-    }
-    
-    // Check if already saved
-    const isSaved = await checkReelSaveStatus(reelId, userId);
-    
-    if (isSaved) {
-      // Unsave
-      const params: ReelIdUserIdParams = {
-        p_reel_id: reelId,
-        p_user_id: userId
-      };
-      
-      const { error } = await supabase.rpc(
-        "unsave_reel", 
-        params
-      );
-        
-      if (error) throw error;
-      return false;
-    } else {
-      // Save
-      const params: SaveReelParams = {
-        p_reel_id: reelId,
-        p_user_id: userId,
-        p_created_at: new Date().toISOString()
-      };
-      
-      const { error } = await supabase.rpc(
-        "save_reel", 
-        params
-      );
-        
-      if (error) throw error;
-      return true;
-    }
-  } catch (error) {
-    console.error("Error toggling reel save:", error);
-    throw error;
-  }
-};
-
-// Check if a reel is already reposted by the user
-export const checkReelRepostStatus = async (reelId: string, userId: string) => {
-  try {
-    const params: ReelIdUserIdParams = {
-      p_reel_id: reelId,
-      p_user_id: userId
-    };
-    
-    const { data } = await supabase.rpc(
-      "is_reel_reposted", 
-      params
-    );
-    
-    return !!data;
-  } catch (error) {
-    console.error("Error checking repost status:", error);
-    return false;
-  }
-};
-
-// Repost a reel
-export const repostReel = async (reelId: string, userId: string, originalUserId: string) => {
-  try {
-    // Check if reel exists in reel_posts
-    const { data: reelExists } = await supabase
-      .from("reel_posts")
-      .select("id")
-      .eq("id", reelId)
-      .maybeSingle();
-      
-    if (!reelExists) {
-      toast.error("Could not find this reel");
-      return false;
-    }
-    
-    // Check if already reposted
-    const isReposted = await checkReelRepostStatus(reelId, userId);
-    
-    if (isReposted) {
-      toast.info("You've already reposted this reel");
-      return false;
-    }
-    
-    // Repost
-    const params: RepostReelParams = {
-      p_reel_id: reelId,
-      p_user_id: userId,
-      p_original_user_id: originalUserId,
-      p_created_at: new Date().toISOString()
-    };
-    
-    const { error } = await supabase.rpc(
-      "repost_reel", 
-      params
-    );
-      
     if (error) throw error;
     return true;
-  } catch (error) {
-    console.error("Error reposting reel:", error);
-    throw error;
   }
-};
+  catch (error) {
+    console.error(`Error liking reel ${reelId}:`, error);
+    return false;
+  }
+}
 
-// Report a reel
-export const reportReel = async (reelId: string, userId: string, reason: string = "inappropriate content") => {
+export async function unlikeReel(reelId: string, userId: string) {
   try {
-    // Check if reel exists in reel_posts
-    const { data: reelExists } = await supabase
-      .from("reel_posts")
-      .select("id")
-      .eq("id", reelId)
-      .maybeSingle();
-      
-    if (!reelExists) {
-      toast.error("Could not find this reel");
-      return false;
-    }
-    
-    const params: ReportContentParams = {
-      p_content_id: reelId,
-      p_user_id: userId,
-      p_content_type: 'reel',
-      p_reason: reason,
-      p_created_at: new Date().toISOString()
-    };
-    
-    const { error } = await supabase.rpc(
-      "report_content", 
-      params
-    );
-      
+    const { error } = await supabase
+      .from('post_likes')
+      .delete()
+      .eq('post_id', reelId)
+      .eq('user_id', userId)
+      .eq('post_type', 'reel');
+
     if (error) throw error;
     return true;
-  } catch (error) {
-    console.error("Error reporting reel:", error);
-    throw error;
   }
-};
+  catch (error) {
+    console.error(`Error unliking reel ${reelId}:`, error);
+    return false;
+  }
+}
+
+export async function hasLikedReel(reelId: string, userId: string) {
+  try {
+    const { data, error } = await supabase
+      .from('post_likes')
+      .select('*')
+      .eq('post_id', reelId)
+      .eq('user_id', userId)
+      .eq('post_type', 'reel')
+      .maybeSingle();
+
+    if (error) throw error;
+    return !!data;
+  }
+  catch (error) {
+    console.error(`Error checking if user ${userId} liked reel ${reelId}:`, error);
+    return false;
+  }
+}
+
+export async function getReelLikesCount(reelId: string) {
+  try {
+    const { count, error } = await supabase
+      .from('post_likes')
+      .select('*', { count: 'exact', head: true })
+      .eq('post_id', reelId)
+      .eq('post_type', 'reel');
+
+    if (error) throw error;
+    return count || 0;
+  }
+  catch (error) {
+    console.error(`Error getting likes count for reel ${reelId}:`, error);
+    return 0;
+  }
+}
+
+export async function getReelCommentsCount(reelId: string) {
+  try {
+    const { count, error } = await supabase
+      .from('post_comments')
+      .select('*', { count: 'exact', head: true })
+      .eq('post_id', reelId)
+      .eq('post_type', 'reel')
+      .eq('is_deleted', false);
+
+    if (error) throw error;
+    return count || 0;
+  }
+  catch (error) {
+    console.error(`Error getting comments count for reel ${reelId}:`, error);
+    return 0;
+  }
+}
+
+export async function getTrendingReels(limit = 10) {
+  try {
+    // This is a simplified implementation
+    // In a real app, you might want to calculate trending based on engagement
+    const { data, error } = await supabase
+      .from('reel_posts')
+      .select(`
+        *,
+        profiles:user_id (*)
+      `)
+      .eq('visibility', 'public')
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) throw error;
+    return data || [];
+  }
+  catch (error) {
+    console.error('Error fetching trending reels:', error);
+    return [];
+  }
+}
