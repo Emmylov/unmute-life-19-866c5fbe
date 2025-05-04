@@ -1,9 +1,10 @@
+
 import { supabase } from "@/integrations/supabase/client";
-import { Post } from "../feed-utils";
 import { createSafeProfile } from "@/utils/safe-data-utils";
+import { FeedPost } from "@/services/post-service";
 
 // Update this function to use the correct table names and handle profiles properly
-export async function fetchFollowingFeed(userId: string, limit: number = 10, offset: number = 0): Promise<Post[]> {
+export async function fetchFollowingFeed(userId: string, limit: number = 10, offset: number = 0): Promise<FeedPost[]> {
   // If userId is not provided, return empty array
   if (!userId) {
     return [];
@@ -75,8 +76,8 @@ export async function fetchFollowingFeed(userId: string, limit: number = 10, off
       console.error('Error fetching reel posts:', reelError);
     }
     
-    // Transform all posts to the common Post format
-    const result: Post[] = [];
+    // Transform all posts to the common FeedPost format
+    const result: FeedPost[] = [];
     
     // Add image posts
     if (imagePosts) {
@@ -87,25 +88,14 @@ export async function fetchFollowingFeed(userId: string, limit: number = 10, off
         return {
           id: post.id,
           user_id: post.user_id,
-          userId: post.user_id,
-          type: 'image' as const,
+          post_type: 'image',
           content: null,
-          imageUrls: post.image_urls,
+          image_urls: post.image_urls,
           caption: post.caption,
           created_at: post.created_at,
-          createdAt: post.created_at, // Add both formats to ensure compatibility
-          user: {
-            id: safeProfile.id,
-            name: safeProfile.full_name,
-            username: safeProfile.username,
-            avatar: safeProfile.avatar
-          },
-          stats: {
-            likes: 0,
-            comments: 0,
-            shares: 0
-          },
-          tags: post.tags || []
+          visibility: post.visibility || 'public',
+          profiles: safeProfile,
+          tags: post.tags || null
         };
       }));
     }
@@ -119,25 +109,14 @@ export async function fetchFollowingFeed(userId: string, limit: number = 10, off
         return {
           id: post.id,
           user_id: post.user_id,
-          userId: post.user_id,
-          type: 'text' as const,
+          post_type: 'text',
           content: post.content,
           title: post.title || null,
-          emojiMood: post.emoji_mood || null,
+          emoji_mood: post.emoji_mood || null,
           created_at: post.created_at,
-          createdAt: post.created_at,
-          user: {
-            id: safeProfile.id,
-            name: safeProfile.full_name,
-            username: safeProfile.username,
-            avatar: safeProfile.avatar
-          },
-          stats: {
-            likes: 0,
-            comments: 0,
-            shares: 0
-          },
-          tags: post.tags || []
+          visibility: post.visibility || 'public',
+          profiles: safeProfile,
+          tags: post.tags || null
         };
       }));
     }
@@ -151,33 +130,22 @@ export async function fetchFollowingFeed(userId: string, limit: number = 10, off
         return {
           id: post.id,
           user_id: post.user_id,
-          userId: post.user_id,
-          type: 'reel' as const,
+          post_type: 'reel',
           content: null,
-          videoUrl: post.video_url,
+          video_url: post.video_url,
           caption: post.caption || null,
-          thumbnailUrl: post.thumbnail_url || null,
+          thumbnail_url: post.thumbnail_url || null,
           created_at: post.created_at,
-          createdAt: post.created_at,
-          user: {
-            id: safeProfile.id,
-            name: safeProfile.full_name,
-            username: safeProfile.username,
-            avatar: safeProfile.avatar
-          },
-          stats: {
-            likes: 0,
-            comments: 0,
-            shares: 0
-          },
-          tags: post.tags || []
+          visibility: post.visibility || 'public',
+          profiles: safeProfile,
+          tags: post.tags || null
         };
       }));
     }
     
     // Sort all posts by creation date, newest first
     return result.sort((a, b) => 
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
   } catch (error) {
     console.error('Error fetching following feed:', error);

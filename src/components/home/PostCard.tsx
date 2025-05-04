@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
@@ -10,11 +11,11 @@ import { useSocialActions } from "@/hooks/use-social-actions";
 import { cn, formatTimeAgo } from "@/lib/utils";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { FeedPost } from "@/services/post-service";
 import { Textarea } from "@/components/ui/textarea";
 import { useTranslation } from "react-i18next";
 import { addComment, getComments, PostComment } from "@/services/content-service";
 import { createSafeProfile } from "@/utils/safe-data-utils";
+import { FeedPost } from "@/services/post-service";
 
 interface PostCardProps {
   post: FeedPost;

@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from 'uuid';
 
@@ -13,6 +14,31 @@ function getPostTypeString(type: string): "image" | "text" | "reel" | "meme" {
 }
 
 export type PostType = 'text' | 'image' | 'reel' | 'meme';
+
+// Define the FeedPost interface that is used across the application
+export interface FeedPost {
+  id: string;
+  user_id: string;
+  post_type: PostType;
+  content?: string | null;
+  title?: string | null;
+  caption?: string | null;
+  image_urls?: string[] | null;
+  video_url?: string | null;
+  thumbnail_url?: string | null;
+  tags?: string[] | null;
+  emoji_mood?: string | null;
+  created_at: string;
+  visibility: string;
+  likes_count?: number;
+  comments_count?: number;
+  profiles?: {
+    id: string;
+    username: string | null;
+    avatar: string | null;
+    full_name: string | null;
+  };
+}
 
 // Define the Post interface
 export interface Post {
@@ -103,7 +129,7 @@ const safeConvertToPost = (data: any, postType: PostType): Post => {
     }
   };
 
-  // Add type-specific properties safely
+  // Add type-specific properties safely with type checking
   switch (postType) {
     case 'text':
       if ('title' in data) post.title = data.title || null;
@@ -130,10 +156,11 @@ const safeConvertToPost = (data: any, postType: PostType): Post => {
     case 'meme':
       if ('top_text' in data) post.title = data.top_text || null;
       if ('bottom_text' in data) post.body = data.bottom_text || null;
-      if ('image_urls' in data && Array.isArray(data.image_urls)) {
-        post.imageUrl = data.image_urls[0] || null;
-      } else if ('image_url' in data) {
+      // Handle both single image_url and array of image_urls
+      if ('image_url' in data) {
         post.imageUrl = data.image_url || null;
+      } else if ('image_urls' in data && Array.isArray(data.image_urls)) {
+        post.imageUrl = data.image_urls[0] || null;
       }
       break;
   }
@@ -202,7 +229,7 @@ export const createPost = async (
         throw new Error("Invalid post type");
     }
 
-    // Use type assertion to handle the table name safely
+    // Handle the table name explicitly for type safety
     const { data, error } = await supabase
       .from(tableName)
       .insert([insertData])
@@ -306,7 +333,7 @@ export const getPosts = async (
   try {
     const tableName = postType ? getTableName(postType) : VALID_TABLE_NAMES.text;
     
-    // Use the type-safe table name
+    // Use the explicit table name for type safety
     const { data, error } = await supabase
       .from(tableName)
       .select("*")
@@ -370,7 +397,7 @@ export const checkPostExists = async (postId: string, postType: string): Promise
   try {
     const tableName = getTableName(postType);
     
-    // Use the type-safe table name
+    // Use explicit table name for type safety
     const { data, error } = await supabase
       .from(tableName)
       .select('id')
@@ -434,14 +461,14 @@ export const updatePost = async (
       return null;
     }
 
-    // Convert to consistent Post interface
+    // Convert to consistent Post interface with safe type handling
     const post: Post = {
       id: data.id,
       userId: data.user_id,
       type: postType as PostType,
-      title: data.title || null,
-      body: data.content || data.body || null,
-      imageUrl: data.image_url || (data.image_urls && data.image_urls[0]) || null,
+      title: data.title || data.top_text || null,
+      body: data.content || data.caption || data.bottom_text || null,
+      imageUrl: (data.image_url || (data.image_urls && data.image_urls[0])) || null,
       videoUrl: data.video_url || null,
       thumbnailUrl: data.thumbnail_url || null,
       createdAt: data.created_at,
@@ -489,18 +516,22 @@ export const deletePost = async (
 
 export const getAllPosts = async (userId: string): Promise<Post[]> => {
   try {
+    // Use explicit table names for type safety
     const textPostsPromise = supabase
-      .from("text_posts")
+      .from(VALID_TABLE_NAMES.text)
       .select("*")
       .eq("user_id", userId);
+      
     const imagePostsPromise = supabase
-      .from("image_posts")
+      .from(VALID_TABLE_NAMES.image)
       .select("*")
       .eq("user_id", userId);
+      
     const reelPostsPromise = supabase
-      .from("reel_posts")
+      .from(VALID_TABLE_NAMES.reel)
       .select("*")
       .eq("user_id", userId);
+      
     const memePostsPromise = supabase
       .from("meme_posts")
       .select("*")
@@ -636,14 +667,16 @@ export const getFeedPosts = async (
 
     if (followError) {
       console.error("Error fetching follow list:", followError);
-      return [];
+      // Continue with empty following list
     }
 
-    // Extract user IDs of those being followed
-    const followedUserIds = following ? following.map(f => f.target_user_id) : [];
+    // Extract user IDs of those being followed, providing a safe fallback
+    const followedUserIds = following && Array.isArray(following) 
+      ? following.map(f => f.target_user_id).filter(Boolean)
+      : [];
 
     // Include the user's own ID in the list
-    const allUserIds = [...followedUserIds, userId];
+    const allUserIds = [...followedUserIds, userId].filter(Boolean);
 
     // Use proper table names from getTableName
     const textTableName = getTableName('text');
@@ -651,7 +684,7 @@ export const getFeedPosts = async (
     const reelTableName = getTableName('reel');
     const memeTableName = getTableName('meme');
 
-    // Fetch posts from each table
+    // Fetch posts from each table with proper error handling
     const { data: textPosts, error: textError } = await supabase
       .from(textTableName)
       .select(`
@@ -744,7 +777,7 @@ export const getFeedPosts = async (
       return {
         id: post.id,
         user_id: post.user_id,
-        content: post.body || post.content || null,
+        content: post.content || null,
         title: post.title || null,
         image_urls: post.image_urls || (post.image_url ? [post.image_url] : null),
         video_url: post.video_url || null,
@@ -788,7 +821,10 @@ export const uploadImage = async (
       return null;
     }
 
-    const publicUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${data.bucket}/${data.path}`;
+    // Access the path properties safely
+    const bucketName = "images"; // Use hardcoded value instead of data.bucket
+    const path = data?.path || storagePath;
+    const publicUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${bucketName}/${path}`;
     return { publicUrl, storagePath };
   } catch (error) {
     console.error("Error uploading image:", error);

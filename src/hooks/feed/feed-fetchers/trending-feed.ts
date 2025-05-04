@@ -1,8 +1,9 @@
-import { supabase } from "@/integrations/supabase/client";
-import { Post } from "../feed-utils";
-import { createSafeProfile } from "@/utils/safe-data-utils";
 
-export async function fetchTrendingFeed(limit: number = 10, offset: number = 0): Promise<Post[]> {
+import { supabase } from "@/integrations/supabase/client";
+import { createSafeProfile } from "@/utils/safe-data-utils";
+import { FeedPost } from "@/services/post-service";
+
+export async function fetchTrendingFeed(limit: number = 10, offset: number = 0): Promise<FeedPost[]> {
   try {
     // Fetch posts from different tables
     // For our implementation, we'll just get the most recent posts across all types
@@ -53,7 +54,7 @@ export async function fetchTrendingFeed(limit: number = 10, offset: number = 0):
     }
     
     // Transform and combine all posts
-    const result: Post[] = [];
+    const result: FeedPost[] = [];
     
     // Add image posts
     if (imagePosts) {
@@ -64,25 +65,14 @@ export async function fetchTrendingFeed(limit: number = 10, offset: number = 0):
         return {
           id: post.id,
           user_id: post.user_id,
-          userId: post.user_id,
-          type: 'image' as const,
+          post_type: 'image',
           content: null,
-          imageUrls: post.image_urls,
+          image_urls: post.image_urls,
           caption: post.caption,
           created_at: post.created_at,
-          createdAt: post.created_at, // Add both formats for compatibility
-          user: {
-            id: safeProfile.id,
-            name: safeProfile.full_name,
-            username: safeProfile.username,
-            avatar: safeProfile.avatar
-          },
-          stats: {
-            likes: 0,
-            comments: 0,
-            shares: 0
-          },
-          tags: post.tags || []
+          visibility: post.visibility || 'public',
+          profiles: safeProfile,
+          tags: post.tags || null
         };
       }));
     }
@@ -96,25 +86,14 @@ export async function fetchTrendingFeed(limit: number = 10, offset: number = 0):
         return {
           id: post.id,
           user_id: post.user_id,
-          userId: post.user_id,
-          type: 'text' as const,
+          post_type: 'text',
           content: post.content,
           title: post.title || null,
-          emojiMood: post.emoji_mood || null,
+          emoji_mood: post.emoji_mood || null,
           created_at: post.created_at,
-          createdAt: post.created_at, // Add both formats for compatibility
-          user: {
-            id: safeProfile.id,
-            name: safeProfile.full_name,
-            username: safeProfile.username,
-            avatar: safeProfile.avatar
-          },
-          stats: {
-            likes: 0,
-            comments: 0,
-            shares: 0
-          },
-          tags: post.tags || []
+          visibility: post.visibility || 'public',
+          profiles: safeProfile,
+          tags: post.tags || null
         };
       }));
     }
@@ -128,33 +107,22 @@ export async function fetchTrendingFeed(limit: number = 10, offset: number = 0):
         return {
           id: post.id,
           user_id: post.user_id,
-          userId: post.user_id,
-          type: 'reel' as const,
+          post_type: 'reel',
           content: null,
-          videoUrl: post.video_url,
+          video_url: post.video_url,
           caption: post.caption || null,
-          thumbnailUrl: post.thumbnail_url || null,
+          thumbnail_url: post.thumbnail_url || null,
           created_at: post.created_at,
-          createdAt: post.created_at, // Add both formats for compatibility
-          user: {
-            id: safeProfile.id,
-            name: safeProfile.full_name,
-            username: safeProfile.username,
-            avatar: safeProfile.avatar
-          },
-          stats: {
-            likes: 0,
-            comments: 0,
-            shares: 0
-          },
-          tags: post.tags || []
+          visibility: post.visibility || 'public',
+          profiles: safeProfile,
+          tags: post.tags || null
         };
       }));
     }
     
     // Sort all posts by creation date, newest first
     return result.sort((a, b) => 
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
   } catch (error) {
     console.error('Error fetching trending feed:', error);

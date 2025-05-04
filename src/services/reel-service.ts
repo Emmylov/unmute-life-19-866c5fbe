@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -44,9 +45,9 @@ export const checkReelLikeStatus = async (reelId: string, userId: string) => {
 // Toggle like on a reel
 export const toggleReelLike = async (reelId: string, userId: string) => {
   try {
-    // First verify if the reel exists in posts_reels table
+    // First verify if the reel exists in reel_posts table (changed from posts_reels)
     const { data: reelExists } = await supabase
-      .from("posts_reels")
+      .from("reel_posts")
       .select("id")
       .eq("id", reelId)
       .maybeSingle();
@@ -126,9 +127,9 @@ export const checkReelSaveStatus = async (reelId: string, userId: string) => {
 // Toggle save on a reel
 export const toggleReelSave = async (reelId: string, userId: string) => {
   try {
-    // Check if reel exists in posts_reels
+    // Check if reel exists in reel_posts
     const { data: reelExists } = await supabase
-      .from("posts_reels")
+      .from("reel_posts")
       .select("id")
       .eq("id", reelId)
       .maybeSingle();
@@ -200,9 +201,9 @@ export const checkReelRepostStatus = async (reelId: string, userId: string) => {
 // Repost a reel
 export const repostReel = async (reelId: string, userId: string, originalUserId: string) => {
   try {
-    // Check if reel exists in posts_reels
+    // Check if reel exists in reel_posts
     const { data: reelExists } = await supabase
-      .from("posts_reels")
+      .from("reel_posts")
       .select("id")
       .eq("id", reelId)
       .maybeSingle();
@@ -244,9 +245,9 @@ export const repostReel = async (reelId: string, userId: string, originalUserId:
 // Report a reel
 export const reportReel = async (reelId: string, userId: string, reason: string = "inappropriate content") => {
   try {
-    // Check if reel exists in posts_reels
+    // Check if reel exists in reel_posts
     const { data: reelExists } = await supabase
-      .from("posts_reels")
+      .from("reel_posts")
       .select("id")
       .eq("id", reelId)
       .maybeSingle();

@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Post, createSafeProfile } from "../feed-utils";
+import { createSafeProfile } from "@/utils/safe-data-utils";
 import { FeedPost } from "@/services/post-service";
 
 // Main function to be exported with the name used in index.ts

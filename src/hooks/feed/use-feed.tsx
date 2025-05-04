@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { getFeedPosts, FeedPost } from '@/services/post-service';
+import { FeedPost, getFeedPosts } from '@/services/post-service';
 
 interface UseFeedProps {
   limit?: number;
