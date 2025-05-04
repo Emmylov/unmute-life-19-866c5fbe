@@ -14,6 +14,7 @@ function getPostTypeString(type: string): "image" | "text" | "reel" | "meme" {
 
 export type PostType = 'text' | 'image' | 'reel' | 'meme';
 
+// Define the Post interface
 export interface Post {
   id: string;
   userId: string;
@@ -40,75 +41,19 @@ export interface Post {
   tags?: string[];
 }
 
-export interface FeedPost {
-  id: string;
-  user_id: string;
-  content: string | null;
-  title: string | null;
-  image_urls: string[] | null;
-  video_url: string | null;
-  thumbnail_url: string | null;
-  caption: string | null;
-  tags: string[] | null;
-  emoji_mood: string | null;
-  post_type: "image" | "text" | "reel" | "meme";
-  created_at: string;
-  visibility: string;
-  likes_count: number;
-  comments_count: number;
-  profiles: {
-    id: string;
-    username: string | null;
-    avatar: string | null;
-    full_name: string | null;
-  };
-}
+// Define valid table names as literal types for TypeScript safety
+type ValidTableName = 'text_posts' | 'image_posts' | 'reel_posts' | 'meme_posts';
 
-export interface DatabasePost {
-  id: string;
-  user_id: string;
-  created_at: string;
-  updated_at: string;
-  visibility: string;
-}
-
-export interface TextPost extends DatabasePost {
-  title: string;
-  body: string;
-  tags: string[];
-  emoji_mood: string;
-}
-
-export interface ImagePost extends DatabasePost {
-  image_urls: string[];
-  content: string;
-  tags: string[];
-  emoji_mood: string;
-}
-
-export interface ReelPost extends DatabasePost {
-  video_url: string;
-  caption?: string;
-  thumbnail_url?: string;
-  tags?: string[];
-}
-
-export interface MemePost extends DatabasePost {
-  image_urls: string[];
-  top_text: string;
-  bottom_text: string;
-}
-
-// Define valid table names for type safety
-const VALID_TABLE_NAMES = {
+// Define the mapping between post types and table names
+const VALID_TABLE_NAMES: Record<string, ValidTableName> = {
   text: 'text_posts',
   image: 'image_posts',
   reel: 'reel_posts',
   meme: 'meme_posts'
-} as const;
+};
 
-// Update the getTableName function to use the valid table names
-export const getTableName = (postType: string): string => {
+// Update the getTableName function to use the valid table names with proper typing
+export const getTableName = (postType: string): ValidTableName => {
   if (postType === 'text') return VALID_TABLE_NAMES.text;
   if (postType === 'image') return VALID_TABLE_NAMES.image;
   if (postType === 'reel') return VALID_TABLE_NAMES.reel;
@@ -169,7 +114,9 @@ const safeConvertToPost = (data: any, postType: PostType): Post => {
     case 'image':
       if ('caption' in data) post.body = data.caption || null;
       if ('content' in data) post.body = data.content || null;
-      if ('image_urls' in data) post.imageUrl = (data.image_urls && data.image_urls[0]) || null;
+      if ('image_urls' in data && Array.isArray(data.image_urls)) {
+        post.imageUrl = data.image_urls[0] || null;
+      }
       if ('tags' in data) post.tags = data.tags || [];
       break;
     case 'reel':
@@ -183,8 +130,11 @@ const safeConvertToPost = (data: any, postType: PostType): Post => {
     case 'meme':
       if ('top_text' in data) post.title = data.top_text || null;
       if ('bottom_text' in data) post.body = data.bottom_text || null;
-      if ('image_urls' in data) post.imageUrl = (data.image_urls && data.image_urls[0]) || null;
-      if ('image_url' in data) post.imageUrl = data.image_url || null;
+      if ('image_urls' in data && Array.isArray(data.image_urls)) {
+        post.imageUrl = data.image_urls[0] || null;
+      } else if ('image_url' in data) {
+        post.imageUrl = data.image_url || null;
+      }
       break;
   }
 
@@ -197,6 +147,7 @@ export const createPost = async (
   postData: any
 ): Promise<Post | null> => {
   try {
+    // Use the typed getTableName function
     const tableName = getTableName(postType);
 
     // Centralized visibility handling
@@ -251,9 +202,9 @@ export const createPost = async (
         throw new Error("Invalid post type");
     }
 
-    // Use typecasted tableName to ensure type safety
+    // Use type assertion to handle the table name safely
     const { data, error } = await supabase
-      .from(tableName as any)
+      .from(tableName)
       .insert([insertData])
       .select("*")
       .single();
@@ -261,6 +212,12 @@ export const createPost = async (
     if (error) {
       console.error("Error creating post:", error);
       throw error;
+    }
+
+    // We need to check if data exists before proceeding
+    if (!data) {
+      console.error("No data returned after post creation");
+      return null;
     }
 
     // Convert to Post interface as needed by the app
@@ -349,9 +306,9 @@ export const getPosts = async (
   try {
     const tableName = postType ? getTableName(postType) : VALID_TABLE_NAMES.text;
     
-    // Use typecasted tableName to ensure type safety
+    // Use the type-safe table name
     const { data, error } = await supabase
-      .from(tableName as any)
+      .from(tableName)
       .select("*")
       .eq("user_id", userId);
 
@@ -360,8 +317,12 @@ export const getPosts = async (
       return [];
     }
 
+    if (!data) {
+      return [];
+    }
+
     // Convert to Post interface
-    return (data || []).map(item => safeConvertToPost(item, (postType || 'text') as PostType));
+    return (data).map(item => safeConvertToPost(item, (postType || 'text') as PostType));
   } catch (error) {
     console.error(`Error getting ${postType} posts:`, error);
     return [];
@@ -409,9 +370,9 @@ export const checkPostExists = async (postId: string, postType: string): Promise
   try {
     const tableName = getTableName(postType);
     
-    // Use typecasted tableName to ensure type safety
+    // Use the type-safe table name
     const { data, error } = await supabase
-      .from(tableName as any)
+      .from(tableName)
       .select('id')
       .eq('id', postId)
       .maybeSingle();
@@ -441,7 +402,7 @@ export const getPost = async (
       .eq("id", postId)
       .single();
 
-    if (error) {
+    if (error || !data) {
       console.error("Error fetching post:", error);
       return null;
     }

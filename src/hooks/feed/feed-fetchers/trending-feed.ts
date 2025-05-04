@@ -1,6 +1,6 @@
-
 import { supabase } from "@/integrations/supabase/client";
-import { Post, createSafeProfile } from "../feed-utils";
+import { Post } from "../feed-utils";
+import { createSafeProfile } from "@/utils/safe-data-utils";
 
 export async function fetchTrendingFeed(limit: number = 10, offset: number = 0): Promise<Post[]> {
   try {
@@ -70,7 +70,7 @@ export async function fetchTrendingFeed(limit: number = 10, offset: number = 0):
           imageUrls: post.image_urls,
           caption: post.caption,
           created_at: post.created_at,
-          createdAt: post.created_at,
+          createdAt: post.created_at, // Add both formats for compatibility
           user: {
             id: safeProfile.id,
             name: safeProfile.full_name,
@@ -102,7 +102,7 @@ export async function fetchTrendingFeed(limit: number = 10, offset: number = 0):
           title: post.title || null,
           emojiMood: post.emoji_mood || null,
           created_at: post.created_at,
-          createdAt: post.created_at,
+          createdAt: post.created_at, // Add both formats for compatibility
           user: {
             id: safeProfile.id,
             name: safeProfile.full_name,
@@ -135,7 +135,7 @@ export async function fetchTrendingFeed(limit: number = 10, offset: number = 0):
           caption: post.caption || null,
           thumbnailUrl: post.thumbnail_url || null,
           created_at: post.created_at,
-          createdAt: post.created_at,
+          createdAt: post.created_at, // Add both formats for compatibility
           user: {
             id: safeProfile.id,
             name: safeProfile.full_name,
@@ -154,8 +154,8 @@ export async function fetchTrendingFeed(limit: number = 10, offset: number = 0):
     
     // Sort all posts by creation date, newest first
     return result.sort((a, b) => 
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    ).slice(offset, offset + limit);
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
   } catch (error) {
     console.error('Error fetching trending feed:', error);
     return [];

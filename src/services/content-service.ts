@@ -33,7 +33,7 @@ export {
 // Export utility functions
 export { createSafeProfile } from '@/utils/safe-data-utils';
 
-// Export PostComment type using export type syntax for compatibility with isolatedModules
+// Export types using 'export type' syntax for compatibility with isolatedModules
 export type { PostComment } from './comment-service';
 export type { Post } from './post-service';
 

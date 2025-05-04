@@ -18,6 +18,7 @@ export const createSafeProfile = (profileData: any): {
 export interface Post {
   id: string;
   userId: string;
+  user_id?: string; // Add snake_case version for compatibility
   type: 'text' | 'image' | 'reel' | 'meme';
   title?: string | null;
   body?: string | null;
@@ -27,6 +28,7 @@ export interface Post {
   audioUrl?: string | null;
   audioType?: string | null;
   createdAt: string;
+  created_at?: string; // Add snake_case version for compatibility
   user: {
     id: string;
     name: string | null;
@@ -39,4 +41,7 @@ export interface Post {
     shares: number;
   };
   tags?: string[];
+  content?: string | null;
+  caption?: string | null;
+  imageUrls?: string[] | null;
 }

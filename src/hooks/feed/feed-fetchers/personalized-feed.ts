@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
-import { Post, createSafeProfile } from "../feed-utils";
+import { Post } from "../feed-utils";
+import { createSafeProfile } from "@/utils/safe-data-utils";
 
 export async function fetchPersonalizedFeed(
   userId: string, 
@@ -79,7 +80,7 @@ export async function fetchPersonalizedFeed(
           imageUrls: post.image_urls,
           caption: post.caption,
           created_at: post.created_at,
-          createdAt: post.created_at,
+          createdAt: post.created_at, // Add both formats for compatibility
           user: {
             id: safeProfile.id,
             name: safeProfile.full_name,
@@ -163,8 +164,8 @@ export async function fetchPersonalizedFeed(
     
     // Sort all posts by creation date, newest first
     return result.sort((a, b) => 
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    ).slice(offset, offset + limit);
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
   } catch (error) {
     console.error('Error fetching personalized feed:', error);
     return [];

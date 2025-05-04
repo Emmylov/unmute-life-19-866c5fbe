@@ -40,6 +40,11 @@ export const addComment = async (
       return null;
     }
 
+    if (!data || !data.profiles) {
+      console.error("Invalid comment data or missing profiles:", data);
+      return null;
+    }
+
     // Create a properly typed comment object
     const comment: PostComment = {
       id: data.id,
@@ -76,8 +81,12 @@ export const getComments = async (
       return [];
     }
 
+    if (!data) {
+      return [];
+    }
+
     // Map database results to properly typed comments
-    return (data || []).map(item => {
+    return data.map(item => {
       const profiles = createSafeProfile(item.profiles);
       
       return {
