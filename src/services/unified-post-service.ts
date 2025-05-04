@@ -321,6 +321,9 @@ export const softDeletePost = async (postId: string, postType: string) => {
       case 'reel':
         tableName = 'reel_posts';
         break;
+      case 'meme':
+        tableName = 'meme_posts';
+        break;
       default:
         throw new Error(`Unknown post type: ${postType}`);
     }
@@ -329,13 +332,34 @@ export const softDeletePost = async (postId: string, postType: string) => {
       throw new Error("Could not determine table name for post deletion");
     }
     
-    // Use normal Supabase query with string literal for table name
-    const { error } = await supabase
-      .from(tableName)
-      .delete()
-      .eq('id', postId);
-      
+    // Use a direct approach with explicit table name validation
+    let deleteResult;
+    
+    if (tableName === 'text_posts') {
+      deleteResult = await supabase
+        .from('text_posts')
+        .delete()
+        .eq('id', postId);
+    } else if (tableName === 'image_posts') {
+      deleteResult = await supabase
+        .from('image_posts')
+        .delete()
+        .eq('id', postId);
+    } else if (tableName === 'reel_posts') {
+      deleteResult = await supabase
+        .from('reel_posts')
+        .delete()
+        .eq('id', postId);
+    } else if (tableName === 'meme_posts') {
+      deleteResult = await supabase
+        .from('meme_posts')
+        .delete()
+        .eq('id', postId);
+    }
+    
+    const { error } = deleteResult || { error: new Error('Invalid table name') };
     if (error) throw error;
+    
     return true;
   } catch (error) {
     console.error("Error deleting post:", error);

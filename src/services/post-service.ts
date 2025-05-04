@@ -176,7 +176,7 @@ const safeConvertToPost = (data: any, postType: PostType): Post => {
     };
   }
 
-  // Base post properties
+  // Create base post object
   const post: Post = {
     id: data.id || '',
     userId: data.user_id || '',
@@ -195,38 +195,38 @@ const safeConvertToPost = (data: any, postType: PostType): Post => {
     }
   };
 
-  // Add type-specific properties based on post type
+  // Add type-specific properties
   switch (postType) {
     case 'text':
-      if (data.title !== undefined) post.title = data.title;
-      if (data.content !== undefined) post.body = data.content;
-      if (data.body !== undefined) post.body = data.body;
+      if ('title' in data) post.title = data.title;
+      if ('content' in data) post.body = data.content;
+      if ('body' in data) post.body = data.body;
       break;
     
     case 'image':
-      if (data.caption !== undefined) post.body = data.caption;
-      if (data.image_urls && Array.isArray(data.image_urls) && data.image_urls.length > 0) {
+      if ('caption' in data) post.body = data.caption;
+      if ('image_urls' in data && Array.isArray(data.image_urls) && data.image_urls.length > 0) {
         post.imageUrl = data.image_urls[0];
       }
       break;
     
     case 'reel':
-      if (data.caption !== undefined) post.body = data.caption;
-      if (data.video_url !== undefined) post.videoUrl = data.video_url;
-      if (data.thumbnail_url !== undefined) post.thumbnailUrl = data.thumbnail_url;
-      if (data.audio_url !== undefined) post.audioUrl = data.audio_url;
-      if (data.audio_type !== undefined) post.audioType = data.audio_type;
+      if ('caption' in data) post.body = data.caption;
+      if ('video_url' in data) post.videoUrl = data.video_url;
+      if ('thumbnail_url' in data) post.thumbnailUrl = data.thumbnail_url;
+      if ('audio_url' in data) post.audioUrl = data.audio_url;
+      if ('audio_type' in data) post.audioType = data.audio_type;
       break;
     
     case 'meme':
-      if (data.top_text !== undefined) post.title = data.top_text;
-      if (data.bottom_text !== undefined) post.body = data.bottom_text;
-      if (data.image_url !== undefined) post.imageUrl = data.image_url;
+      if ('top_text' in data) post.title = data.top_text;
+      if ('bottom_text' in data) post.body = data.bottom_text;
+      if ('image_url' in data) post.imageUrl = data.image_url;
       break;
   }
 
   // Handle tags for all post types that might have them
-  if (data.tags && Array.isArray(data.tags)) {
+  if ('tags' in data && Array.isArray(data.tags)) {
     post.tags = data.tags;
   }
 

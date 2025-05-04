@@ -72,11 +72,11 @@ export const useReel = (reelId: string) => {
         audio_type: data.audio_type || null,
         audio_url: data.audio_url || null,
         // Handle fields that might not exist in the database schema with safe defaults
-        audio: data.audio_url || null, // Fallback to audio_url
-        // Handle optional fields with null default values
-        duration: data.duration || null,
-        original_audio_volume: data.original_audio_volume || null,
-        overlay_audio_volume: data.overlay_audio_volume || null,
+        audio: data.audio || data.audio_url || null, // Fallback to audio_url
+        // Explicitly check for undefined before using || to preserve 0 values
+        duration: data.duration !== undefined ? data.duration : null,
+        original_audio_volume: data.original_audio_volume !== undefined ? data.original_audio_volume : null,
+        overlay_audio_volume: data.overlay_audio_volume !== undefined ? data.overlay_audio_volume : null,
         // Handle profiles data safely
         profiles: data.profiles ? createSafeProfile(data.profiles) : null
       };
