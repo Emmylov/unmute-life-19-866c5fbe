@@ -87,7 +87,8 @@ export const getTableName = (postType: string): ValidTableName => {
 };
 
 // Helper function to safely handle data conversion for different table types
-const safeConvertToPost = (data: any, postType: PostType): Post => {
+// Use generic parameter for type safety
+const safeConvertToPost = <T extends Record<string, any>>(data: T, postType: PostType): Post => {
   if (!data) {
     // Return a minimal valid Post if data is missing
     return {
@@ -128,40 +129,47 @@ const safeConvertToPost = (data: any, postType: PostType): Post => {
     }
   };
 
-  // Add type-specific properties safely with type checking
-  switch (postType) {
-    case 'text':
-      if ('title' in data) post.title = data.title || null;
-      if ('content' in data) post.body = data.content || null;
-      if ('body' in data) post.body = data.body || null;
-      if ('tags' in data) post.tags = data.tags || [];
-      break;
-    case 'image':
-      if ('caption' in data) post.body = data.caption || null;
-      if ('content' in data) post.body = data.content || null;
-      if ('image_urls' in data && Array.isArray(data.image_urls)) {
-        post.imageUrl = data.image_urls[0] || null;
-      }
-      if ('tags' in data) post.tags = data.tags || [];
-      break;
-    case 'reel':
-      if ('caption' in data) post.body = data.caption || null;
-      if ('video_url' in data) post.videoUrl = data.video_url || null;
-      if ('thumbnail_url' in data) post.thumbnailUrl = data.thumbnail_url || null;
-      if ('tags' in data) post.tags = data.tags || [];
-      if ('audio_url' in data) post.audioUrl = data.audio_url || null;
-      if ('audio_type' in data) post.audioType = data.audio_type || null;
-      break;
-    case 'meme':
-      if ('top_text' in data) post.title = data.top_text || null;
-      if ('bottom_text' in data) post.body = data.bottom_text || null;
-      // Handle both single image_url and array of image_urls
-      if ('image_url' in data) {
-        post.imageUrl = data.image_url || null;
-      } else if ('image_urls' in data && Array.isArray(data.image_urls)) {
-        post.imageUrl = data.image_urls[0] || null;
-      }
-      break;
+  // Add type-specific properties safely with null/undefined checking
+  // For text posts
+  if (postType === 'text') {
+    post.title = ('title' in data) ? data.title || null : null;
+    post.body = ('content' in data) ? data.content || null : 
+               ('body' in data) ? data.body || null : null;
+    if ('tags' in data) post.tags = data.tags || [];
+  }
+
+  // For image posts
+  if (postType === 'image') {
+    post.body = ('caption' in data) ? data.caption || null : 
+               ('content' in data) ? data.content || null : null;
+    
+    if ('image_urls' in data && Array.isArray(data.image_urls)) {
+      post.imageUrl = data.image_urls[0] || null;
+    }
+    if ('tags' in data) post.tags = data.tags || [];
+  }
+
+  // For reel posts
+  if (postType === 'reel') {
+    post.body = ('caption' in data) ? data.caption || null : null;
+    post.videoUrl = ('video_url' in data) ? data.video_url || null : null;
+    post.thumbnailUrl = ('thumbnail_url' in data) ? data.thumbnail_url || null : null;
+    if ('tags' in data) post.tags = data.tags || [];
+    post.audioUrl = ('audio_url' in data) ? data.audio_url || null : null;
+    post.audioType = ('audio_type' in data) ? data.audio_type || null : null;
+  }
+
+  // For meme posts
+  if (postType === 'meme') {
+    post.title = ('top_text' in data) ? data.top_text || null : null;
+    post.body = ('bottom_text' in data) ? data.bottom_text || null : null;
+    
+    // Handle both single image_url and array of image_urls
+    if ('image_url' in data) {
+      post.imageUrl = data.image_url || null;
+    } else if ('image_urls' in data && Array.isArray(data.image_urls)) {
+      post.imageUrl = data.image_urls[0] || null;
+    }
   }
 
   return post;
@@ -581,91 +589,18 @@ export const getAllPosts = async (userId: string): Promise<Post[]> => {
       return [];
     }
 
-    // Convert all post types to the common Post interface
-    const textPosts: Post[] = (textPostsResult.data || []).map(post => ({
-      id: post.id,
-      userId: post.user_id,
-      type: 'text' as PostType,
-      title: post.title || null,
-      body: post.content || null,
-      createdAt: post.created_at,
-      user: {
-        id: post.user_id,
-        name: null,
-        username: null,
-        avatar: null
-      },
-      stats: {
-        likes: 0,
-        comments: 0,
-        shares: 0
-      },
-      tags: post.tags || []
-    }));
+    // Convert all post types to the common Post interface using safeConvertToPost
+    const textPosts: Post[] = (textPostsResult.data || []).map(post => 
+      safeConvertToPost(post, 'text'));
 
-    const imagePosts: Post[] = (imagePostsResult.data || []).map(post => ({
-      id: post.id,
-      userId: post.user_id,
-      type: 'image' as PostType,
-      imageUrl: post.image_urls && post.image_urls[0] || null,
-      body: post.caption || null,
-      createdAt: post.created_at,
-      user: {
-        id: post.user_id,
-        name: null,
-        username: null,
-        avatar: null
-      },
-      stats: {
-        likes: 0,
-        comments: 0,
-        shares: 0
-      },
-      tags: post.tags || []
-    }));
+    const imagePosts: Post[] = (imagePostsResult.data || []).map(post => 
+      safeConvertToPost(post, 'image'));
 
-    const reelPosts: Post[] = (reelPostsResult.data || []).map(post => ({
-      id: post.id,
-      userId: post.user_id,
-      type: 'reel' as PostType,
-      videoUrl: post.video_url || null,
-      thumbnailUrl: post.thumbnail_url || null,
-      body: post.caption || null,
-      createdAt: post.created_at,
-      user: {
-        id: post.user_id,
-        name: null,
-        username: null,
-        avatar: null
-      },
-      stats: {
-        likes: 0,
-        comments: 0,
-        shares: 0
-      },
-      tags: post.tags || []
-    }));
+    const reelPosts: Post[] = (reelPostsResult.data || []).map(post => 
+      safeConvertToPost(post, 'reel'));
 
-    const memePosts: Post[] = (memePostsResult.data || []).map(post => ({
-      id: post.id,
-      userId: post.user_id,
-      type: 'meme' as PostType,
-      imageUrl: post.image_url || null,
-      title: post.top_text || null,
-      body: post.bottom_text || null,
-      createdAt: post.created_at,
-      user: {
-        id: post.user_id,
-        name: null,
-        username: null,
-        avatar: null
-      },
-      stats: {
-        likes: 0,
-        comments: 0,
-        shares: 0
-      }
-    }));
+    const memePosts: Post[] = (memePostsResult.data || []).map(post => 
+      safeConvertToPost(post, 'meme'));
 
     return [...textPosts, ...imagePosts, ...reelPosts, ...memePosts];
   } catch (error) {

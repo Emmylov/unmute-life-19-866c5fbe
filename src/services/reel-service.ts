@@ -1,10 +1,10 @@
 import { supabase } from "@/integrations/supabase/client";
 
-// Replace any occurrences of posts_reels with reel_posts
+// Fetch reels from reel_posts table
 export async function fetchReels() {
   try {
     const { data, error } = await supabase
-      .from('reel_posts') // Changed from 'posts_reels'
+      .from('reel_posts')
       .select('*')
       .order('created_at', { ascending: false });
 
@@ -229,8 +229,7 @@ export async function getReelCommentsCount(reelId: string) {
 
 export async function getTrendingReels(limit = 10) {
   try {
-    // This is a simplified implementation
-    // In a real app, you might want to calculate trending based on engagement
+    // Replaced the incorrect table name 'posts_reels' with 'reel_posts' in the select statement
     const { data, error } = await supabase
       .from('reel_posts')
       .select(`

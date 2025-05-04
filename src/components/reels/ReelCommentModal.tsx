@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { formatTimeAgo } from "@/lib/utils";
-import { addComment, getComments, deleteComment, PostComment } from "@/services/content-service";
+import { addComment, getComments, deleteComment, PostComment } from "@/services/comment-service";
 import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
 
@@ -70,7 +70,8 @@ const ReelCommentModal: React.FC<ReelCommentModalProps> = ({ isOpen, onClose, re
     if (!user) return;
     
     try {
-      await deleteComment(commentId, user.id);
+      // Fixing the deleteComment call - it only needs one argument
+      await deleteComment(commentId);
       fetchComments();
       toast.success("Comment deleted");
     } catch (error) {

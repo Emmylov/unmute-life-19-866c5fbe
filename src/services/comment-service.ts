@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { createSafeProfile } from "@/utils/safe-data-utils";
 
