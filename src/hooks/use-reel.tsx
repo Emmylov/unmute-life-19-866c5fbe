@@ -71,10 +71,10 @@ export const useReel = (reelId: string) => {
         audio_url: data.audio_url || null,
         // Handle fields that might not exist in the database schema with safe defaults
         audio: data.audio_url || null, // Fallback to audio_url
-        // Ensure we check if properties exist before accessing them
-        duration: null, // Since duration isn't in the database schema
-        original_audio_volume: null, // Since original_audio_volume isn't in the database schema
-        overlay_audio_volume: null, // Since overlay_audio_volume isn't in the database schema
+        // Handle optional fields with null default values
+        duration: null, // Since this isn't in the standard schema
+        original_audio_volume: null, // Since this isn't in the standard schema
+        overlay_audio_volume: null, // Since this isn't in the standard schema
         // Handle profiles data safely
         profiles: data.profiles ? createSafeProfile(data.profiles) : null
       };

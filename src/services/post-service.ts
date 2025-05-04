@@ -66,6 +66,54 @@ export interface Post {
   tags?: string[];
 }
 
+// Define each post type interface for type safety
+interface TextPostData {
+  id: string;
+  user_id: string;
+  created_at: string;
+  title?: string | null;
+  content: string;
+  tags?: string[] | null;
+  visibility?: string;
+}
+
+interface ImagePostData {
+  id: string;
+  user_id: string;
+  created_at: string;
+  image_urls: string[];
+  caption?: string | null;
+  tags?: string[] | null;
+  visibility?: string;
+}
+
+interface ReelPostData {
+  id: string;
+  user_id: string;
+  created_at: string;
+  video_url: string;
+  caption?: string | null;
+  thumbnail_url?: string | null;
+  tags?: string[] | null;
+  audio_url?: string | null;
+  audio_type?: string | null;
+  visibility?: string;
+}
+
+interface MemePostData {
+  id: string;
+  user_id: string;
+  created_at: string;
+  image_url: string;
+  top_text?: string | null;
+  bottom_text?: string | null;
+  category?: string | null;
+  visibility?: string;
+}
+
+// Type union for all post data types
+type PostData = TextPostData | ImagePostData | ReelPostData | MemePostData;
+
 // Define valid table names as literal types for TypeScript safety
 type ValidTableName = 'text_posts' | 'image_posts' | 'reel_posts' | 'meme_posts';
 
@@ -87,25 +135,25 @@ export const getTableName = (postType: string): ValidTableName => {
 };
 
 // Type guards to check post types
-function isTextPost(data: any): data is { title?: string, content?: string } {
-  return data && 'content' in data;
+function isTextPost(data: any): data is TextPostData {
+  return data && typeof data.content === 'string';
 }
 
-function isImagePost(data: any): data is { caption?: string, image_urls?: string[] } {
-  return data && 'image_urls' in data;
+function isImagePost(data: any): data is ImagePostData {
+  return data && Array.isArray(data.image_urls);
 }
 
-function isReelPost(data: any): data is { caption?: string, video_url?: string, thumbnail_url?: string } {
-  return data && 'video_url' in data;
+function isReelPost(data: any): data is ReelPostData {
+  return data && typeof data.video_url === 'string';
 }
 
-function isMemePost(data: any): data is { top_text?: string, bottom_text?: string, image_url?: string } {
-  return data && ('top_text' in data || 'bottom_text' in data) && 'image_url' in data;
+function isMemePost(data: any): data is MemePostData {
+  return data && typeof data.image_url === 'string' && 
+    ((data.top_text !== undefined) || (data.bottom_text !== undefined));
 }
 
 // Helper function to safely handle data conversion for different table types
-// Use generic parameter for type safety
-const safeConvertToPost = <T extends Record<string, any>>(data: T, postType: PostType): Post => {
+const safeConvertToPost = (data: PostData, postType: PostType): Post => {
   if (!data) {
     // Return a minimal valid Post if data is missing
     return {
@@ -234,7 +282,7 @@ export const createPost = async (
       case "meme":
         insertData = {
           ...insertData,
-          image_urls: postData.image_urls || [postData.image_url],
+          image_url: postData.image_url,
           top_text: postData.top_text,
           bottom_text: postData.bottom_text,
         };
@@ -261,27 +309,71 @@ export const createPost = async (
       return null;
     }
 
-    // Convert to Post interface as needed by the app
-    const result: Post = {
-      id: data.id,
-      userId: data.user_id,
-      type: postType as PostType,
-      title: data.title || null,
-      body: data.content || data.body || null,
-      createdAt: data.created_at,
-      // Initialize user and stats with defaults
-      user: {
-        id: userId,
-        name: null,
-        username: null,
-        avatar: null
-      },
-      stats: {
-        likes: 0,
-        comments: 0,
-        shares: 0
-      }
-    };
+    // Create a type-safe post object based on the post type
+    let result: Post;
+    
+    if (postType === 'text' && isTextPost(data)) {
+      result = {
+        id: data.id,
+        userId: data.user_id,
+        type: 'text',
+        title: data.title || null,
+        body: data.content || null,
+        createdAt: data.created_at,
+        user: { id: userId, name: null, username: null, avatar: null },
+        stats: { likes: 0, comments: 0, shares: 0 },
+        tags: data.tags || []
+      };
+    } else if (postType === 'image' && isImagePost(data)) {
+      result = {
+        id: data.id,
+        userId: data.user_id,
+        type: 'image',
+        body: data.caption || null,
+        imageUrl: (data.image_urls && data.image_urls.length > 0) ? data.image_urls[0] : null,
+        createdAt: data.created_at,
+        user: { id: userId, name: null, username: null, avatar: null },
+        stats: { likes: 0, comments: 0, shares: 0 },
+        tags: data.tags || []
+      };
+    } else if (postType === 'reel' && isReelPost(data)) {
+      result = {
+        id: data.id,
+        userId: data.user_id,
+        type: 'reel',
+        body: data.caption || null,
+        videoUrl: data.video_url,
+        thumbnailUrl: data.thumbnail_url || null,
+        audioUrl: data.audio_url || null,
+        audioType: data.audio_type || null,
+        createdAt: data.created_at,
+        user: { id: userId, name: null, username: null, avatar: null },
+        stats: { likes: 0, comments: 0, shares: 0 },
+        tags: data.tags || []
+      };
+    } else if (postType === 'meme' && isMemePost(data)) {
+      result = {
+        id: data.id,
+        userId: data.user_id,
+        type: 'meme',
+        title: data.top_text || null,
+        body: data.bottom_text || null,
+        imageUrl: data.image_url,
+        createdAt: data.created_at,
+        user: { id: userId, name: null, username: null, avatar: null },
+        stats: { likes: 0, comments: 0, shares: 0 }
+      };
+    } else {
+      // Fallback generic post
+      result = {
+        id: data.id,
+        userId: data.user_id || userId,
+        type: postType as PostType,
+        createdAt: data.created_at || new Date().toISOString(),
+        user: { id: userId, name: null, username: null, avatar: null },
+        stats: { likes: 0, comments: 0, shares: 0 }
+      };
+    }
 
     return result;
   } catch (error) {
@@ -362,8 +454,10 @@ export const getPosts = async (
       return [];
     }
 
-    // Convert to Post interface
-    return (data).map(item => safeConvertToPost(item, (postType || 'text') as PostType));
+    // Convert to Post interface using a type assertion here to avoid deep instantiation
+    return (data as PostData[]).map(item => 
+      safeConvertToPost(item, (postType || 'text') as PostType)
+    );
   } catch (error) {
     console.error(`Error getting ${postType} posts:`, error);
     return [];
@@ -550,18 +644,18 @@ export const getAllPosts = async (userId: string): Promise<Post[]> => {
       return [];
     }
 
-    // Convert all post types to the common Post interface using safeConvertToPost
-    const textPosts: Post[] = (textPostsResult.data || []).map(post => 
-      safeConvertToPost(post, 'text'));
+    // Convert all post types to the common Post interface using type assertions and safeConvertToPost
+    const textPosts: Post[] = (textPostsResult.data as TextPostData[] || [])
+      .map(post => safeConvertToPost(post, 'text'));
 
-    const imagePosts: Post[] = (imagePostsResult.data || []).map(post => 
-      safeConvertToPost(post, 'image'));
+    const imagePosts: Post[] = (imagePostsResult.data as ImagePostData[] || [])
+      .map(post => safeConvertToPost(post, 'image'));
 
-    const reelPosts: Post[] = (reelPostsResult.data || []).map(post => 
-      safeConvertToPost(post, 'reel'));
+    const reelPosts: Post[] = (reelPostsResult.data as ReelPostData[] || [])
+      .map(post => safeConvertToPost(post, 'reel'));
 
-    const memePosts: Post[] = (memePostsResult.data || []).map(post => 
-      safeConvertToPost(post, 'meme'));
+    const memePosts: Post[] = (memePostsResult.data as MemePostData[] || [])
+      .map(post => safeConvertToPost(post, 'meme'));
 
     return [...textPosts, ...imagePosts, ...reelPosts, ...memePosts];
   } catch (error) {
