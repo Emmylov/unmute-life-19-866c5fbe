@@ -70,7 +70,7 @@ const ReelCommentModal: React.FC<ReelCommentModalProps> = ({ isOpen, onClose, re
     if (!user) return;
     
     try {
-      // Fixing the deleteComment call - it only needs one argument
+      // Fix: Only pass the commentId
       await deleteComment(commentId);
       fetchComments();
       toast.success("Comment deleted");

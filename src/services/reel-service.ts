@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 // Fetch reels from reel_posts table
@@ -229,7 +230,7 @@ export async function getReelCommentsCount(reelId: string) {
 
 export async function getTrendingReels(limit = 10) {
   try {
-    // Replaced the incorrect table name 'posts_reels' with 'reel_posts' in the select statement
+    // Use reel_posts instead of posts_reels
     const { data, error } = await supabase
       .from('reel_posts')
       .select(`

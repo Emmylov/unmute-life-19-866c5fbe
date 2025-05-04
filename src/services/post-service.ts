@@ -86,6 +86,23 @@ export const getTableName = (postType: string): ValidTableName => {
   return VALID_TABLE_NAMES.text; // Default to text
 };
 
+// Type guards to check post types
+function isTextPost(data: any): data is { title?: string, content?: string } {
+  return data && 'content' in data;
+}
+
+function isImagePost(data: any): data is { caption?: string, image_urls?: string[] } {
+  return data && 'image_urls' in data;
+}
+
+function isReelPost(data: any): data is { caption?: string, video_url?: string, thumbnail_url?: string } {
+  return data && 'video_url' in data;
+}
+
+function isMemePost(data: any): data is { top_text?: string, bottom_text?: string, image_url?: string } {
+  return data && ('top_text' in data || 'bottom_text' in data) && 'image_url' in data;
+}
+
 // Helper function to safely handle data conversion for different table types
 // Use generic parameter for type safety
 const safeConvertToPost = <T extends Record<string, any>>(data: T, postType: PostType): Post => {
@@ -129,47 +146,37 @@ const safeConvertToPost = <T extends Record<string, any>>(data: T, postType: Pos
     }
   };
 
-  // Add type-specific properties safely with null/undefined checking
-  // For text posts
-  if (postType === 'text') {
-    post.title = ('title' in data) ? data.title || null : null;
-    post.body = ('content' in data) ? data.content || null : 
-               ('body' in data) ? data.body || null : null;
-    if ('tags' in data) post.tags = data.tags || [];
+  // Add type-specific properties safely with type guards
+  if (isTextPost(data)) {
+    post.title = data.title || null;
+    post.body = data.content || null;
   }
 
-  // For image posts
-  if (postType === 'image') {
-    post.body = ('caption' in data) ? data.caption || null : 
-               ('content' in data) ? data.content || null : null;
+  if (isImagePost(data)) {
+    post.body = data.caption || null;
     
-    if ('image_urls' in data && Array.isArray(data.image_urls)) {
+    if (data.image_urls && Array.isArray(data.image_urls)) {
       post.imageUrl = data.image_urls[0] || null;
     }
-    if ('tags' in data) post.tags = data.tags || [];
   }
 
-  // For reel posts
-  if (postType === 'reel') {
-    post.body = ('caption' in data) ? data.caption || null : null;
-    post.videoUrl = ('video_url' in data) ? data.video_url || null : null;
-    post.thumbnailUrl = ('thumbnail_url' in data) ? data.thumbnail_url || null : null;
-    if ('tags' in data) post.tags = data.tags || [];
-    post.audioUrl = ('audio_url' in data) ? data.audio_url || null : null;
-    post.audioType = ('audio_type' in data) ? data.audio_type || null : null;
+  if (isReelPost(data)) {
+    post.body = data.caption || null;
+    post.videoUrl = data.video_url || null;
+    post.thumbnailUrl = data.thumbnail_url || null;
+    post.audioUrl = data.audio_url || null;
+    post.audioType = data.audio_type || null;
   }
 
-  // For meme posts
-  if (postType === 'meme') {
-    post.title = ('top_text' in data) ? data.top_text || null : null;
-    post.body = ('bottom_text' in data) ? data.bottom_text || null : null;
-    
-    // Handle both single image_url and array of image_urls
-    if ('image_url' in data) {
-      post.imageUrl = data.image_url || null;
-    } else if ('image_urls' in data && Array.isArray(data.image_urls)) {
-      post.imageUrl = data.image_urls[0] || null;
-    }
+  if (isMemePost(data)) {
+    post.title = data.top_text || null;
+    post.body = data.bottom_text || null;
+    post.imageUrl = data.image_url || null;
+  }
+
+  // Handle tags for all post types that might have them
+  if ('tags' in data && Array.isArray(data.tags)) {
+    post.tags = data.tags;
   }
 
   return post;
@@ -468,54 +475,8 @@ export const updatePost = async (
       return null;
     }
 
-    // Safely handle the different post types
-    const postTypeEnum = postType as PostType;
-    const post: Post = {
-      id: data.id,
-      userId: data.user_id,
-      type: postTypeEnum,
-      createdAt: data.created_at,
-      user: {
-        id: data.user_id,
-        name: null,
-        username: null,
-        avatar: null
-      },
-      stats: {
-        likes: 0,
-        comments: 0,
-        shares: 0
-      }
-    };
-
-    // Add type-specific properties safely
-    switch (postTypeEnum) {
-      case 'text':
-        post.title = data.title || null;
-        post.body = data.content || null;
-        break;
-      case 'image':
-        post.body = data.caption || null;
-        post.imageUrl = data.image_urls && data.image_urls[0] || null;
-        break;
-      case 'reel':
-        post.body = data.caption || null;
-        post.videoUrl = data.video_url || null;
-        post.thumbnailUrl = data.thumbnail_url || null;
-        break;
-      case 'meme':
-        post.title = data.top_text || null;
-        post.body = data.bottom_text || null;
-        post.imageUrl = data.image_url || null;
-        break;
-    }
-
-    // Handle tags for all post types that have them
-    if ('tags' in data && Array.isArray(data.tags)) {
-      post.tags = data.tags;
-    }
-
-    return post;
+    // Use the type-safe conversion function with proper type guards
+    return safeConvertToPost(data, postType as PostType);
   } catch (error) {
     console.error("Error updating post:", error);
     return null;
@@ -617,8 +578,8 @@ export const getFeedPosts = async (
     // Fetch the user's follow list
     const { data: following, error: followError } = await supabase
       .from('profile_reactions')
-      .select('target_user_id')
-      .eq('user_id', userId)
+      .select('to_user_id') // Changed from target_user_id to to_user_id to match the schema
+      .eq('from_user_id', userId) // Changed from user_id to from_user_id to match the schema
       .eq('type', 'follow');
 
     if (followError) {
@@ -628,7 +589,7 @@ export const getFeedPosts = async (
 
     // Extract user IDs of those being followed, providing a safe fallback
     const followedUserIds = following && Array.isArray(following) 
-      ? following.map(f => f.target_user_id).filter(Boolean)
+      ? following.map(f => f.to_user_id).filter(Boolean)
       : [];
 
     // Include the user's own ID in the list
@@ -757,6 +718,7 @@ export const getFeedPosts = async (
   }
 };
 
+// Helper function for image upload path construction
 export const uploadImage = async (
   imageFile: File,
   userId: string
