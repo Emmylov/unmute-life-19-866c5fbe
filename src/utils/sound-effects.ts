@@ -1,88 +1,55 @@
 
-// Sound effects utility for playing various app sounds
-
-// Define sound effect types for better type safety
-export type SoundEffectType = 
-  | 'notification' 
-  | 'success' 
-  | 'error' 
-  | 'click' 
-  | 'complete'
-  | 'reward'
-  | 'achievement';
-
-// Map of sound effect types to their file paths
-const soundEffects: Record<SoundEffectType, string> = {
-  notification: '/notification-sound.mp3',
-  success: '/sounds/success.mp3',
-  error: '/sounds/error.mp3',
-  click: '/sounds/click.mp3',
-  complete: '/sounds/complete.mp3',
-  reward: '/notification-sound.mp3', // Reusing existing sound
-  achievement: '/sounds/achievement.mp3',
-};
-
-// Volume settings (0-1)
-const defaultVolume = 0.5;
+// Simple utility to play sound effects
 
 /**
- * Play a sound effect
- * @param type The type of sound effect to play
- * @param volume Optional volume override (0-1)
- * @returns Promise that resolves when the sound is played or rejects on error
+ * Play a sound effect with the given volume
+ * @param soundName Name of the sound file without extension
+ * @param volume Volume level between 0 and 1
+ * @returns Promise that resolves when the sound is loaded
  */
-export const playSound = (type: SoundEffectType, volume?: number): Promise<void> => {
+export const playSound = (soundName: string, volume = 0.5): Promise<void> => {
   return new Promise((resolve, reject) => {
     try {
-      const sound = new Audio(soundEffects[type]);
-      sound.volume = volume !== undefined ? Math.min(Math.max(volume, 0), 1) : defaultVolume;
+      // Create audio element
+      const audio = new Audio(`/sounds/${soundName}.mp3`);
+      audio.volume = volume;
       
-      sound.onended = () => {
-        resolve();
+      // Set event handlers
+      audio.oncanplaythrough = () => {
+        audio.play()
+          .then(resolve)
+          .catch(err => {
+            console.warn(`Sound playback was prevented for ${soundName}: ${err.message}`);
+            resolve(); // Resolve anyway to avoid breaking the app flow
+          });
       };
       
-      sound.onerror = (error) => {
-        console.error(`Error playing sound ${type}:`, error);
-        reject(error);
+      audio.onerror = (err) => {
+        console.error(`Error loading sound ${soundName}:`, err);
+        resolve(); // Resolve anyway to avoid breaking the app flow
       };
-      
-      sound.play().catch(error => {
-        console.error(`Browser blocked autoplay for ${type}:`, error);
-        reject(error);
-      });
     } catch (error) {
-      console.error(`Could not play sound ${type}:`, error);
-      reject(error);
+      console.error("Error playing sound:", error);
+      resolve(); // Resolve anyway to avoid breaking the app flow
     }
   });
 };
 
 /**
- * Check if user has interacted with the page (needed for autoplay)
+ * Play a music track with looping
+ * @param trackPath Path to the music file
+ * @param volume Volume level between 0 and 1
+ * @returns Audio element that can be controlled
  */
-export const hasUserInteracted = (): boolean => {
-  return document.documentElement.hasAttribute('data-user-interacted');
-};
-
-/**
- * Set up user interaction detection
- */
-export const setupSoundInteractionDetection = (): void => {
-  if (typeof document === 'undefined') return;
-
-  const markUserInteraction = () => {
-    document.documentElement.setAttribute('data-user-interacted', 'true');
-    ['click', 'touchstart', 'keydown'].forEach(event => {
-      document.removeEventListener(event, markUserInteraction);
-    });
-  };
-
-  ['click', 'touchstart', 'keydown'].forEach(event => {
-    document.addEventListener(event, markUserInteraction);
+export const playMusic = (trackPath: string, volume = 0.3): HTMLAudioElement => {
+  const audio = new Audio(trackPath);
+  audio.loop = true;
+  audio.volume = volume;
+  
+  // Try to play the audio
+  audio.play().catch(err => {
+    console.warn(`Music playback was prevented: ${err.message}`);
   });
+  
+  return audio;
 };
-
-// Initialize user interaction detection
-if (typeof document !== 'undefined') {
-  setupSoundInteractionDetection();
-}

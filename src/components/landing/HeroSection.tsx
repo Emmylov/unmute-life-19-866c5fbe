@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect, useRef } from "react";
-import { ArrowDown, Volume2, VolumeX, ArrowRight } from "lucide-react";
+import { ArrowDown, Volume2, VolumeX, ArrowRight, Music } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { playSound } from "@/utils/sound-effects";
@@ -11,6 +10,8 @@ enum StoryScene {
   AVATAR_SELECTION = "avatar",
   NOISE_MAZE = "maze",
   SANCTUARY = "sanctuary",
+  MEMORY_LANE = "memory",
+  REFLECTION = "reflection",
   AGE_SELECTION = "age",
   READY = "ready"
 }
@@ -23,10 +24,45 @@ interface AvatarOption {
   description: string;
 }
 
+// Music tracks
+interface MusicTrack {
+  id: string;
+  name: string;
+  url: string;
+  sceneTypes: StoryScene[];
+}
+
+const musicTracks: MusicTrack[] = [
+  { 
+    id: "ambient", 
+    name: "Ambient Reflection", 
+    url: "/sounds/ambient-sound.mp3", 
+    sceneTypes: [StoryScene.INTRO, StoryScene.SANCTUARY, StoryScene.READY]
+  },
+  { 
+    id: "tension", 
+    name: "Inner Tension", 
+    url: "/sounds/tension-sound.mp3", 
+    sceneTypes: [StoryScene.NOISE_MAZE]
+  },
+  { 
+    id: "memory", 
+    name: "Nostalgic Waves", 
+    url: "/sounds/memory-lane.mp3", 
+    sceneTypes: [StoryScene.MEMORY_LANE, StoryScene.REFLECTION]
+  },
+  { 
+    id: "choice", 
+    name: "Decision Point", 
+    url: "/sounds/choice-moment.mp3", 
+    sceneTypes: [StoryScene.AVATAR_SELECTION, StoryScene.AGE_SELECTION]
+  }
+];
+
 const avatarOptions: AvatarOption[] = [
   { id: "overthinker", name: "The Overthinker", emoji: "🤔", description: "Always analyzing everything and everyone." },
   { id: "pleaser", name: "The People Pleaser", emoji: "😊", description: "Putting others' needs before your own." },
-  { id: "bottled", name: "The Bottled-Up One", emoji: "😤", description: "Keeping emotions tucked away inside." },
+  { id: "bottledup", name: "The Bottled-Up One", emoji: "😤", description: "Keeping emotions tucked away inside." },
   { id: "trying", name: "The One Who's Trying Again", emoji: "🌱", description: "Taking new steps toward healing." },
   { id: "lost", name: "None of these? I'm just lost.", emoji: "🔍", description: "Still figuring things out." },
 ];
@@ -36,14 +72,26 @@ const ageGroups = [
   "16-24", "25-34", "35-44", "45-54", "55+"
 ];
 
+// Memory options (new)
+const memoryPrompts = [
+  "A time when you felt silenced",
+  "The first moment you realized you needed to speak up",
+  "When someone made you feel small",
+  "A time you wished someone had listened",
+  "The last time you truly felt heard"
+];
+
 const HeroSection = () => {
   const [isVideoLoaded, setIsVideoLoaded] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [currentScene, setCurrentScene] = useState<StoryScene>(StoryScene.INTRO);
   const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
   const [selectedAge, setSelectedAge] = useState<string | null>(null);
+  const [selectedMemory, setSelectedMemory] = useState<string | null>(null);
   const [typedText, setTypedText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [showMusicControls, setShowMusicControls] = useState(false);
+  const [currentMusicTrack, setCurrentMusicTrack] = useState<MusicTrack | null>(null);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -66,6 +114,18 @@ const HeroSection = () => {
     ],
     [StoryScene.SANCTUARY]: [
       "Welcome. This is Unmute — a sanctuary for real voices, raw stories, and radical belonging."
+    ],
+    [StoryScene.MEMORY_LANE]: [
+      "We all carry moments that shaped our silence.",
+      "Select a memory prompt that resonates with you.",
+      "You don't need to share it — just hold it in your mind as we continue."
+    ],
+    [StoryScene.REFLECTION]: [
+      "That moment you're holding... it matters.",
+      "The words you didn't say then...",
+      "You can speak them now.",
+      "Or whenever you're ready.",
+      "This is a place for those unspoken words."
     ],
     [StoryScene.AGE_SELECTION]: [
       "To build your space, we need to know one thing.",
@@ -113,6 +173,28 @@ const HeroSection = () => {
       audioRef.current.muted = !audioRef.current.muted;
     }
   };
+
+  // Switch music track based on scene
+  const switchMusicTrack = (scene: StoryScene) => {
+    // Find appropriate track for this scene
+    const trackForScene = musicTracks.find(track => 
+      track.sceneTypes.includes(scene)
+    ) || musicTracks[0]; // Default to first track
+    
+    if (!audioRef.current) {
+      audioRef.current = new Audio(trackForScene.url);
+      audioRef.current.loop = true;
+      audioRef.current.volume = 0.3;
+      audioRef.current.muted = isMuted;
+    } else {
+      if (currentMusicTrack?.id !== trackForScene.id) {
+        audioRef.current.src = trackForScene.url;
+      }
+    }
+    
+    setCurrentMusicTrack(trackForScene);
+    audioRef.current.play().catch(console.error);
+  };
   
   // Type writer effect
   useEffect(() => {
@@ -136,21 +218,18 @@ const HeroSection = () => {
     }
   }, [currentScene]);
   
-  // Play sound effect when changing scenes
+  // Play sound effect when changing scenes and change music track
   useEffect(() => {
     if (currentScene) {
       playSound("click", 0.2).catch(console.error);
+      switchMusicTrack(currentScene);
     }
   }, [currentScene]);
   
   // Initialize audio for ambient sound
   useEffect(() => {
-    audioRef.current = new Audio("/sounds/ambient-sound.mp3");
-    if (audioRef.current) {
-      audioRef.current.loop = true;
-      audioRef.current.volume = 0.3;
-      audioRef.current.muted = isMuted;
-    }
+    // Initialize with first track
+    switchMusicTrack(StoryScene.INTRO);
     
     return () => {
       if (audioRef.current) {
@@ -159,15 +238,6 @@ const HeroSection = () => {
       }
     }
   }, []);
-  
-  // Play ambient sound when scene changes to noise maze
-  useEffect(() => {
-    if (currentScene === StoryScene.NOISE_MAZE && audioRef.current) {
-      audioRef.current.play().catch(console.error);
-    } else if (audioRef.current && audioRef.current.played) {
-      audioRef.current.pause();
-    }
-  }, [currentScene]);
 
   // Continue to next scene
   const continueToNextScene = () => {
@@ -184,6 +254,14 @@ const HeroSection = () => {
         setCurrentScene(StoryScene.SANCTUARY);
         break;
       case StoryScene.SANCTUARY:
+        setCurrentScene(StoryScene.MEMORY_LANE);
+        break;
+      case StoryScene.MEMORY_LANE:
+        if (selectedMemory || true) { // Always allow continued progression
+          setCurrentScene(StoryScene.REFLECTION);
+        }
+        break;
+      case StoryScene.REFLECTION:
         setCurrentScene(StoryScene.AGE_SELECTION);
         break;
       case StoryScene.AGE_SELECTION:
@@ -212,6 +290,10 @@ const HeroSection = () => {
         return "bg-gradient-to-b from-red-900/80 to-purple-900/80";
       case StoryScene.SANCTUARY:
         return "bg-gradient-to-b from-indigo-900 to-violet-900";
+      case StoryScene.MEMORY_LANE:
+        return "bg-gradient-to-b from-purple-900 to-blue-900";
+      case StoryScene.REFLECTION:
+        return "bg-gradient-to-b from-blue-900 to-indigo-900";
       case StoryScene.AGE_SELECTION:
         return "bg-gradient-to-b from-violet-900 to-blue-900";
       case StoryScene.READY:
@@ -376,6 +458,91 @@ const HeroSection = () => {
               className="mt-4 bg-white hover:bg-gray-100 text-violet-900 px-8 py-3 rounded-full text-lg font-medium"
             >
               Continue
+            </Button>
+          </motion.div>
+        );
+        
+      case StoryScene.MEMORY_LANE:
+        return (
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            className="text-center max-w-2xl"
+          >
+            <h2 className="text-3xl md:text-4xl font-bold mb-8 text-white">Memory Lane</h2>
+            
+            <div className="mb-10 text-lg md:text-xl text-white/90">
+              <p>{typedText}</p>
+            </div>
+            
+            {!isTyping && (
+              <motion.div 
+                className="grid grid-cols-1 gap-4 mb-10"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+              >
+                {memoryPrompts.map((prompt, index) => (
+                  <motion.button
+                    key={index}
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setSelectedMemory(prompt)}
+                    className={`p-4 rounded-lg text-left transition-all ${
+                      selectedMemory === prompt 
+                        ? "bg-blue-500 text-white" 
+                        : "bg-white/10 text-white/80 hover:bg-white/20"
+                    }`}
+                  >
+                    <p className="font-medium">{prompt}</p>
+                  </motion.button>
+                ))}
+              </motion.div>
+            )}
+            
+            <Button
+              onClick={continueToNextScene}
+              disabled={isTyping}
+              className="mt-4 bg-white hover:bg-gray-100 text-purple-900 px-8 py-3 rounded-full text-lg font-medium"
+            >
+              Continue
+            </Button>
+          </motion.div>
+        );
+        
+      case StoryScene.REFLECTION:
+        return (
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            className="text-center max-w-2xl"
+          >
+            <div className="w-24 h-24 mx-auto rounded-full bg-white/10 flex items-center justify-center mb-8">
+              <span className="text-4xl">💭</span>
+            </div>
+            
+            <h2 className="text-3xl md:text-4xl font-bold mb-8 text-white">A Moment of Reflection</h2>
+            
+            <div className="mb-16 text-lg md:text-xl text-white/90 space-y-4">
+              <p>{typedText}</p>
+            </div>
+            
+            {selectedMemory && !isTyping && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="mb-10 p-4 rounded-lg bg-white/10 backdrop-blur-sm"
+              >
+                <p className="italic text-white/80">"{selectedMemory}"</p>
+              </motion.div>
+            )}
+            
+            <Button
+              onClick={continueToNextScene}
+              disabled={isTyping}
+              className="mt-4 bg-white hover:bg-gray-100 text-indigo-900 px-8 py-3 rounded-full text-lg font-medium"
+            >
+              I'm Ready to Continue
             </Button>
           </motion.div>
         );
@@ -633,16 +800,37 @@ const HeroSection = () => {
       </div>
       
       {/* Audio controls */}
-      <button 
-        onClick={toggleMute} 
-        className="absolute bottom-8 right-8 z-20 bg-black/30 backdrop-blur-sm p-3 rounded-full hover:bg-black/50 transition-colors"
-      >
-        {isMuted ? (
-          <VolumeX className="h-5 w-5 text-white/80" />
-        ) : (
-          <Volume2 className="h-5 w-5 text-white/80" />
+      <div className="absolute bottom-8 right-8 z-20 flex items-center space-x-2">
+        <button 
+          onClick={() => setShowMusicControls(!showMusicControls)}
+          className="bg-black/30 backdrop-blur-sm p-3 rounded-full hover:bg-black/50 transition-colors"
+        >
+          <Music className="h-5 w-5 text-white/80" />
+        </button>
+        
+        <button 
+          onClick={toggleMute} 
+          className="bg-black/30 backdrop-blur-sm p-3 rounded-full hover:bg-black/50 transition-colors"
+        >
+          {isMuted ? (
+            <VolumeX className="h-5 w-5 text-white/80" />
+          ) : (
+            <Volume2 className="h-5 w-5 text-white/80" />
+          )}
+        </button>
+        
+        {showMusicControls && currentMusicTrack && (
+          <motion.div 
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            className="bg-black/30 backdrop-blur-sm px-4 py-2 rounded-full text-white/80 text-sm flex items-center"
+          >
+            <span className="mr-2">🎵</span>
+            <span>{currentMusicTrack.name}</span>
+          </motion.div>
         )}
-      </button>
+      </div>
       
       {/* Skip story button */}
       {currentScene !== StoryScene.READY && (
@@ -658,6 +846,22 @@ const HeroSection = () => {
           Skip Story
         </button>
       )}
+      
+      {/* Scene progress indicator */}
+      <div className="absolute top-8 left-1/2 transform -translate-x-1/2 z-20">
+        <div className="flex space-x-2">
+          {Object.values(StoryScene).map((scene, index) => (
+            <div 
+              key={scene}
+              className={`h-1 w-8 rounded ${
+                Object.values(StoryScene).indexOf(currentScene as StoryScene) >= index 
+                  ? 'bg-white' 
+                  : 'bg-white/20'
+              }`}
+            />
+          ))}
+        </div>
+      </div>
     </section>
   );
 };
