@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useCallback } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import HomeHeader from "@/components/home/HomeHeader";
@@ -26,13 +27,28 @@ const Home = () => {
     posts, 
     loading: isLoading, 
     error, 
-    refreshFeed, 
-    networkError, 
-    hasFetchedData 
+    hasMore,
+    fetchNextPage,
+    refreshFeed
   } = useFeed({
     type: activeTab,
     refreshTrigger
   });
+
+  // For compatibility with the expected interface
+  const refresh = refreshFeed;
+  const [networkError, setNetworkError] = useState(false);
+  const [hasFetchedData, setHasFetchedData] = useState(false);
+  
+  // Update status variables based on hook state
+  useEffect(() => {
+    if (error) {
+      setNetworkError(true);
+    }
+    if (posts.length > 0 || !isLoading) {
+      setHasFetchedData(true);
+    }
+  }, [error, posts, isLoading]);
 
   // Handle refresh after post creation
   const handlePostCreated = useCallback(() => {

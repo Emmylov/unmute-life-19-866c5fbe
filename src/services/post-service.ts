@@ -1,5 +1,5 @@
-
 import { supabase } from '@/integrations/supabase/client';
+import { PostType } from './content-service';
 
 // Define types for post interfaces
 export interface Post {
@@ -48,12 +48,12 @@ export interface ReelPost extends Post {
   vibe_tag?: string | null;
 }
 
-export type PostType = 'text_post' | 'image_post' | 'meme_post' | 'reel_post';
+export type PostTypeString = 'text_post' | 'image_post' | 'meme_post' | 'reel_post';
 
 export interface FeedPost {
   id: string;
-  type: PostType;
-  post_type?: PostType;  // For backward compatibility
+  type: PostType;  // Using PostType enum
+  post_type?: string;  // For backward compatibility
   user_id: string;
   created_at: string;
   updated_at?: string | null;
@@ -268,18 +268,65 @@ export const getUserPosts = async (userId: string, limit = 10, offset = 0) => {
   }
 };
 
-// Get feed posts for the current user
+// Get feed posts for the current user - use a different approach instead of querying a view
 export const getFeedPosts = async (limit = 10, offset = 0) => {
   try {
-    // Switch to use a view instead to avoid the complex query that was causing issues
-    const { data, error } = await supabase
-      .from('feed_posts_view')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1);
-
-    if (error) throw error;
-
+    // Use our custom function to get feed posts instead of querying a view
+    const fetchFeedPosts = async () => {
+      // Get current user
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData?.user?.id;
+      
+      if (!userId) {
+        throw new Error("User not authenticated");
+      }
+      
+      // Fetch posts from each table and combine them
+      const fetchTablePosts = async (table: string, postType: string) => {
+        const { data, error } = await supabase
+          .from(table)
+          .select(`
+            *,
+            profiles:user_id (
+              id, username, full_name, avatar
+            )
+          `)
+          .eq('visibility', 'public')
+          .order('created_at', { ascending: false })
+          .limit(limit);
+        
+        if (error) {
+          console.error(`Error fetching ${table}:`, error);
+          return [];
+        }
+        
+        return data?.map(post => ({ 
+          ...post, 
+          post_type: postType
+        })) || [];
+      };
+      
+      // Fetch from all post tables
+      const textPosts = await fetchTablePosts('text_posts', 'text');
+      const imagePosts = await fetchTablePosts('image_posts', 'image');
+      const reelPosts = await fetchTablePosts('reel_posts', 'reel');
+      const memePosts = await fetchTablePosts('meme_posts', 'meme');
+      
+      // Combine all posts
+      const allPosts = [
+        ...textPosts,
+        ...imagePosts,
+        ...reelPosts,
+        ...memePosts
+      ];
+      
+      // Sort by created_at and limit
+      return allPosts
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(offset, offset + limit);
+    };
+    
+    const data = await fetchFeedPosts();
     return { data, error: null };
   } catch (error) {
     console.error('Error fetching feed posts:', error);

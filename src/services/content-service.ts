@@ -5,6 +5,14 @@
 // Upload services
 export { uploadImage, uploadReelVideo } from './upload-service';
 
+// Export enums first to ensure they're available for other exports
+export enum PostType {
+  TEXT = "text",
+  IMAGE = "image",
+  REEL = "reel",
+  MEME = "meme"
+}
+
 // Export necessary functions from post-service
 export {
   hasLikedPost,
@@ -26,13 +34,13 @@ export const createPost = async (userId: string, type: string, data: any) => {
   const { createTextPost, createImagePost, createMemePost, createReelPost } = await import('./post-service');
   
   switch(type) {
-    case 'text':
+    case PostType.TEXT:
       return createTextPost(userId, data.content, data.title, data.tags, data.visibility || true, data.anonymous || false, data.emoji_mood);
-    case 'image':
+    case PostType.IMAGE:
       return createImagePost(userId, data.image_urls, data.caption, data.tags, data.visibility || true, data.anonymous || false, data.emoji_mood);
-    case 'meme':
+    case PostType.MEME:
       return createMemePost(userId, data.image_url, data.caption, data.tags, data.visibility || true, data.anonymous || false, data.emoji_mood);
-    case 'reel':
+    case PostType.REEL:
       return createReelPost(
         userId, 
         data.video_url, 
@@ -68,14 +76,6 @@ export {
 
 // Export utility functions
 export { createSafeProfile } from '@/utils/safe-data-utils';
-
-// Define and export the PostType enum
-export enum PostType {
-  TEXT = "text",
-  IMAGE = "image",
-  REEL = "reel",
-  MEME = "meme"
-}
 
 // Export types using 'export type' syntax for compatibility with isolatedModules
 export type { Post, FeedPost } from './post-service';

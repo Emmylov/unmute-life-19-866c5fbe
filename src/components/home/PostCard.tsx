@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
@@ -13,9 +12,9 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useTranslation } from "react-i18next";
-import { addComment, getComments, PostComment } from "@/services/content-service";
+import { addComment, getComments, PostComment, PostType } from "@/services/content-service";
 import { createSafeProfile } from "@/utils/safe-data-utils";
-import { FeedPost } from "@/services/post-service";
+import { FeedPost } from "@/types/feed-post";
 
 interface PostCardProps {
   post: FeedPost;
@@ -137,7 +136,7 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
   // Render different post content based on type
   const renderPostContent = () => {
     switch (post.post_type) {
-      case 'text':
+      case PostType.TEXT:
         return (
           <div className="mb-4">
             {post.title && <h2 className="text-xl font-semibold mb-2">{post.title}</h2>}
@@ -145,7 +144,7 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
           </div>
         );
         
-      case 'image':
+      case PostType.IMAGE:
         return (
           <div className="mb-4">
             {post.caption && <p className="text-gray-700 dark:text-gray-300 mb-2">{post.caption}</p>}
@@ -163,7 +162,7 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
           </div>
         );
         
-      case 'reel':
+      case PostType.REEL:
         return (
           <div className="mb-4">
             {post.caption && <p className="text-gray-700 dark:text-gray-300 mb-2">{post.caption}</p>}
@@ -179,7 +178,7 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
           </div>
         );
         
-      case 'meme':
+      case PostType.MEME:
         return (
           <div className="mb-4 relative">
             <div className="relative">

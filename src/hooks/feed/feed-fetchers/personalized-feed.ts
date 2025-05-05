@@ -14,7 +14,7 @@ export const fetchPersonalizedFeed = async (lastId?: string | null): Promise<Fee
       throw new Error("User not authenticated");
     }
 
-    // Fetch posts from separate tables since 'posts' table doesn't exist
+    // Fetch posts from separate tables
     // Get text posts
     let textPostsQuery = supabase
       .from("text_posts")

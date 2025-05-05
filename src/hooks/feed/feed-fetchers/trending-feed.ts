@@ -6,8 +6,7 @@ import { PostType } from "@/services/content-service";
 
 export const fetchTrendingFeed = async (lastId?: string | null): Promise<FeedPost[]> => {
   try {
-    // Fetch trending posts - for simplicity, using most liked posts as trending
-    // Query text_posts, image_posts, reel_posts, and meme_posts separately since 'posts' doesn't exist
+    // Fetch trending posts from separate tables since 'posts' doesn't exist
     
     // Get text posts
     let textPostsQuery = supabase

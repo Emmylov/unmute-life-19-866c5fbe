@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -36,10 +37,10 @@ export const useReel = (reelId?: string) => {
         const processedReels = data.map(reel => ({
           ...reel,
           audio: reel.audio || null,
-          // Use optional chaining or provide defaults for missing properties
-          duration: reel.duration || 0,
-          original_audio_volume: reel.original_audio_volume || 1.0,
-          overlay_audio_volume: reel.overlay_audio_volume || 0.5,
+          // Add missing properties with default values
+          duration: 0, // Default value for duration
+          original_audio_volume: 1.0, // Default audio volume
+          overlay_audio_volume: 0.5, // Default overlay volume
         }));
         setReels(processedReels);
       }
@@ -78,9 +79,10 @@ export const useReel = (reelId?: string) => {
         const processedReel = {
           ...data,
           audio: data.audio || null,
-          duration: data.duration || 0,
-          original_audio_volume: data.original_audio_volume || 1.0,
-          overlay_audio_volume: data.overlay_audio_volume || 0.5,
+          // Add missing properties with default values
+          duration: 0, // Default value for duration
+          original_audio_volume: 1.0, // Default audio volume
+          overlay_audio_volume: 0.5, // Default overlay volume
         };
         setReel(processedReel);
       }
