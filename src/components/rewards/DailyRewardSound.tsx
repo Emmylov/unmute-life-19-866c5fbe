@@ -51,7 +51,7 @@ const DailyRewardSound = ({
   return (
     <audio 
       ref={audioRef}
-      src="/notification-sound.mp3"
+      src="/sounds/reward.mp3"
       onEnded={onEnd}
     />
   );

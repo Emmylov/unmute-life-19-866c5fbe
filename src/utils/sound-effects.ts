@@ -1,13 +1,47 @@
 
 // Simple utility to play sound effects
 
+// Define sound effect types
+export type SoundEffectType = string;
+
+// Track user interaction
+let userHasInteracted = false;
+
+/**
+ * Check if the user has interacted with the page
+ * @returns Boolean indicating if user has interacted
+ */
+export const hasUserInteracted = (): boolean => {
+  return userHasInteracted;
+};
+
+/**
+ * Set up detection for user interaction with the page
+ */
+export const setupSoundInteractionDetection = (): void => {
+  const interactionEvents = ['click', 'touchstart', 'keydown'];
+  
+  const handleInteraction = () => {
+    userHasInteracted = true;
+    // Once interaction is detected, we can remove the listeners
+    interactionEvents.forEach(event => {
+      document.removeEventListener(event, handleInteraction);
+    });
+  };
+  
+  // Add listeners for common interaction events
+  interactionEvents.forEach(event => {
+    document.addEventListener(event, handleInteraction);
+  });
+};
+
 /**
  * Play a sound effect with the given volume
  * @param soundName Name of the sound file without extension
  * @param volume Volume level between 0 and 1
  * @returns Promise that resolves when the sound is loaded
  */
-export const playSound = (soundName: string, volume = 0.5): Promise<void> => {
+export const playSound = (soundName: SoundEffectType, volume = 0.5): Promise<void> => {
   return new Promise((resolve, reject) => {
     try {
       // Create audio element

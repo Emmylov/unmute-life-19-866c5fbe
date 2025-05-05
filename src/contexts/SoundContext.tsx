@@ -1,6 +1,11 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { playSound, SoundEffectType, hasUserInteracted, setupSoundInteractionDetection } from '@/utils/sound-effects';
+import { 
+  playSound, 
+  SoundEffectType, 
+  hasUserInteracted, 
+  setupSoundInteractionDetection 
+} from '@/utils/sound-effects';
 
 interface SoundContextValue {
   isSoundEnabled: boolean;

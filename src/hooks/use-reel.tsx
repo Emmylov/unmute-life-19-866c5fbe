@@ -4,12 +4,35 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
+// Define type for reel data
+interface ReelData {
+  id: string;
+  user_id: string;
+  created_at: string;
+  video_url: string;
+  thumbnail_url?: string;
+  caption?: string;
+  audio?: string;
+  storage_path?: string;
+  thumbnail_storage_path?: string;
+  // Add missing properties 
+  duration?: number;
+  original_audio_volume?: number;
+  overlay_audio_volume?: number;
+  profiles?: {
+    id: string;
+    username?: string;
+    avatar?: string;
+    full_name?: string;
+  };
+}
+
 export const useReel = (reelId?: string) => {
-  const [reels, setReels] = useState<any[]>([]);
+  const [reels, setReels] = useState<ReelData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [reel, setReel] = useState<any>(null);
+  const [reel, setReel] = useState<ReelData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   
@@ -38,9 +61,9 @@ export const useReel = (reelId?: string) => {
           ...reel,
           audio: reel.audio || null,
           // Add missing properties with default values
-          duration: 0, // Default value for duration
-          original_audio_volume: 1.0, // Default audio volume
-          overlay_audio_volume: 0.5, // Default overlay volume
+          duration: reel.duration || 0, 
+          original_audio_volume: reel.original_audio_volume || 1.0,
+          overlay_audio_volume: reel.overlay_audio_volume || 0.5,
         }));
         setReels(processedReels);
       }
@@ -80,9 +103,9 @@ export const useReel = (reelId?: string) => {
           ...data,
           audio: data.audio || null,
           // Add missing properties with default values
-          duration: 0, // Default value for duration
-          original_audio_volume: 1.0, // Default audio volume
-          overlay_audio_volume: 0.5, // Default overlay volume
+          duration: data.duration || 0,
+          original_audio_volume: data.original_audio_volume || 1.0,
+          overlay_audio_volume: data.overlay_audio_volume || 0.5,
         };
         setReel(processedReel);
       }

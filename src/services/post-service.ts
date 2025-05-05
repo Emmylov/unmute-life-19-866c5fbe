@@ -1,5 +1,13 @@
+
 import { supabase } from '@/integrations/supabase/client';
-import { PostType } from './content-service';
+
+// Define and export PostType enum
+export enum PostType {
+  TEXT = "text",
+  IMAGE = "image",
+  REEL = "reel",
+  MEME = "meme"
+}
 
 // Define types for post interfaces
 export interface Post {
@@ -268,66 +276,63 @@ export const getUserPosts = async (userId: string, limit = 10, offset = 0) => {
   }
 };
 
-// Get feed posts for the current user - use a different approach instead of querying a view
+// Get feed posts for the current user
 export const getFeedPosts = async (limit = 10, offset = 0) => {
   try {
-    // Use our custom function to get feed posts instead of querying a view
-    const fetchFeedPosts = async () => {
-      // Get current user
-      const { data: userData } = await supabase.auth.getUser();
-      const userId = userData?.user?.id;
+    // Get current user
+    const { data: userData } = await supabase.auth.getUser();
+    const userId = userData?.user?.id;
+    
+    if (!userId) {
+      throw new Error("User not authenticated");
+    }
+    
+    // Fetch posts from each table and combine them
+    const fetchTablePosts = async (table: string, postType: string) => {
+      const { data, error } = await supabase
+        .from(table)
+        .select(`
+          *,
+          profiles:user_id (
+            id, username, full_name, avatar
+          )
+        `)
+        .eq('visibility', 'public')
+        .order('created_at', { ascending: false })
+        .limit(limit);
       
-      if (!userId) {
-        throw new Error("User not authenticated");
+      if (error) {
+        console.error(`Error fetching ${table}:`, error);
+        return [];
       }
       
-      // Fetch posts from each table and combine them
-      const fetchTablePosts = async (table: string, postType: string) => {
-        const { data, error } = await supabase
-          .from(table)
-          .select(`
-            *,
-            profiles:user_id (
-              id, username, full_name, avatar
-            )
-          `)
-          .eq('visibility', 'public')
-          .order('created_at', { ascending: false })
-          .limit(limit);
-        
-        if (error) {
-          console.error(`Error fetching ${table}:`, error);
-          return [];
-        }
-        
-        return data?.map(post => ({ 
-          ...post, 
-          post_type: postType
-        })) || [];
-      };
-      
-      // Fetch from all post tables
-      const textPosts = await fetchTablePosts('text_posts', 'text');
-      const imagePosts = await fetchTablePosts('image_posts', 'image');
-      const reelPosts = await fetchTablePosts('reel_posts', 'reel');
-      const memePosts = await fetchTablePosts('meme_posts', 'meme');
-      
-      // Combine all posts
-      const allPosts = [
-        ...textPosts,
-        ...imagePosts,
-        ...reelPosts,
-        ...memePosts
-      ];
-      
-      // Sort by created_at and limit
-      return allPosts
-        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-        .slice(offset, offset + limit);
+      return data?.map(post => ({ 
+        ...post, 
+        post_type: postType
+      })) || [];
     };
     
-    const data = await fetchFeedPosts();
-    return { data, error: null };
+    // Fetch from all post tables
+    const textPosts = await fetchTablePosts('text_posts', 'text');
+    const imagePosts = await fetchTablePosts('image_posts', 'image');
+    const reelPosts = await fetchTablePosts('reel_posts', 'reel');
+    const memePosts = await fetchTablePosts('meme_posts', 'meme');
+    
+    // Combine all posts
+    const allPosts = [
+      ...textPosts,
+      ...imagePosts,
+      ...reelPosts,
+      ...memePosts
+    ];
+    
+    // Sort by created_at and limit
+    return { 
+      data: allPosts
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(offset, offset + limit), 
+      error: null 
+    };
   } catch (error) {
     console.error('Error fetching feed posts:', error);
     return { data: [], error };
@@ -452,12 +457,11 @@ export const likePost = async (
         post_id: postId,
         post_type: postType
       })
-      .select()
-      .single();
+      .select();
       
     if (error) throw error;
     
-    return { data, error: null };
+    return { data: data[0], error: null };
   } catch (error) {
     console.error(`Error liking post:`, error);
     return { data: null, error };
@@ -479,8 +483,7 @@ export const unlikePost = async (
         post_id: postId,
         post_type: postType
       })
-      .select()
-      .single();
+      .select();
       
     if (error) {
       // If the error is "No rows found", the user hadn't liked the post
@@ -490,7 +493,8 @@ export const unlikePost = async (
       throw error;
     }
     
-    return { data, error: null };
+    const result = data && data.length > 0 ? data[0] : { success: true };
+    return { data: result, error: null };
   } catch (error) {
     console.error(`Error unliking post:`, error);
     return { data: null, error };
