@@ -57,14 +57,19 @@ export const useReel = (reelId?: string) => {
       
       if (data) {
         // Map the data to include optional properties with defaults
-        const processedReels = data.map(reel => ({
-          ...reel,
-          audio: reel.audio || null,
-          // Set default values for properties that might not exist in the database
-          duration: reel.duration !== undefined ? reel.duration : 0, 
-          original_audio_volume: reel.original_audio_volume !== undefined ? reel.original_audio_volume : 1.0,
-          overlay_audio_volume: reel.overlay_audio_volume !== undefined ? reel.overlay_audio_volume : 0.5,
-        }));
+        const processedReels = data.map(reel => {
+          // Use type assertion to tell TypeScript this object has the expected shape
+          const reelData = reel as any;
+          
+          return {
+            ...reelData,
+            audio: reelData.audio || null,
+            // Set default values for properties that might not exist in the database
+            duration: reelData.duration !== undefined ? reelData.duration : 0, 
+            original_audio_volume: reelData.original_audio_volume !== undefined ? reelData.original_audio_volume : 1.0,
+            overlay_audio_volume: reelData.overlay_audio_volume !== undefined ? reelData.overlay_audio_volume : 0.5,
+          };
+        });
         setReels(processedReels);
       }
       
@@ -98,14 +103,17 @@ export const useReel = (reelId?: string) => {
       if (error) throw error;
       
       if (data) {
+        // Use type assertion to tell TypeScript this object has the expected shape
+        const reelData = data as any;
+        
         // Add default values for potentially missing properties
         const processedReel = {
-          ...data,
-          audio: data.audio || null,
+          ...reelData,
+          audio: reelData.audio || null,
           // Ensure these properties have default values if they don't exist
-          duration: data.duration !== undefined ? data.duration : 0,
-          original_audio_volume: data.original_audio_volume !== undefined ? data.original_audio_volume : 1.0,
-          overlay_audio_volume: data.overlay_audio_volume !== undefined ? data.overlay_audio_volume : 0.5,
+          duration: reelData.duration !== undefined ? reelData.duration : 0,
+          original_audio_volume: reelData.original_audio_volume !== undefined ? reelData.original_audio_volume : 1.0,
+          overlay_audio_volume: reelData.overlay_audio_volume !== undefined ? reelData.overlay_audio_volume : 0.5,
         };
         setReel(processedReel);
       }
