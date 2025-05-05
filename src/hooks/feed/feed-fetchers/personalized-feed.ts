@@ -1,141 +1,74 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { createSafeProfile } from "@/utils/safe-data-utils";
-import { FeedPost, PostType } from "@/services/post-service";
+import { FeedPost } from "@/types/feed-post";
+import { adaptToFeedPost } from "./utils";
 
-export async function fetchPersonalizedFeed(
-  userId: string, 
-  interests: string[] | undefined,
-  limit: number = 10, 
-  offset: number = 0
-): Promise<FeedPost[]> {
-  // If userId is not provided, return empty array
-  if (!userId) {
-    return [];
-  }
-  
+export const fetchPersonalizedFeed = async (lastId?: string | null): Promise<FeedPost[]> => {
   try {
-    // If interests are defined, fetch posts with matching tags
-    // Otherwise, fetch general content
-    
-    // Image posts with matching interests
-    const { data: imagePosts, error: imageError } = await supabase
-      .from('image_posts')
-      .select(`
-        *,
-        profiles:user_id (*)
-      `)
-      .eq('visibility', 'public')
-      .order('created_at', { ascending: false })
-      .limit(limit / 3);
-    
-    if (imageError) {
-      console.error('Error fetching personalized image posts:', imageError);
+    // Get current user
+    const { data: userData } = await supabase.auth.getUser();
+    const userId = userData?.user?.id;
+
+    if (!userId) {
+      throw new Error("User not authenticated");
     }
-    
-    // Text posts with matching interests
-    const { data: textPosts, error: textError } = await supabase
-      .from('text_posts')
-      .select(`
-        *,
-        profiles:user_id (*)
-      `)
-      .eq('visibility', 'public')
-      .order('created_at', { ascending: false })
-      .limit(limit / 3);
-    
-    if (textError) {
-      console.error('Error fetching personalized text posts:', textError);
+
+    // Fetch posts based on personalization algorithm
+    // For simplicity, we're just getting recent posts but could be extended with user preferences
+    let query = supabase
+      .from("posts")
+      .select(
+        `
+        id,
+        user_id,
+        post_type,
+        content,
+        title,
+        image_urls,
+        video_url,
+        caption,
+        thumbnail_url,
+        emoji_mood,
+        created_at,
+        visibility,
+        likes_count,
+        comments_count,
+        profiles (
+          id,
+          username,
+          avatar,
+          full_name
+        ),
+        tags
+        `
+      )
+      .eq("visibility", "public")
+      .order("created_at", { ascending: false })
+      .limit(10);
+
+    // Add pagination if lastId is provided
+    if (lastId) {
+      query = query.lt("id", lastId);
     }
-    
-    // Reel posts with matching interests
-    const { data: reelPosts, error: reelError } = await supabase
-      .from('reel_posts')
-      .select(`
-        *,
-        profiles:user_id (*)
-      `)
-      .eq('visibility', 'public')
-      .order('created_at', { ascending: false })
-      .limit(limit / 3);
-    
-    if (reelError) {
-      console.error('Error fetching personalized reel posts:', reelError);
+
+    const { data, error } = await query;
+
+    if (error) {
+      throw error;
     }
-    
-    // Transform and combine all posts
-    const result: FeedPost[] = [];
-    
-    // Add image posts
-    if (imagePosts) {
-      result.push(...imagePosts.map(post => {
-        // Create a safe profile with default values
-        const safeProfile = createSafeProfile(post.profiles);
-            
-        return {
-          id: post.id,
-          user_id: post.user_id,
-          post_type: 'image' as PostType,
-          content: null,
-          image_urls: post.image_urls,
-          caption: post.caption,
-          created_at: post.created_at,
-          visibility: post.visibility || 'public',
-          profiles: safeProfile,
-          tags: post.tags || null
-        };
-      }));
+
+    if (!data || data.length === 0) {
+      return [];
     }
-    
-    // Add text posts
-    if (textPosts) {
-      result.push(...textPosts.map(post => {
-        // Create a safe profile with default values
-        const safeProfile = createSafeProfile(post.profiles);
-            
-        return {
-          id: post.id,
-          user_id: post.user_id,
-          post_type: 'text' as PostType,
-          content: post.content,
-          title: post.title || null,
-          emoji_mood: post.emoji_mood || null,
-          created_at: post.created_at,
-          visibility: post.visibility || 'public',
-          profiles: safeProfile,
-          tags: post.tags || null
-        };
-      }));
-    }
-    
-    // Add reel posts
-    if (reelPosts) {
-      result.push(...reelPosts.map(post => {
-        // Create a safe profile with default values
-        const safeProfile = createSafeProfile(post.profiles);
-            
-        return {
-          id: post.id,
-          user_id: post.user_id,
-          post_type: 'reel' as PostType,
-          content: null,
-          video_url: post.video_url,
-          caption: post.caption || null,
-          thumbnail_url: post.thumbnail_url || null,
-          created_at: post.created_at,
-          visibility: post.visibility || 'public',
-          profiles: safeProfile,
-          tags: post.tags || null
-        };
-      }));
-    }
-    
-    // Sort all posts by creation date, newest first
-    return result.sort((a, b) => 
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    );
+
+    // Transform the data to match the FeedPost type
+    const feedPosts: FeedPost[] = data.map((post) => {
+      return adaptToFeedPost(post);
+    });
+
+    return feedPosts;
   } catch (error) {
-    console.error('Error fetching personalized feed:', error);
-    return [];
+    console.error("Error fetching personalized feed:", error);
+    throw error;
   }
-}
+};

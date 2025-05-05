@@ -27,11 +27,11 @@ export const createPost = async (userId: string, type: string, data: any) => {
   
   switch(type) {
     case 'text':
-      return createTextPost(userId, data.content, data.title, data.tags, true, false, data.emoji_mood);
+      return createTextPost(userId, data.content, data.title, data.tags, data.visibility || true, data.anonymous || false, data.emoji_mood);
     case 'image':
-      return createImagePost(userId, data.image_urls, data.caption, data.tags, true, false, data.emoji_mood);
+      return createImagePost(userId, data.image_urls, data.caption, data.tags, data.visibility || true, data.anonymous || false, data.emoji_mood);
     case 'meme':
-      return createMemePost(userId, data.image_url, data.caption, data.tags, true, false, data.emoji_mood);
+      return createMemePost(userId, data.image_url, data.caption, data.tags, data.visibility || true, data.anonymous || false, data.emoji_mood);
     case 'reel':
       return createReelPost(
         userId, 
@@ -45,8 +45,8 @@ export const createPost = async (userId: string, type: string, data: any) => {
         data.original_audio_volume,
         data.overlay_audio_volume,
         data.tags,
-        true,
-        true,
+        data.visibility || true,
+        data.public || true,
         data.vibe_tag,
         data.emoji_mood
       );

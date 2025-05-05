@@ -1,102 +1,89 @@
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { createSafeProfile } from '@/utils/safe-data-utils';
 
-export interface Reel {
-  id: string;
-  user_id: string;
-  video_url: string;
-  caption?: string | null;
-  thumbnail_url?: string | null;
-  created_at: string;
-  tags?: string[] | null;
-  visibility?: string;
-  audio?: string | null;
-  audio_type?: string | null;
-  audio_url?: string | null;
-  duration?: number | null;
-  original_audio_volume?: number | null;
-  overlay_audio_volume?: number | null;
-  profiles?: {
-    id: string;
-    username: string | null;
-    avatar: string | null;
-    full_name: string | null;
-  } | null;
-}
-
-export const useReel = (reelId: string) => {
-  const [reel, setReel] = useState<Reel | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  const fetchReel = async () => {
-    if (!reelId) {
-      setIsLoading(false);
-      return;
-    }
-
+export const useReel = () => {
+  const [reels, setReels] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const navigate = useNavigate();
+  
+  const fetchReels = async () => {
     try {
-      setIsLoading(true);
-      setError(null);
-
+      setLoading(true);
       const { data, error } = await supabase
-        .from('reel_posts')
+        .from('reels')
         .select(`
           *,
-          profiles:user_id (
-            id, username, avatar, full_name
+          profiles (
+            id,
+            username,
+            avatar,
+            full_name
           )
         `)
-        .eq('id', reelId)
-        .single();
-
+        .order('created_at', { ascending: false })
+        .limit(10);
+      
       if (error) throw error;
-
-      if (!data) {
-        throw new Error('Reel not found');
+      
+      if (data) {
+        // Map the data to include optional properties with defaults
+        const processedReels = data.map(reel => ({
+          ...reel,
+          audio: reel.audio || null,
+          duration: reel.duration || 0,
+          original_audio_volume: reel.original_audio_volume || 1.0,
+          overlay_audio_volume: reel.overlay_audio_volume || 0.5,
+        }));
+        setReels(processedReels);
       }
       
-      // Create a properly typed safe reel object with default values
-      const safeReel: Reel = {
-        id: data.id,
-        user_id: data.user_id,
-        video_url: data.video_url,
-        caption: data.caption || null,
-        thumbnail_url: data.thumbnail_url || null,
-        created_at: data.created_at,
-        tags: data.tags || null,
-        visibility: data.visibility || 'public',
-        audio_type: data.audio_type || null,
-        audio_url: data.audio_url || null,
-        // Use nullish coalescing for properties that might not exist
-        audio: data.audio || data.audio_url || null,
-        duration: data.duration !== undefined ? data.duration : null,
-        original_audio_volume: data.original_audio_volume !== undefined ? data.original_audio_volume : null,
-        overlay_audio_volume: data.overlay_audio_volume !== undefined ? data.overlay_audio_volume : null,
-        // Handle profiles data safely
-        profiles: data.profiles ? createSafeProfile(data.profiles) : null
-      };
-
-      setReel(safeReel);
+      setLoading(false);
     } catch (err) {
-      console.error('Error fetching reel:', err);
-      setError(err instanceof Error ? err : new Error('Failed to load reel'));
-      toast.error('Could not load the reel. Please try again.');
-    } finally {
-      setIsLoading(false);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch reels';
+      console.error('Error fetching reels:', errorMessage);
+      setError(errorMessage);
+      setLoading(false);
+      toast.error('Could not load reels');
     }
   };
-
-  useEffect(() => {
-    fetchReel();
-  }, [reelId]);
-
-  const refetch = () => {
-    fetchReel();
+  
+  const nextReel = () => {
+    if (currentIndex < reels.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+    }
   };
-
-  return { reel, isLoading, error, refetch };
+  
+  const prevReel = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex(currentIndex - 1);
+    }
+  };
+  
+  const goToProfile = (username: string) => {
+    if (!username) return;
+    navigate(`/profile/${username}`);
+  };
+  
+  useEffect(() => {
+    fetchReels();
+  }, []);
+  
+  return {
+    reels,
+    loading,
+    error,
+    currentIndex,
+    currentReel: reels[currentIndex],
+    nextReel,
+    prevReel,
+    goToProfile,
+    fetchReels
+  };
 };
+
+export default useReel;
