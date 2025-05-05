@@ -1,23 +1,27 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { 
   hasLikedPost, 
   getPostLikesCount, 
-  checkPostExists 
-} from '@/services/post-service';
+  checkPostExists,
+  likePost,
+  unlikePost
+} from '@/services/content-service';
 
-export const useSocialActions = (postId: string, postType: string) => {
+export const useSocialActions = (postId?: string, postType?: string) => {
   const { user } = useAuth();
   const [liked, setLiked] = useState<boolean>(false);
   const [likesCount, setLikesCount] = useState<number>(0);
   const [exists, setExists] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(true);
+  const [isLiking, setIsLiking] = useState<Record<string, boolean>>({});
+  const [loadingFollowState, setLoadingFollowState] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    if (!postId || !user) return;
+    if (!postId || !user || !postType) return;
 
     const checkLikeStatus = async () => {
       try {
@@ -50,7 +54,7 @@ export const useSocialActions = (postId: string, postType: string) => {
   }, [postId, postType, user]);
 
   const toggleLike = async () => {
-    if (!user || !postId || !exists) return;
+    if (!user || !postId || !postType || !exists) return;
     
     try {
       // Optimistically update UI
@@ -70,33 +74,17 @@ export const useSocialActions = (postId: string, postType: string) => {
       // Update like in database
       if (newLikeState) {
         // Like the post
-        const { error } = await supabase
-          .from('post_likes')
-          .insert({
-            user_id: user.id,
-            post_id: postId,
-            post_type: postType
-          });
-          
-        if (error) throw error;
+        await likePost(user.id, postId, postType);
       } else {
         // Unlike the post
-        const { error } = await supabase
-          .from('post_likes')
-          .delete()
-          .match({
-            user_id: user.id,
-            post_id: postId,
-            post_type: postType
-          });
-          
-        if (error) throw error;
+        await unlikePost(user.id, postId, postType);
       }
       
       // Refresh count
       const count = await getPostLikesCount(postId, postType);
       setLikesCount(count || 0);
       
+      return newLikeState;
     } catch (error) {
       console.error('Error toggling like:', error);
       
@@ -105,6 +93,95 @@ export const useSocialActions = (postId: string, postType: string) => {
       setLikesCount(prevCount => liked ? prevCount + 1 : Math.max(0, prevCount - 1));
       
       toast.error("Couldn't update your reaction. Please try again.");
+      return liked;
+    }
+  };
+
+  // Add toggle follow functionality
+  const toggleFollow = async (userId: string) => {
+    if (!user) {
+      toast.error("Please sign in to follow users");
+      return false;
+    }
+    
+    setLoadingFollowState(prev => ({ ...prev, [userId]: true }));
+    
+    try {
+      // Check if already following
+      const isFollowing = await checkFollowStatus(userId);
+      
+      if (isFollowing) {
+        // Unfollow
+        await supabase
+          .from('user_follows')
+          .delete()
+          .match({
+            follower_id: user.id,
+            following_id: userId
+          });
+      } else {
+        // Follow
+        await supabase
+          .from('user_follows')
+          .insert({
+            follower_id: user.id,
+            following_id: userId
+          });
+      }
+      
+      return !isFollowing;
+    } catch (error) {
+      console.error('Error toggling follow:', error);
+      toast.error("Couldn't update follow status. Please try again.");
+      return false;
+    } finally {
+      setLoadingFollowState(prev => ({ ...prev, [userId]: false }));
+    }
+  };
+  
+  // Add check follow status functionality
+  const checkFollowStatus = async (userId: string) => {
+    if (!user) return false;
+    
+    try {
+      const { data } = await supabase
+        .from('user_follows')
+        .select('*')
+        .eq('follower_id', user.id)
+        .eq('following_id', userId)
+        .single();
+        
+      return !!data;
+    } catch (error) {
+      return false;
+    }
+  };
+  
+  // Add toggle like post functionality
+  const toggleLikePost = async (postId: string, postType: string) => {
+    if (!user) {
+      toast.error("Please sign in to like posts");
+      return false;
+    }
+    
+    setIsLiking(prev => ({ ...prev, [postId]: true }));
+    
+    try {
+      const hasLiked = await hasLikedPost(user.id, postId, postType);
+      
+      if (hasLiked) {
+        await unlikePost(user.id, postId, postType);
+      } else {
+        await likePost(user.id, postId, postType);
+      }
+      
+      return !hasLiked;
+    } catch (error) {
+      console.error('Error toggling like:', error);
+      toast.error("Couldn't update like status. Please try again.");
+      return false;
+    } finally {
+      setIsLiking(prev => ({ ...prev, [postId]: false }));
     }
   };
 
@@ -113,6 +190,13 @@ export const useSocialActions = (postId: string, postType: string) => {
     likesCount,
     exists,
     loading,
-    toggleLike
+    toggleLike,
+    toggleFollow,
+    checkFollowStatus,
+    loadingFollowState,
+    toggleLikePost,
+    hasLikedPost,
+    getPostLikesCount,
+    isLiking
   };
 };

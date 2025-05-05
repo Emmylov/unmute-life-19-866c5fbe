@@ -8,9 +8,9 @@ export const createUnifiedTextPost = async (
   content: string,
   title?: string,
   tags?: string[],
+  moodVibe?: string,
   allowComments: boolean = true,
-  isAnonymous: boolean = false,
-  moodVibe?: string
+  isAnonymous: boolean = false
 ) => {
   return createTextPost(userId, content, title, tags, allowComments, isAnonymous, moodVibe);
 };

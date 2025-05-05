@@ -53,6 +53,7 @@ export type PostType = 'text_post' | 'image_post' | 'meme_post' | 'reel_post';
 export interface FeedPost {
   id: string;
   type: PostType;
+  post_type?: PostType;  // For backward compatibility
   user_id: string;
   created_at: string;
   updated_at?: string | null;
@@ -66,6 +67,8 @@ export interface FeedPost {
   tags?: string[] | null;
   emoji_mood?: string | null;
   visibility?: string | null;
+  likes_count?: number;
+  comments_count?: number;
   profiles?: {
     id: string;
     username?: string | null;

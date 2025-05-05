@@ -16,7 +16,44 @@ export {
   createMemePost,
   getUserPosts,
   getFeedPosts,
+  likePost,
+  unlikePost,
+  getLikeCount,
 } from './post-service';
+
+// Add missing createPost function for backward compatibility
+export const createPost = async (userId: string, type: string, data: any) => {
+  const { createTextPost, createImagePost, createMemePost, createReelPost } = await import('./post-service');
+  
+  switch(type) {
+    case 'text':
+      return createTextPost(userId, data.content, data.title, data.tags, true, false, data.emoji_mood);
+    case 'image':
+      return createImagePost(userId, data.image_urls, data.caption, data.tags, true, false, data.emoji_mood);
+    case 'meme':
+      return createMemePost(userId, data.image_url, data.caption, data.tags, true, false, data.emoji_mood);
+    case 'reel':
+      return createReelPost(
+        userId, 
+        data.video_url, 
+        data.thumbnail_url, 
+        data.caption, 
+        data.audio, 
+        data.audio_type,
+        data.audio_url,
+        data.duration,
+        data.original_audio_volume,
+        data.overlay_audio_volume,
+        data.tags,
+        true,
+        true,
+        data.vibe_tag,
+        data.emoji_mood
+      );
+    default:
+      throw new Error(`Unsupported post type: ${type}`);
+  }
+};
 
 // Comment services
 export {

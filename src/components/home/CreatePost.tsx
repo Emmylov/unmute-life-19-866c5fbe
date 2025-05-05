@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Image as ImageIcon, Smile, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { createPost } from "@/services/content-service";
+import { createPost, createTextPost } from "@/services/content-service";
 import { toast } from "sonner";
 import MoodSelector from "@/components/home/MoodSelector";
 import { createUnifiedTextPost } from "@/services/unified-post-service";
@@ -38,7 +38,15 @@ const CreatePost = ({ profile, onPostCreated }: CreatePostProps) => {
     try {
       // Try to use the unified_posts table first
       try {
-        await createUnifiedTextPost(user.id, postText.trim(), undefined, undefined, moodEmoji || undefined);
+        await createUnifiedTextPost(
+          user.id, 
+          postText.trim(), 
+          undefined, 
+          undefined, 
+          moodEmoji || undefined,
+          true, // allowComments
+          false // isAnonymous
+        );
         
         // Clear form
         setPostText("");

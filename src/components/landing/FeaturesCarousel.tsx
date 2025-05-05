@@ -49,8 +49,8 @@ const FeaturesCarousel: React.FC = () => {
     setCurrentIndex((prevIndex) => (prevIndex === 0 ? features.length - 1 : prevIndex - 1));
   };
 
-  // Fix: Make sure the handler expects a number parameter
-  const handleSelect = (index: number) => {
+  // Fixed: Now the function accepts a React event
+  const handleSelect = (index: number) => () => {
     setCurrentIndex(index);
   };
 
@@ -106,7 +106,7 @@ const FeaturesCarousel: React.FC = () => {
           {features.map((_, index) => (
             <button
               key={index}
-              onClick={() => handleSelect(index)}
+              onClick={handleSelect(index)} // Fixed: Now returns a function
               className={`w-2.5 h-2.5 rounded-full transition-colors ${
                 index === currentIndex ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'
               }`}
