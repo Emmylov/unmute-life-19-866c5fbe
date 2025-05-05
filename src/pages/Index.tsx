@@ -2,28 +2,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { 
-  ArrowDown, 
-  Headphones, 
-  Mic, 
-  Users, 
-  Heart, 
-  Video,
-  Mail
-} from "lucide-react";
 import useAuthGuard from "@/hooks/use-auth-guard";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
 import { playSound } from "@/utils/sound-effects";
 import SEO from "@/components/shared/SEO";
-import HeroSection from "@/components/landing/HeroSection";
-import JourneyQuiz from "@/components/landing/JourneyQuiz";
-import WhySection from "@/components/landing/WhySection";
-import FeaturesCarousel from "@/components/landing/FeaturesCarousel";
-import FounderVideoSection from "@/components/landing/FounderVideoSection";
-import JourneyCTA from "@/components/landing/JourneyCTA";
-import TestimonialsSection from "@/components/landing/TestimonialsSection";
-import LandingFooter from "@/components/landing/LandingFooter";
+import UnmuteExperience from "@/components/landing/UnmuteExperience";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -113,31 +97,7 @@ const Index = () => {
         description="Welcome to Unmute - a safe space to be loud. Express yourself authentically, connect deeply, and find your community. No filters, just real connections."
       />
       
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-unmute-purple/5 to-unmute-pink/5 overflow-hidden">
-        {/* Hero Section */}
-        <HeroSection />
-        
-        {/* Journey Quiz */}
-        <JourneyQuiz />
-        
-        {/* Why Section */}
-        <WhySection />
-        
-        {/* Features Carousel */}
-        <FeaturesCarousel />
-        
-        {/* Founder Video */}
-        <FounderVideoSection />
-        
-        {/* Journey CTA */}
-        <JourneyCTA />
-        
-        {/* Testimonials */}
-        <TestimonialsSection />
-        
-        {/* Footer */}
-        <LandingFooter />
-      </div>
+      <UnmuteExperience />
     </>
   );
 };

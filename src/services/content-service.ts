@@ -21,7 +21,7 @@ export {
   getLikeCount,
 } from './post-service';
 
-// Add missing createPost function for backward compatibility
+// Add createPost function for backward compatibility
 export const createPost = async (userId: string, type: string, data: any) => {
   const { createTextPost, createImagePost, createMemePost, createReelPost } = await import('./post-service');
   
@@ -69,8 +69,16 @@ export {
 // Export utility functions
 export { createSafeProfile } from '@/utils/safe-data-utils';
 
+// Define and export the PostType enum
+export enum PostType {
+  TEXT = "text",
+  IMAGE = "image",
+  REEL = "reel",
+  MEME = "meme"
+}
+
 // Export types using 'export type' syntax for compatibility with isolatedModules
-export type { Post, FeedPost, PostType } from './post-service';
+export type { Post, FeedPost } from './post-service';
 export type { PostComment } from './comment-service';
 
 // Message services
