@@ -21,7 +21,7 @@ const featuresByAvatar = {
     { icon: '🧩', title: 'Self-Priority Rooms', description: 'Put yourself first for once' }
   ],
   bottledup: [
-    { icon: '🎭', title: 'Expression Space', description: 'Release what you've been holding in' },
+    { icon: '🎭', title: 'Expression Space', description: "Release what you've been holding in" },
     { icon: '🔥', title: 'Anger Room', description: 'Safely express bottled emotions' },
     { icon: '🗣️', title: 'Voice Notes', description: 'Say it out loud when words are hard' }
   ],
@@ -33,7 +33,7 @@ const featuresByAvatar = {
   lost: [
     { icon: '🧭', title: 'Finding Direction', description: 'Explore possibilities without pressure' },
     { icon: '👋', title: 'Welcome Circle', description: 'Find your people, one conversation at a time' },
-    { icon: '📝', title: 'Discovery Journal', description: 'Track what resonates and what doesn't' }
+    { icon: '📝', title: 'Discovery Journal', description: "Track what resonates and what doesn't" }
   ]
 };
 
