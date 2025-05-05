@@ -49,7 +49,7 @@ const FeaturesCarousel: React.FC = () => {
     setCurrentIndex((prevIndex) => (prevIndex === 0 ? features.length - 1 : prevIndex - 1));
   };
 
-  // Fix: Use a function that expects a number parameter rather than an event
+  // Fix: Make sure the handler expects a number parameter
   const handleSelect = (index: number) => {
     setCurrentIndex(index);
   };

@@ -1,151 +1,118 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { useTranslation } from 'react-i18next';
 import { 
-  likePost, 
   hasLikedPost, 
   getPostLikesCount, 
   checkPostExists 
 } from '@/services/post-service';
-import { supabase } from '@/integrations/supabase/client';
-import { useProfileCounters } from './use-profile-counters';
 
-export const useSocialActions = () => {
+export const useSocialActions = (postId: string, postType: string) => {
   const { user } = useAuth();
-  const [loadingFollowState, setLoadingFollowState] = useState<Record<string, boolean>>({});
-  const [isLiking, setIsLiking] = useState<Record<string, boolean>>({});
-  const { t } = useTranslation();
-  const { incrementProfileCounter, decrementProfileCounter } = useProfileCounters();
-  
-  // Check if following a user
-  const checkFollowStatus = useCallback(async (userId: string): Promise<boolean> => {
-    if (!user) return false;
-    
-    try {
-      const { data, error } = await supabase
-        .from('user_follows')
-        .select('*')
-        .eq('follower_id', user.id)
-        .eq('following_id', userId)
-        .maybeSingle();
-        
-      if (error) throw error;
-      return !!data;
-    } catch (error) {
-      console.error('Error checking follow status:', error);
-      return false;
-    }
-  }, [user]);
+  const [liked, setLiked] = useState<boolean>(false);
+  const [likesCount, setLikesCount] = useState<number>(0);
+  const [exists, setExists] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(true);
 
-  // Toggle like on a post
-  const toggleLikePost = useCallback(async (postId: string, postType: string): Promise<boolean> => {
-    if (!user) {
-      toast.error(t('auth.signInRequired', 'Please sign in to like posts'));
-      return false;
-    }
+  useEffect(() => {
+    if (!postId || !user) return;
+
+    const checkLikeStatus = async () => {
+      try {
+        setLoading(true);
+        
+        // Check if post exists
+        const postExists = await checkPostExists(postId, postType);
+        setExists(!!postExists);
+        
+        if (!postExists) {
+          setLoading(false);
+          return;
+        }
+        
+        // Check if user has liked post
+        const hasLiked = await hasLikedPost(user.id, postId, postType);
+        setLiked(!!hasLiked);
+        
+        // Get likes count
+        const count = await getPostLikesCount(postId, postType);
+        setLikesCount(count || 0);
+      } catch (error) {
+        console.error('Error checking like status:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkLikeStatus();
+  }, [postId, postType, user]);
+
+  const toggleLike = async () => {
+    if (!user || !postId || !exists) return;
     
     try {
-      setIsLiking(prev => ({ ...prev, [postId]: true }));
+      // Optimistically update UI
+      const newLikeState = !liked;
+      setLiked(newLikeState);
+      setLikesCount(prevCount => newLikeState ? prevCount + 1 : Math.max(0, prevCount - 1));
       
-      // First check if post exists
+      // Check if post exists
       const postExists = await checkPostExists(postId, postType);
       
       if (!postExists) {
-        console.log(`Post ${postId} of type ${postType} does not exist`);
-        toast.error(t('common.error.postDeleted', 'This post is no longer available'));
-        return false;
+        setExists(false);
+        toast.error("This post no longer exists.");
+        return;
       }
       
-      // Use our new post service to toggle like
-      const liked = await likePost(postId, user.id, postType);
-      return liked;
-    } catch (error: any) {
-      // Provide specific error message
-      toast.error(t('common.error.likePost', 'Failed to update like status'));
-      console.error('Error toggling like:', error);
-      return false;
-    } finally {
-      setIsLiking(prev => ({ ...prev, [postId]: false }));
-    }
-  }, [user, t]);
-  
-  // Toggle following a user
-  const toggleFollow = useCallback(async (userId: string): Promise<boolean> => {
-    if (!user) {
-      toast.error(t('auth.signInRequired', 'Please sign in to follow users'));
-      return false;
-    }
-    
-    try {
-      setLoadingFollowState(prev => ({ ...prev, [userId]: true }));
-      
-      // Check if already following
-      const { data, error: checkError } = await supabase
-        .from('user_follows')
-        .select('*')
-        .eq('follower_id', user.id)
-        .eq('following_id', userId)
-        .maybeSingle();
-        
-      if (checkError) throw checkError;
-      
-      if (data) {
-        // Unfollow
-        const { error: unfollowError } = await supabase
-          .from('user_follows')
-          .delete()
-          .eq('follower_id', user.id)
-          .eq('following_id', userId);
-          
-        if (unfollowError) throw unfollowError;
-        
-        // Update followers count for the user being unfollowed
-        await decrementProfileCounter(userId, 'followers');
-          
-        // Update following count for the current user
-        await decrementProfileCounter(user.id, 'following');
-        
-        toast.success(t('common.success.unfollowed', 'Unfollowed user'));
-        return false;
-      } else {
-        // Follow
-        const { error: followError } = await supabase
-          .from('user_follows')
+      // Update like in database
+      if (newLikeState) {
+        // Like the post
+        const { error } = await supabase
+          .from('post_likes')
           .insert({
-            follower_id: user.id,
-            following_id: userId
+            user_id: user.id,
+            post_id: postId,
+            post_type: postType
           });
           
-        if (followError) throw followError;
-        
-        // Update followers count for the user being followed
-        await incrementProfileCounter(userId, 'followers');
+        if (error) throw error;
+      } else {
+        // Unlike the post
+        const { error } = await supabase
+          .from('post_likes')
+          .delete()
+          .match({
+            user_id: user.id,
+            post_id: postId,
+            post_type: postType
+          });
           
-        // Update following count for the current user
-        await incrementProfileCounter(user.id, 'following');
-        
-        toast.success(t('common.success.following', 'Following user'));
-        return true;
+        if (error) throw error;
       }
-    } catch (error: any) {
-      toast.error(t('common.error.followStatus', 'Error updating follow status'));
-      console.error('Error toggling follow:', error);
-      return false;
-    } finally {
-      setLoadingFollowState(prev => ({ ...prev, [userId]: false }));
+      
+      // Refresh count
+      const count = await getPostLikesCount(postId, postType);
+      setLikesCount(count || 0);
+      
+    } catch (error) {
+      console.error('Error toggling like:', error);
+      
+      // Revert optimistic update
+      setLiked(!liked);
+      setLikesCount(prevCount => liked ? prevCount + 1 : Math.max(0, prevCount - 1));
+      
+      toast.error("Couldn't update your reaction. Please try again.");
     }
-  }, [user, t, incrementProfileCounter, decrementProfileCounter]);
+  };
 
   return {
-    toggleFollow,
-    checkFollowStatus,
-    toggleLikePost,
-    hasLikedPost,
-    getPostLikesCount,
-    loadingFollowState,
-    isLiking,
-    checkPostExists
+    liked,
+    likesCount,
+    exists,
+    loading,
+    toggleLike
   };
 };

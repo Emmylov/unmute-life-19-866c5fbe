@@ -71,7 +71,7 @@ export const useReel = (reelId: string) => {
         visibility: data.visibility || 'public',
         audio_type: data.audio_type || null,
         audio_url: data.audio_url || null,
-        // Use nullish coalescing and optional chaining for properties that might not exist in data
+        // Use nullish coalescing for properties that might not exist
         audio: data.audio || data.audio_url || null,
         duration: data.duration !== undefined ? data.duration : null,
         original_audio_volume: data.original_audio_volume !== undefined ? data.original_audio_volume : null,

@@ -7,8 +7,6 @@ export { uploadImage, uploadReelVideo } from './upload-service';
 
 // Export necessary functions from post-service
 export {
-  getUserPosts,
-  getFeedPosts,
   hasLikedPost,
   getPostLikesCount,
   checkPostExists,
@@ -16,7 +14,8 @@ export {
   createImagePost,
   createReelPost,
   createMemePost,
-  createPost,
+  getUserPosts,
+  getFeedPosts,
 } from './post-service';
 
 // Comment services
