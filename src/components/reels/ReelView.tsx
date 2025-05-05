@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Heart, MessageCircle, Share, Volume2, VolumeX } from "lucide-react";
 import { useSocialActions } from "@/hooks/use-social-actions";
 import { formatTimeAgo } from "@/lib/utils";
-import { ErrorDisplay } from "@/components/ui/error-display";
+import { ErrorDisplay } from '@/components/ui/error-display';
 import { Link } from "react-router-dom";
 import { ReelWithUser } from "@/types/reels";
 
@@ -42,7 +42,7 @@ const ReelView: React.FC<ReelViewProps> = ({
   totalReels
 }) => {
   const { reelId } = useParams<{ reelId: string }>();
-  const { reel: singleReel, isLoading, error, refetch } = useReel(reelId || "");
+  const { reel: singleReel, loading, error, refetch } = useReel(reelId || "");
   const { user } = useAuth();
   const { toggleFollow, checkFollowStatus, toggleLikePost, hasLikedPost, getPostLikesCount } = useSocialActions();
   const [isFollowing, setIsFollowing] = useState(false);
@@ -134,7 +134,7 @@ const ReelView: React.FC<ReelViewProps> = ({
     }
   };
 
-  if (isLoading && !reelWithUser) {
+  if (loading && !reelWithUser) {
     return <div className="flex justify-center items-center h-screen">Loading...</div>;
   }
 
@@ -143,8 +143,8 @@ const ReelView: React.FC<ReelViewProps> = ({
       <div className="p-4">
         <ErrorDisplay 
           title="Failed to load reel" 
-          message={error?.message || "This reel might have been deleted or is unavailable"} 
-          onRetry={refetch}
+          message={error || "This reel might have been deleted or is unavailable"}
+          onRetry={() => refetch()}
         />
       </div>
     );

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useCallback } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import HomeHeader from "@/components/home/HomeHeader";
@@ -12,32 +11,39 @@ import { useAuth } from "@/contexts/AuthContext";
 import SEO from "@/components/shared/SEO";
 import StoreSidebarItem from "@/components/store/StoreSidebarItem";
 import { motion } from "framer-motion";
-import { useFeed } from "@/hooks/feed/use-feed";
+import { useFeed, FeedType } from "@/hooks/feed/use-feed";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 
 const Home = () => {
   const { user, profile } = useAuth();
-  const [activeTab, setActiveTab] = useState("for-you");
+  const [activeTab, setActiveTab] = useState<FeedType>("personalized");
   const { t } = useTranslation();
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   
   // Use our improved feed hook
-  const { posts, loading: isLoading, error, refresh, networkError, hasFetchedData } = useFeed({
-    type: activeTab === "for-you" ? "personalized" : activeTab === "trending" ? "trending" : "following",
+  const { 
+    posts, 
+    loading: isLoading, 
+    error, 
+    refreshFeed, 
+    networkError, 
+    hasFetchedData 
+  } = useFeed({
+    type: activeTab,
     refreshTrigger
   });
 
   // Handle refresh after post creation
   const handlePostCreated = useCallback(() => {
     // Immediately refresh the feed when a post is created
-    refresh().then(() => {
+    refreshFeed().then(() => {
       toast.success(t('common.success.postCreated', "Post created successfully!"));
     });
-  }, [refresh, t]);
+  }, [refreshFeed, t]);
 
   const handleTabChange = (tabValue: string) => {
-    setActiveTab(tabValue);
+    setActiveTab(tabValue as FeedType);
   };
 
   // Display network error only once
@@ -159,7 +165,7 @@ const Home = () => {
               </p>
               {!hasFetchedData && (
                 <button 
-                  onClick={() => refresh()} 
+                  onClick={() => refreshFeed()} 
                   className="mt-4 px-4 py-2 bg-unmute-purple text-white rounded-md hover:bg-unmute-purple/90 transition-colors"
                 >
                   Try Again

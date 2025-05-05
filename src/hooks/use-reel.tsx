@@ -1,14 +1,15 @@
-
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
-export const useReel = () => {
+export const useReel = (reelId?: string) => {
   const [reels, setReels] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [reel, setReel] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   
   const fetchReels = async () => {
@@ -35,6 +36,7 @@ export const useReel = () => {
         const processedReels = data.map(reel => ({
           ...reel,
           audio: reel.audio || null,
+          // Use optional chaining or provide defaults for missing properties
           duration: reel.duration || 0,
           original_audio_volume: reel.original_audio_volume || 1.0,
           overlay_audio_volume: reel.overlay_audio_volume || 0.5,
@@ -49,6 +51,47 @@ export const useReel = () => {
       setError(errorMessage);
       setLoading(false);
       toast.error('Could not load reels');
+    }
+  };
+
+  const fetchSingleReel = async (id: string) => {
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('reels')
+        .select(`
+          *,
+          profiles (
+            id,
+            username,
+            avatar,
+            full_name
+          )
+        `)
+        .eq('id', id)
+        .single();
+      
+      if (error) throw error;
+      
+      if (data) {
+        // Add default values for potentially missing properties
+        const processedReel = {
+          ...data,
+          audio: data.audio || null,
+          duration: data.duration || 0,
+          original_audio_volume: data.original_audio_volume || 1.0,
+          overlay_audio_volume: data.overlay_audio_volume || 0.5,
+        };
+        setReel(processedReel);
+      }
+      
+      setIsLoading(false);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch reel';
+      console.error('Error fetching reel:', errorMessage);
+      setError(errorMessage);
+      setIsLoading(false);
+      toast.error('Could not load reel');
     }
   };
   
@@ -69,9 +112,23 @@ export const useReel = () => {
     navigate(`/profile/${username}`);
   };
   
+  const refetch = () => {
+    if (reelId) {
+      fetchSingleReel(reelId);
+    } else {
+      fetchReels();
+    }
+  };
+  
   useEffect(() => {
-    fetchReels();
-  }, []);
+    // If reelId is provided, fetch just that one reel
+    if (reelId) {
+      fetchSingleReel(reelId);
+    } else {
+      // Otherwise fetch all reels
+      fetchReels();
+    }
+  }, [reelId]);
   
   return {
     reels,
@@ -82,7 +139,11 @@ export const useReel = () => {
     nextReel,
     prevReel,
     goToProfile,
-    fetchReels
+    fetchReels,
+    // Add these properties needed by ReelView
+    reel,
+    isLoading,
+    refetch
   };
 };
 

@@ -4,8 +4,8 @@ import { PostType } from "@/services/content-service";
 export interface FeedPost {
   id: string;
   user_id: string;
-  type: PostType;  // For compatibility with existing code
-  post_type?: PostType;  // Used in some places instead of type
+  type: PostType;  // This should be the PostType enum
+  post_type?: string;  // Changed to string to avoid conflicts
   content?: any;
   title?: string;
   image_urls?: string[];
