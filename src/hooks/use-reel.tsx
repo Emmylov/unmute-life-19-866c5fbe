@@ -15,7 +15,7 @@ interface ReelData {
   audio?: string;
   storage_path?: string;
   thumbnail_storage_path?: string;
-  // Add missing properties 
+  // Explicitly define the missing properties
   duration?: number;
   original_audio_volume?: number;
   overlay_audio_volume?: number;

@@ -19,13 +19,14 @@ const VibeCheck = lazy(() => import("./pages/VibeCheck"));
 const CreateCollab = lazy(() => import("./pages/CreateCollab"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const UsersPage = lazy(() => import("./pages/Users"));
+const Story = lazy(() => import("./pages/Story")); // Add our new Story page
 
 // Auth pages
 const Auth = lazy(() => import("./pages/Auth"));
 
 // Game pages
 const MemoryMatch = lazy(() => import("./pages/games/MemoryMatch"));
-const Games = lazy(() => import("./pages/Games")); // Fixed path here
+const Games = lazy(() => import("./pages/Games"));
 
 // App routes configuration
 export const routes = [
@@ -112,5 +113,9 @@ export const routes = [
   {
     path: "/users",
     element: <UsersPage />,
+  },
+  {
+    path: "/story",
+    element: <Story />,
   },
 ];

@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 // Define and export PostType enum
@@ -241,7 +240,7 @@ export const createReelPost = async (
 export const getUserPosts = async (userId: string, limit = 10, offset = 0) => {
   try {
     // Function to fetch posts of a specific type
-    const fetchPosts = async (table: string) => {
+    const fetchPosts = async (table: 'text_posts' | 'image_posts' | 'meme_posts' | 'reel_posts') => {
       const { data, error } = await supabase
         .from(table)
         .select(`
@@ -255,7 +254,7 @@ export const getUserPosts = async (userId: string, limit = 10, offset = 0) => {
         .range(offset, offset + limit - 1);
       
       if (error) throw error;
-      return data?.map(post => ({ ...post, type: table })) || [];
+      return data?.map(post => ({ ...post, type: table.replace('_posts', '') })) || [];
     };
 
     // Fetch all post types
@@ -287,8 +286,8 @@ export const getFeedPosts = async (limit = 10, offset = 0) => {
       throw new Error("User not authenticated");
     }
     
-    // Fetch posts from each table and combine them
-    const fetchTablePosts = async (table: string, postType: string) => {
+    // Fetch posts from each table individually and combine them
+    const fetchTablePosts = async (table: 'text_posts' | 'image_posts' | 'reel_posts' | 'meme_posts', postType: PostType) => {
       const { data, error } = await supabase
         .from(table)
         .select(`
@@ -308,15 +307,15 @@ export const getFeedPosts = async (limit = 10, offset = 0) => {
       
       return data?.map(post => ({ 
         ...post, 
-        post_type: postType
+        type: postType
       })) || [];
     };
     
     // Fetch from all post tables
-    const textPosts = await fetchTablePosts('text_posts', 'text');
-    const imagePosts = await fetchTablePosts('image_posts', 'image');
-    const reelPosts = await fetchTablePosts('reel_posts', 'reel');
-    const memePosts = await fetchTablePosts('meme_posts', 'meme');
+    const textPosts = await fetchTablePosts('text_posts', PostType.TEXT);
+    const imagePosts = await fetchTablePosts('image_posts', PostType.IMAGE);
+    const reelPosts = await fetchTablePosts('reel_posts', PostType.REEL);
+    const memePosts = await fetchTablePosts('meme_posts', PostType.MEME);
     
     // Combine all posts
     const allPosts = [
@@ -518,3 +517,5 @@ export const getLikeCount = async (postId: string, postType: string) => {
     return 0;
   }
 };
+
+// Now let's create a new file for our interactive story application
