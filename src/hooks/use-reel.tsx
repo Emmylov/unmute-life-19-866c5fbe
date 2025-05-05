@@ -15,7 +15,7 @@ interface ReelData {
   audio?: string;
   storage_path?: string;
   thumbnail_storage_path?: string;
-  // Explicitly define the missing properties
+  // Add these properties as optional since they might not exist in the database
   duration?: number;
   original_audio_volume?: number;
   overlay_audio_volume?: number;
@@ -60,10 +60,10 @@ export const useReel = (reelId?: string) => {
         const processedReels = data.map(reel => ({
           ...reel,
           audio: reel.audio || null,
-          // Add missing properties with default values
-          duration: reel.duration || 0, 
-          original_audio_volume: reel.original_audio_volume || 1.0,
-          overlay_audio_volume: reel.overlay_audio_volume || 0.5,
+          // Set default values for properties that might not exist in the database
+          duration: reel.duration !== undefined ? reel.duration : 0, 
+          original_audio_volume: reel.original_audio_volume !== undefined ? reel.original_audio_volume : 1.0,
+          overlay_audio_volume: reel.overlay_audio_volume !== undefined ? reel.overlay_audio_volume : 0.5,
         }));
         setReels(processedReels);
       }
@@ -102,10 +102,10 @@ export const useReel = (reelId?: string) => {
         const processedReel = {
           ...data,
           audio: data.audio || null,
-          // Add missing properties with default values
-          duration: data.duration || 0,
-          original_audio_volume: data.original_audio_volume || 1.0,
-          overlay_audio_volume: data.overlay_audio_volume || 0.5,
+          // Ensure these properties have default values if they don't exist
+          duration: data.duration !== undefined ? data.duration : 0,
+          original_audio_volume: data.original_audio_volume !== undefined ? data.original_audio_volume : 1.0,
+          overlay_audio_volume: data.overlay_audio_volume !== undefined ? data.overlay_audio_volume : 0.5,
         };
         setReel(processedReel);
       }
