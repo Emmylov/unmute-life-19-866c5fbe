@@ -98,7 +98,7 @@ const UnmuteExperience = () => {
       {/* Skip button */}
       <button 
         onClick={handleSkip}
-        className="fixed top-4 right-4 text-white hover:text-white z-50 text-sm bg-black/40 backdrop-blur-sm px-3 py-1.5 rounded-full"
+        className="fixed top-4 right-4 text-white hover:text-white z-50 text-sm bg-black/60 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/20"
       >
         Skip experience →
       </button>
@@ -153,9 +153,9 @@ const UnmuteExperience = () => {
         <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-50">
           <Link to="/story">
             <Button
-              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full hover:from-blue-700 hover:to-purple-700 shadow-lg"
+              className="px-6 py-3 bg-gradient-to-r from-purple-700 to-indigo-800 text-white rounded-full hover:from-purple-800 hover:to-indigo-900 transition-colors shadow-lg border border-white/20 font-medium text-base"
             >
-              Experience the full interactive story
+              Begin Your Immersive Journey
             </Button>
           </Link>
         </div>
@@ -163,8 +163,8 @@ const UnmuteExperience = () => {
       
       {/* Scroll indicator for all devices */}
       <div className="fixed bottom-10 left-1/2 transform -translate-x-1/2 z-50 flex flex-col items-center animate-bounce">
-        <ArrowDown className="h-5 w-5 text-white" />
-        <span className="text-xs text-white mt-1 font-medium">Scroll</span>
+        <ArrowDown className="h-5 w-5 text-white drop-shadow-md" />
+        <span className="text-xs text-white mt-1 font-medium drop-shadow-md">Scroll</span>
       </div>
     </div>
   );
