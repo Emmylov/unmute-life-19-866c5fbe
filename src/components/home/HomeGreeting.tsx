@@ -43,21 +43,21 @@ const HomeGreeting: React.FC<HomeGreetingProps> = ({ username }) => {
         <div className="flex flex-wrap gap-2">
           <Link 
             to="/reels" 
-            className="flex items-center gap-1 bg-primary/10 text-primary px-3 py-1 rounded-full hover:bg-primary/20 transition-all text-xs"
+            className="flex items-center gap-1 bg-primary/10 text-primary font-medium px-3 py-1 rounded-full hover:bg-primary/20 transition-all text-xs"
           >
             <Sparkles className="h-3 w-3 mr-1" />
             Explore Reels
           </Link>
           <Link 
             to="/vibe-check" 
-            className="flex items-center gap-1 bg-cosmic-crush/10 text-cosmic-crush px-3 py-1 rounded-full hover:bg-cosmic-crush/20 transition-all text-xs"
+            className="flex items-center gap-1 bg-cosmic-crush/10 text-cosmic-crush font-medium px-3 py-1 rounded-full hover:bg-cosmic-crush/20 transition-all text-xs"
           >
             <Activity className="h-3 w-3 mr-1" />
             Vibe Check
           </Link>
           <Link 
             to="/story" 
-            className="flex items-center gap-1 bg-amber-500/10 text-amber-600 px-3 py-1 rounded-full hover:bg-amber-500/20 transition-all text-xs"
+            className="flex items-center gap-1 bg-amber-600/10 text-amber-700 font-medium px-3 py-1 rounded-full hover:bg-amber-600/20 transition-all text-xs"
           >
             <BookOpen className="h-3 w-3 mr-1" />
             Interactive Story
