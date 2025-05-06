@@ -3,6 +3,7 @@ import { ArrowDown, Volume2, VolumeX, ArrowRight, Music } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { playSound } from "@/utils/sound-effects";
+import { Link } from "react-router-dom";
 
 // Story scenes
 enum StoryScene {
@@ -627,7 +628,7 @@ const HeroSection = () => {
   };
 
   return (
-    <section className={`relative min-h-screen flex items-center justify-center overflow-hidden ${getSceneBackground()}`}>
+    <section className={`relative min-h-screen overflow-y-auto ${getSceneBackground()}`}>
       {/* Video Background with Gradient Overlay (only visible in the intro) */}
       {currentScene === StoryScene.INTRO && (
         <div className="absolute inset-0 z-0">
@@ -799,8 +800,26 @@ const HeroSection = () => {
         </AnimatePresence>
       </div>
       
+      {/* Full interactive story link */}
+      {currentScene === StoryScene.READY && (
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.5, duration: 0.5 }}
+          className="fixed bottom-20 left-1/2 transform -translate-x-1/2 z-50"
+        >
+          <Link to="/story">
+            <Button
+              className="px-6 py-3 bg-white/20 backdrop-blur-sm border border-white/30 text-white rounded-full hover:bg-white/30 transition-colors"
+            >
+              Experience the full interactive story
+            </Button>
+          </Link>
+        </motion.div>
+      )}
+      
       {/* Audio controls */}
-      <div className="absolute bottom-8 right-8 z-20 flex items-center space-x-2">
+      <div className="fixed bottom-8 right-8 z-20 flex items-center space-x-2">
         <button 
           onClick={() => setShowMusicControls(!showMusicControls)}
           className="bg-black/30 backdrop-blur-sm p-3 rounded-full hover:bg-black/50 transition-colors"
@@ -862,6 +881,16 @@ const HeroSection = () => {
           ))}
         </div>
       </div>
+      
+      {/* Scroll indicator for mobile devices */}
+      <motion.div 
+        className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-20 hidden sm:flex flex-col items-center"
+        animate={{ opacity: [0.4, 0.8, 0.4], y: [0, 5, 0] }}
+        transition={{ duration: 2, repeat: Infinity }}
+      >
+        <ArrowDown className="h-5 w-5 text-white/60" />
+        <span className="text-xs text-white/60 mt-1">Scroll</span>
+      </motion.div>
     </section>
   );
 };

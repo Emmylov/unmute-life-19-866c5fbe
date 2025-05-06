@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Link } from "react-router-dom";
-import { Sparkles, Activity } from "lucide-react";
+import { Sparkles, Activity, BookOpen } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface HomeGreetingProps {
@@ -55,6 +55,13 @@ const HomeGreeting: React.FC<HomeGreetingProps> = ({ username }) => {
             <Activity className="h-3 w-3 mr-1" />
             Vibe Check
           </Link>
+          <Link 
+            to="/story" 
+            className="flex items-center gap-1 bg-amber-500/10 text-amber-600 px-3 py-1 rounded-full hover:bg-amber-500/20 transition-all text-xs"
+          >
+            <BookOpen className="h-3 w-3 mr-1" />
+            Interactive Story
+          </Link>
         </div>
       </div>
     </motion.div>
@@ -62,4 +69,3 @@ const HomeGreeting: React.FC<HomeGreetingProps> = ({ username }) => {
 };
 
 export default HomeGreeting;
-

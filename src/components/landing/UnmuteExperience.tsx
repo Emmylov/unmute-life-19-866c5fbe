@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import WorldOfSilence from './experience/WorldOfSilence';
 import AvatarSelection from './experience/AvatarSelection';
 import MazeOfNoise from './experience/MazeOfNoise';
@@ -8,6 +8,7 @@ import SanctuaryScene from './experience/SanctuaryScene';
 import AgePortal from './experience/AgePortal';
 import FinalScene from './experience/FinalScene';
 import { Button } from '@/components/ui/button';
+import { ArrowDown } from 'lucide-react';
 
 type SceneType = 'silence' | 'avatar' | 'maze' | 'sanctuary' | 'age' | 'final';
 type AvatarType = 'overthinker' | 'peoplepleaser' | 'bottledup' | 'tryingagain' | 'lost' | null;
@@ -93,57 +94,78 @@ const UnmuteExperience = () => {
   };
   
   return (
-    <div className="h-screen w-full overflow-hidden relative bg-black">
+    <div className="w-full overflow-x-hidden overflow-y-auto">
       {/* Skip button */}
       <button 
         onClick={handleSkip}
-        className="absolute top-4 right-4 text-white/50 hover:text-white z-50 text-sm"
+        className="fixed top-4 right-4 text-white/50 hover:text-white z-50 text-sm bg-black/20 backdrop-blur-sm px-3 py-1.5 rounded-full"
       >
         Skip experience →
       </button>
       
-      {/* Scene renderer */}
-      {currentScene === 'silence' && (
-        <WorldOfSilence onContinue={handleContinue} />
-      )}
+      {/* Scene renderer - Make each scene take full height but allow scrolling */}
+      <div className="h-auto min-h-screen">
+        {currentScene === 'silence' && (
+          <WorldOfSilence onContinue={handleContinue} />
+        )}
+        
+        {currentScene === 'avatar' && (
+          <AvatarSelection 
+            onSelect={handleAvatarSelect} 
+            onContinue={handleContinue}
+            selectedAvatar={selectedAvatar}
+          />
+        )}
+        
+        {currentScene === 'maze' && (
+          <MazeOfNoise 
+            onContinue={handleContinue}
+            avatarType={selectedAvatar}
+          />
+        )}
+        
+        {currentScene === 'sanctuary' && (
+          <SanctuaryScene 
+            onContinue={handleContinue}
+            avatarType={selectedAvatar}
+          />
+        )}
+        
+        {currentScene === 'age' && (
+          <AgePortal 
+            onSelect={handleAgeSelect}
+            onContinue={handleContinue}
+            selectedAge={selectedAge}
+          />
+        )}
+        
+        {currentScene === 'final' && (
+          <FinalScene 
+            onContinue={handleContinue}
+            avatarType={selectedAvatar}
+            ageGroup={selectedAge}
+          />
+        )}
+      </div>
       
-      {currentScene === 'avatar' && (
-        <AvatarSelection 
-          onSelect={handleAvatarSelect} 
-          onContinue={handleContinue}
-          selectedAvatar={selectedAvatar}
-        />
-      )}
-      
-      {currentScene === 'maze' && (
-        <MazeOfNoise 
-          onContinue={handleContinue}
-          avatarType={selectedAvatar}
-        />
-      )}
-      
-      {currentScene === 'sanctuary' && (
-        <SanctuaryScene 
-          onContinue={handleContinue}
-          avatarType={selectedAvatar}
-        />
-      )}
-      
-      {currentScene === 'age' && (
-        <AgePortal 
-          onSelect={handleAgeSelect}
-          onContinue={handleContinue}
-          selectedAge={selectedAge}
-        />
-      )}
-      
+      {/* Interactive story link at the end */}
       {currentScene === 'final' && (
-        <FinalScene 
-          onContinue={handleContinue}
-          avatarType={selectedAvatar}
-          ageGroup={selectedAge}
-        />
+        <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-50">
+          <Link to="/story">
+            <Button
+              className="px-6 py-3 bg-gradient-to-r from-blue-500/70 to-purple-500/70 text-white rounded-full hover:from-blue-500/90 hover:to-purple-500/90 backdrop-blur-sm"
+            >
+              Experience the full interactive story
+            </Button>
+          </Link>
+        </div>
       )}
+      
+      {/* Scroll indicator for all devices */}
+      <div className="fixed bottom-10 left-1/2 transform -translate-x-1/2 z-50 flex flex-col items-center animate-bounce">
+        <ArrowDown className="h-5 w-5 text-white/70" />
+        <span className="text-xs text-white/70 mt-1">Scroll</span>
+      </div>
     </div>
   );
 };
