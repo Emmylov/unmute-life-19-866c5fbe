@@ -32,15 +32,15 @@ const HomeGreeting: React.FC<HomeGreetingProps> = ({ username }) => {
       transition={{ duration: 0.4 }}
     >
       <div className="relative">
-        <h2 className="text-lg font-semibold bg-gradient-to-r from-unmute-purple to-unmute-pink bg-clip-text text-transparent mb-2">
+        <h2 className="text-lg font-semibold bg-gradient-to-r from-unmute-purple to-unmute-pink bg-clip-text text-transparent mb-2 drop-shadow-sm">
           Hello, {username || "Beautiful Soul"}
         </h2>
         
-        <p className="text-xs text-gray-600 italic mb-3">
+        <p className="text-xs text-gray-600 italic mb-3 drop-shadow-sm">
           "{randomAffirmation}"
         </p>
         
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 mb-4">
           <Link 
             to="/reels" 
             className="flex items-center gap-1 bg-primary/10 text-primary font-medium px-3 py-1 rounded-full hover:bg-primary/20 transition-all text-xs"
@@ -63,6 +63,14 @@ const HomeGreeting: React.FC<HomeGreetingProps> = ({ username }) => {
             Interactive Story
           </Link>
         </div>
+
+        {/* Add prominent story link */}
+        <Link
+          to="/story"
+          className="block w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-center py-2 rounded-lg font-medium shadow-md hover:from-purple-700 hover:to-indigo-700 transition-colors"
+        >
+          Experience the Full Interactive Story
+        </Link>
       </div>
     </motion.div>
   );

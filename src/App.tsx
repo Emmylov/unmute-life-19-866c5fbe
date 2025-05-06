@@ -36,6 +36,7 @@ import BubblePop from "@/pages/games/BubblePop";
 import WordScramble from "@/pages/games/WordScramble";
 import Music from "@/pages/Music";
 import Store from "@/pages/Store";
+import Story from "@/pages/Story"; // Import the Story page
 
 function App() {
   React.useEffect(() => {
@@ -66,6 +67,7 @@ function App() {
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/story" element={<Story />} /> {/* Add the Story route outside the protected layout */}
 
                 <Route element={<ProtectedLayout />}>
                   <Route path="/onboarding" element={<Onboarding />} />
