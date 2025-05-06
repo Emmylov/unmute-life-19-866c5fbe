@@ -67,7 +67,7 @@ const HomeGreeting: React.FC<HomeGreetingProps> = ({ username }) => {
         {/* Add prominent story link */}
         <Link
           to="/story"
-          className="block w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-center py-2 rounded-lg font-medium shadow-md hover:from-purple-700 hover:to-indigo-700 transition-colors"
+          className="block w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-center py-2 rounded-lg font-medium shadow-md hover:from-indigo-700 hover:to-purple-700 transition-colors"
         >
           Experience the Full Interactive Story
         </Link>

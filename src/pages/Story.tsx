@@ -4,8 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import AppLayout from '@/components/layout/AppLayout';
 import { motion, AnimatePresence } from 'framer-motion';
-import { playSound, playMusic } from '@/utils/sound-effects';
-import { useSound } from '@/contexts/SoundContext';
 import { Volume2, VolumeX, ArrowRight, RotateCcw, Music } from 'lucide-react';
 
 // Story types
@@ -82,6 +80,33 @@ const STORY_DATA: Scene[] = [
     ]
   },
   {
+    id: 'forest_depths',
+    text: "You venture deeper into the forest, the canopy growing thicker above you. The light changes, dappled patterns dancing across the forest floor. There's a sense of ancient magic all around you.",
+    image: "https://images.unsplash.com/photo-1448375240586-882707db888b",
+    choices: [
+      { text: "Follow a narrow deer path", nextScene: "lakeside" },
+      { text: "Climb a tall tree to get your bearings", nextScene: "tree_climb" }
+    ]
+  },
+  {
+    id: 'tree_climb',
+    text: "From the top branches, you can see the entire forest stretching out before you. To the east lies a glimmering lake, to the west a mountain range, and to the north, curiously, what seems to be a circle of standing stones.",
+    image: "https://images.unsplash.com/photo-1511497584788-876760111969",
+    choices: [
+      { text: "Head toward the lake", nextScene: "lakeside" },
+      { text: "Head toward the stone circle", nextScene: "stone_circle" }
+    ]
+  },
+  {
+    id: 'stone_circle',
+    text: "The ancient stone circle stands solemnly in a perfect clearing. Each stone is covered in symbols that seem to shift when you don't look directly at them. In the center is a small pedestal.",
+    image: "https://images.unsplash.com/photo-1564658718110-11737c2d9457",
+    choices: [
+      { text: "Examine the pedestal", nextScene: "meet_guide" },
+      { text: "Leave the circle and head to the lake", nextScene: "lakeside" }
+    ]
+  },
+  {
     id: 'meet_guide',
     text: "'I am the Keeper of Stories,' they say with a gentle smile. 'Every journey that passes through this forest becomes part of the great tapestry I weave. Your thread has been anticipated for some time, {playerName}.' They offer you a small wooden flute. 'This might help you on your journey.'",
     image: "https://images.unsplash.com/photo-1518877593221-1f28583780b4",
@@ -134,6 +159,37 @@ const STORY_DATA: Scene[] = [
     ]
   },
   {
+    id: 'lakeside_retreat',
+    text: "Something about the lake makes you uneasy. As you step back, a gentle breeze ripples across the surface, breaking the perfect mirror. You feel like you've just avoided something... significant.",
+    choices: [
+      { text: "Reconsider and look into the water", nextScene: "reflection_vision" },
+      { text: "Follow the shore around the lake", nextScene: "lake_shore" }
+    ]
+  },
+  {
+    id: 'lake_shore',
+    text: "Walking along the shore, you find a small boat tied to a weathered dock. It looks seaworthy, with a single oar resting inside.",
+    image: "https://images.unsplash.com/photo-1520116468816-95b69f847357",
+    choices: [
+      { text: "Take the boat onto the lake", nextScene: "boat_journey" },
+      { text: "Continue following the shore", nextScene: "mountain_base" }
+    ]
+  },
+  {
+    id: 'boat_journey',
+    text: "As you row to the center of the lake, the water beneath you begins to glow with an ethereal light. The boat seems to move of its own accord now, guided by unseen currents.",
+    image: "https://images.unsplash.com/photo-1439405326854-014607f694d7",
+    choices: [
+      { text: "Allow the boat to guide you", nextScene: "lake_center" },
+      { text: "Try to row back to shore", nextScene: "lakeside" }
+    ]
+  },
+  {
+    id: 'lake_center',
+    text: "In the center of the lake, time seems to stand still. The water is perfectly clear, and you can see all the way to the bottom, where something is glowing...",
+    endScene: true
+  },
+  {
     id: 'mountain_peak',
     text: "After a challenging climb, you reach the Summit of Whispers. The wind here has a voice—or rather, many voices—whispering words that seem just beyond comprehension. As you close your eyes and focus, one message becomes clear...",
     image: "https://images.unsplash.com/photo-1500673922987-e212871fec22",
@@ -144,6 +200,27 @@ const STORY_DATA: Scene[] = [
     ]
   },
   {
+    id: 'mountain_descent',
+    text: "You begin your descent, carrying the whispers of the wind with you. The path down is different from the one you took up, leading you through a series of narrow ledges and small caves.",
+    image: "https://images.unsplash.com/photo-1486870591958-9b9d0d1dda99",
+    choices: [
+      { text: "Explore one of the caves", nextScene: "mountain_cave" },
+      { text: "Keep descending toward the valley", nextScene: "valley_approach" }
+    ]
+  },
+  {
+    id: 'mountain_cave',
+    text: "The cave is surprisingly warm and emits a soft, pulsing light. As your eyes adjust, you see that the walls are covered in luminescent crystals that seem to respond to your presence.",
+    image: "https://images.unsplash.com/photo-1496889934714-8724ace33656",
+    endScene: true
+  },
+  {
+    id: 'valley_approach',
+    text: "The valley below is lush and vibrant, a stark contrast to the rugged mountain. A river winds through it, leading to what looks like a small settlement in the distance.",
+    image: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b",
+    endScene: true
+  },
+  {
     id: 'reflection_vision',
     text: "Your reflection ripples and transforms, showing not who you are now, but who you might become. You see yourself standing tall, confident, having overcome challenges you haven't yet faced. The vision fills you with both anticipation and apprehension.",
     image: "https://images.unsplash.com/photo-1518877593221-1f28583780b4",
@@ -151,6 +228,19 @@ const STORY_DATA: Scene[] = [
       { text: "Reach out to touch the water", nextScene: "touch_reflection" },
       { text: "Take a moment to reflect on the vision", nextScene: "contemplation" }
     ]
+  },
+  {
+    id: 'contemplation',
+    text: "As you contemplate the vision, the lake seems to respond to your thoughts. The reflection shifts again, showing glimpses of the paths that lie before you—some bright with promise, others shrouded in shadow.",
+    choices: [
+      { text: "Reach out to touch the water now", nextScene: "touch_reflection" },
+      { text: "Move away from the lake with new insight", nextScene: "leave_lake" }
+    ]
+  },
+  {
+    id: 'leave_lake',
+    text: "Taking a deep breath, you step back from the lake, carrying the vision with you. As you walk away, you feel somehow changed, as if the lake has awakened something within you that was always there but dormant.",
+    endScene: true
   },
   {
     id: 'wind_message',
@@ -192,10 +282,8 @@ const StoryPage: React.FC = () => {
   const [playerInput, setPlayerInput] = useState<string>('');
   const [isMuted, setIsMuted] = useState<boolean>(false);
   const [showMusicControls, setShowMusicControls] = useState<boolean>(false);
-  const [gameOver, setGameOver] = useState<boolean>(false);
-  const { playEffect } = useSound();
-  
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  
   const currentScene = STORY_DATA.find(scene => scene.id === currentSceneId);
   
   // Initialize audio when component mounts
@@ -217,13 +305,18 @@ const StoryPage: React.FC = () => {
       if (audioRef.current) {
         audioRef.current.pause();
       }
-      audioRef.current = playMusic(`/sounds/${currentScene.music}.mp3`, 0.3);
-      audioRef.current.muted = isMuted;
+      
+      try {
+        audioRef.current = new Audio(`/sounds/${currentScene.music}.mp3`);
+        audioRef.current.volume = 0.3;
+        audioRef.current.loop = true;
+        audioRef.current.muted = isMuted;
+        audioRef.current.play().catch(err => console.log("Audio playback prevented:", err));
+      } catch (error) {
+        console.error("Error playing audio:", error);
+      }
     }
-    
-    // Play sound effect on scene change
-    playEffect('scene-change');
-  }, [currentSceneId, isMuted, playEffect]);
+  }, [currentSceneId, isMuted]);
 
   const handleChoiceSelect = (choice: Choice) => {
     // Record the choice
@@ -236,9 +329,15 @@ const StoryPage: React.FC = () => {
       visitedScenes: [...prev.visitedScenes, choice.nextScene],
       inventory: choice.effect === 'ADD_FLUTE' ? [...prev.inventory, 'Wooden Flute'] : prev.inventory
     }));
-
-    // Play choice sound
-    playEffect('select');
+    
+    // Play sound effect for choice selection if available
+    try {
+      const sound = new Audio('/sounds/select.mp3');
+      sound.volume = 0.5;
+      sound.play().catch(err => console.log("Select sound prevented:", err));
+    } catch (error) {
+      console.error("Error playing select sound:", error);
+    }
     
     // Move to next scene
     setCurrentSceneId(choice.nextScene);
@@ -252,8 +351,14 @@ const StoryPage: React.FC = () => {
         visitedScenes: [...prev.visitedScenes, 'beginning']
       }));
       
-      // Play effect
-      playEffect('confirm');
+      // Play confirmation sound if available
+      try {
+        const sound = new Audio('/sounds/confirm.mp3');
+        sound.volume = 0.5;
+        sound.play().catch(err => console.log("Confirm sound prevented:", err));
+      } catch (error) {
+        console.error("Error playing confirm sound:", error);
+      }
       
       // Move to first real scene
       setCurrentSceneId('beginning');
@@ -277,8 +382,14 @@ const StoryPage: React.FC = () => {
   };
 
   const restartStory = () => {
-    // Play restart sound
-    playEffect('restart');
+    // Play restart sound if available
+    try {
+      const sound = new Audio('/sounds/restart.mp3');
+      sound.volume = 0.5;
+      sound.play().catch(err => console.log("Restart sound prevented:", err));
+    } catch (error) {
+      console.error("Error playing restart sound:", error);
+    }
     
     // Reset state
     setStoryState({
@@ -288,7 +399,6 @@ const StoryPage: React.FC = () => {
       visitedScenes: ['intro']
     });
     setCurrentSceneId('intro');
-    setGameOver(false);
   };
 
   const toggleMute = () => {
@@ -301,21 +411,21 @@ const StoryPage: React.FC = () => {
 
   return (
     <AppLayout pageTitle="Interactive Story">
-      <div className="min-h-screen bg-gray-900 text-white">
+      <div className="min-h-screen bg-gradient-to-b from-indigo-900 to-purple-900 text-white">
         <div className="container mx-auto px-4 py-8 max-w-4xl">
           <div className="relative mb-8">
-            <h1 className="text-4xl md:text-5xl font-bold text-center mb-2 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+            <h1 className="text-4xl md:text-5xl font-bold text-center mb-2 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent drop-shadow-lg">
               The Keeper's Journey
             </h1>
-            <p className="text-center text-gray-400">An interactive tale of choices and discovery</p>
+            <p className="text-center text-gray-300">An interactive tale of choices and discovery</p>
             
             {/* Inventory display */}
             {storyState.inventory.length > 0 && (
-              <div className="mt-4 p-2 bg-gray-800/50 rounded-md">
-                <p className="text-sm text-gray-400">Inventory:</p>
+              <div className="mt-4 p-2 bg-white/10 backdrop-blur-sm rounded-md">
+                <p className="text-sm text-gray-300">Inventory:</p>
                 <div className="flex gap-2 mt-1">
                   {storyState.inventory.map(item => (
-                    <span key={item} className="px-2 py-1 bg-gray-700/50 rounded text-xs font-medium">
+                    <span key={item} className="px-2 py-1 bg-white/20 rounded text-xs font-medium">
                       {item}
                     </span>
                   ))}
@@ -331,7 +441,7 @@ const StoryPage: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.5 }}
-              className="rounded-lg overflow-hidden shadow-2xl bg-gray-800/50 backdrop-blur-sm"
+              className="rounded-lg overflow-hidden shadow-2xl bg-black/30 backdrop-blur-sm border border-white/10"
             >
               {/* Scene image */}
               {currentScene?.image && (
@@ -347,7 +457,7 @@ const StoryPage: React.FC = () => {
               {/* Scene content */}
               <div className="p-6 md:p-8">
                 <div className="prose prose-invert max-w-none mb-6">
-                  <p className="text-lg md:text-xl leading-relaxed">
+                  <p className="text-lg md:text-xl leading-relaxed text-gray-100">
                     {processText(currentScene?.text || 'Your journey continues...')}
                   </p>
                 </div>
@@ -355,7 +465,7 @@ const StoryPage: React.FC = () => {
                 {/* Input prompt for name entry */}
                 {currentScene?.inputPrompt && (
                   <div className="mb-6 mt-4">
-                    <label className="block text-sm text-gray-400 mb-2">
+                    <label className="block text-sm text-gray-300 mb-2">
                       {currentScene.inputPrompt}:
                     </label>
                     <div className="flex gap-3">
@@ -363,13 +473,13 @@ const StoryPage: React.FC = () => {
                         value={playerInput}
                         onChange={(e) => setPlayerInput(e.target.value)}
                         onKeyPress={handleKeyPress}
-                        className="bg-gray-700/50 border-gray-600 text-white"
+                        className="bg-white/20 border-white/30 text-white placeholder:text-gray-400"
                         placeholder="Enter your name"
                       />
                       <Button 
                         onClick={handleNameSubmit}
                         disabled={!playerInput.trim()}
-                        className="bg-blue-600 hover:bg-blue-700"
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white"
                       >
                         Continue
                       </Button>
@@ -386,7 +496,7 @@ const StoryPage: React.FC = () => {
                         <Button
                           key={index}
                           onClick={() => handleChoiceSelect(choice)}
-                          className="w-full flex items-center justify-between px-4 py-6 bg-gray-700/50 hover:bg-blue-600/50 border border-gray-600 hover:border-blue-500 transition-colors"
+                          className="w-full flex items-center justify-between px-4 py-6 bg-white/10 hover:bg-indigo-600/50 border border-white/20 hover:border-indigo-500 transition-colors text-left"
                           variant="outline"
                         >
                           <span>{choice.text}</span>
@@ -400,7 +510,7 @@ const StoryPage: React.FC = () => {
                 {/* End scene */}
                 {currentScene?.endScene && (
                   <div className="mt-8 text-center">
-                    <p className="text-gray-400 mb-4">Your journey has reached a meaningful moment, but there are many more paths to explore.</p>
+                    <p className="text-gray-300 mb-4">Your journey has reached a meaningful moment, but there are many more paths to explore.</p>
                     <Button 
                       onClick={restartStory}
                       className="bg-purple-600 hover:bg-purple-700"
@@ -418,7 +528,7 @@ const StoryPage: React.FC = () => {
           <div className="mt-6 flex justify-center space-x-3">
             <button 
               onClick={toggleMute}
-              className="p-2 rounded-full bg-gray-800/50 hover:bg-gray-700/70 transition-colors"
+              className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
               aria-label={isMuted ? "Unmute" : "Mute"}
             >
               {isMuted ? (
@@ -430,7 +540,7 @@ const StoryPage: React.FC = () => {
             
             <button 
               onClick={() => setShowMusicControls(!showMusicControls)}
-              className="p-2 rounded-full bg-gray-800/50 hover:bg-gray-700/70 transition-colors"
+              className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
               aria-label="Music information"
             >
               <Music className="h-5 w-5" />
@@ -442,7 +552,7 @@ const StoryPage: React.FC = () => {
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mt-3 p-3 bg-gray-800/50 rounded-md text-center text-sm text-gray-400"
+              className="mt-3 p-3 bg-white/10 rounded-md text-center text-sm text-gray-300"
             >
               Now playing: {currentScene.music.replace(/-/g, ' ')}
               <div className="text-xs mt-1">Music changes as your story unfolds</div>
