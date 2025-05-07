@@ -94,6 +94,47 @@ const UnmuteExperience = () => {
     navigate('/auth');
   };
   
+  // Get text content for the current scene
+  const getSceneContent = () => {
+    switch (currentScene) {
+      case 'silence':
+        return {
+          title: "The Day I Lost My Voice",
+          description: "Once, I had a voice. It was loud. Too loud, they said. Then one day, I muted myself."
+        };
+      case 'avatar':
+        return {
+          title: "Choose Your Path",
+          description: "Which version of you resonates the most today?"
+        };
+      case 'maze':
+        return {
+          title: "The Maze of Noise",
+          description: "You enter the world again. But it's all... noise. \"Why are you always so emotional?\" \"You talk too much.\" \"You're too sensitive.\""
+        };
+      case 'sanctuary':
+        return {
+          title: "The Sanctuary of Unmute",
+          description: "Welcome. This is Unmute — a sanctuary for real voices, raw stories, and radical belonging."
+        };
+      case 'age':
+        return {
+          title: "Your Journey Continues",
+          description: "To build your space, we need to know one thing. How old are you?"
+        };
+      case 'final':
+        return {
+          title: "You're Ready",
+          description: "You're not too loud. You're not too sensitive. You're not too old. You're not too young. You're just right — and you belong here."
+        };
+      default:
+        return {
+          title: "",
+          description: ""
+        };
+    }
+  };
+  
   return (
     <div className="w-full overflow-x-hidden overflow-y-auto">
       <HeroSection />
@@ -131,6 +172,7 @@ const UnmuteExperience = () => {
           <SanctuaryScene 
             onContinue={handleContinue}
             avatarType={selectedAvatar}
+            sceneContent={getSceneContent()}
           />
         )}
         
