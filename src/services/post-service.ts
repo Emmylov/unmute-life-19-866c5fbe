@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 // Define and export PostType enum
@@ -547,5 +548,3 @@ export const getLikeCount = async (postId: string, postType: string) => {
 };
 
 // Now let's create a new file for our interactive story application
-
-</edits_to_apply>
