@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect, useRef } from 'react';
+import React from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import WorldOfSilence from './experience/WorldOfSilence';
 import AvatarSelection from './experience/AvatarSelection';
@@ -9,6 +8,7 @@ import AgePortal from './experience/AgePortal';
 import FinalScene from './experience/FinalScene';
 import { Button } from '@/components/ui/button';
 import { ArrowDown } from 'lucide-react';
+import HeroSection from './HeroSection';
 
 type SceneType = 'silence' | 'avatar' | 'maze' | 'sanctuary' | 'age' | 'final';
 type AvatarType = 'overthinker' | 'peoplepleaser' | 'bottledup' | 'tryingagain' | 'lost' | null;
@@ -95,6 +95,8 @@ const UnmuteExperience = () => {
   
   return (
     <div className="w-full overflow-x-hidden overflow-y-auto">
+      <HeroSection />
+      
       {/* Skip button */}
       <button 
         onClick={handleSkip}
@@ -165,6 +167,11 @@ const UnmuteExperience = () => {
       <div className="fixed bottom-10 left-1/2 transform -translate-x-1/2 z-50 flex flex-col items-center animate-bounce">
         <ArrowDown className="h-5 w-5 text-white drop-shadow-md" />
         <span className="text-xs text-white mt-1 font-medium drop-shadow-md">Scroll</span>
+      </div>
+      
+      {/* Journey quiz section */}
+      <div id="journey-quiz" className="min-h-screen">
+        {/* This is where the quiz would start after the story experience */}
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 
-import React, { useState, useEffect, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import useAuthGuard from "@/hooks/use-auth-guard";
 import { toast } from "sonner";
@@ -98,15 +98,6 @@ const Index = () => {
       />
       
       <UnmuteExperience />
-      
-      {/* Sticky floating button for story access */}
-      <div className="fixed bottom-4 right-4 z-50">
-        <Link to="/story">
-          <Button className="bg-gradient-to-r from-purple-700 to-indigo-800 text-white shadow-lg hover:from-purple-800 hover:to-indigo-900 border border-white/20">
-            Experience the Interactive Story
-          </Button>
-        </Link>
-      </div>
     </>
   );
 };

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { ArrowDown, Volume2, VolumeX, ArrowRight, Music } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -896,3 +897,4 @@ const HeroSection = () => {
 };
 
 export default HeroSection;
+
