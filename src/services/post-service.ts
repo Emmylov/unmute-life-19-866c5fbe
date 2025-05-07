@@ -345,15 +345,19 @@ export const checkPostExists = async (postId: string, postType: string): Promise
     let tableName;
     
     switch (postType) {
+      case 'text':
       case 'text_post':
         tableName = 'text_posts';
         break;
+      case 'image':
       case 'image_post':
         tableName = 'image_posts';
         break;
+      case 'meme':
       case 'meme_post':
         tableName = 'meme_posts';
         break;
+      case 'reel':
       case 'reel_post':
         tableName = 'reel_posts';
         break;
@@ -382,19 +386,25 @@ export const checkPostExists = async (postId: string, postType: string): Promise
   }
 };
 
-// Check if user has liked a post
+// Check if user has liked a post - fixed parameter order for consistency
 export const hasLikedPost = async (
-  userId: string,
   postId: string,
+  userId: string,
   postType: string
 ): Promise<boolean> => {
   try {
+    // Fix: Normalize post type to handle variations
+    let normalizedPostType = postType;
+    if (postType.includes('_post')) {
+      normalizedPostType = postType.replace('_post', '');
+    }
+    
     const { data, error } = await supabase
       .from('post_likes')
       .select('id')
       .eq('user_id', userId)
       .eq('post_id', postId)
-      .eq('post_type', postType)
+      .eq('post_type', normalizedPostType)
       .single();
       
     if (error) {
@@ -418,11 +428,17 @@ export const getPostLikesCount = async (
   postType: string
 ): Promise<number> => {
   try {
+    // Fix: Normalize post type to handle variations
+    let normalizedPostType = postType;
+    if (postType.includes('_post')) {
+      normalizedPostType = postType.replace('_post', '');
+    }
+    
     const { count, error } = await supabase
       .from('post_likes')
       .select('id', { count: 'exact' })
       .eq('post_id', postId)
-      .eq('post_type', postType);
+      .eq('post_type', normalizedPostType);
       
     if (error) throw error;
     
@@ -440,8 +456,14 @@ export const likePost = async (
   postType: string
 ) => {
   try {
+    // Fix: Normalize post type to handle variations
+    let normalizedPostType = postType;
+    if (postType.includes('_post')) {
+      normalizedPostType = postType.replace('_post', '');
+    }
+    
     // Check if the user has already liked this post
-    const alreadyLiked = await hasLikedPost(userId, postId, postType);
+    const alreadyLiked = await hasLikedPost(postId, userId, normalizedPostType);
     
     if (alreadyLiked) {
       // If already liked, do nothing
@@ -454,7 +476,7 @@ export const likePost = async (
       .insert({
         user_id: userId,
         post_id: postId,
-        post_type: postType
+        post_type: normalizedPostType
       })
       .select();
       
@@ -474,13 +496,19 @@ export const unlikePost = async (
   postType: string
 ) => {
   try {
+    // Fix: Normalize post type to handle variations
+    let normalizedPostType = postType;
+    if (postType.includes('_post')) {
+      normalizedPostType = postType.replace('_post', '');
+    }
+    
     const { data, error } = await supabase
       .from('post_likes')
       .delete()
       .match({
         user_id: userId,
         post_id: postId,
-        post_type: postType
+        post_type: normalizedPostType
       })
       .select();
       
@@ -519,3 +547,5 @@ export const getLikeCount = async (postId: string, postType: string) => {
 };
 
 // Now let's create a new file for our interactive story application
+
+</edits_to_apply>

@@ -4,8 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { 
-  hasLikedPost, 
-  getPostLikesCount, 
+  hasLikedPost as checkHasLikedPost, 
+  getPostLikesCount as fetchPostLikesCount, 
   checkPostExists,
   likePost,
   unlikePost
@@ -37,11 +37,12 @@ export const useSocialActions = (postId?: string, postType?: string) => {
         }
         
         // Check if user has liked post
-        const hasLiked = await hasLikedPost(user.id, postId, postType);
+        // Fix: Pass parameters in correct order - postId, userId, postType
+        const hasLiked = await checkHasLikedPost(postId, user.id, postType);
         setLiked(!!hasLiked);
         
         // Get likes count
-        const count = await getPostLikesCount(postId, postType);
+        const count = await fetchPostLikesCount(postId, postType);
         setLikesCount(count || 0);
       } catch (error) {
         console.error('Error checking like status:', error);
@@ -81,7 +82,7 @@ export const useSocialActions = (postId?: string, postType?: string) => {
       }
       
       // Refresh count
-      const count = await getPostLikesCount(postId, postType);
+      const count = await fetchPostLikesCount(postId, postType);
       setLikesCount(count || 0);
       
       return newLikeState;
@@ -157,9 +158,9 @@ export const useSocialActions = (postId?: string, postType?: string) => {
     }
   };
   
-  // Add toggle like post functionality
-  const toggleLikePost = async (postId: string, postType: string) => {
-    if (!user) {
+  // Fix: Make sure parameters are in correct order - postId, userId, postType
+  const toggleLikePost = async (postId: string, userId: string, postType: string) => {
+    if (!userId) {
       toast.error("Please sign in to like posts");
       return false;
     }
@@ -167,12 +168,13 @@ export const useSocialActions = (postId?: string, postType?: string) => {
     setIsLiking(prev => ({ ...prev, [postId]: true }));
     
     try {
-      const hasLiked = await hasLikedPost(user.id, postId, postType);
+      // Fix: Pass parameters in correct order - postId, userId, postType
+      const hasLiked = await checkHasLikedPost(postId, userId, postType);
       
       if (hasLiked) {
-        await unlikePost(user.id, postId, postType);
+        await unlikePost(userId, postId, postType);
       } else {
-        await likePost(user.id, postId, postType);
+        await likePost(userId, postId, postType);
       }
       
       return !hasLiked;
@@ -183,6 +185,15 @@ export const useSocialActions = (postId?: string, postType?: string) => {
     } finally {
       setIsLiking(prev => ({ ...prev, [postId]: false }));
     }
+  };
+
+  // Fix: Export these renamed functions with parameters in correct order
+  const hasLikedPost = async (postId: string, userId: string, postType: string) => {
+    return checkHasLikedPost(postId, userId, postType);
+  };
+
+  const getPostLikesCount = async (postId: string, postType: string) => {
+    return fetchPostLikesCount(postId, postType);
   };
 
   return {

@@ -22,13 +22,12 @@ interface PostCardProps {
 
 const PostCard: React.FC<PostCardProps> = ({ post }) => {
   const { user } = useAuth();
-  const { toggleLikePost, hasLikedPost, getPostLikesCount, isLiking } = useSocialActions();
+  const { toggleLikePost, hasLikedPost, getPostLikesCount } = useSocialActions();
   const [liked, setLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(post.likes_count || 0);
   const [showComments, setShowComments] = useState(false);
   const [comment, setComment] = useState('');
   const [comments, setComments] = useState<PostComment[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const { t } = useTranslation();
@@ -41,7 +40,8 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
     const checkLikeStatus = async () => {
       if (user && post.id) {
         try {
-          const hasLiked = await hasLikedPost(post.id, user.id, post.post_type);
+          // Fixed: Pass parameters in correct order - postId, userId, postType
+          const hasLiked = await hasLikedPost(post.id, user.id, post.post_type || 'text');
           setLiked(hasLiked);
         } catch (error) {
           console.error("Error checking like status:", error);
@@ -50,7 +50,7 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
     };
     
     checkLikeStatus();
-  }, [post.id, post.post_type, post.likes_count, user]);
+  }, [post.id, post.post_type, post.likes_count, user, hasLikedPost]);
 
   const handleLike = async () => {
     if (!user) {
@@ -65,12 +65,14 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
       setLikesCount(prevLikeState ? likesCount - 1 : likesCount + 1);
       
       // Make API call to toggle like
-      const result = await toggleLikePost(post.id, post.post_type);
+      // Fixed: Pass parameters in correct order - postId, userId, postType
+      const result = await toggleLikePost(post.id, user.id, post.post_type || 'text');
       
       // If result is different from what we expected, revert the UI
       if (result !== !prevLikeState) {
         setLiked(result);
-        const updatedLikesCount = await getPostLikesCount(post.id, post.post_type);
+        // Fixed: Pass parameters in correct order - postId, postType
+        const updatedLikesCount = await getPostLikesCount(post.id, post.post_type || 'text');
         setLikesCount(updatedLikesCount);
       }
     } catch (error) {
@@ -91,7 +93,8 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
     
     setIsLoadingComments(true);
     try {
-      const fetchedComments = await getComments(post.id, post.post_type);
+      // Fixed: pass in correct post_type parameter
+      const fetchedComments = await getComments(post.id, post.post_type || 'text');
       // Ensure we have valid comments before setting them
       const validComments = Array.isArray(fetchedComments) ? fetchedComments : [];
       setComments(validComments);
@@ -117,7 +120,8 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
     
     setIsSubmittingComment(true);
     try {
-      const newComment = await addComment(post.id, user.id, comment, post.post_type);
+      // Fixed: Pass correct post_type parameter
+      const newComment = await addComment(post.id, user.id, comment, post.post_type || 'text');
       
       if (newComment) {
         // Make sure we properly handle the new comment

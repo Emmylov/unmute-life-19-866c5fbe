@@ -28,13 +28,19 @@ export async function addComment(
   postType: string
 ): Promise<PostComment | null> {
   try {
+    // Fix: Normalize post type to handle variations
+    let normalizedPostType = postType;
+    if (postType.includes('_post')) {
+      normalizedPostType = postType.replace('_post', '');
+    }
+    
     const { data, error } = await supabase
       .from('post_comments')
       .insert({
         post_id: postId,
         user_id: userId,
         content,
-        post_type: postType
+        post_type: normalizedPostType
       })
       .select('*, profiles:user_id(*)')
       .single();
@@ -57,11 +63,17 @@ export async function addComment(
 
 export async function getComments(postId: string, postType: string): Promise<PostComment[]> {
   try {
+    // Fix: Normalize post type to handle variations
+    let normalizedPostType = postType;
+    if (postType.includes('_post')) {
+      normalizedPostType = postType.replace('_post', '');
+    }
+    
     const { data, error } = await supabase
       .from('post_comments')
       .select('*, profiles:user_id(*)')
       .eq('post_id', postId)
-      .eq('post_type', postType)
+      .eq('post_type', normalizedPostType)
       .eq('is_deleted', false)
       .order('created_at', { ascending: false });
 
