@@ -30,6 +30,7 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
   const [comments, setComments] = useState<PostComment[]>([]);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [isLiking, setIsLiking] = useState<Record<string, boolean>>({}); // Add missing isLiking state
   const { t } = useTranslation();
   
   useEffect(() => {

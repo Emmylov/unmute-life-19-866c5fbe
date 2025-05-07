@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { useReel } from "@/hooks/use-reel";
@@ -110,8 +109,8 @@ const ReelView: React.FC<ReelViewProps> = ({
       setIsLiked(!isLiked);
       setLikesCount(isLiked ? likesCount - 1 : likesCount + 1);
       
-      // Make API call
-      const result = await toggleLikePost(reel.id, 'reel');
+      // Make API call - Fix: Add the missing third parameter 'reel' for post type
+      const result = await toggleLikePost(reel.id, user.id, 'reel');
       
       // If result is different from what we expected, revert
       if (result !== !isLiked) {
