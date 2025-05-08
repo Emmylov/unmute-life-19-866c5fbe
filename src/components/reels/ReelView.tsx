@@ -14,6 +14,7 @@ import { ReelWithUser } from "@/types/reels";
 import { motion, useAnimationControls } from "framer-motion";
 import ReelMuteButton from "./controls/ReelMuteButton";
 import ReelEmotionDisplay from "./controls/ReelEmotionDisplay";
+import { toast } from "sonner";
 import "@/styles/animation-utils.css";
 
 // Add missing formatCompactNumber utility function
@@ -54,6 +55,8 @@ const ReelView: React.FC<ReelViewProps> = ({
   const [likesCount, setLikesCount] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
   const [selectedEmotion, setSelectedEmotion] = useState<string | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
   const emotionControls = useAnimationControls();
   
@@ -96,6 +99,56 @@ const ReelView: React.FC<ReelViewProps> = ({
     getLikes();
   }, [user, reel, checkFollowStatus, hasLikedPost, getPostLikesCount]);
 
+  // Handle video loading and playing
+  useEffect(() => {
+    if (videoRef.current) {
+      const video = videoRef.current;
+      
+      const handleLoadStart = () => {
+        setIsLoading(true);
+      };
+      
+      const handleCanPlay = () => {
+        setIsLoading(false);
+        // Only autoplay if not muted
+        if (!isMuted) {
+          video.play().catch(err => {
+            console.log("Autoplay prevented, muting and trying again");
+            setIsMuted(true);
+            video.muted = true;
+            video.play().catch(err2 => console.error("Still can't play:", err2));
+          });
+        } else {
+          video.play().catch(err => console.error("Error playing video:", err));
+        }
+      };
+      
+      const handlePlaying = () => {
+        setIsPlaying(true);
+        setIsLoading(false);
+      };
+      
+      const handleError = (e: Event) => {
+        console.error("Video error:", e);
+        setIsLoading(false);
+        toast.error("Error loading video");
+      };
+      
+      video.addEventListener('loadstart', handleLoadStart);
+      video.addEventListener('canplay', handleCanPlay);
+      video.addEventListener('playing', handlePlaying);
+      video.addEventListener('error', handleError);
+      
+      // Clean up
+      return () => {
+        video.removeEventListener('loadstart', handleLoadStart);
+        video.removeEventListener('canplay', handleCanPlay);
+        video.removeEventListener('playing', handlePlaying);
+        video.removeEventListener('error', handleError);
+      };
+    }
+  }, [reel, isMuted]);
+
   const handleFollowToggle = async () => {
     if (!user || !reel) return;
 
@@ -124,7 +177,7 @@ const ReelView: React.FC<ReelViewProps> = ({
         });
       }
       
-      // Make API call
+      // Make API call - adding 'reel' as the third parameter
       const result = await toggleLikePost(reel.id, user.id, 'reel');
       
       // If result is different from what we expected, revert
@@ -157,14 +210,29 @@ const ReelView: React.FC<ReelViewProps> = ({
       transition: { duration: 1.5 }
     });
   };
+  
+  // Toggle play/pause on video click
+  const handleVideoClick = () => {
+    if (videoRef.current) {
+      if (videoRef.current.paused) {
+        videoRef.current.play();
+        setIsPlaying(true);
+      } else {
+        videoRef.current.pause();
+        setIsPlaying(false);
+      }
+    }
+  };
 
   if (loading && !reelWithUser) {
-    return <div className="flex justify-center items-center h-screen bg-black/90">
-      <div className="animate-pulse flex flex-col items-center">
-        <div className="w-16 h-16 rounded-full bg-gray-600/50 mb-4"></div>
-        <div className="h-2 w-24 bg-gray-600/50 rounded"></div>
+    return (
+      <div className="flex justify-center items-center h-screen bg-black/90">
+        <div className="animate-pulse flex flex-col items-center">
+          <div className="w-16 h-16 rounded-full bg-gray-600/50 mb-4"></div>
+          <div className="h-2 w-24 bg-gray-600/50 rounded"></div>
+        </div>
       </div>
-    </div>;
+    );
   }
 
   if ((error || !reel) && !reelWithUser) {
@@ -192,7 +260,7 @@ const ReelView: React.FC<ReelViewProps> = ({
       transition={{ duration: 0.3 }}
     >
       {/* Video Container */}
-      <div className="relative w-full h-full">
+      <div className="relative w-full h-full" onClick={handleVideoClick}>
         <video
           ref={videoRef}
           src={reel?.video_url}
@@ -201,10 +269,21 @@ const ReelView: React.FC<ReelViewProps> = ({
           loop
           muted={isMuted}
           className="w-full h-full object-cover"
+          poster={reel?.thumbnail_url || undefined}
         />
         
+        {/* Loading state */}
+        {isLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/40 z-10">
+            <div className="relative w-12 h-12">
+              <div className="absolute inset-0 rounded-full border-2 border-t-primary border-r-transparent border-b-transparent border-l-transparent animate-spin"></div>
+              <div className="absolute inset-1 rounded-full border-2 border-t-primary/50 border-r-transparent border-b-transparent border-l-transparent animate-spin" style={{ animationDuration: '1.5s' }}></div>
+            </div>
+          </div>
+        )}
+        
         {/* Gradient Overlay for better text visibility */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/50 pointer-events-none" />
         
         {/* Emotion display (hearts, etc.) */}
         <ReelEmotionDisplay 
@@ -279,7 +358,7 @@ const ReelView: React.FC<ReelViewProps> = ({
             variant="ghost" 
             size="icon" 
             onClick={handleLikeToggle}
-            className="h-12 w-12 rounded-full bg-black/20 backdrop-blur-sm border border-white/10"
+            className="h-12 w-12 rounded-full bg-black/20 backdrop-blur-sm border border-white/10 hover:bg-black/40"
           >
             <Heart 
               className={`h-6 w-6 transition-all duration-300 ${isLiked ? 'text-red-500 fill-red-500 scale-110' : 'text-white'}`} 
@@ -296,7 +375,7 @@ const ReelView: React.FC<ReelViewProps> = ({
           <Button 
             variant="ghost" 
             size="icon"
-            className="h-12 w-12 rounded-full bg-black/20 backdrop-blur-sm border border-white/10"
+            className="h-12 w-12 rounded-full bg-black/20 backdrop-blur-sm border border-white/10 hover:bg-black/40"
           >
             <MessageCircle className="h-6 w-6 text-white" />
           </Button>
@@ -311,7 +390,7 @@ const ReelView: React.FC<ReelViewProps> = ({
           <Button 
             variant="ghost" 
             size="icon"
-            className="h-12 w-12 rounded-full bg-black/20 backdrop-blur-sm border border-white/10"
+            className="h-12 w-12 rounded-full bg-black/20 backdrop-blur-sm border border-white/10 hover:bg-black/40"
           >
             <Share className="h-6 w-6 text-white" />
           </Button>
@@ -343,7 +422,7 @@ const ReelView: React.FC<ReelViewProps> = ({
             <Button 
               variant="ghost" 
               size="icon" 
-              className="opacity-70 backdrop-blur-sm pointer-events-auto bg-black/30 text-white hover:bg-black/50" 
+              className="opacity-70 backdrop-blur-sm pointer-events-auto bg-black/30 text-white hover:bg-black/50 rounded-full" 
               onClick={onPrevious}
             >
               &lt;
@@ -353,7 +432,7 @@ const ReelView: React.FC<ReelViewProps> = ({
             <Button 
               variant="ghost" 
               size="icon" 
-              className="opacity-70 backdrop-blur-sm pointer-events-auto ml-auto bg-black/30 text-white hover:bg-black/50" 
+              className="opacity-70 backdrop-blur-sm pointer-events-auto ml-auto bg-black/30 text-white hover:bg-black/50 rounded-full" 
               onClick={onNext}
             >
               &gt;
@@ -371,6 +450,30 @@ const ReelView: React.FC<ReelViewProps> = ({
           transition={{ delay: 0.3 }}
         >
           {currentIndex + 1} / {totalReels}
+        </motion.div>
+      )}
+      
+      {/* Play/Pause indicator that shows briefly when video is clicked */}
+      {!isLoading && (
+        <motion.div
+          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 0 }}
+          whileHover={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+        >
+          <div className="bg-black/40 backdrop-blur-sm p-4 rounded-full">
+            {isPlaying ? (
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="white">
+                <rect x="6" y="4" width="4" height="16" rx="1" ry="1" />
+                <rect x="14" y="4" width="4" height="16" rx="1" ry="1" />
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="white">
+                <polygon points="5 3 19 12 5 21" />
+              </svg>
+            )}
+          </div>
         </motion.div>
       )}
     </motion.div>

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ReelView from '@/components/reels/ReelView';
@@ -8,6 +9,9 @@ import { useSwipeable } from 'react-swipeable';
 import { ReelWithUser } from '@/types/reels';
 import { useScreenSize } from '@/hooks/use-responsive';
 import { createSafeProfile } from '@/hooks/feed/feed-utils';
+import { Button } from '@/components/ui/button';
+import { RefreshCcw } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface ReelsProps {
   initialReelId?: string | null;
@@ -20,6 +24,7 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState<boolean>(true);
   const [viewMode, setViewMode] = useState<'vertical' | 'horizontal'>('vertical');
+  const [retryCount, setRetryCount] = useState(0);
   const reelContainerRef = useRef<HTMLDivElement>(null);
   const horizontalScrollRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -37,7 +42,7 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
 
   useEffect(() => {
     fetchReels();
-  }, []);
+  }, [retryCount]);
 
   useEffect(() => {
     if (initialReelId && reels.length > 0) {
@@ -51,6 +56,7 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
   const fetchReels = async () => {
     try {
       setLoading(true);
+      setError(null);
       console.log('Fetching reels...');
       
       // Check that the table and columns exist before querying
@@ -58,8 +64,7 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
         .from('reel_posts')
         .select(`
           id, user_id, created_at, video_url, thumbnail_url, caption, 
-          tags, visibility, audio_type, audio_url,
-          profiles:user_id (id, username, avatar, full_name)
+          tags, visibility, audio_type, audio_url
         `)
         .order('created_at', { ascending: false })
         .limit(10);
@@ -77,13 +82,34 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
         return;
       }
 
+      // Fetch user profiles in a separate query
+      const userIds = reelsData.map(reel => reel.user_id);
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, username, avatar, full_name')
+        .in('id', userIds);
+
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        // Continue anyway, we'll use placeholders for missing profiles
+      }
+
+      // Create a map of user_id to profile for quick lookup
+      const profileMap = new Map();
+      if (profilesData) {
+        profilesData.forEach(profile => {
+          profileMap.set(profile.id, profile);
+        });
+      }
+
       // Map profiles to reels with proper type safety and error handling
       const formattedReels: ReelWithUser[] = reelsData.map(item => {
-        // Handle missing or error in profiles data
-        const userProfile = item && typeof item === 'object' && 'profiles' in item && item.profiles
-          ? createSafeProfile(item.profiles)
+        // Use the profile from map, or create a placeholder
+        const profile = profileMap.get(item.user_id);
+        const userProfile = profile 
+          ? createSafeProfile(profile)
           : {
-              id: item && typeof item === 'object' && 'user_id' in item ? item.user_id : 'unknown',
+              id: item.user_id,
               username: 'Anonymous',
               avatar: '',
               full_name: 'Unknown User'
@@ -91,39 +117,34 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
 
         return {
           reel: {
-            id: item && typeof item === 'object' && 'id' in item ? item.id : 'unknown-id',
-            user_id: item && typeof item === 'object' && 'user_id' in item ? item.user_id : 'unknown-user',
-            created_at: item && typeof item === 'object' && 'created_at' in item ? item.created_at : new Date().toISOString(),
-            video_url: item && typeof item === 'object' && 'video_url' in item ? item.video_url : '',
-            thumbnail_url: item && typeof item === 'object' && 'thumbnail_url' in item ? item.thumbnail_url : null,
-            caption: item && typeof item === 'object' && 'caption' in item ? item.caption : null,
+            id: item.id || 'unknown-id',
+            user_id: item.user_id || 'unknown-user',
+            created_at: item.created_at || new Date().toISOString(),
+            video_url: item.video_url || '',
+            thumbnail_url: item.thumbnail_url || null,
+            caption: item.caption || null,
             audio: null, // These fields may not exist in the database schema
-            audio_type: item && typeof item === 'object' && 'audio_type' in item ? item.audio_type : null,
-            audio_url: item && typeof item === 'object' && 'audio_url' in item ? item.audio_url : null,
+            audio_type: item.audio_type || null,
+            audio_url: item.audio_url || null,
             duration: null, // These fields may not exist in the database schema
             original_audio_volume: 1, // Default value
             overlay_audio_volume: 0, // Default value
-            tags: item && typeof item === 'object' && 'tags' in item ? item.tags : [],
+            tags: item.tags || [],
             allow_comments: true,
             allow_duets: true,
             vibe_tag: null,
             mood_vibe: null,
           },
-          user: {
-            id: userProfile.id,
-            username: userProfile.username || '',
-            avatar: userProfile.avatar || '',
-            full_name: userProfile.full_name || '',
-          },
+          user: userProfile
         };
       });
 
       setReels(formattedReels);
       setHasMore(formattedReels.length === 10);
-      console.log('Formatted reels:', formattedReels);
+      console.log('Fetched reels count:', formattedReels.length);
     } catch (err) {
       console.error('Error fetching reels:', err);
-      setError('Failed to load reels');
+      setError('Failed to load reels. Please try again.');
       toast({
         title: 'Error',
         description: 'Failed to load reels. Please try again.',
@@ -144,8 +165,7 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
         .from('reel_posts')
         .select(`
           id, user_id, created_at, video_url, thumbnail_url, caption, 
-          tags, visibility, audio_type, audio_url,
-          profiles:user_id (id, username, avatar, full_name)
+          tags, visibility, audio_type, audio_url
         `)
         .lt('created_at', lastCreatedAt)
         .order('created_at', { ascending: false })
@@ -158,12 +178,28 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
         return;
       }
 
-      // Map to properly typed ReelWithUser objects with error handling
+      // Fetch user profiles
+      const userIds = reelsData.map(reel => reel.user_id);
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, username, avatar, full_name')
+        .in('id', userIds);
+
+      // Create a map of user_id to profile
+      const profileMap = new Map();
+      if (profilesData) {
+        profilesData.forEach(profile => {
+          profileMap.set(profile.id, profile);
+        });
+      }
+
+      // Map to properly typed ReelWithUser objects
       const formattedReels: ReelWithUser[] = reelsData.map(item => {
-        const userProfile = item && typeof item === 'object' && 'profiles' in item && item.profiles
-          ? createSafeProfile(item.profiles)
+        const profile = profileMap.get(item.user_id);
+        const userProfile = profile 
+          ? createSafeProfile(profile)
           : {
-              id: item && typeof item === 'object' && 'user_id' in item ? item.user_id : 'unknown',
+              id: item.user_id,
               username: 'Anonymous',
               avatar: '',
               full_name: 'Unknown User'
@@ -171,30 +207,25 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
 
         return {
           reel: {
-            id: item && typeof item === 'object' && 'id' in item ? item.id : 'unknown-id',
-            user_id: item && typeof item === 'object' && 'user_id' in item ? item.user_id : 'unknown-user',
-            created_at: item && typeof item === 'object' && 'created_at' in item ? item.created_at : new Date().toISOString(),
-            video_url: item && typeof item === 'object' && 'video_url' in item ? item.video_url : '',
-            thumbnail_url: item && typeof item === 'object' && 'thumbnail_url' in item ? item.thumbnail_url : null,
-            caption: item && typeof item === 'object' && 'caption' in item ? item.caption : null,
-            audio: null, // These fields may not exist in the database schema
-            audio_type: item && typeof item === 'object' && 'audio_type' in item ? item.audio_type : null,
-            audio_url: item && typeof item === 'object' && 'audio_url' in item ? item.audio_url : null,
-            duration: null, // These fields may not exist in the database schema
-            original_audio_volume: 1, // Default value
-            overlay_audio_volume: 0, // Default value
-            tags: item && typeof item === 'object' && 'tags' in item ? item.tags : [],
+            id: item.id || 'unknown-id',
+            user_id: item.user_id || 'unknown-user',
+            created_at: item.created_at || new Date().toISOString(),
+            video_url: item.video_url || '',
+            thumbnail_url: item.thumbnail_url || null,
+            caption: item.caption || null,
+            audio: null,
+            audio_type: item.audio_type || null,
+            audio_url: item.audio_url || null,
+            duration: null,
+            original_audio_volume: 1,
+            overlay_audio_volume: 0,
+            tags: item.tags || [],
             allow_comments: true,
             allow_duets: true,
             vibe_tag: null,
             mood_vibe: null,
           },
-          user: {
-            id: userProfile.id,
-            username: userProfile.username || '',
-            avatar: userProfile.avatar || '',
-            full_name: userProfile.full_name || '',
-          },
+          user: userProfile
         };
       });
       
@@ -323,37 +354,60 @@ const Reels: React.FC<ReelsProps> = ({ initialReelId }) => {
     setCurrentIndex(index);
   };
 
+  const handleRetry = () => {
+    setRetryCount(prev => prev + 1);
+  };
+
   if (loading && reels.length === 0) {
     return <ReelsSkeleton />;
   }
 
   if (error && reels.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen bg-black text-white p-4">
-        <h2 className="text-xl font-bold mb-2">Something went wrong</h2>
-        <p className="mb-4 text-center">{error}</p>
-        <button 
-          onClick={() => fetchReels()}
-          className="px-4 py-2 bg-primary text-white rounded-full"
-        >
-          Try Again
-        </button>
-      </div>
+      <motion.div 
+        className="flex flex-col items-center justify-center h-screen bg-black text-white p-4"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+      >
+        <div className="bg-black/60 backdrop-blur-md rounded-xl p-8 flex flex-col items-center max-w-md w-full">
+          <svg className="h-16 w-16 text-red-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <h2 className="text-xl font-bold mb-2">Something went wrong</h2>
+          <p className="mb-6 text-center text-gray-300">{error}</p>
+          <Button 
+            onClick={handleRetry}
+            className="px-4 py-2 bg-primary text-white rounded-full flex items-center gap-2 hover:bg-primary/80"
+          >
+            <RefreshCcw className="h-4 w-4" />
+            Try Again
+          </Button>
+        </div>
+      </motion.div>
     );
   }
 
   if (reels.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen bg-black text-white p-4">
-        <h2 className="text-xl font-bold mb-2">No reels found</h2>
-        <p className="mb-4 text-center">Be the first to create a reel!</p>
-        <button
-          onClick={() => navigate('/create')}
-          className="px-4 py-2 bg-primary text-white rounded-full"
-        >
-          Create a Reel
-        </button>
-      </div>
+      <motion.div 
+        className="flex flex-col items-center justify-center h-screen bg-black text-white p-4"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+      >
+        <div className="bg-black/60 backdrop-blur-md rounded-xl p-8 flex flex-col items-center max-w-md w-full">
+          <svg className="h-16 w-16 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          </svg>
+          <h2 className="text-xl font-bold mb-2">No reels found</h2>
+          <p className="mb-6 text-center text-gray-300">Be the first to create a reel!</p>
+          <Button
+            onClick={() => navigate('/create')}
+            className="px-4 py-2 bg-primary text-white rounded-full hover:bg-primary/80"
+          >
+            Create a Reel
+          </Button>
+        </div>
+      </motion.div>
     );
   }
 
