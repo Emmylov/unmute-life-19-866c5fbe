@@ -20,3 +20,8 @@ declare module 'react-i18next' {
     defaultNS: 'translation';
   }
 }
+
+// This critical type declaration fixes the compatibility between ReactI18NextChildren and ReactNode
+declare module 'react' {
+  interface ReactI18NextChildren extends ReactNode {}
+}

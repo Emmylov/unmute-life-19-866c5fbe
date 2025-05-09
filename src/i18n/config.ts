@@ -29,7 +29,8 @@ i18n
     // Fix for type compatibility issues
     react: {
       transSupportBasicHtmlNodes: true,
-      transKeepBasicHtmlNodesFor: ['br', 'strong', 'i', 'p']
+      transKeepBasicHtmlNodesFor: ['br', 'strong', 'i', 'p'],
+      useSuspense: false // This is important to avoid issues with React 18
     }
   });
 
