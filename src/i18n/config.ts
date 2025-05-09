@@ -25,6 +25,11 @@ i18n
     fallbackLng: 'en',
     interpolation: {
       escapeValue: false
+    },
+    // Fix for type compatibility issues
+    react: {
+      transSupportBasicHtmlNodes: true,
+      transKeepBasicHtmlNodesFor: ['br', 'strong', 'i', 'p']
     }
   });
 
