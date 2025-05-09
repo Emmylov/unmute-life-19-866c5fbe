@@ -4,10 +4,12 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import SEO from "@/components/shared/SEO";
+import { useTranslation } from "react-i18next";
 
 const Story = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const navigate = useNavigate();
+  const { t } = useTranslation();
   
   // Story content with proper structure to avoid "undefined" text
   const storyPages = [
