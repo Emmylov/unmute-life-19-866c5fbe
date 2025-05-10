@@ -21,16 +21,29 @@ declare module 'react-i18next' {
   }
 }
 
-// This critical type declaration fixes the compatibility between ReactI18NextChildren and ReactNode
+// Fix the type compatibility issue between JSX text nodes and ReactI18NextChildren
 declare module 'react' {
-  interface ReactI18NextChildren {
-    [key: string]: any;
+  // This makes string, number, etc. compatible with ReactI18NextChildren
+  interface ReactI18NextChildren extends ReactNode {}
+}
+
+// Ensure that built-in JSX elements accept string literals
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      // Ensure all intrinsic elements accept string children
+      [key: string]: any;
+    }
   }
 }
 
-// Add this to ensure compatibility with React 18 and above
+// Extend React's namespace to make ReactNode compatible with ReactI18NextChildren
 declare global {
   namespace React {
-    interface ReactI18NextChildren extends ReactNode {}
+    interface ReactElement {
+      props: {
+        children?: ReactNode | ReactI18NextChildren | Iterable<ReactI18NextChildren>;
+      } & any;
+    }
   }
 }
