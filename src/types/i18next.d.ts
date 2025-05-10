@@ -23,5 +23,14 @@ declare module 'react-i18next' {
 
 // This critical type declaration fixes the compatibility between ReactI18NextChildren and ReactNode
 declare module 'react' {
-  interface ReactI18NextChildren extends ReactNode {}
+  interface ReactI18NextChildren {
+    [key: string]: any;
+  }
+}
+
+// Add this to ensure compatibility with React 18 and above
+declare global {
+  namespace React {
+    interface ReactI18NextChildren extends ReactNode {}
+  }
 }

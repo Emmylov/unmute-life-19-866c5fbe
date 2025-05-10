@@ -7,6 +7,7 @@ import enTranslations from './locales/en.json';
 import frTranslations from './locales/fr.json';
 import esTranslations from './locales/es.json';
 
+// Initialize i18next with settings compatible with React 18
 i18n
   .use(initReactI18next)
   .init({
@@ -26,12 +27,16 @@ i18n
     interpolation: {
       escapeValue: false
     },
-    // Fix for type compatibility issues
+    // Enhanced compatibility settings for React 18
     react: {
       transSupportBasicHtmlNodes: true,
-      transKeepBasicHtmlNodesFor: ['br', 'strong', 'i', 'p'],
-      useSuspense: false // This is important to avoid issues with React 18
-    }
+      transKeepBasicHtmlNodesFor: ['br', 'strong', 'i', 'p', 'span', 'em'],
+      useSuspense: false, // Critical to avoid issues with React 18
+      transWrapTextNodes: ''  // Using empty string instead of null/undefined
+    },
+    // Additional settings to ensure compatibility
+    compatibilityJSON: 'v3',
+    skipOnVariables: false
   });
 
 export default i18n;
