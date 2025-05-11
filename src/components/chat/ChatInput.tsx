@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Send, Smile, Paperclip, Mic } from "lucide-react";
 import { useChatContext } from "@/contexts/ChatContext";
+import jsx from "@/utils/jsx-helper";
 
 const emojis = ["😀", "😂", "❤️", "👍", "🔥", "🎉", "🙌", "👀", "💯", "✨"];
 
@@ -74,7 +75,7 @@ const ChatInput = () => {
                   className="h-10 w-10 p-0 text-lg"
                   onClick={() => handleEmojiClick(emoji)}
                 >
-                  {emoji}
+                  {jsx(emoji)}
                 </Button>
               ))}
             </div>
@@ -118,7 +119,7 @@ const ChatInput = () => {
       {isRecording && (
         <div className="flex items-center mt-2 text-sm text-red-500">
           <div className="w-2 h-2 bg-red-500 rounded-full mr-2 animate-pulse"></div>
-          Recording voice message...
+          {jsx("Recording voice message...")}
         </div>
       )}
     </form>

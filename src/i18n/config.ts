@@ -1,6 +1,7 @@
 
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
+import LanguageDetector from 'i18next-browser-languagedetector';
 
 // Import all translations
 import enTranslations from './locales/en.json';
@@ -9,6 +10,7 @@ import esTranslations from './locales/es.json';
 
 // Initialize i18next with enhanced settings compatible with React 18
 i18n
+  .use(LanguageDetector)
   .use(initReactI18next)
   .init({
     resources: {
@@ -36,8 +38,5 @@ i18n
     // Additional settings to ensure compatibility
     compatibilityJSON: 'v3'
   });
-
-// Add a global helper to make text JSX-compatible (will be used as a last resort)
-(window as any).textToJSX = (text: string) => text;
 
 export default i18n;

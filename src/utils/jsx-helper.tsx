@@ -5,8 +5,10 @@ import React from 'react';
  * Wraps text content to make it compatible with ReactI18NextChildren
  * Use this helper when JSX elements expect ReactI18NextChildren but you have a string
  */
-export const jsx = (text: string | number | null | undefined): React.ReactNode => {
-  return <>{text}</>;
+export const jsx = (
+  content: React.ReactNode | string | number | null | undefined
+): React.ReactNode => {
+  return <>{content}</>;
 };
 
 /**
