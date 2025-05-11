@@ -8,6 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import TextWrapper from '@/components/i18n/TextWrapper';
 
 const LanguageSwitcher = () => {
   const { i18n } = useTranslation();
@@ -25,12 +26,12 @@ const LanguageSwitcher = () => {
   return (
     <Select onValueChange={handleLanguageChange} defaultValue={i18n.language}>
       <SelectTrigger className="w-[120px]">
-        <SelectValue placeholder="Language" />
+        <SelectValue placeholder={<TextWrapper text="Language" />} />
       </SelectTrigger>
       <SelectContent>
         {languages.map((lang) => (
           <SelectItem key={lang.code} value={lang.code}>
-            {lang.name}
+            <TextWrapper text={lang.name} />
           </SelectItem>
         ))}
       </SelectContent>

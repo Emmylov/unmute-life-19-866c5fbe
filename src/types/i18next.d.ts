@@ -23,7 +23,7 @@ declare module 'react-i18next' {
 
 // Fix the type compatibility issue between JSX text nodes and ReactI18NextChildren
 declare module 'react' {
-  // This makes string, number, etc. compatible with ReactI18NextChildren
+  // Make ReactI18NextChildren extend ReactNode to ensure compatibility
   interface ReactI18NextChildren extends ReactNode {}
 }
 
@@ -37,7 +37,7 @@ declare global {
   }
 }
 
-// Extend React's namespace to make ReactNode compatible with ReactI18NextChildren
+// Make ReactNode compatible with ReactI18NextChildren
 declare global {
   namespace React {
     interface ReactElement {

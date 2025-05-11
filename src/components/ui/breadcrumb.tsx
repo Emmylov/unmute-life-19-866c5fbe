@@ -1,8 +1,10 @@
+
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { ChevronRight, MoreHorizontal } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import TextWrapper from "@/components/i18n/TextWrapper"
 
 const Breadcrumb = React.forwardRef<
   HTMLElement,
@@ -99,7 +101,7 @@ const BreadcrumbEllipsis = ({
     {...props}
   >
     <MoreHorizontal className="h-4 w-4" />
-    <span className="sr-only">More</span>
+    <span className="sr-only"><TextWrapper text="More" /></span>
   </span>
 )
 BreadcrumbEllipsis.displayName = "BreadcrumbElipssis"

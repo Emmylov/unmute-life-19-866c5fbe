@@ -31,16 +31,10 @@ i18n
     react: {
       transSupportBasicHtmlNodes: true,
       transKeepBasicHtmlNodesFor: ['br', 'strong', 'i', 'p', 'span', 'em', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'button'],
-      useSuspense: false, // Critical to avoid issues with React 18
-      transWrapTextNodes: '' // Using empty string instead of null/undefined
+      useSuspense: false // Critical to avoid issues with React 18
     },
     // Additional settings to ensure compatibility
-    compatibilityJSON: 'v3',
-    skipOnVariables: false,
-    parseMissingKeyHandler: (key) => {
-      console.warn(`Missing translation key: ${key}`);
-      return key;
-    }
+    compatibilityJSON: 'v3'
   });
 
 // Add a global helper to make text JSX-compatible (will be used as a last resort)

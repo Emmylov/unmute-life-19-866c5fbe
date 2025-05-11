@@ -10,7 +10,7 @@ interface TextWrapperProps {
  * React components that expect ReactI18NextChildren
  */
 const TextWrapper: React.FC<TextWrapperProps> = ({ text }) => {
-  // Return the text directly, the wrapper component itself ensures compatibility
+  // Cast the text as ReactNode to ensure type compatibility
   return <>{text}</>;
 };
 

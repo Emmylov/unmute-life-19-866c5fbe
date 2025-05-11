@@ -6,6 +6,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { TutorialProvider } from '@/contexts/TutorialContext';
 import TutorialOverlay from '@/components/tutorial/TutorialOverlay';
 import { HelmetProvider } from 'react-helmet-async';
+// Import the i18n configuration before importing components that use translations
 import '@/i18n/config';
 
 import Index from "@/pages/Index";

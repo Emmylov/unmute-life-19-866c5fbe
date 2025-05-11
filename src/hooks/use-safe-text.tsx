@@ -11,6 +11,7 @@ export const useSafeText = () => {
    * Wraps text in a TextWrapper component to ensure type compatibility with ReactI18NextChildren
    */
   const safeText = (text: string | number | null | undefined) => {
+    // Cast directly to ReactNode to resolve type issues
     return <TextWrapper text={text} />;
   };
 
