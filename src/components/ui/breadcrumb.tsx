@@ -48,14 +48,14 @@ const BreadcrumbLink = React.forwardRef<
 >(({ asChild, className, children, ...props }, ref) => {
   const Comp = asChild ? Slot : "a"
 
-  // Directly return the component with children to avoid type issues
+  // Cast children to ReactNode to satisfy TypeScript
   return (
     <Comp
       ref={ref}
       className={cn("transition-colors hover:text-foreground", className)}
       {...props}
     >
-      {children}
+      {children as React.ReactNode}
     </Comp>
   )
 })

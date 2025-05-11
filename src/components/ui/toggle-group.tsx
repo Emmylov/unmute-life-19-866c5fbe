@@ -24,8 +24,8 @@ const ToggleGroup = React.forwardRef<
     {...props}
   >
     <ToggleGroupContext.Provider value={{ variant, size }}>
-      {/* Using props.children directly removes the need for explicit casting */}
-      {props.children}
+      {/* Cast children to ReactNode to resolve type issues */}
+      {props.children as React.ReactNode}
     </ToggleGroupContext.Provider>
   </ToggleGroupPrimitive.Root>
 ))

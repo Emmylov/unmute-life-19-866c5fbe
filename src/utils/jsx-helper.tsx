@@ -10,7 +10,7 @@ export const jsx = (
 ): React.ReactNode => {
   // This wrapper ensures that any content is properly cast to ReactNode
   // and is compatible with ReactI18NextChildren
-  return <>{content}</>;
+  return content as React.ReactNode;
 };
 
 /**
