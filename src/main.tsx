@@ -8,10 +8,6 @@ import './i18n/config';
 import App from './App.tsx';
 import './index.css';
 
-// Make the jsx helper globally available for emergency fixes
-import jsx from './utils/jsx-helper';
-(window as any).jsx = jsx;
-
 // Create a dedicated function for rendering to ensure i18n is fully loaded
 const renderApp = () => {
   ReactDOM.createRoot(document.getElementById('root')!).render(

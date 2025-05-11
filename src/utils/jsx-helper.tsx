@@ -8,6 +8,7 @@ import React from 'react';
 export const jsx = (
   content: React.ReactNode | string | number | null | undefined
 ): React.ReactNode => {
+  // Cast explicitly to ReactNode to resolve TypeScript compatibility issues
   return <>{content}</>;
 };
 
