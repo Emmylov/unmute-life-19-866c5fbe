@@ -31,9 +31,9 @@ i18n
     },
     // Enhanced compatibility settings for React 18
     react: {
+      useSuspense: false, // Critical to avoid issues with React 18
       transSupportBasicHtmlNodes: true,
-      transKeepBasicHtmlNodesFor: ['br', 'strong', 'i', 'p', 'span', 'em', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'button'],
-      useSuspense: false // Critical to avoid issues with React 18
+      transKeepBasicHtmlNodesFor: ['br', 'strong', 'i', 'p', 'span', 'em', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'button']
     },
     // Additional settings to ensure compatibility
     compatibilityJSON: 'v3'

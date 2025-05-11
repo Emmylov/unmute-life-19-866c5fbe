@@ -26,8 +26,10 @@ declare module 'react' {
   // Make ReactI18NextChildren extend ReactNode to ensure compatibility
   interface ReactI18NextChildren extends ReactNode {}
   
-  // Ensure ReactNode is compatible with ReactI18NextChildren
-  type ReactNode = ReactElement | string | number | ReactFragment | ReactPortal | boolean | null | undefined | ReactI18NextChildren;
+  // Ensure ReactNode includes ReactI18NextChildren
+  interface ReactElement<P = any, T extends string | JSXElementConstructor<any> = string | JSXElementConstructor<any>> {
+    props: P & { children?: ReactNode | ReactI18NextChildren | Iterable<ReactI18NextChildren> };
+  }
 }
 
 // Ensure that built-in JSX elements accept string literals
