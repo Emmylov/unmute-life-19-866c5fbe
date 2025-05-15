@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 const validateEmail = (email: string) => {
   return String(email)
     .toLowerCase()
-    .match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
+    .match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/) !== null;
 };
 
 const MaintenanceMode = () => {
@@ -36,6 +36,7 @@ const MaintenanceMode = () => {
   }, []);
 
   useEffect(() => {
+    // Update the validity state based on email validation
     setIsValid(validateEmail(email));
   }, [email]);
 
