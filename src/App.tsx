@@ -6,6 +6,8 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { TutorialProvider } from '@/contexts/TutorialContext';
 import TutorialOverlay from '@/components/tutorial/TutorialOverlay';
 import { HelmetProvider } from 'react-helmet-async';
+import { isInMaintenanceMode, shouldBypassMaintenance } from '@/utils/maintenance';
+import MaintenanceMode from '@/components/maintenance/MaintenanceMode';
 // Import the i18n configuration before importing components that use translations
 import '@/i18n/config';
 
@@ -58,6 +60,14 @@ function App() {
       document.removeEventListener('keydown', handleInteraction);
     };
   }, []);
+
+  // Check if we should show maintenance mode
+  const showMaintenanceMode = isInMaintenanceMode() && !shouldBypassMaintenance();
+
+  // If in maintenance mode, show the maintenance page instead of the app
+  if (showMaintenanceMode) {
+    return <MaintenanceMode />;
+  }
 
   return (
     <div className="App">

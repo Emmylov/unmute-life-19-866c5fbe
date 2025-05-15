@@ -7,6 +7,7 @@ import './i18n/config';
 // Import other things after i18n is initialized
 import App from './App.tsx';
 import './index.css';
+import './styles/maintenance.css';
 
 // Create a dedicated function for rendering to ensure i18n is fully loaded
 const renderApp = () => {
