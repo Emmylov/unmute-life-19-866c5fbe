@@ -9,7 +9,7 @@ export const isInMaintenanceMode = (): boolean => {
   // 1. Use an environment variable
   // 2. Fetch from a database or API
   // 3. Use a feature flag service
-  return true;
+  return true; // Set to true to enable maintenance mode
 };
 
 // Check if the current user should bypass maintenance mode

@@ -1,7 +1,7 @@
 
 import React, { useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CalendarClock, Rocket, ArrowRight, BellRing } from 'lucide-react';
+import { CalendarClock, Rocket, ArrowRight, BellRing, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 // Simple email validation
@@ -15,12 +15,6 @@ const MaintenanceMode = () => {
   const [email, setEmail] = React.useState('');
   const [isValid, setIsValid] = React.useState(false);
   const [isSubmitted, setIsSubmitted] = React.useState(false);
-  const [countdown, setCountdown] = React.useState({
-    days: 3,
-    hours: 14,
-    minutes: 25,
-    seconds: 0,
-  });
 
   useEffect(() => {
     // Set up confetti background
@@ -49,8 +43,8 @@ const MaintenanceMode = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#1A1F2C] to-[#2D3748] flex flex-col justify-center items-center px-4 py-10">
-      {/* Purple gradient orb */}
+    <div className="min-h-screen bg-gradient-to-b from-[#1A1F2C] to-[#2D3748] flex flex-col justify-center items-center px-4 py-10 maintenance-mode">
+      {/* Purple gradient orbs */}
       <div className="absolute top-20 right-20 w-64 h-64 rounded-full bg-gradient-to-r from-[#9b87f5] to-[#D6BCFA] opacity-20 blur-3xl" />
       <div className="absolute bottom-20 left-20 w-72 h-72 rounded-full bg-gradient-to-r from-[#D6BCFA] to-[#9b87f5] opacity-10 blur-3xl" />
       
@@ -67,31 +61,32 @@ const MaintenanceMode = () => {
             }}
             transition={{ duration: 2, repeat: Infinity }}
           >
-            <Rocket className="h-8 w-8 text-white" />
+            <BookOpen className="h-8 w-8 text-white" />
           </motion.div>
         </div>
 
         <h1 className="text-4xl md:text-5xl font-bold mb-4 text-white bg-clip-text text-transparent bg-gradient-to-r from-[#9b87f5] to-[#D6BCFA]">
-          Something Huge is Coming to Unmute
+          Unmute is Taking a Study Break
         </h1>
         
         <p className="text-xl md:text-2xl mb-6 text-gray-300">
-          We're upgrading our platform with exciting new features to enhance your experience.
+          We're pausing development while focusing on school commitments.
         </p>
         
         <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 mb-8 border border-white/20">
           <div className="flex items-center mb-4">
             <CalendarClock className="h-6 w-6 text-[#9b87f5] mr-2" />
-            <h2 className="text-xl font-semibold text-white">Expected Return</h2>
+            <h2 className="text-xl font-semibold text-white">When Will We Be Back?</h2>
           </div>
           
-          <div className="grid grid-cols-4 gap-2 md:gap-4 mb-4">
-            {Object.entries(countdown).map(([unit, value]) => (
-              <div key={unit} className="bg-white/5 rounded-lg p-3">
-                <div className="text-2xl md:text-3xl font-bold text-white">{value}</div>
-                <div className="text-xs md:text-sm text-gray-400">{unit.charAt(0).toUpperCase() + unit.slice(1)}</div>
-              </div>
-            ))}
+          <p className="text-gray-300 mb-2">
+            The app development is currently paused while we focus on school priorities. We don't have a specific return date, but we're excited to continue building when time allows.
+          </p>
+          
+          <div className="mt-4 bg-white/5 rounded-lg p-4">
+            <p className="text-white font-medium">
+              "Education is our priority right now, but Unmute will return with even better features when we're back!"
+            </p>
           </div>
         </div>
         
@@ -105,11 +100,11 @@ const MaintenanceMode = () => {
             >
               <div className="flex items-center mb-4">
                 <BellRing className="h-6 w-6 text-[#9b87f5] mr-2" />
-                <h2 className="text-xl font-semibold text-white">Get Notified</h2>
+                <h2 className="text-xl font-semibold text-white">Get Notified When We're Back</h2>
               </div>
               
               <p className="text-gray-300 mb-4">
-                Leave your email and we'll let you know the moment we're back online!
+                Leave your email and we'll let you know when development resumes!
               </p>
               
               <form onSubmit={handleSubmit} className="flex flex-col md:flex-row gap-3">
@@ -137,7 +132,7 @@ const MaintenanceMode = () => {
             >
               <h3 className="text-xl font-semibold text-white mb-2">Thank You!</h3>
               <p className="text-gray-300">
-                We'll send you an update as soon as we're back. Get ready for an improved Unmute experience!
+                We'll send you an update when development resumes. Thanks for your patience and support!
               </p>
             </motion.div>
           )}
