@@ -1,11 +1,12 @@
 
 import React, { useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CalendarClock, Rocket, ArrowRight, BellRing, BookOpen } from 'lucide-react';
+import { CalendarClock, ArrowRight, BellRing, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { toast } from '@/components/ui/use-toast';
 
 // Simple email validation
-const validateEmail = (email: string) => {
+const validateEmail = (email: string): boolean => {
   return String(email)
     .toLowerCase()
     .match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/) !== null;
@@ -23,9 +24,13 @@ const MaintenanceMode = () => {
     canvas.id = 'maintenance-confetti';
     document.body.appendChild(canvas);
 
+    // Enable scrolling on the body
+    document.body.style.overflow = 'auto';
+    
     // Return cleanup function
     return () => {
       document.getElementById('maintenance-confetti')?.remove();
+      document.body.style.overflow = '';
     };
   }, []);
 
@@ -38,20 +43,24 @@ const MaintenanceMode = () => {
     e.preventDefault();
     if (isValid) {
       setIsSubmitted(true);
+      toast({
+        title: "Thanks for subscribing!",
+        description: "We'll notify you when development resumes.",
+      });
       // Here you could send the email to your backend
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#1A1F2C] to-[#2D3748] flex flex-col justify-center items-center px-4 py-10 maintenance-mode">
+    <div className="min-h-screen bg-gradient-to-b from-[#1A1F2C] to-[#2D3748] flex flex-col justify-center items-center px-4 py-10 maintenance-mode overflow-y-auto">
       {/* Purple gradient orbs */}
-      <div className="absolute top-20 right-20 w-64 h-64 rounded-full bg-gradient-to-r from-[#9b87f5] to-[#D6BCFA] opacity-20 blur-3xl" />
-      <div className="absolute bottom-20 left-20 w-72 h-72 rounded-full bg-gradient-to-r from-[#D6BCFA] to-[#9b87f5] opacity-10 blur-3xl" />
+      <div className="fixed top-20 right-20 w-64 h-64 rounded-full bg-gradient-to-r from-[#9b87f5] to-[#D6BCFA] opacity-20 blur-3xl" />
+      <div className="fixed bottom-20 left-20 w-72 h-72 rounded-full bg-gradient-to-r from-[#D6BCFA] to-[#9b87f5] opacity-10 blur-3xl" />
       
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="z-10 max-w-2xl mx-auto text-center"
+        className="z-10 max-w-2xl mx-auto text-center my-8"
       >
         <div className="mb-6 inline-block">
           <motion.div 
@@ -66,26 +75,26 @@ const MaintenanceMode = () => {
         </div>
 
         <h1 className="text-4xl md:text-5xl font-bold mb-4 text-white bg-clip-text text-transparent bg-gradient-to-r from-[#9b87f5] to-[#D6BCFA]">
-          Unmute is Taking a Study Break
+          I'm Taking a Study Break
         </h1>
         
         <p className="text-xl md:text-2xl mb-6 text-gray-300">
-          We're pausing development while focusing on school commitments.
+          Development is paused while I focus on school commitments.
         </p>
         
         <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 mb-8 border border-white/20">
           <div className="flex items-center mb-4">
             <CalendarClock className="h-6 w-6 text-[#9b87f5] mr-2" />
-            <h2 className="text-xl font-semibold text-white">When Will We Be Back?</h2>
+            <h2 className="text-xl font-semibold text-white">When Will Development Resume?</h2>
           </div>
           
           <p className="text-gray-300 mb-2">
-            The app development is currently paused while we focus on school priorities. We don't have a specific return date, but we're excited to continue building when time allows.
+            App development is currently paused while I focus on school priorities. I don't have a specific return date, but I'm excited to continue building when time allows.
           </p>
           
           <div className="mt-4 bg-white/5 rounded-lg p-4">
             <p className="text-white font-medium">
-              "Education is our priority right now, but Unmute will return with even better features when we're back!"
+              "Education is my priority right now, but Unmute will return with even better features when I'm back!"
             </p>
           </div>
         </div>
@@ -100,11 +109,11 @@ const MaintenanceMode = () => {
             >
               <div className="flex items-center mb-4">
                 <BellRing className="h-6 w-6 text-[#9b87f5] mr-2" />
-                <h2 className="text-xl font-semibold text-white">Get Notified When We're Back</h2>
+                <h2 className="text-xl font-semibold text-white">Get Notified When I'm Back</h2>
               </div>
               
               <p className="text-gray-300 mb-4">
-                Leave your email and we'll let you know when development resumes!
+                Leave your email and I'll let you know when development resumes!
               </p>
               
               <form onSubmit={handleSubmit} className="flex flex-col md:flex-row gap-3">
@@ -132,14 +141,14 @@ const MaintenanceMode = () => {
             >
               <h3 className="text-xl font-semibold text-white mb-2">Thank You!</h3>
               <p className="text-gray-300">
-                We'll send you an update when development resumes. Thanks for your patience and support!
+                I'll send you an update when development resumes. Thanks for your patience and support!
               </p>
             </motion.div>
           )}
         </AnimatePresence>
         
         <p className="mt-8 text-sm text-gray-400">
-          If you have any questions, reach out to us at support@unmutelife.online
+          If you have any questions, reach out to me at support@unmutelife.online
         </p>
       </motion.div>
     </div>
