@@ -43,9 +43,8 @@ const MaintenanceMode = () => {
     e.preventDefault();
     if (isValid) {
       setIsSubmitted(true);
-      toast({
-        title: "Thanks for subscribing!",
-        description: "We'll notify you when development resumes.",
+      toast.success("Thanks for subscribing!", {
+        description: "We'll notify you when development resumes."
       });
       // Here you could send the email to your backend
     }
