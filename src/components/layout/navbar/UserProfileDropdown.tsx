@@ -10,7 +10,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { useIsDesktop } from "@/hooks/use-responsive";
 import { LogOut, Settings, User } from "lucide-react";
 import LanguageSwitcher from "../LanguageSwitcher";
@@ -30,7 +30,6 @@ const UserProfileDropdown = (props: UserProfileDropdownProps = {}) => {
   // Use props or fallback to context values for backward compatibility
   const authContext = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
   const isDesktop = useIsDesktop();
   const { t } = useTranslation();
 
@@ -46,17 +45,10 @@ const UserProfileDropdown = (props: UserProfileDropdownProps = {}) => {
       } else {
         await authContext.signOut();
         navigate("/auth");
-        toast({
-          title: "Signed out",
-          description: "You have been successfully signed out.",
-        });
+        toast.success("You have been successfully signed out.");
       }
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Sign out failed",
-        description: "There was an error signing you out. Please try again.",
-      });
+      toast.error("There was an error signing you out. Please try again.");
     }
   };
 
